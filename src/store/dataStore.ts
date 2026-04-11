@@ -54,12 +54,30 @@ const defaultSettings: UserSettings = {
 
 // ── Store interface ──────────────────────────────────────────
 
+export interface UserProfile {
+  name: string;
+  email: string;
+  picture: string;
+}
+
 interface DataState {
   sources: Source[];
   methods: PaymentMethod[];
   categories: Category[];
   transactions: Transaction[];
   settings: UserSettings;
+  accessToken: string | null;
+  
+  // Cloud Sync properties
+  userProfile: UserProfile | null;
+  spreadsheetId: string | null;
+  lastSyncedAt: string | null;
+  isSyncing: boolean;
+
+  // Cloud Actions
+  setUserProfile: (profile: UserProfile | null) => void;
+  setSpreadsheetId: (id: string | null) => void;
+  setSyncState: (lastSyncedAt: string | null, isSyncing: boolean) => void;
 
   // Sources
   addSource: (s: Omit<Source, 'id' | 'createdAt'>) => void;
@@ -84,6 +102,7 @@ interface DataState {
 
   // Settings
   updateSettings: (patch: Partial<UserSettings>) => void;
+  setAccessToken: (token: string | null) => void;
 }
 
 const uuid = () => crypto.randomUUID();
@@ -97,6 +116,16 @@ export const useDataStore = create<DataState>()(
       categories: defaultCategories,
       transactions: [],
       settings: defaultSettings,
+      accessToken: null,
+      userProfile: null,
+      spreadsheetId: null,
+      lastSyncedAt: null,
+      isSyncing: false,
+
+      // Cloud actions
+      setUserProfile: (profile) => set({ userProfile: profile }),
+      setSpreadsheetId: (id) => set({ spreadsheetId: id }),
+      setSyncState: (lastSyncedAt, isSyncing) => set({ lastSyncedAt, isSyncing }),
 
       // Sources
       addSource: (s) =>
@@ -156,6 +185,8 @@ export const useDataStore = create<DataState>()(
       // Settings
       updateSettings: (patch) =>
         set((state) => ({ settings: { ...state.settings, ...patch } })),
+      setAccessToken: (token) =>
+        set(() => ({ accessToken: token })),
     }),
     { name: 'moniq-data' }
   )
