@@ -8,9 +8,9 @@ This document tracks the end-to-end implementation roadmap for **moniq**. Items 
 ## 🛠 Phase 1: Foundation & Authentication
 - [x] Initialize project (Vite / Next.js, Tailwind CSS/Vanilla CSS, TypeScript).
 - [x] Configure `design_system.css` and core layout shell.
-- [ ] Implement Google Sign-In (OAuth) flow.
-- [ ] Set up Google Sheets API Client inside the app (Drive scope request).
-- [ ] Build the "Initialize Database" routine (checks for the user's `moniq` sheet and creates it if missing).
+- [x] Implement Google Sign-In (OAuth) flow.
+- [x] Set up Google Sheets API Client inside the app (Drive scope request).
+- [x] Build the "Initialize Database" routine (checks for the user's `moniq` folder/sheet and creates it if missing).
 - [x] Set up basic local state sync (fetch all tabs on boot and map to client stores).
 
 ## ⚙️ Phase 2: Master Data Management (CRUD)
@@ -63,3 +63,10 @@ This document tracks the end-to-end implementation roadmap for **moniq**. Items 
 - [ ] Setup PWA meta tags and service worker for offline loading cache.
 - [ ] Implement transaction queuing (if offline, store in IndexedDB, sync on reconnect).
 - [ ] Final user testing and deployment (Vercel/Netlify).
+
+## 🔮 Phase 7: Future Optimizations (Scale & UX)
+- [ ] **Background Synchronization**: Utilize service workers to intelligently sync offline queued transactions the moment connection is restored.
+- [ ] **Intelligent Auto-Categorization**: Save a local dictionary of note keywords to category mappings to auto-select categories based on note text.
+- [ ] **Smart Budget Rollover**: Move unspent funds from specific categories into next month's budget or automatically sweep to savings constraints.
+- [ ] **Household Sharing (Joint Accounts)**: Configure the app to read from a shared `moniq` folder UUID, allowing spouses to contribute to a joint ledger.
+- [ ] **Sheets Auto-Archiving Tool**: Scripts to extract transactions older than 2 years into a separate `Archive_YYYY` sheet to preserve API performance at scale.
