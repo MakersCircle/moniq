@@ -1,9 +1,27 @@
 import { useState } from 'react';
 import { Plus, Pencil, Archive, Check, X } from 'lucide-react';
 import PageShell from '../../components/PageShell';
-import Modal from '../../components/Modal';
 import { useDataStore } from '../../store/dataStore';
 import type { Source, SourceType } from '../../types';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const SOURCE_TYPES: SourceType[] = ['Bank', 'Wallet', 'Cash', 'Investment', 'Receivable', 'Payable', 'Custom'];
 
@@ -58,70 +76,117 @@ export default function Sources() {
     <PageShell
       title="Accounts"
       subtitle="Where your money lives"
+      hasBack
+
       headerRight={
-        <button className="btn btn-primary btn-sm" onClick={openAdd} id="add-source-btn">
-          <Plus size={15} /> Add
-        </button>
+        <Button size="sm" onClick={openAdd} id="add-source-btn">
+          <Plus className="mr-2 h-4 w-4" /> Add
+        </Button>
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div className="flex flex-col gap-2">
         {activeSources.map((s) => (
-          <div key={s.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontWeight: 600, fontSize: '0.9375rem' }} className="truncate">{s.name}</p>
-              <p className="label" style={{ marginTop: 2 }}>{s.type} · {s.currency}</p>
+          <Card key={s.id} className="flex items-center gap-3 p-4">
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-[0.9375rem] truncate">{s.name}</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mt-0.5">
+                {s.type} · {s.currency}
+              </p>
             </div>
-            <p className="mono" style={{ fontWeight: 600, flexShrink: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-              Opening: {settings.currencySymbol}{s.initialBalance.toFixed(2)}
+            <p className="mono font-semibold text-sm text-muted-foreground shrink-0">
+              Opening: {settings.currencySymbol}{s.initialBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
-            <button className="btn btn-ghost btn-icon" onClick={() => openEdit(s)} aria-label={`Edit ${s.name}`}>
-              <Pencil size={15} />
-            </button>
-            <button className="btn btn-ghost btn-icon" onClick={() => archiveSource(s.id)} aria-label={`Archive ${s.name}`}>
-              <Archive size={15} />
-            </button>
-          </div>
+            <Button variant="ghost" size="icon" onClick={() => openEdit(s)} aria-label={`Edit ${s.name}`}>
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => archiveSource(s.id)} aria-label={`Archive ${s.name}`}>
+              <Archive className="h-4 w-4" />
+            </Button>
+          </Card>
         ))}
       </div>
 
       {archivedSources.length > 0 && (
-        <div>
-          <p className="label" style={{ marginBottom: 8 }}>Archived</p>
+        <div className="mt-6">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Archived</p>
           {archivedSources.map((s) => (
-            <div key={s.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, opacity: 0.5 }}>
-              <span style={{ flex: 1 }}>{s.name}</span>
-              <button className="btn btn-ghost btn-sm" onClick={() => updateSource(s.id, { isActive: true })}>
+            <Card key={s.id} className="flex items-center gap-3 p-4 opacity-50">
+              <span className="flex-1">{s.name}</span>
+              <Button variant="ghost" size="sm" onClick={() => updateSource(s.id, { isActive: true })}>
                 Restore
-              </button>
-            </div>
+              </Button>
+            </Card>
           ))}
         </div>
       )}
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Account' : 'Add Account'}>
-        <div className="form-group">
-          <label className="form-label" htmlFor="src-name">Name</label>
-          <input id="src-name" className="form-input" placeholder="e.g., SBI Savings" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        </div>
-        <div className="form-group">
-          <label className="form-label" htmlFor="src-type">Type</label>
-          <select id="src-type" className="form-select" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as SourceType })}>
-            {SOURCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-        </div>
-        <div className="form-group">
-          <label className="form-label" htmlFor="src-balance">Opening Balance</label>
-          <input id="src-balance" type="number" className="form-input" value={form.initialBalance} onChange={(e) => setForm({ ...form, initialBalance: e.target.value })} inputMode="decimal" />
-        </div>
-        <div className="form-group">
-          <label className="form-label" htmlFor="src-currency">Currency</label>
-          <input id="src-currency" className="form-input" value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} placeholder="INR" />
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-primary btn-full" onClick={handleSave}><Check size={16} /> Save</button>
-          <button className="btn btn-secondary" onClick={() => setModalOpen(false)}><X size={16} /></button>
-        </div>
-      </Modal>
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editing ? 'Edit Account' : 'Add Account'}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="src-name">Name</Label>
+              <Input 
+                id="src-name" 
+                placeholder="e.g., SBI Savings" 
+                value={form.name} 
+                onChange={(e) => setForm({ ...form, name: e.target.value })} 
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="src-type">Type</Label>
+              <Select 
+                value={form.type} 
+                onValueChange={(val) => setForm({ ...form, type: val as SourceType })}
+              >
+                <SelectTrigger id="src-type">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SOURCE_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="src-balance">Opening Balance</Label>
+              <Input 
+                id="src-balance" 
+                type="number" 
+                value={form.initialBalance} 
+                onChange={(e) => setForm({ ...form, initialBalance: e.target.value })} 
+                inputMode="decimal" 
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="src-currency">Currency</Label>
+              <Input 
+                id="src-currency" 
+                value={form.currency} 
+                onChange={(e) => setForm({ ...form, currency: e.target.value })} 
+                placeholder="INR" 
+              />
+            </div>
+          </div>
+          
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave}>
+              <Check className="mr-2 h-4 w-4" /> Save Account
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageShell>
   );
 }
+

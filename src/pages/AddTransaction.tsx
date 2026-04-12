@@ -2,10 +2,28 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Check, ChevronDown } from 'lucide-react';
 import PageShell from '../components/PageShell';
-import Modal from '../components/Modal';
 import { useDataStore } from '../store/dataStore';
 import type { TransactionType } from '../types';
-import './AddTransaction.css';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from '@/lib/utils';
 
 interface SplitLine {
   categoryId: string;
@@ -19,7 +37,6 @@ export default function AddTransaction() {
   const navigate = useNavigate();
   const { sources, methods, categories, settings, addTransaction, addTransactionGroup } = useDataStore();
 
-  // ── Form state ───
   const [type, setType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(today);
@@ -29,20 +46,15 @@ export default function AddTransaction() {
   const [categoryId, setCategoryId] = useState('');
   const [note, setNote] = useState('');
 
-  // Split
   const [isSplit, setIsSplit] = useState(false);
   const [splits, setSplits] = useState<SplitLine[]>([
     { categoryId: '', amount: '', note: '' },
     { categoryId: '', amount: '', note: '' },
   ]);
 
-  // Modals
   const [showCatPicker, setShowCatPicker] = useState(false);
   const [splitPickerIdx, setSplitPickerIdx] = useState<number | null>(null);
 
-  const amountRef = useRef<HTMLInputElement>(null);
-
-  // ── Helpers ─────
   const activeSources = sources.filter((s) => s.isActive);
   const activeMethods = methods.filter((m) => m.isActive);
   const activeCategories = categories.filter((c) => c.isActive);
@@ -52,13 +64,10 @@ export default function AddTransaction() {
     return c ? `${c.head}${c.subHead ? ' · ' + c.subHead : ''}` : 'Select category';
   };
 
-
-
   const totalSplitAmount = splits.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
   const parsedAmount = parseFloat(amount) || 0;
   const remainingForSplits = parsedAmount - totalSplitAmount;
 
-  // ── Submit ───────
   const handleSubmit = () => {
     if (!parsedAmount || parsedAmount <= 0) return;
     if (!sourceId) return;
@@ -95,7 +104,6 @@ export default function AddTransaction() {
     navigate('/');
   };
 
-  // ── Split helpers ─
   const updateSplit = (idx: number, patch: Partial<SplitLine>) => {
     setSplits((prev) => prev.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
   };
@@ -103,7 +111,6 @@ export default function AddTransaction() {
   const addSplitLine = () => setSplits((prev) => [...prev, { categoryId: '', amount: '', note: '' }]);
   const removeSplitLine = (idx: number) => setSplits((prev) => prev.filter((_, i) => i !== idx));
 
-  // Category groups
   const catGroups = activeCategories.reduce<Record<string, typeof activeCategories>>((acc, c) => {
     const key = c.group;
     if (!acc[key]) acc[key] = [];
@@ -113,265 +120,230 @@ export default function AddTransaction() {
 
   return (
     <PageShell title="Add Transaction">
-      <div className="add-txn">
-        {/* Type tabs */}
-        <div className="type-tabs" role="tablist">
-          {(['expense', 'income', 'transfer'] as TransactionType[]).map((t) => (
-            <button
-              key={t}
-              role="tab"
-              aria-selected={type === t}
-              className={`type-tab${type === t ? ` active-${t}` : ''}`}
-              onClick={() => { setType(t); setIsSplit(false); }}
-            >
-              {t.charAt(0).toUpperCase() + t.slice(1)}
-            </button>
-          ))}
-        </div>
+      <div className="flex flex-col gap-6 max-w-md mx-auto">
+        <Tabs value={type} onValueChange={(v) => { 
+          setType(v as TransactionType); 
+          setIsSplit(false);
+          setAmount('');
+          setSplits([{ categoryId: '', amount: '', note: '' }, { categoryId: '', amount: '', note: '' }]);
+        }}>
 
-        {/* Amount */}
-        <div className="add-amount-wrap card">
-          <div className="amount-input-wrap">
-            <span className="amount-currency">{settings.currencySymbol}</span>
-            <input
-              ref={amountRef}
-              type="number"
-              className="amount-input"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              inputMode="decimal"
-              min="0"
-              step="0.01"
-              id="txn-amount"
-              aria-label="Transaction amount"
-            />
+          <TabsList>
+            <TabsTrigger value="expense">Expense</TabsTrigger>
+            <TabsTrigger value="income">Income</TabsTrigger>
+            <TabsTrigger value="transfer">Transfer</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <Card className="p-0 border-none bg-transparent shadow-none">
+          <div className="flex flex-col items-center justify-center py-6">
+             <div className="flex items-center gap-2">
+                <span className="text-3xl font-medium text-muted-foreground">{settings.currencySymbol}</span>
+                <input
+                  type="number"
+                  className="bg-transparent text-6xl font-semibold outline-none text-center w-full min-w-[200px]"
+                  placeholder="0"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  inputMode="decimal"
+                  autoFocus
+                />
+             </div>
+             {isSplit && (
+                <p className={cn(
+                  "mt-4 text-sm font-medium",
+                  Math.abs(remainingForSplits) < 0.01 ? "text-income" : "text-expense"
+                )}>
+                  {Math.abs(remainingForSplits) < 0.01 
+                    ? "✓ All split" 
+                    : `To split: ${settings.currencySymbol}${remainingForSplits.toFixed(2)}`}
+                </p>
+             )}
           </div>
-          {isSplit && (
-            <div className={`split-remainder ${Math.abs(remainingForSplits) < 0.01 ? 'ok' : 'warn'}`}>
-              {Math.abs(remainingForSplits) < 0.01
-                ? '✓ Splits match total'
-                : `Remaining to split: ${settings.currencySymbol}${remainingForSplits.toFixed(2)}`}
+        </Card>
+
+        <div className="space-y-4 px-1">
+          <div className="space-y-2">
+            <Label htmlFor="txn-date">Date</Label>
+            <Input id="txn-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="txn-source">{type === 'transfer' ? 'From Account' : 'Account'}</Label>
+            <Select value={sourceId} onValueChange={setSourceId}>
+              <SelectTrigger id="txn-source">
+                <SelectValue placeholder="Select account" />
+              </SelectTrigger>
+              <SelectContent>
+                {activeSources.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {type === 'transfer' && (
+            <div className="space-y-2">
+              <Label htmlFor="txn-to-source">To Account</Label>
+              <Select value={toSourceId} onValueChange={setToSourceId}>
+                <SelectTrigger id="txn-to-source">
+                  <SelectValue placeholder="Select destination" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeSources.filter(s => s.id !== sourceId).map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
-        </div>
 
-        {/* Date */}
-        <div className="form-group">
-          <label className="form-label" htmlFor="txn-date">Date</label>
-          <input
-            id="txn-date"
-            type="date"
-            className="form-input"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-        </div>
-
-        {/* Source */}
-        <div className="form-group">
-          <label className="form-label" htmlFor="txn-source">
-            {type === 'transfer' ? 'From Account' : 'Account'}
-          </label>
-          <div className="select-wrap">
-            <select
-              id="txn-source"
-              className="form-select"
-              value={sourceId}
-              onChange={(e) => setSourceId(e.target.value)}
-            >
-              <option value="">Select account...</option>
-              {activeSources.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-            <ChevronDown size={16} className="select-icon" />
-          </div>
-        </div>
-
-        {/* To Source (Transfer only) */}
-        {type === 'transfer' && (
-          <div className="form-group">
-            <label className="form-label" htmlFor="txn-to-source">To Account</label>
-            <div className="select-wrap">
-              <select
-                id="txn-to-source"
-                className="form-select"
-                value={toSourceId}
-                onChange={(e) => setToSourceId(e.target.value)}
-              >
-                <option value="">Select account...</option>
-                {activeSources.filter((s) => s.id !== sourceId).map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
+          <div className="space-y-2">
+            <Label htmlFor="txn-method">Payment Method</Label>
+            <Select value={methodId} onValueChange={setMethodId}>
+              <SelectTrigger id="txn-method">
+                <SelectValue placeholder="Select method (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {activeMethods.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
                 ))}
-              </select>
-              <ChevronDown size={16} className="select-icon" />
+              </SelectContent>
+            </Select>
+          </div>
+
+          {type !== 'transfer' && !isSplit && (
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Button
+                variant="outline"
+                className="w-full justify-between font-normal"
+                onClick={() => setShowCatPicker(true)}
+              >
+                <span className={categoryId ? 'text-primary font-medium' : 'text-muted-foreground'}>
+                  {getCatLabel(categoryId)}
+                </span>
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Payment Method */}
-        <div className="form-group">
-          <label className="form-label" htmlFor="txn-method">Payment Method</label>
-          <div className="select-wrap">
-            <select
-              id="txn-method"
-              className="form-select"
-              value={methodId}
-              onChange={(e) => setMethodId(e.target.value)}
-            >
-              <option value="">Select method... (optional)</option>
-              {activeMethods.map((m) => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-            </select>
-            <ChevronDown size={16} className="select-icon" />
-          </div>
-        </div>
-
-        {/* Category (non-transfer) */}
-        {type !== 'transfer' && !isSplit && (
-          <div className="form-group">
-            <label className="form-label">Category</label>
-            <button
-              type="button"
-              className="form-input cat-button"
-              onClick={() => setShowCatPicker(true)}
-            >
-              <span className={categoryId ? 'text-primary' : 'text-muted'}>
-                {getCatLabel(categoryId)}
-              </span>
-              <ChevronDown size={16} />
-            </button>
-          </div>
-        )}
-
-        {/* Split Section */}
-        {type === 'expense' && (
-          <div className="split-toggle-row">
-            <span className="form-label">Split into multiple categories</span>
-            <button
-              type="button"
-              className={`toggle-btn${isSplit ? ' active' : ''}`}
-              onClick={() => setIsSplit((v) => !v)}
-              aria-pressed={isSplit}
-            >
-              <span className="toggle-thumb" />
-            </button>
-          </div>
-        )}
-
-        {isSplit && type === 'expense' && (
-          <div className="split-lines">
-            {splits.map((s, idx) => (
-              <div key={idx} className="split-line card">
-                <div className="split-line-top">
-                  <button
-                    type="button"
-                    className="form-input cat-button split-cat-btn"
-                    onClick={() => { setSplitPickerIdx(idx); setShowCatPicker(true); }}
-                  >
-                    <span className={s.categoryId ? 'text-primary' : 'text-muted'}>
-                      {getCatLabel(s.categoryId)}
-                    </span>
-                    <ChevronDown size={14} />
-                  </button>
-                  <input
-                    type="number"
-                    className="form-input split-amount-input"
-                    placeholder="Amount"
-                    value={s.amount}
-                    onChange={(e) => updateSplit(idx, { amount: e.target.value })}
-                    inputMode="decimal"
-                    min="0"
-                    aria-label={`Split amount ${idx + 1}`}
-                  />
-                  {splits.length > 2 && (
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-icon"
-                      onClick={() => removeSplitLine(idx)}
-                      aria-label="Remove split"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  )}
-                </div>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="Note for this split (optional)"
-                  value={s.note}
-                  onChange={(e) => updateSplit(idx, { note: e.target.value })}
-                />
+          {type === 'expense' && (
+            <div className="flex items-center justify-between py-2">
+              <div className="space-y-0.5">
+                <Label>Split Expense</Label>
+                <p className="text-[0.8rem] text-muted-foreground">Assign to multiple categories</p>
               </div>
-            ))}
-            <button type="button" className="btn btn-secondary" onClick={addSplitLine}>
-              <Plus size={15} /> Add split
-            </button>
+              <Button 
+                variant={isSplit ? "default" : "outline"}
+                size="sm"
+                onClick={() => setIsSplit(!isSplit)}
+              >
+                {isSplit ? "Active" : "Enable"}
+              </Button>
+            </div>
+          )}
+
+          {isSplit && type === 'expense' && (
+            <div className="space-y-4">
+              {splits.map((s, idx) => (
+                <Card key={idx} className="p-4 space-y-3">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1 justify-between text-left font-normal h-9 px-3 py-1"
+                      onClick={() => { setSplitPickerIdx(idx); setShowCatPicker(true); }}
+                    >
+                      <span className={s.categoryId ? 'text-primary font-medium truncate' : 'text-muted-foreground truncate'}>
+                        {getCatLabel(s.categoryId)}
+                      </span>
+                      <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                    </Button>
+                    <Input
+                      type="number"
+                      className="w-24 h-9"
+                      placeholder="Amount"
+                      value={s.amount}
+                      onChange={(e) => updateSplit(idx, { amount: e.target.value })}
+                    />
+                    {splits.length > 2 && (
+                      <Button variant="ghost" size="icon" onClick={() => removeSplitLine(idx)}>
+                        <Trash2 className="h-4 w-4 text-expense" />
+                      </Button>
+                    )}
+                  </div>
+                  <Input
+                    placeholder="Note for this split (optional)"
+                    className="h-8 text-xs"
+                    value={s.note}
+                    onChange={(e) => updateSplit(idx, { note: e.target.value })}
+                  />
+                </Card>
+              ))}
+              <Button variant="outline" className="w-full dashed border-dashed border-2" onClick={addSplitLine}>
+                <Plus className="mr-2 h-4 w-4" /> Add Split
+              </Button>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="txn-note">Note</Label>
+            <Input
+              id="txn-note"
+              placeholder="What was this for?"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
           </div>
-        )}
 
-        {/* Note */}
-        <div className="form-group">
-          <label className="form-label" htmlFor="txn-note">Note</label>
-          <input
-            id="txn-note"
-            type="text"
-            className="form-input"
-            placeholder="What was this for?"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-          />
+          <Button 
+            className="w-full mt-4 h-12 text-lg" 
+            size="lg"
+            onClick={handleSubmit} 
+            disabled={!parsedAmount || parsedAmount <= 0}
+          >
+            <Check className="mr-2 h-5 w-5" /> Save Transaction
+          </Button>
         </div>
-
-        {/* Submit */}
-        <button
-          type="button"
-          className="btn btn-primary btn-full btn-lg"
-          onClick={handleSubmit}
-          id="submit-transaction"
-        >
-          <Check size={20} /> Save Transaction
-        </button>
       </div>
 
-      {/* Category Picker Modal */}
-      <Modal
-        isOpen={showCatPicker}
-        onClose={() => { setShowCatPicker(false); setSplitPickerIdx(null); }}
-        title="Select Category"
-        size="md"
-      >
-        <div className="cat-picker">
-          {Object.entries(catGroups).map(([group, cats]) => (
-            <div key={group} className="cat-group">
-              <p className="label cat-group-label">{group}</p>
-              <div className="cat-list">
-                {cats.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    className="cat-option"
-                    onClick={() => {
-                      if (splitPickerIdx !== null) {
-                        updateSplit(splitPickerIdx, { categoryId: c.id });
-                      } else {
-                        setCategoryId(c.id);
-                      }
-                      setShowCatPicker(false);
-                      setSplitPickerIdx(null);
-                    }}
-                  >
-                    {c.head}{c.subHead && <span className="text-secondary"> · {c.subHead}</span>}
-                  </button>
-                ))}
+      <Dialog open={showCatPicker} onOpenChange={(o) => { if(!o) { setShowCatPicker(false); setSplitPickerIdx(null); }}}>
+        <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Select Category</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            {Object.entries(catGroups).map(([group, cats]) => (
+              <div key={group} className="space-y-2">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-1">{group}</p>
+                <div className="grid grid-cols-1 gap-1">
+                  {cats.map((c) => (
+                    <Button
+                      key={c.id}
+                      variant="ghost"
+                      className="justify-start h-auto py-2.5 px-3 text-sm font-normal"
+                      onClick={() => {
+                        if (splitPickerIdx !== null) {
+                          updateSplit(splitPickerIdx, { categoryId: c.id });
+                        } else {
+                          setCategoryId(c.id);
+                        }
+                        setShowCatPicker(false);
+                      }}
+                    >
+                      <span>{c.head}</span>
+                      {c.subHead && <span className="text-muted-foreground ml-2">· {c.subHead}</span>}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </Modal>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </PageShell>
   );
 }
+
 

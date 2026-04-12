@@ -1,9 +1,27 @@
 import { useState } from 'react';
 import { Plus, Pencil, Archive, Check, X } from 'lucide-react';
 import PageShell from '../../components/PageShell';
-import Modal from '../../components/Modal';
 import { useDataStore } from '../../store/dataStore';
 import type { Category, CategoryGroup } from '../../types';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const GROUPS: CategoryGroup[] = ['Needs', 'Wants', 'Savings', 'Investment', 'Debt', 'Income', 'Custom'];
 
@@ -38,59 +56,111 @@ export default function Categories() {
     <PageShell
       title="Categories"
       subtitle="Why money moves"
-      headerRight={<button className="btn btn-primary btn-sm" onClick={openAdd} id="add-category-btn"><Plus size={15} /> Add</button>}
+      hasBack
+
+      headerRight={
+        <Button size="sm" onClick={openAdd} id="add-category-btn">
+          <Plus className="mr-2 h-4 w-4" /> Add
+        </Button>
+      }
     >
-      {Object.entries(grouped).map(([group, cats]) => (
-        <div key={group}>
-          <p className="label" style={{ marginBottom: 8, paddingLeft: 4 }}>{group}</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {cats.map((c) => (
-              <div key={c.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontWeight: 600, fontSize: '0.9375rem' }}>
-                    {c.head}{c.subHead && <span style={{ color: 'var(--text-secondary)', fontWeight: 400 }}> · {c.subHead}</span>}
-                  </p>
-                </div>
-                <button className="btn btn-ghost btn-icon" onClick={() => openEdit(c)}><Pencil size={15} /></button>
-                <button className="btn btn-ghost btn-icon" onClick={() => archiveCategory(c.id)}><Archive size={15} /></button>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-
-      {archived.length > 0 && (
-        <div>
-          <p className="label" style={{ marginBottom: 8 }}>Archived</p>
-          {archived.map((c) => (
-            <div key={c.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, opacity: 0.5 }}>
-              <span style={{ flex: 1 }}>{c.head}{c.subHead ? ` · ${c.subHead}` : ''}</span>
-              <button className="btn btn-ghost btn-sm" onClick={() => updateCategory(c.id, { isActive: true })}>Restore</button>
+      <div className="space-y-6">
+        {Object.entries(grouped).map(([group, cats]) => (
+          <div key={group}>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3 px-1">{group}</p>
+            <div className="flex flex-col gap-2">
+              {cats.map((c) => (
+                <Card key={c.id} className="flex items-center gap-3 p-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-[0.9375rem]">
+                      {c.head}{c.subHead && <span className="text-muted-foreground font-normal"> · {c.subHead}</span>}
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(c)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => archiveCategory(c.id)}>
+                    <Archive className="h-4 w-4" />
+                  </Button>
+                </Card>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Category' : 'Add Category'}>
-        <div className="form-group">
-          <label className="form-label" htmlFor="cat-group">Group</label>
-          <select id="cat-group" className="form-select" value={form.group} onChange={(e) => setForm({ ...form, group: e.target.value as CategoryGroup })}>
-            {GROUPS.map((g) => <option key={g} value={g}>{g}</option>)}
-          </select>
-        </div>
-        <div className="form-group">
-          <label className="form-label" htmlFor="cat-head">Head</label>
-          <input id="cat-head" className="form-input" placeholder="e.g., Food" value={form.head} onChange={(e) => setForm({ ...form, head: e.target.value })} />
-        </div>
-        <div className="form-group">
-          <label className="form-label" htmlFor="cat-subhead">Sub-head (optional)</label>
-          <input id="cat-subhead" className="form-input" placeholder="e.g., Groceries" value={form.subHead} onChange={(e) => setForm({ ...form, subHead: e.target.value })} />
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-primary btn-full" onClick={handleSave}><Check size={16} /> Save</button>
-          <button className="btn btn-secondary" onClick={() => setModalOpen(false)}><X size={16} /></button>
-        </div>
-      </Modal>
+        {archived.length > 0 && (
+          <div className="mt-8">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3 px-1">Archived</p>
+            <div className="flex flex-col gap-2">
+              {archived.map((c) => (
+                <Card key={c.id} className="flex items-center gap-3 p-4 opacity-50">
+                  <span className="flex-1 text-[0.9375rem]">{c.head}{c.subHead ? ` · ${c.subHead}` : ''}</span>
+                  <Button variant="ghost" size="sm" onClick={() => updateCategory(c.id, { isActive: true })}>
+                    Restore
+                  </Button>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editing ? 'Edit Category' : 'Add Category'}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="cat-group">Group</Label>
+              <Select 
+                value={form.group} 
+                onValueChange={(val) => setForm({ ...form, group: val as CategoryGroup })}
+              >
+                <SelectTrigger id="cat-group">
+                  <SelectValue placeholder="Select group" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GROUPS.map((g) => (
+                    <SelectItem key={g} value={g}>{g}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="cat-head">Head</Label>
+              <Input 
+                id="cat-head" 
+                placeholder="e.g., Food" 
+                value={form.head} 
+                onChange={(e) => setForm({ ...form, head: e.target.value })} 
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="cat-subhead">Sub-head (optional)</Label>
+              <Input 
+                id="cat-subhead" 
+                placeholder="e.g., Groceries" 
+                value={form.subHead} 
+                onChange={(e) => setForm({ ...form, subHead: e.target.value })} 
+              />
+            </div>
+          </div>
+          
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave}>
+              <Check className="mr-2 h-4 w-4" /> Save Category
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageShell>
   );
 }
+
