@@ -63,9 +63,6 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
           })}
         </div>
 
-        <div className="mt-10 px-4 pt-10 border-t border-border/50">
-           <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 text-center">moniq v0.1</p>
-        </div>
       </aside>
 
       {/* Settings Content Area Area */}

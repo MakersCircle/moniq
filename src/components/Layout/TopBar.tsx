@@ -1,7 +1,5 @@
 import { Search, Plus } from 'lucide-react';
-import { useDataStore } from '@/store/dataStore';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useEffect, useRef } from 'react';
 
 interface TopBarProps {
@@ -9,7 +7,6 @@ interface TopBarProps {
 }
 
 export default function TopBar({ onNewTransaction }: TopBarProps) {
-  const { userProfile } = useDataStore();
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -52,18 +49,6 @@ export default function TopBar({ onNewTransaction }: TopBarProps) {
           <Plus className="h-3.5 w-3.5" />
           <span>New Transaction</span>
         </Button>
-        
-        <div className="h-8 w-px bg-border mx-1" />
-
-        <div className="flex items-center gap-2 pr-1">
-          <span className="text-xs font-medium text-foreground/90 hidden sm:inline-block">
-            {userProfile?.name?.split(' ')[0] || 'Rahul'}
-          </span>
-          <Avatar className="h-8 w-8 border border-border">
-            <AvatarImage src={userProfile?.picture} />
-            <AvatarFallback className="text-xs">{userProfile?.name?.charAt(0) || 'U'}</AvatarFallback>
-          </Avatar>
-        </div>
       </div>
     </header>
   );
