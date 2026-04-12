@@ -66,14 +66,16 @@ export default function Categories() {
   return (
     <SettingsLayout>
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight">Categories</h2>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Expense & Income Classification</p>
+        <div className="sticky top-0 bg-background/95 backdrop-blur-md z-40 pb-4 pt-2 -mx-1 px-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold tracking-tight">Categories</h2>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Expense & Income Classification</p>
+            </div>
+            <Button size="sm" onClick={openAdd} className="h-9 gap-2">
+              <Plus className="h-4 w-4" /> Add Category
+            </Button>
           </div>
-          <Button size="sm" onClick={openAdd} className="h-9 gap-2">
-            <Plus className="h-4 w-4" /> Add Category
-          </Button>
         </div>
 
         <div className="space-y-10">

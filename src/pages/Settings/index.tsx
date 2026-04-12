@@ -41,6 +41,10 @@ export default function SettingsIndex() {
   return (
     <SettingsLayout>
       <div className="space-y-10">
+        <div className="sticky top-0 bg-background/95 backdrop-blur-md z-40 pb-4 pt-2 -mx-1 px-1">
+          <h2 className="text-xl font-bold tracking-tight">General</h2>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Preferences & Sync</p>
+        </div>
         {/* Profile */}
         <section className="space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">Profile</h3>

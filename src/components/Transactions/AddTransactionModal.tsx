@@ -108,7 +108,7 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
   const inputClasses = "h-9 bg-muted/40 border-transparent focus:border-primary/30 transition-all";
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden bg-background">
+    <form onSubmit={handleSubmit} className="flex flex-col max-h-full overflow-hidden bg-background">
       {/* Header Area */}
       <div className="px-6 py-4 border-b border-border bg-accent/5">
         <div className="flex items-center justify-between mb-4 pr-10">

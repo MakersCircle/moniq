@@ -84,14 +84,16 @@ export default function Sources() {
   return (
     <SettingsLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight">Accounts</h2>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Active Entities ({activeSources.length})</p>
+        <div className="sticky top-0 bg-background/95 backdrop-blur-md z-40 pb-4 pt-2 -mx-1 px-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold tracking-tight">Accounts</h2>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Active Entities ({activeSources.length})</p>
+            </div>
+            <Button size="sm" onClick={openAdd} className="h-9 gap-2">
+              <Plus className="h-4 w-4" /> Add Account
+            </Button>
           </div>
-          <Button size="sm" onClick={openAdd} className="h-9 gap-2">
-            <Plus className="h-4 w-4" /> Add Account
-          </Button>
         </div>
 
         <div className="grid grid-cols-1 gap-3">

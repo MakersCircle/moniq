@@ -28,9 +28,9 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   };
 
   return (
-    <div className="flex gap-10">
+    <div className="flex gap-10 h-[calc(100vh-112px)] overflow-hidden -mt-2">
       {/* Settings Internal Sidebar */}
-      <aside className="w-[200px] shrink-0">
+      <aside className="w-[200px] shrink-0 overflow-y-auto custom-scrollbar pr-2 pb-6 pt-2">
         <h2 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground mb-6 px-4">
           Settings
         </h2>
@@ -68,8 +68,8 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         </div>
       </aside>
 
-      {/* Settings Content Area */}
-      <div className="flex-1 min-w-0 max-w-[800px]">
+      {/* Settings Content Area Area */}
+      <div className="flex-1 min-w-0 max-w-[800px] overflow-y-auto custom-scrollbar pr-6 pb-6">
         {children}
       </div>
     </div>
