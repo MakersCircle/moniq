@@ -82,6 +82,7 @@ export async function initializeDatabase(accessToken: string): Promise<string> {
         { properties: { title: 'Categories' } },
         { properties: { title: 'Methods' } },
         { properties: { title: 'Settings' } },
+        { properties: { title: 'Budgets' } },
       ],
     }),
   });
@@ -115,6 +116,25 @@ export async function syncDataToGoogleSheets(
     'Content-Type': 'application/json',
   };
 
+  // 0. Ensure all required sheets exist (Add "Budgets" if missing from old DBs)
+  try {
+    const metaRes = await fetch(`${SHEETS_API_URL}/spreadsheets/${spreadsheetId}`, { headers });
+    const metaData = await metaRes.json();
+    const existingSheets = metaData.sheets.map((s: any) => s.properties.title);
+    
+    if (!existingSheets.includes('Budgets')) {
+      await fetch(`${SHEETS_API_URL}/spreadsheets/${spreadsheetId}:batchUpdate`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          requests: [{ addSheet: { properties: { title: 'Budgets' } } }]
+        })
+      });
+    }
+  } catch (err) {
+    console.warn("Failed to verify/add missing sheets:", err);
+  }
+
   // 1. Prepare Transactions
   const txRows = state.transactions.map((t: any) => [
     t.id, t.groupId || '', t.type, t.amount, t.date, t.sourceId, t.categoryId || '', t.note || '', t.isDeleted ? 'TRUE' : 'FALSE', t.createdAt, t.updatedAt
@@ -143,9 +163,15 @@ export async function syncDataToGoogleSheets(
   const setRows = Object.entries(state.settings || {}).map(([k, v]) => [k, String(v)]);
   setRows.unshift(['Key', 'Value']);
 
-  // 6. First, clear the entire sheets to avoid lingering deleted row data
+  // 6. Prepare Budgets
+  const budgetRows = state.budgets.map((b: any) => [
+    b.id, b.categoryId, b.period, b.amount, b.createdAt
+  ]);
+  budgetRows.unshift(['ID', 'Category ID', 'Period', 'Amount', 'Created At']);
+
+  // 7. First, clear the entire sheets to avoid lingering deleted row data
   const clearBody = {
-    ranges: ['Transactions', 'Sources', 'Categories', 'Methods', 'Settings']
+    ranges: ['Transactions', 'Sources', 'Categories', 'Methods', 'Settings', 'Budgets']
   };
   await fetch(`${SHEETS_API_URL}/spreadsheets/${spreadsheetId}/values:batchClear`, {
     method: 'POST',
@@ -153,7 +179,7 @@ export async function syncDataToGoogleSheets(
     body: JSON.stringify(clearBody)
   });
 
-  // 7. Write all current local data back to the sheets
+  // 8. Write all current local data back to the sheets
   const updateBody = {
     valueInputOption: "USER_ENTERED",
     data: [
@@ -162,6 +188,7 @@ export async function syncDataToGoogleSheets(
       { range: 'Categories!A1', values: catRows },
       { range: 'Methods!A1', values: metRows },
       { range: 'Settings!A1', values: setRows },
+      { range: 'Budgets!A1', values: budgetRows },
     ]
   };
 

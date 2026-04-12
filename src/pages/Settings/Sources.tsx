@@ -1,13 +1,12 @@
 import { useState } from 'react';
-import { Plus, Pencil, Archive, Check, X } from 'lucide-react';
-import PageShell from '../../components/PageShell';
+import { Plus, Pencil, Archive, Check, Bookmark, Landmark, Wallet, IndianRupee, PieChart } from 'lucide-react';
 import { useDataStore } from '../../store/dataStore';
 import type { Source, SourceType } from '../../types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -22,8 +21,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from '@/lib/utils';
+import SettingsLayout from '@/components/Layout/SettingsLayout';
 
 const SOURCE_TYPES: SourceType[] = ['Bank', 'Wallet', 'Cash', 'Investment', 'Receivable', 'Payable', 'Custom'];
+
+const TYPE_ICONS: Record<string, any> = {
+  Bank: Landmark,
+  Wallet: Wallet,
+  Cash: IndianRupee,
+  Investment: PieChart,
+  Custom: Bookmark,
+};
 
 interface SourceForm {
   name: string;
@@ -73,120 +82,138 @@ export default function Sources() {
   const archivedSources = sources.filter((s) => !s.isActive);
 
   return (
-    <PageShell
-      title="Accounts"
-      subtitle="Where your money lives"
-      hasBack
+    <SettingsLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight">Accounts</h2>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Active Entities ({activeSources.length})</p>
+          </div>
+          <Button size="sm" onClick={openAdd} className="h-9 gap-2">
+            <Plus className="h-4 w-4" /> Add Account
+          </Button>
+        </div>
 
-      headerRight={
-        <Button size="sm" onClick={openAdd} id="add-source-btn">
-          <Plus className="mr-2 h-4 w-4" /> Add
-        </Button>
-      }
-    >
-      <div className="flex flex-col gap-2">
-        {activeSources.map((s) => (
-          <Card key={s.id} className="flex items-center gap-3 p-4">
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-[0.9375rem] truncate">{s.name}</p>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mt-0.5">
-                {s.type} · {s.currency}
-              </p>
+        <div className="grid grid-cols-1 gap-3">
+          {activeSources.map((s) => {
+            const Icon = TYPE_ICONS[s.type] || Bookmark;
+            return (
+              <Card key={s.id} className="group border-border hover:border-primary/30 transition-all shadow-sm overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="flex items-center gap-4 p-4">
+                    <div className="h-10 w-10 shrink-0 rounded-xl bg-accent flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm tracking-tight">{s.name}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{s.type}</p>
+                    </div>
+                    <div className="text-right pr-2">
+                       <p className="text-xs font-bold mono">{settings.currencySymbol}{s.initialBalance.toLocaleString()}</p>
+                       <p className="text-[9px] text-muted-foreground font-medium uppercase">Opening</p>
+                    </div>
+                    <div className="flex items-center gap-1 opacity-10 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(s)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10" onClick={() => archiveSource(s.id)}>
+                        <Archive className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {archivedSources.length > 0 && (
+          <div className="pt-8 space-y-4">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 px-1">Archived Accounts</h4>
+            <div className="grid grid-cols-1 gap-2">
+              {archivedSources.map((s) => (
+                <div key={s.id} className="flex items-center justify-between p-3 px-4 rounded-lg bg-accent/20 border border-transparent opacity-60">
+                  <span className="text-xs font-bold text-muted-foreground">{s.name}</span>
+                  <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider" onClick={() => updateSource(s.id, { isActive: true })}>
+                    Restore
+                  </Button>
+                </div>
+              ))}
             </div>
-            <p className="mono font-semibold text-sm text-muted-foreground shrink-0">
-              Opening: {settings.currencySymbol}{s.initialBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </p>
-            <Button variant="ghost" size="icon" onClick={() => openEdit(s)} aria-label={`Edit ${s.name}`}>
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => archiveSource(s.id)} aria-label={`Archive ${s.name}`}>
-              <Archive className="h-4 w-4" />
-            </Button>
-          </Card>
-        ))}
+          </div>
+        )}
       </div>
 
-      {archivedSources.length > 0 && (
-        <div className="mt-6">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Archived</p>
-          {archivedSources.map((s) => (
-            <Card key={s.id} className="flex items-center gap-3 p-4 opacity-50">
-              <span className="flex-1">{s.name}</span>
-              <Button variant="ghost" size="sm" onClick={() => updateSource(s.id, { isActive: true })}>
-                Restore
-              </Button>
-            </Card>
-          ))}
-        </div>
-      )}
-
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit Account' : 'Add Account'}</DialogTitle>
+            <DialogTitle className="text-xl font-bold tracking-tight">{editing ? 'Edit Account' : 'New Account'}</DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label htmlFor="src-name">Name</Label>
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Display Name</Label>
               <Input 
-                id="src-name" 
                 placeholder="e.g., SBI Savings" 
                 value={form.name} 
                 onChange={(e) => setForm({ ...form, name: e.target.value })} 
+                className="h-10 border-border/50 focus:border-primary/30"
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="src-type">Type</Label>
-              <Select 
-                value={form.type} 
-                onValueChange={(val) => setForm({ ...form, type: val as SourceType })}
-              >
-                <SelectTrigger id="src-type">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SOURCE_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Account Type</Label>
+                <Select 
+                  value={form.type} 
+                  onValueChange={(val) => setForm({ ...form, type: val as SourceType })}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SOURCE_TYPES.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Currency</Label>
+                <Input 
+                  value={form.currency} 
+                  onChange={(e) => setForm({ ...form, currency: e.target.value })} 
+                  className="h-10 border-border/50 focus:border-primary/30 font-bold mono"
+                />
+              </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="src-balance">Opening Balance</Label>
-              <Input 
-                id="src-balance" 
-                type="number" 
-                value={form.initialBalance} 
-                onChange={(e) => setForm({ ...form, initialBalance: e.target.value })} 
-                inputMode="decimal" 
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="src-currency">Currency</Label>
-              <Input 
-                id="src-currency" 
-                value={form.currency} 
-                onChange={(e) => setForm({ ...form, currency: e.target.value })} 
-                placeholder="INR" 
-              />
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Opening Balance</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">{settings.currencySymbol}</span>
+                <Input 
+                  type="number" 
+                  value={form.initialBalance} 
+                  onChange={(e) => setForm({ ...form, initialBalance: e.target.value })} 
+                  className="h-12 pl-8 border-border/50 focus:border-primary/30 text-lg font-bold mono"
+                  inputMode="decimal" 
+                  step="any"
+                />
+              </div>
             </div>
           </div>
           
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setModalOpen(false)}>
+          <DialogFooter className="pt-4">
+            <Button variant="ghost" onClick={() => setModalOpen(false)} className="h-10 px-6 font-bold uppercase text-[10px] tracking-widest">
               Cancel
             </Button>
-            <Button onClick={handleSave}>
-              <Check className="mr-2 h-4 w-4" /> Save Account
+            <Button onClick={handleSave} className="h-10 px-8 font-bold uppercase text-[10px] tracking-widest">
+              {editing ? 'Update Account' : 'Create Account'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </PageShell>
+    </SettingsLayout>
   );
 }
-

@@ -5,13 +5,18 @@ This document tracks the end-to-end implementation roadmap for **moniq**. Items 
 
 ---
 
-## 🛠 Phase 1: Foundation & Authentication
-- [x] Initialize project (Vite / Next.js, Tailwind CSS/Vanilla CSS, TypeScript).
+## 🛠 Phase 1: Foundation & Layout Redesign (Desktop-First)
+- [x] Initialize project (Vite, TypeScript).
 - [x] Configure `design_system.css` and core layout shell.
+- [x] **Complete Layout Redesign**
+  - [x] Implement `LayoutShell` (Sidebar + TopBar).
+  - [x] Centered `AddTransactionModal` (520px).
+  - [x] Spreadsheet-like `Ledger` with right detail panel.
+  - [x] Global Search / Command Palette placeholder (`/` shortcut).
 - [x] Implement Google Sign-In (OAuth) flow.
-- [x] Set up Google Sheets API Client inside the app (Drive scope request).
-- [x] Build the "Initialize Database" routine (checks for the user's `moniq` folder/sheet and creates it if missing).
-- [x] Set up basic local state sync (fetch all tabs on boot and map to client stores).
+- [x] Set up Google Sheets API Client.
+- [x] Build the "Initialize Database" routine.
+- [x] Set up basic local state sync.
 
 ## ⚙️ Phase 2: Master Data Management (CRUD)
 - [x] **Sources Management**
@@ -23,50 +28,57 @@ This document tracks the end-to-end implementation roadmap for **moniq**. Items 
 - [x] **Categories Management**
   - [x] Define Head & Sub-head UI.
   - [x] Group definitions (Needs/Wants/Save).
-  - [x] List View & Edit Module.
+  - [x] Grouped view with inline edit for Categories (Settings).
 
 ## 🤝 Phase 2.5: Contacts / Lending
-- [x] UI to add people as "Receivable" (Loan Given) or "Payable" (Loan Taken) inside the Sources section logically.
+- [x] UI to add people as "Receivable" (Loan Given) or "Payable" (Loan Taken).
 
 ## ✍️ Phase 3: Core UX — Transaction Engine
-- [x] Layout the "New Transaction" Modal/Page (Mobile-first).
-- [x] Implement robust Form Validation (required fields based on Type).
-- [x] **Transaction Types Flow:**
-  - [x] Income logic (Select Source, Category, Mode).
-  - [x] Expense logic (Select Source, Category, Mode).
-  - [x] Transfer logic (Select From Source, To Source, Mode. Hide Categories).
-  - [x] Split Transactions: Allow clicking 'Split' when adding an expense to break down the total amount into multiple categories. Assign same `group_id` before submission.
-- [ ] Submit to backend (Append row to `Transactions` sheet).
-- [x] Implement Local Optimistic Update (reflect new transaction instantly).
+- [x] **New Transaction Experience**
+  - [x] Layout the "New Transaction" Modal/Page.
+  - [x] Implement robust Form Validation.
+  - [x] "Allocated X of Y" logic for Split Transactions.
+- [ ] Submit to backend (Append row to `Transactions` sheet for new structures).
+- [x] Implement Local Optimistic Update.
 
 ## 📊 Phase 4: Ledger & Viewing
-- [x] Build the Recent Transactions List (sorted by date desc).
-- [ ] Implement infinite scroll or pagination (Sheets API batch fetching).
+- [x] **Redesigned Ledger**
+  - [x] Spreadsheet table view with day dividers.
+  - [x] Right detail panel sliding interface.
+- [ ] Context menus for quick actions (Edit/Delete/Copy).
+- [ ] Implement infinite scroll or pagination.
 - [x] Add filter logic (by Month, Category, Source, Type).
-- [x] Edit/Delete Transactions (Soft delete in Sheet or explicit update).
+- [x] Edit/Delete Transactions.
 
 ## 📈 Phase 5: Dashboards, Insights & Budgeting
-- [ ] **Zero-based Budgeting Module:**
-  - [ ] Screen to view total monthly income (Salary).
-  - [ ] Drag/Allocate portions of total income into category buckets.
-- [x] Compute real-time "Current Balances" across all Sources directly from start-balance + transaction log.
-- [ ] Track outstanding Lend/Borrow amounts (Receivables/Payables) on the Dashboard.
-- [x] Build "Sources Overview" Heatmap / Cards.
-- [x] Build "Current Month Spending" vs. Incoming overview.
-- [x] Pie chart / Breakdown view based on Category Heads.
+- [x] **Desktop Dashboard**
+  - [x] 4 Stat cards (Net Worth, Income, Expenses, Savings Rate).
+  - [x] 50/50 split for Sources and Spending.
+- [x] **Zero-based Budgeting Module:**
+  - [x] Screen to view total monthly income (Salary).
+  - [x] Income allocation vs Spending actuals.
+  - [x] Inline-editable "Budgeted" cells.
+- [x] **Insights & Analytics:**
+  - [x] Dedicated Insights page with category distribution and monthly trends.
+- [x] Compute real-time "Current Balances".
+- [x] Track outstanding Lend/Borrow amounts on the Dashboard.
 - [x] **Reporting Exporter:**
   - [x] UI button to Download CSV.
-  - [x] Implementation of filtering/compiling local data to a CSV Blob and triggering browser download.
 
 ## 🚀 Phase 6: Polish & PWA Support
-- [x] Make the UI adhere fully to `design_system.md` constraints (animations, glassmorphism).
-- [ ] Setup PWA meta tags and service worker for offline loading cache.
-- [ ] Implement transaction queuing (if offline, store in IndexedDB, sync on reconnect).
-- [ ] Final user testing and deployment (Vercel/Netlify).
+- [x] Make the UI adhere fully to `design_system.md`.
+- [x] **Context Menus in Ledger**: 3-dot menu for Duplicate, Edit, and Delete in the spreadsheet view.
+- [x] **Cloud Sync Refinements**: Automated sync on every state change and support for Budget data.
+- [x] **Lending Statistics**: Dashboard indicators for total receivable/payable amounts.
+- [ ] **Background Synchronization**: Use Service Workers to sync while the tab is closed.
+- [ ] **Intelligent Auto-Categorization**: Suggesting categories for manual entries based on past similar notes.
+- [ ] **Data Export and Reports**: Full PDF or Excel generation of monthly summaries.
+- [ ] **Sheets Auto-Archiving Tool**.
 
 ## 🔮 Phase 7: Future Optimizations (Scale & UX)
-- [ ] **Background Synchronization**: Utilize service workers to intelligently sync offline queued transactions the moment connection is restored.
-- [ ] **Intelligent Auto-Categorization**: Save a local dictionary of note keywords to category mappings to auto-select categories based on note text.
-- [ ] **Smart Budget Rollover**: Move unspent funds from specific categories into next month's budget or automatically sweep to savings constraints.
-- [ ] **Household Sharing (Joint Accounts)**: Configure the app to read from a shared `moniq` folder UUID, allowing spouses to contribute to a joint ledger.
-- [ ] **Sheets Auto-Archiving Tool**: Scripts to extract transactions older than 2 years into a separate `Archive_YYYY` sheet to preserve API performance at scale.
+- [ ] **Global Command Palette**: Deep search across transactions and sources.
+- [ ] **Background Synchronization**.
+- [ ] **Intelligent Auto-Categorization**.
+- [ ] **Smart Budget Rollover**.
+- [ ] **Household Sharing (Joint Accounts)**.
+- [ ] **Sheets Auto-Archiving Tool**.

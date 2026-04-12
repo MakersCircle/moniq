@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Source, PaymentMethod, Category, Transaction, UserSettings } from '../types';
+import type { Source, PaymentMethod, Category, Transaction, Budget, UserSettings } from '../types';
 
 // ── Default seed data for first-time users ──────────────────
 
@@ -65,6 +65,7 @@ interface DataState {
   methods: PaymentMethod[];
   categories: Category[];
   transactions: Transaction[];
+  budgets: Budget[];
   settings: UserSettings;
   accessToken: string | null;
   
@@ -100,9 +101,13 @@ interface DataState {
   updateTransaction: (id: string, patch: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
 
+  // Budgets
+  updateBudget: (categoryId: string, period: string, amount: number) => void;
+
   // Settings
   updateSettings: (patch: Partial<UserSettings>) => void;
   setAccessToken: (token: string | null) => void;
+  triggerSync: () => Promise<void>;
 }
 
 const uuid = () => crypto.randomUUID();
@@ -115,6 +120,7 @@ export const useDataStore = create<DataState>()(
       methods: defaultMethods,
       categories: defaultCategories,
       transactions: [],
+      budgets: [],
       settings: defaultSettings,
       accessToken: null,
       userProfile: null,
@@ -128,37 +134,57 @@ export const useDataStore = create<DataState>()(
       setSyncState: (lastSyncedAt, isSyncing) => set({ lastSyncedAt, isSyncing }),
 
       // Sources
-      addSource: (s) =>
-        set((state) => ({ sources: [...state.sources, { ...s, id: uuid(), createdAt: now() }] })),
-      updateSource: (id, patch) =>
-        set((state) => ({ sources: state.sources.map((s) => (s.id === id ? { ...s, ...patch } : s)) })),
-      archiveSource: (id) =>
-        set((state) => ({ sources: state.sources.map((s) => (s.id === id ? { ...s, isActive: false } : s)) })),
+      addSource: (s) => {
+        set((state) => ({ sources: [...state.sources, { ...s, id: uuid(), createdAt: now() }] }));
+        useDataStore.getState().triggerSync();
+      },
+      updateSource: (id, patch) => {
+        set((state) => ({ sources: state.sources.map((s) => (s.id === id ? { ...s, ...patch } : s)) }));
+        useDataStore.getState().triggerSync();
+      },
+      archiveSource: (id) => {
+        set((state) => ({ sources: state.sources.map((s) => (s.id === id ? { ...s, isActive: false } : s)) }));
+        useDataStore.getState().triggerSync();
+      },
 
       // Methods
-      addMethod: (m) =>
-        set((state) => ({ methods: [...state.methods, { ...m, id: uuid(), createdAt: now() }] })),
-      updateMethod: (id, patch) =>
-        set((state) => ({ methods: state.methods.map((m) => (m.id === id ? { ...m, ...patch } : m)) })),
-      archiveMethod: (id) =>
-        set((state) => ({ methods: state.methods.map((m) => (m.id === id ? { ...m, isActive: false } : m)) })),
+      addMethod: (m) => {
+        set((state) => ({ methods: [...state.methods, { ...m, id: uuid(), createdAt: now() }] }));
+        useDataStore.getState().triggerSync();
+      },
+      updateMethod: (id, patch) => {
+        set((state) => ({ methods: state.methods.map((m) => (m.id === id ? { ...m, ...patch } : m)) }));
+        useDataStore.getState().triggerSync();
+      },
+      archiveMethod: (id) => {
+        set((state) => ({ methods: state.methods.map((m) => (m.id === id ? { ...m, isActive: false } : m)) }));
+        useDataStore.getState().triggerSync();
+      },
 
       // Categories
-      addCategory: (c) =>
-        set((state) => ({ categories: [...state.categories, { ...c, id: uuid(), createdAt: now() }] })),
-      updateCategory: (id, patch) =>
-        set((state) => ({ categories: state.categories.map((c) => (c.id === id ? { ...c, ...patch } : c)) })),
-      archiveCategory: (id) =>
-        set((state) => ({ categories: state.categories.map((c) => (c.id === id ? { ...c, isActive: false } : c)) })),
+      addCategory: (c) => {
+        set((state) => ({ categories: [...state.categories, { ...c, id: uuid(), createdAt: now() }] }));
+        useDataStore.getState().triggerSync();
+      },
+      updateCategory: (id, patch) => {
+        set((state) => ({ categories: state.categories.map((c) => (c.id === id ? { ...c, ...patch } : c)) }));
+        useDataStore.getState().triggerSync();
+      },
+      archiveCategory: (id) => {
+        set((state) => ({ categories: state.categories.map((c) => (c.id === id ? { ...c, isActive: false } : c)) }));
+        useDataStore.getState().triggerSync();
+      },
 
       // Transactions
-      addTransaction: (t) =>
+      addTransaction: (t) => {
         set((state) => ({
           transactions: [
             ...state.transactions,
             { ...t, id: uuid(), groupId: uuid(), isDeleted: false, createdAt: now(), updatedAt: now() },
           ],
-        })),
+        }));
+        useDataStore.getState().triggerSync();
+      },
       addTransactionGroup: (txns) => {
         const groupId = uuid();
         const ts = now();
@@ -168,25 +194,62 @@ export const useDataStore = create<DataState>()(
             ...txns.map((t) => ({ ...t, id: uuid(), groupId, isDeleted: false, createdAt: ts, updatedAt: ts })),
           ],
         }));
+        useDataStore.getState().triggerSync();
       },
-      updateTransaction: (id, patch) =>
+      updateTransaction: (id, patch) => {
         set((state) => ({
           transactions: state.transactions.map((t) =>
             t.id === id ? { ...t, ...patch, updatedAt: now() } : t
           ),
-        })),
-      deleteTransaction: (id) =>
+        }));
+        useDataStore.getState().triggerSync();
+      },
+      deleteTransaction: (id) => {
         set((state) => ({
           transactions: state.transactions.map((t) =>
             t.id === id ? { ...t, isDeleted: true, updatedAt: now() } : t
           ),
-        })),
+        }));
+        useDataStore.getState().triggerSync();
+      },
+
+      // Budgets
+      updateBudget: (categoryId, period, amount) => {
+        set((state) => {
+          const existingIdx = state.budgets.findIndex(b => b.categoryId === categoryId && b.period === period);
+          if (existingIdx >= 0) {
+            const next = [...state.budgets];
+            next[existingIdx] = { ...next[existingIdx], amount };
+            return { budgets: next };
+          }
+          return { budgets: [...state.budgets, { id: uuid(), categoryId, period, amount, createdAt: now() }] };
+        });
+        useDataStore.getState().triggerSync();
+      },
 
       // Settings
-      updateSettings: (patch) =>
-        set((state) => ({ settings: { ...state.settings, ...patch } })),
+      updateSettings: (patch) => {
+        set((state) => ({ settings: { ...state.settings, ...patch } }));
+        useDataStore.getState().triggerSync();
+      },
       setAccessToken: (token) =>
         set(() => ({ accessToken: token })),
+
+      triggerSync: async () => {
+        const state = useDataStore.getState();
+        if (!state.accessToken || !state.spreadsheetId || state.isSyncing) return;
+        
+        const { syncDataToGoogleSheets } = await import('../api/google');
+        
+        set({ isSyncing: true });
+        try {
+          await syncDataToGoogleSheets(state.accessToken, state.spreadsheetId, state);
+          set({ lastSyncedAt: new Date().toISOString(), isSyncing: false });
+        } catch (err) {
+          console.error("Auto-sync failed:", err);
+          set({ isSyncing: false });
+        }
+      }
     }),
     { name: 'moniq-data' }
   )

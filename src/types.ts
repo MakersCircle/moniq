@@ -60,6 +60,14 @@ export interface Transaction {
   updatedAt: string;
 }
 
+export interface Budget {
+  id: string;
+  categoryId: string;
+  amount: number;
+  period: string; // "YYYY-MM"
+  createdAt: string;
+}
+
 export interface UserSettings {
   currency: string;
   currencySymbol: string;

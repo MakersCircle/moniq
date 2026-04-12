@@ -118,3 +118,76 @@ export function useCategorySpend(year: number, month: number) {
     return Object.values(map).sort((a, b) => b.amount - a.amount);
   }, [transactions, categories, year, month]);
 }
+// ── Historical monthly data for charts ────────────────────────
+export function useHistoricalData(months = 6) {
+  const { transactions } = useDataStore();
+
+  return useMemo(() => {
+    const data = [];
+    for (let i = 0; i < months; i++) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1;
+      const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+      
+      const monthTxns = transactions.filter(
+        (t) => !t.isDeleted && t.date.startsWith(monthStr)
+      );
+
+      const income   = monthTxns.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+      const expenses = monthTxns.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+      
+      data.push({
+        label: d.toLocaleDateString('en-IN', { month: 'short' }),
+        month: monthStr,
+        income,
+        expenses,
+        net: income - expenses
+      });
+    }
+    return data.reverse();
+  }, [transactions, months]);
+}
+// ── Budget summary for a month ───────────────────────────────
+export function useBudgetSummary(year: number, month: number) {
+  const { transactions, categories, budgets } = useDataStore();
+
+  return useMemo(() => {
+    const period = `${year}-${String(month).padStart(2, '0')}`;
+    const monthTxns = transactions.filter(
+      (t) => !t.isDeleted && t.date.startsWith(period)
+    );
+
+    const income = monthTxns.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    
+    // Group categories by their parent group
+    const groups: Record<string, any[]> = {};
+    
+    let totalAllocated = 0;
+
+    for (const cat of categories.filter(c => c.isActive && c.group !== 'Income')) {
+      const budget = budgets.find(b => b.categoryId === cat.id && b.period === period);
+      const spent = monthTxns.filter(t => t.categoryId === cat.id && t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+      
+      const budgeted = budget?.amount || 0;
+      totalAllocated += budgeted;
+
+      if (!groups[cat.group]) groups[cat.group] = [];
+      groups[cat.group].push({
+        ...cat,
+        budgeted,
+        spent,
+        remaining: budgeted - spent,
+        percent: budgeted > 0 ? (spent / budgeted) * 100 : 0
+      });
+    }
+
+    return {
+      income,
+      totalAllocated,
+      remainingToAllocate: income - totalAllocated,
+      categoryGroups: Object.entries(groups).map(([name, categories]) => ({ name, categories }))
+    };
+  }, [transactions, categories, budgets, year, month]);
+}

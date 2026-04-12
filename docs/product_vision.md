@@ -33,11 +33,12 @@ Allow a single user to define where their money lives, manually record all finan
 - **Split Transactions**: Support multiple categories within a single transaction entry (e.g., a single supermarket receipt split into Groceries and Household Items).
 
 ### 3.4 Budgets & Lending
-- **Budgeting**: Zero-based or simple monthly salary budgeting, allowing users to assign portions of their income to specific category buckets.
+- **Zero-based Budgeting**: A dedicated module for allocating monthly income into category buckets and tracking real-time spending against these allocations.
 - **Lend/Borrow**: Track lending money to friends (Loan Given) or borrowing (Loan Taken) using specific contact-based "Sources" to maintain receivable/payable ledgers.
 
 ### 3.5 Dashboards, Analytics & Export
-- Unified dashboard displaying Current Balances grouped by Source.
-- Expenses vs. Budget visualization to track monthly salary allocations.
-- Historical ledger view with complex sorting and filtering logic.
-- Export functionality (CSV) to download spending reports.
+- **Desktop Command Center**: Balanced dashboard with high-level stats (Net Worth, Savings Rate) and detailed panel views for Sources and Spending.
+- **Global Search**: Command-palette style quick-find for transactions, sources, and navigation.
+- **Insights Engine**: Dedicated analytics page with category distribution, monthly trends, and income vs. expense bars.
+- **Spreadsheet Ledger**: A high-density transaction log with right-side detail panels and inline filtering.
+- **Export functionality (CSV)**: Download filtered spending reports for external auditing.

@@ -1,13 +1,12 @@
 import { useState } from 'react';
-import { Plus, Pencil, Archive, Check, X } from 'lucide-react';
-import PageShell from '../../components/PageShell';
+import { Plus, Pencil, Archive, Check, CreditCard, ArrowRight } from 'lucide-react';
 import { useDataStore } from '../../store/dataStore';
 import type { PaymentMethod } from '../../types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from '@/lib/utils';
+import SettingsLayout from '@/components/Layout/SettingsLayout';
 
 export default function Methods() {
   const { methods, sources, addMethod, updateMethod, archiveMethod } = useDataStore();
@@ -34,7 +35,7 @@ export default function Methods() {
 
   const handleSave = () => {
     if (!form.name.trim()) return;
-    const data = { name: form.name.trim(), linkedSourceId: form.linkedSourceId || undefined, isActive: true };
+    const data = { name: form.name.trim(), linkedSourceId: form.linkedSourceId === 'none' ? undefined : form.linkedSourceId || undefined, isActive: true };
     if (editing) updateMethod(editing.id, data);
     else addMethod(data);
     setModalOpen(false);
@@ -44,101 +45,117 @@ export default function Methods() {
   const archived = methods.filter((m) => !m.isActive);
 
   return (
-    <PageShell
-      title="Payment Methods"
-      subtitle="How money moves"
-      hasBack
+    <SettingsLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight">Payment Methods</h2>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Active Methods ({active.length})</p>
+          </div>
+          <Button size="sm" onClick={openAdd} className="h-9 gap-2">
+            <Plus className="h-4 w-4" /> Add Method
+          </Button>
+        </div>
 
-      headerRight={
-        <Button size="sm" onClick={openAdd} id="add-method-btn">
-          <Plus className="mr-2 h-4 w-4" /> Add
-        </Button>
-      }
-    >
-      <div className="flex flex-col gap-2">
-        {active.map((m) => (
-          <Card key={m.id} className="flex items-center gap-3 p-4">
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-[0.9375rem]">{m.name}</p>
-              {m.linkedSourceId && (
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mt-0.5">
-                  → {sources.find((s) => s.id === m.linkedSourceId)?.name || '?'}
-                </p>
-              )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {active.map((m) => (
+            <Card key={m.id} className="group border-border hover:border-primary/30 transition-all shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-8 w-8 shrink-0 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                      <CreditCard className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm tracking-tight truncate">{m.name}</p>
+                      {m.linkedSourceId && (
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <ArrowRight className="h-2 w-2 text-muted-foreground" />
+                          <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground truncate">
+                            {sources.find((s) => s.id === m.linkedSourceId)?.name || 'Unknown'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(m)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10" onClick={() => archiveMethod(m.id)}>
+                      <Archive className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {archived.length > 0 && (
+          <div className="pt-8 space-y-4">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 px-1">Archived Methods</h4>
+            <div className="grid grid-cols-1 gap-2">
+              {archived.map((m) => (
+                <div key={m.id} className="flex items-center justify-between p-3 px-4 rounded-lg bg-accent/20 border border-transparent opacity-60">
+                  <span className="text-xs font-bold text-muted-foreground">{m.name}</span>
+                  <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider" onClick={() => updateMethod(m.id, { isActive: true })}>
+                    Restore
+                  </Button>
+                </div>
+              ))}
             </div>
-            <Button variant="ghost" size="icon" onClick={() => openEdit(m)}>
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => archiveMethod(m.id)}>
-              <Archive className="h-4 w-4" />
-            </Button>
-          </Card>
-        ))}
+          </div>
+        )}
       </div>
 
-      {archived.length > 0 && (
-        <div className="mt-8">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3 px-1">Archived</p>
-          <div className="flex flex-col gap-2">
-            {archived.map((m) => (
-              <Card key={m.id} className="flex items-center gap-3 p-4 opacity-50">
-                <span className="flex-1 text-[0.9375rem]">{m.name}</span>
-                <Button variant="ghost" size="sm" onClick={() => updateMethod(m.id, { isActive: true })}>
-                  Restore
-                </Button>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit Method' : 'Add Method'}</DialogTitle>
+            <DialogTitle className="text-xl font-bold tracking-tight">{editing ? 'Edit Method' : 'New Method'}</DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label htmlFor="met-name">Name</Label>
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Display Name</Label>
               <Input 
-                id="met-name" 
-                placeholder="e.g., UPI, Cash" 
+                placeholder="e.g., UPI, HDFC Card" 
                 value={form.name} 
                 onChange={(e) => setForm({ ...form, name: e.target.value })} 
+                className="h-10 border-border/50 focus:border-primary/30"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="met-src">Default Account (optional)</Label>
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Default Account (optional)</Label>
               <Select 
-                value={form.linkedSourceId} 
+                value={form.linkedSourceId || 'none'} 
                 onValueChange={(val) => setForm({ ...form, linkedSourceId: val })}
               >
-                <SelectTrigger id="met-src">
+                <SelectTrigger className="h-10">
                   <SelectValue placeholder="Select account" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="none">Default Account (None)</SelectItem>
                   {sources.filter((s) => s.isActive).map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-[9px] text-muted-foreground">When you pick this method, this account will be auto-selected.</p>
             </div>
           </div>
           
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setModalOpen(false)}>
+          <DialogFooter className="pt-4">
+            <Button variant="ghost" onClick={() => setModalOpen(false)} className="h-10 px-6 font-bold uppercase text-[10px] tracking-widest">
               Cancel
             </Button>
-            <Button onClick={handleSave}>
-              <Check className="mr-2 h-4 w-4" /> Save Method
+            <Button onClick={handleSave} className="h-10 px-8 font-bold uppercase text-[10px] tracking-widest">
+              {editing ? 'Update Method' : 'Create Method'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </PageShell>
+    </SettingsLayout>
   );
 }
-
