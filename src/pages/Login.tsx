@@ -56,8 +56,8 @@ export default function Login() {
         
         {/* Row 1: m, o, Content */}
         <div className="flex items-start font-brand text-[32vw] md:text-[24vw] lg:text-[300px] leading-[0.7] tracking-[-0.05em] text-foreground font-black select-none gap-x-4 md:gap-x-8">
-          <div className="hover-gradient-brand lowercase">m</div>
-          <div className="hover-gradient-brand lowercase">o</div>
+          <div className="hover-primary-brand lowercase">m</div>
+          <div className="hover-primary-brand lowercase">o</div>
           
           {/* Content Box */}
           <div className="relative flex flex-col justify-start pt-2 md:pt-4" style={{ fontSize: '1rem', lineHeight: 'normal', letterSpacing: 'normal', textTransform: 'none' }}>
@@ -92,9 +92,9 @@ export default function Login() {
 
         {/* Row 2: n, ı, q, Logo */}
         <div className="flex items-center font-brand text-[32vw] md:text-[24vw] lg:text-[300px] leading-[0.7] tracking-[-0.05em] text-foreground font-black select-none gap-x-4 md:gap-x-8">
-          <div className="hover-gradient-brand lowercase">n</div>
-          <div className="hover-gradient-brand lowercase">ı</div>
-          <div className="hover-gradient-brand lowercase">q</div>
+          <div className="hover-primary-brand lowercase">n</div>
+          <div className="hover-primary-brand lowercase">ı</div>
+          <div className="hover-primary-brand lowercase">q</div>
           <div className="flex items-center justify-center">
             <img 
               src="/favicon.svg" 
