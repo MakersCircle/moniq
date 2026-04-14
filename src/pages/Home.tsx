@@ -1,27 +1,13 @@
 import { useGoogleLogin } from '@react-oauth/google';
 import { ArrowRight } from 'lucide-react';
 import { useDataStore } from '../store/dataStore';
-import { DotPattern } from '@/components/ui/dot-pattern';
-import { cn } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import Grainient from '@/components/ui/Grainient';
 import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
   const accessToken = useDataStore((s) => s.accessToken);
   const setAccessToken = useDataStore((s) => s.setAccessToken);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      const x = (e.clientX / window.innerWidth) * 2 - 1;
-      const y = (e.clientY / window.innerHeight) * 2 - 1;
-      setMousePos({ x, y });
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
 
   const login = useGoogleLogin({
     onSuccess: (tokenResponse) => {
@@ -33,28 +19,37 @@ export default function Home() {
   });
 
   return (
-    <div className="relative flex min-h-screen w-full bg-background overflow-hidden selection:bg-primary/30">
+    <div className="relative flex min-h-screen w-full bg-[#111111] overflow-hidden selection:bg-primary/30">
       
-      {/* Designer Poster Noise Overlay */}
-      <div className="pointer-events-none fixed inset-0 z-50 h-full w-full opacity-[0.1] mix-blend-overlay">
-        <svg className="absolute inset-0 h-full w-full">
-          <filter id="noise">
-            <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="3" stitchTiles="stitch" />
-          </filter>
-          <rect width="100%" height="100%" filter="url(#noise)" />
-        </svg>
+      {/* Background Grainient */}
+      <div className="absolute inset-0 z-0">
+        <Grainient
+          color1="#1e1e1e"
+          color2="#3c3c3c"
+          color3="#111111"
+          timeSpeed={0.6}
+          colorBalance={-0.15}
+          warpStrength={3.4}
+          warpFrequency={1.4}
+          warpSpeed={1.1}
+          warpAmplitude={26}
+          blendAngle={49}
+          blendSoftness={0.05}
+          rotationAmount={460}
+          noiseScale={1}
+          grainAmount={0.1}
+          grainScale={2.0}
+          grainAnimated={false}
+          contrast={1.5}
+          gamma={1.0}
+          saturation={1.0}
+          centerX={0.0}
+          centerY={0.0}
+          zoom={1.2}
+        />
       </div>
 
-      {/* Subtle Background Texture in Negative Space */}
-      <DotPattern
-        className={cn(
-          "pointer-events-none absolute inset-[-50px] z-0 opacity-40 transition-transform duration-[400ms] ease-out [mask-image:radial-gradient(circle_at_top_right,white,transparent_75%)]",
-        )}
-        style={{
-          transform: `translate(${mousePos.x * -30}px, ${mousePos.y * -30}px)`
-        }}
-      />
-
+      {/* Main Content */}
       <div className="absolute z-10 bottom-6 left-6 md:bottom-12 md:left-12 xl:bottom-16 xl:left-16 flex flex-col">
         
         {/* Row 1: m, o, Content */}
@@ -112,3 +107,4 @@ export default function Home() {
     </div>
   );
 }
+
