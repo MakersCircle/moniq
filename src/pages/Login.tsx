@@ -1,12 +1,24 @@
 import { useGoogleLogin } from '@react-oauth/google';
-import { LogIn, Sparkles } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useDataStore } from '../store/dataStore';
 import { DotPattern } from '@/components/ui/dot-pattern';
-import { ShinyButton } from '@/components/ui/shiny-button';
 import { cn } from '@/lib/utils';
+import { useEffect, useState } from 'react';
 
 export default function Login() {
   const setAccessToken = useDataStore((s) => s.setAccessToken);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const x = (e.clientX / window.innerWidth) * 2 - 1;
+      const y = (e.clientY / window.innerHeight) * 2 - 1;
+      setMousePos({ x, y });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   const login = useGoogleLogin({
     onSuccess: (tokenResponse) => {
@@ -18,51 +30,82 @@ export default function Login() {
   });
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-background px-6 py-24 text-center">
-      {/* Background decoration */}
+    <div className="relative flex min-h-screen w-full bg-background overflow-hidden selection:bg-primary/30">
+      
+      {/* Designer Poster Noise Overlay */}
+      <div className="pointer-events-none fixed inset-0 z-50 h-full w-full opacity-[0.1] mix-blend-overlay">
+        <svg className="absolute inset-0 h-full w-full">
+          <filter id="noise">
+            <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="3" stitchTiles="stitch" />
+          </filter>
+          <rect width="100%" height="100%" filter="url(#noise)" />
+        </svg>
+      </div>
+
+      {/* Subtle Background Texture in Negative Space */}
       <DotPattern
         className={cn(
-          "[mask-image:radial-gradient(400px_circle_at_center,white,transparent)]",
+          "pointer-events-none absolute inset-[-50px] z-0 opacity-40 transition-transform duration-[400ms] ease-out [mask-image:radial-gradient(circle_at_top_right,white,transparent_75%)]",
         )}
+        style={{
+          transform: `translate(${mousePos.x * -30}px, ${mousePos.y * -30}px)`
+        }}
       />
-      
-      <div className="relative z-10 flex flex-col items-center max-w-md w-full">
-        {/* Logo/Icon */}
-        <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-3xl bg-primary/10 text-primary animate-in zoom-in duration-500">
-          <Sparkles className="h-8 w-8" />
-        </div>
 
-        <h1 className="text-5xl font-extrabold tracking-tighter sm:text-7xl mb-4 text-foreground">
-          moniq
-        </h1>
+      <div className="absolute z-10 bottom-6 left-6 md:bottom-12 md:left-12 xl:bottom-16 xl:left-16 flex flex-col">
         
-        <p className="text-lg text-muted-foreground mb-12 max-w-[300px]">
-          Seamless personal finance tracking powered by your own Google Drive.
-        </p>
+        {/* Row 1: m, o, Content */}
+        <div className="flex items-start font-brand text-[32vw] md:text-[24vw] lg:text-[300px] leading-[0.7] tracking-[-0.05em] text-foreground font-black select-none gap-x-4 md:gap-x-8">
+          <div className="hover-gradient-brand lowercase">m</div>
+          <div className="hover-gradient-brand lowercase">o</div>
+          
+          {/* Content Box */}
+          <div className="relative flex flex-col justify-start pt-2 md:pt-4" style={{ fontSize: '1rem', lineHeight: 'normal', letterSpacing: 'normal', textTransform: 'none' }}>
+            <div className="w-full h-full flex flex-col">
+              {/* Arrow Button */}
+              <div 
+                onClick={() => login()}
+                className="group flex w-max cursor-pointer items-center rounded-full border border-border/30 bg-card hover:bg-foreground hover:text-background p-2 md:p-3 text-foreground transition-all duration-700 ease-out z-10"
+              >
+                <ArrowRight className="h-4 w-4 md:h-6 md:w-6 shrink-0 transition-transform duration-500 group-hover:-rotate-45" />
+                <div className="grid grid-cols-[0fr] transition-[grid-template-columns] duration-700 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:grid-cols-[1fr]">
+                  <div className="overflow-hidden">
+                    <span className="whitespace-nowrap pl-2 md:pl-3 pr-1 md:pr-2 font-mono text-[10px] md:text-sm font-bold tracking-wide">
+                      Sign in with Google
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-        <ShinyButton 
-          className="w-full h-12 text-base font-bold transition-all hover:scale-[1.02] shadow-xl" 
-          onClick={() => login()}
-        >
-          <div className="flex items-center justify-center gap-2">
-            <LogIn className="h-5 w-5" />
-            Sign in with Google
+              {/* Text content */}
+              <div className="mt-2 md:mt-4 flex flex-col gap-1 md:gap-2 pr-2 max-w-[140px] md:max-w-[280px]">
+                <p className="font-sans text-[10px] md:text-xs lg:text-sm text-foreground/80 leading-snug md:leading-snug font-medium">
+                  Seamless personal finance tracking powered by your own Google Drive.
+                </p>
+                <p className="font-mono text-[7px] md:text-[9px] text-muted-foreground/60 uppercase tracking-wider leading-relaxed mt-1">
+                  Your data is yours. We don't even have a backend to store it. Your logs sync directly, securely, and privately to a hidden spreadsheet inside your own Drive. We couldn't look at your ledgers even if we tried.
+                </p>
+              </div>
+            </div>
           </div>
-        </ShinyButton>
-
-        <div className="mt-12 space-y-4 rounded-xl bg-muted/30 p-4 border border-border/50 backdrop-blur-sm">
-          <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Privacy First</p>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Moniq uses a private Google Sheet in your Drive as its database. 
-            Your data never leaves your Google account.
-          </p>
         </div>
-      </div>
 
-      <div className="absolute bottom-8 text-[10px] font-medium text-muted-foreground/50 tracking-widest uppercase">
-        © 2026 Moniq Finance • Open Source
+        {/* Row 2: n, ı, q, Logo */}
+        <div className="flex items-center font-brand text-[32vw] md:text-[24vw] lg:text-[300px] leading-[0.7] tracking-[-0.05em] text-foreground font-black select-none gap-x-4 md:gap-x-8">
+          <div className="hover-gradient-brand lowercase">n</div>
+          <div className="hover-gradient-brand lowercase">ı</div>
+          <div className="hover-gradient-brand lowercase">q</div>
+          <div className="flex items-center justify-center">
+            <img 
+              src="/favicon.svg" 
+              alt="moniq logo" 
+              className="h-[0.63em] w-[0.63em] object-contain"
+            />
+          </div>
+        </div>
+
       </div>
+      
     </div>
   );
 }
-

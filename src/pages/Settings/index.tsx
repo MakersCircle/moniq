@@ -97,8 +97,7 @@ export default function SettingsIndex() {
                 </div>
                 <div className="p-3 bg-accent/30 rounded-lg border border-border/50">
                   <p className="text-[10px] text-muted-foreground leading-relaxed">
-                    All your data is stored in a private spreadsheet in your Google Drive. 
-                    Moniq only manages the <strong>{spreadsheetId?.substring(0, 8)}...</strong> workbook.
+                    Your financial data is 100% private. Moniq does not have a central database; instead, all your transactions and settings are securely backed up to a dedicated spreadsheet inside your personal Google Drive.
                   </p>
                 </div>
              </CardContent>
