@@ -4,10 +4,13 @@ import { useDataStore } from '../store/dataStore';
 import { DotPattern } from '@/components/ui/dot-pattern';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-export default function Login() {
+export default function Home() {
+  const accessToken = useDataStore((s) => s.accessToken);
   const setAccessToken = useDataStore((s) => s.setAccessToken);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -64,14 +67,14 @@ export default function Login() {
             <div className="w-full h-full flex flex-col">
               {/* Arrow Button */}
               <div 
-                onClick={() => login()}
+                onClick={() => accessToken ? navigate('/dashboard') : login()}
                 className="group flex w-max cursor-pointer items-center rounded-full border border-border/30 bg-card hover:bg-foreground hover:text-background p-2 md:p-3 text-foreground transition-all duration-700 ease-out z-10"
               >
                 <ArrowRight className="h-4 w-4 md:h-6 md:w-6 shrink-0 transition-transform duration-500 group-hover:-rotate-45" />
                 <div className="grid grid-cols-[0fr] transition-[grid-template-columns] duration-700 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:grid-cols-[1fr]">
                   <div className="overflow-hidden">
                     <span className="whitespace-nowrap pl-2 md:pl-3 pr-1 md:pr-2 font-mono text-[10px] md:text-sm font-bold tracking-wide">
-                      Sign in with Google
+                      {accessToken ? 'Go to Dashboard' : 'Sign in with Google'}
                     </span>
                   </div>
                 </div>

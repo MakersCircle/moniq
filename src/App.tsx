@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
@@ -8,16 +8,17 @@ import SettingsIndex from './pages/Settings/index';
 import Sources from './pages/Settings/Sources';
 import Methods from './pages/Settings/Methods';
 import Categories from './pages/Settings/Categories';
-import Login from './pages/Login';
+import Home from './pages/Home';
 import LayoutShell from './components/Layout/LayoutShell';
 import { useDataStore } from './store/dataStore';
 import { fetchUserProfile, initializeDatabase } from './api/google';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 import AddTransactionModal from './components/Transactions/AddTransactionModal';
 
 export default function App() {
   const accessToken = useDataStore((s) => s.accessToken);
+  const transactions = useDataStore((s) => s.transactions);
   const setUserProfile = useDataStore((s) => s.setUserProfile);
   const setSpreadsheetId = useDataStore((s) => s.setSpreadsheetId);
   
@@ -51,42 +52,67 @@ export default function App() {
     initCloud();
   }, [accessToken, setUserProfile, setSpreadsheetId]);
 
-  if (!accessToken) {
-    return <Login />;
-  }
+  const hasTransactions = transactions.length > 0;
 
   // To allow child pages to trigger the modal, we'll store the trigger functions in a window object 
   // or a better yet, just pass them down or use a global store for UI state. 
   // For now, I'll add them to window for quick access from the Ledger.
-  (window as any).openTransactionModal = { openNew, openEdit, openDuplicate };
+  if (accessToken) {
+    (window as any).openTransactionModal = { openNew, openEdit, openDuplicate };
+  }
 
   return (
     <BrowserRouter>
-      <LayoutShell onNewTransaction={openNew}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/insights" element={<Insights />} />
-          <Route path="/budget" element={<Budget />} />
-          <Route path="/settings" element={<SettingsIndex />} />
-          <Route path="/settings/sources" element={<Sources />} />
-          <Route path="/settings/methods" element={<Methods />} />
-          <Route path="/settings/categories" element={<Categories />} />
-        </Routes>
-      </LayoutShell>
+      <Routes>
+        {/* Landing/Home page - No Sidebar/TopBar */}
+        <Route 
+          path="/" 
+          element={
+            accessToken && hasTransactions 
+              ? <Navigate to="/dashboard" replace /> 
+              : <Home />
+          } 
+        />
 
-      <Dialog 
-        open={modalState.isOpen} 
-        onOpenChange={(open) => setModalState(prev => ({ ...prev, isOpen: open }))}
-      >
-        <DialogContent className="max-w-[520px] max-h-[90vh] h-auto flex flex-col p-0 overflow-hidden border-none shadow-2xl">
-          <AddTransactionModal 
-            initialData={modalState.initialData}
-            isDuplicate={modalState.isDuplicate}
-            onClose={() => setModalState({ isOpen: false })} 
-          />
-        </DialogContent>
-      </Dialog>
+        {/* Application routes - Wrapped in LayoutShell */}
+        <Route
+          path="*"
+          element={
+            accessToken ? (
+              <LayoutShell onNewTransaction={openNew}>
+                <Routes>
+                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="transactions" element={<Transactions />} />
+                  <Route path="insights" element={<Insights />} />
+                  <Route path="budget" element={<Budget />} />
+                  <Route path="settings" element={<SettingsIndex />} />
+                  <Route path="settings/sources" element={<Sources />} />
+                  <Route path="settings/methods" element={<Methods />} />
+                  <Route path="settings/categories" element={<Categories />} />
+                  <Route path="*" element={<Navigate to={hasTransactions ? "/dashboard" : "/"} replace />} />
+                </Routes>
+              </LayoutShell>
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+      </Routes>
+
+      {accessToken && (
+        <Dialog 
+          open={modalState.isOpen} 
+          onOpenChange={(open) => setModalState(prev => ({ ...prev, isOpen: open }))}
+        >
+          <DialogContent className="max-w-130 max-h-[90vh] h-auto flex flex-col p-0 overflow-hidden border-none shadow-2xl">
+            <AddTransactionModal 
+              initialData={modalState.initialData}
+              isDuplicate={modalState.isDuplicate}
+              onClose={() => setModalState({ isOpen: false })} 
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </BrowserRouter>
   );
 }
