@@ -20,7 +20,7 @@ export default function Home() {
 
   return (
     <div className="relative flex min-h-screen w-full bg-[#111111] overflow-hidden selection:bg-primary/30">
-      
+
       {/* Background Grainient */}
       <div className="absolute inset-0 z-0">
         <Grainient
@@ -51,59 +51,64 @@ export default function Home() {
 
       {/* Main Content */}
       <div className="absolute z-10 bottom-6 left-6 md:bottom-12 md:left-12 xl:bottom-16 xl:left-16 flex flex-col">
-        
+
         {/* Row 1: m, o, Content */}
         <div className="flex items-start font-brand text-[32vw] md:text-[24vw] lg:text-[300px] leading-[0.7] tracking-[-0.05em] text-foreground font-black select-none gap-x-4 md:gap-x-8">
-          <div className="hover-primary-brand lowercase">m</div>
-          <div className="hover-primary-brand lowercase">o</div>
-          
+          <div className="flex items-start gap-x-3 md:gap-x-6">
+            <div className="hover-primary-brand lowercase">m</div>
+            <div className="hover-primary-brand lowercase">o</div>
+          </div>
+
           {/* Content Box */}
-          <div className="relative flex flex-col justify-start pt-2 md:pt-4" style={{ fontSize: '1rem', lineHeight: 'normal', letterSpacing: 'normal', textTransform: 'none' }}>
-            <div className="w-full h-full flex flex-col">
-              {/* Arrow Button */}
-              <div 
-                onClick={() => accessToken ? navigate('/dashboard') : login()}
-                className="group flex w-max cursor-pointer items-center rounded-full border border-border/30 bg-card hover:bg-foreground hover:text-background p-2 md:p-3 text-foreground transition-all duration-700 ease-out z-10"
-              >
-                <ArrowRight className="h-4 w-4 md:h-6 md:w-6 shrink-0 transition-transform duration-500 group-hover:-rotate-45" />
-                <div className="grid grid-cols-[0fr] transition-[grid-template-columns] duration-700 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:grid-cols-[1fr]">
-                  <div className="overflow-hidden">
-                    <span className="whitespace-nowrap pl-2 md:pl-3 pr-1 md:pr-2 font-mono text-[10px] md:text-sm font-bold tracking-wide">
-                      {accessToken ? 'Go to Dashboard' : 'Sign in with Google'}
-                    </span>
-                  </div>
+          <div
+            className="relative flex flex-col items-start justify-start pt-2 md:pt-4 gap-3 md:gap-4"
+            style={{ fontSize: '1rem', lineHeight: 'normal', letterSpacing: 'normal', textTransform: 'none' }}
+          >
+            {/* Arrow Button */}
+            <div
+              onClick={() => accessToken ? navigate('/dashboard') : login()}
+              className="group flex w-max cursor-pointer items-center rounded-full border border-border/30 bg-card hover:bg-foreground hover:text-background p-2 md:p-3 text-foreground transition-all duration-700 ease-out z-10"
+            >
+              <ArrowRight className="h-4 w-4 md:h-6 md:w-6 shrink-0 transition-transform duration-500 group-hover:-rotate-45" />
+              <div className="grid grid-cols-[0fr] transition-[grid-template-columns] duration-700 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:grid-cols-[1fr]">
+                <div className="overflow-hidden">
+                  <span className="whitespace-nowrap pl-2 md:pl-3 pr-1 md:pr-2 font-mono text-[10px] md:text-sm font-bold tracking-wide">
+                    {accessToken ? 'Go to Dashboard' : 'Sign in with Google'}
+                  </span>
                 </div>
               </div>
-
-              {/* Text content */}
-              <div className="mt-2 md:mt-4 flex flex-col gap-1 md:gap-2 pr-2 max-w-[140px] md:max-w-[280px]">
-                <p className="font-sans text-[10px] md:text-xs lg:text-sm text-foreground/80 leading-snug md:leading-snug font-medium">
-                  Seamless personal finance tracking powered by your own Google Drive.
-                </p>
-                <p className="font-mono text-[7px] md:text-[9px] text-muted-foreground/60 uppercase tracking-wider leading-relaxed mt-1">
-                  Your data is yours. We don't even have a backend to store it. Your logs sync directly, securely, and privately to a hidden spreadsheet inside your own Drive. We couldn't look at your ledgers even if we tried.
-                </p>
-              </div>
             </div>
+
+            {/* Headline */}
+            <p className="font-sans text-[10px] md:text-xs lg:text-sm text-foreground/80 leading-snug font-medium max-w-[140px] md:max-w-[280px]">
+              Seamless personal finance tracking powered by your own Google Drive.
+            </p>
+
+            {/* Paragraph */}
+            <p className="font-mono text-[7px] md:text-[9px] text-muted-foreground/60 uppercase tracking-wider leading-relaxed max-w-[140px] md:max-w-[280px]">
+              Your data is yours. We don't even have a backend to store it. Your logs sync directly, securely, and privately to a hidden spreadsheet inside your own Drive. We couldn't look at your ledgers even if we tried.
+            </p>
           </div>
         </div>
 
         {/* Row 2: n, ı, q, Logo */}
         <div className="flex items-center font-brand text-[32vw] md:text-[24vw] lg:text-[300px] leading-[0.7] tracking-[-0.05em] text-foreground font-black select-none gap-x-4 md:gap-x-8">
-          <div className="hover-primary-brand lowercase">n</div>
-          <div className="hover-primary-brand lowercase">ı</div>
-          <div className="hover-primary-brand lowercase">q</div>
+          <div className="flex items-center gap-x-3 md:gap-x-6">
+            <div className="hover-primary-brand lowercase">n</div>
+            <div className="hover-primary-brand lowercase">ı</div>
+            <div className="hover-primary-brand lowercase">q</div>
+          </div>
           <div className="flex items-center justify-center">
-            <img 
-              src="/favicon.svg" 
-              alt="moniq logo" 
+            <img
+              src="/favicon.svg"
+              alt="moniq logo"
               className="h-[0.63em] w-[0.63em] object-contain"
             />
           </div>
         </div>
 
       </div>
-      
+
     </div>
   );
 }
