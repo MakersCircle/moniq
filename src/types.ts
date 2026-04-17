@@ -2,14 +2,15 @@
 // Data types for all core moniq entities
 // ============================================================
 
-export type SourceType = 'Bank' | 'Wallet' | 'Cash' | 'Investment' | 'Receivable' | 'Payable' | 'Custom';
+export type AccountType = 'Asset' | 'Liability';
 
-export interface Source {
+export interface Account {
   id: string;
   name: string;
-  type: SourceType;
+  type: AccountType;       // Strictly Asset or Liability
+  subType: string;         // e.g. 'Bank', 'Cash', 'Credit Card'
+  isSavings: boolean;      // ✅ Flag to designate saving accounts
   initialBalance: number;
-  currency: string;
   isActive: boolean;
   excludeFromNet?: boolean;
   createdAt: string;
@@ -18,41 +19,44 @@ export interface Source {
 export interface PaymentMethod {
   id: string;
   name: string;
-  linkedSourceId?: string; // Optional default source
+  linkedAccountId?: string; // Links to Account
   isActive: boolean;
   createdAt: string;
 }
 
-export type CategoryGroup = 'Needs' | 'Wants' | 'Savings' | 'Investment' | 'Debt' | 'Income' | 'Custom';
+export type CategoryGroup = 'Income' | 'Needs' | 'Wants' | 'Invest' | 'Lend' | 'Borrow';
 
 export interface Category {
   id: string;
   group: CategoryGroup;
   head: string;
   subHead?: string;
+  initialBalance?: number; // ✅ For Invest, Lend, Borrow opening balances
   color?: string;
   isActive: boolean;
   createdAt: string;
 }
 
-export type TransactionType = 'income' | 'expense' | 'transfer';
+export type EntryType = 'DEBIT' | 'CREDIT';
 
-export interface TransactionSplit {
-  categoryId: string;
+export interface LedgerEntry {
+  accountId: string;     // References an Account.id OR Category.id
+  type: EntryType;
   amount: number;
-  note?: string;
 }
+
+export type TransactionType = 'income' | 'expense' | 'transfer';
 
 export interface Transaction {
   id: string;
-  groupId: string; // Same groupId = split transaction parts
-  date: string;    // ISO date string
-  type: TransactionType;
-  amount: number;  // Total for splits; per-part for leaves
-  sourceId: string;
-  toSourceId?: string;    // Transfers only
+  groupId: string;        // For grouping related entries if needed (split txns)
+  date: string;           // ISO date string
+  amount: number;         // Total transaction amount
+  entries: LedgerEntry[]; // ✅ Standard Double-Entry system
+  
+  // UI-Helper Fields (to maintain logic simplicity in the UI)
+  uiType: TransactionType;
   methodId?: string;
-  categoryId?: string;    // Undefined for transfers
   note: string;
   tags?: string[];
   isDeleted: boolean;
