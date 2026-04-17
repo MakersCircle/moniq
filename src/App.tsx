@@ -5,7 +5,7 @@ import Transactions from './pages/Transactions';
 import Insights from './pages/Insights';
 import Budget from './pages/Budget';
 import SettingsIndex from './pages/Settings/index';
-import Sources from './pages/Settings/Sources';
+import Accounts from './pages/Settings/Accounts';
 import Methods from './pages/Settings/Methods';
 import Categories from './pages/Settings/Categories';
 import Home from './pages/Home';
@@ -86,7 +86,7 @@ export default function App() {
                   <Route path="insights" element={<Insights />} />
                   <Route path="budget" element={<Budget />} />
                   <Route path="settings" element={<SettingsIndex />} />
-                  <Route path="settings/sources" element={<Sources />} />
+                  <Route path="settings/accounts" element={<Accounts />} />
                   <Route path="settings/methods" element={<Methods />} />
                   <Route path="settings/categories" element={<Categories />} />
                   <Route path="*" element={<Navigate to={hasTransactions ? "/dashboard" : "/"} replace />} />

@@ -12,16 +12,16 @@ import { useDataStore } from '@/store/dataStore';
 
 const SETTINGS_NAV = [
   { icon: Settings, label: 'General', to: '/settings' },
-  { icon: Landmark, label: 'Accounts', to: '/settings/sources' },
+  { icon: Landmark, label: 'Accounts', to: '/settings/accounts' },
   { icon: CreditCard, label: 'Pay Methods', to: '/settings/methods' },
   { icon: Tag, label: 'Categories', to: '/settings/categories' },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
-  const { sources, methods, categories } = useDataStore();
+  const { accounts, methods, categories } = useDataStore();
 
   const getCount = (label: string) => {
-    if (label === 'Accounts') return sources.filter(s => s.isActive).length;
+    if (label === 'Accounts') return accounts.filter(s => s.isActive).length;
     if (label === 'Pay Methods') return methods.filter(m => m.isActive).length;
     if (label === 'Categories') return categories.filter(c => c.isActive).length;
     return null;

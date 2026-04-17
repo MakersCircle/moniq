@@ -25,17 +25,17 @@ import { cn } from '@/lib/utils';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 
 export default function Methods() {
-  const { methods, sources, addMethod, updateMethod, archiveMethod } = useDataStore();
+  const { methods, accounts, addMethod, updateMethod, archiveMethod } = useDataStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<PaymentMethod | null>(null);
-  const [form, setForm] = useState({ name: '', linkedSourceId: '' });
+  const [form, setForm] = useState({ name: '', linkedAccountId: '' });
 
-  const openAdd = () => { setEditing(null); setForm({ name: '', linkedSourceId: '' }); setModalOpen(true); };
-  const openEdit = (m: PaymentMethod) => { setEditing(m); setForm({ name: m.name, linkedSourceId: m.linkedSourceId || '' }); setModalOpen(true); };
+  const openAdd = () => { setEditing(null); setForm({ name: '', linkedAccountId: '' }); setModalOpen(true); };
+  const openEdit = (m: PaymentMethod) => { setEditing(m); setForm({ name: m.name, linkedAccountId: m.linkedAccountId || '' }); setModalOpen(true); };
 
   const handleSave = () => {
     if (!form.name.trim()) return;
-    const data = { name: form.name.trim(), linkedSourceId: form.linkedSourceId === 'none' ? undefined : form.linkedSourceId || undefined, isActive: true };
+    const data = { name: form.name.trim(), linkedAccountId: form.linkedAccountId === 'none' ? undefined : form.linkedAccountId || undefined, isActive: true };
     if (editing) updateMethod(editing.id, data);
     else addMethod(data);
     setModalOpen(false);
@@ -70,11 +70,11 @@ export default function Methods() {
                     </div>
                     <div className="min-w-0">
                       <p className="font-bold text-sm tracking-tight truncate">{m.name}</p>
-                      {m.linkedSourceId && (
+                      {m.linkedAccountId && (
                         <div className="flex items-center gap-1 mt-0.5">
                           <ArrowRight className="h-2 w-2 text-muted-foreground" />
                           <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground truncate">
-                            {sources.find((s) => s.id === m.linkedSourceId)?.name || 'Unknown'}
+                            {accounts.find((s) => s.id === m.linkedAccountId)?.name || 'Unknown'}
                           </p>
                         </div>
                       )}
@@ -131,15 +131,15 @@ export default function Methods() {
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Default Account (optional)</Label>
               <Select 
-                value={form.linkedSourceId || 'none'} 
-                onValueChange={(val) => setForm({ ...form, linkedSourceId: val })}
+                value={form.linkedAccountId || 'none'} 
+                onValueChange={(val) => setForm({ ...form, linkedAccountId: val })}
               >
                 <SelectTrigger className="h-10">
                   <SelectValue placeholder="Select account" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Default Account (None)</SelectItem>
-                  {sources.filter((s) => s.isActive).map((s) => (
+                  {accounts.filter((s) => s.isActive).map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
                 </SelectContent>

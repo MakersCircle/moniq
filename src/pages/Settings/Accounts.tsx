@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Plus, Pencil, Archive, Check, Bookmark, Landmark, Wallet, IndianRupee, PieChart } from 'lucide-react';
+import { Plus, Pencil, Archive, Landmark, Wallet, IndianRupee, PieChart, Bookmark, CreditCard } from 'lucide-react';
 import { useDataStore } from '../../store/dataStore';
-import type { Source, SourceType } from '../../types';
+import type { Account, AccountType } from '../../types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,43 +21,62 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 
-const SOURCE_TYPES: SourceType[] = ['Bank', 'Wallet', 'Cash', 'Investment', 'Receivable', 'Payable', 'Custom'];
+const ACCOUNT_CLASSES: AccountType[] = ['Asset', 'Liability'];
+const ACCOUNT_SUBTYPES = ['Bank', 'Cash', 'Credit Card', 'Wallet', 'Investment', 'Loan', 'Custom'];
 
 const TYPE_ICONS: Record<string, any> = {
   Bank: Landmark,
   Wallet: Wallet,
   Cash: IndianRupee,
+  'Credit Card': CreditCard,
   Investment: PieChart,
+  Loan: Wallet,
   Custom: Bookmark,
 };
 
-interface SourceForm {
+interface AccountForm {
   name: string;
-  type: SourceType;
+  type: AccountType;
+  subType: string;
   initialBalance: string;
-  currency: string;
+  isSavings: boolean;
+  excludeFromNet: boolean;
 }
 
-const emptyForm: SourceForm = { name: '', type: 'Bank', initialBalance: '0', currency: 'INR' };
+const emptyForm: AccountForm = { 
+  name: '', 
+  type: 'Asset', 
+  subType: 'Bank', 
+  initialBalance: '0', 
+  isSavings: false, 
+  excludeFromNet: false 
+};
 
-export default function Sources() {
-  const { sources, settings, addSource, updateSource, archiveSource } = useDataStore();
+export default function Accounts() {
+  const { accounts, settings, addAccount, updateAccount, archiveAccount } = useDataStore();
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<Source | null>(null);
-  const [form, setForm] = useState<SourceForm>(emptyForm);
+  const [editing, setEditing] = useState<Account | null>(null);
+  const [form, setForm] = useState<AccountForm>(emptyForm);
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ ...emptyForm, currency: settings.currency });
+    setForm(emptyForm);
     setModalOpen(true);
   };
 
-  const openEdit = (s: Source) => {
-    setEditing(s);
-    setForm({ name: s.name, type: s.type, initialBalance: String(s.initialBalance), currency: s.currency });
+  const openEdit = (a: Account) => {
+    setEditing(a);
+    setForm({ 
+      name: a.name, 
+      type: a.type, 
+      subType: a.subType, 
+      initialBalance: String(a.initialBalance),
+      isSavings: a.isSavings,
+      excludeFromNet: !!a.excludeFromNet
+    });
     setModalOpen(true);
   };
 
@@ -66,20 +85,22 @@ export default function Sources() {
     const data = {
       name: form.name.trim(),
       type: form.type,
+      subType: form.subType,
       initialBalance: parseFloat(form.initialBalance) || 0,
-      currency: form.currency || 'INR',
+      isSavings: form.isSavings,
+      excludeFromNet: form.excludeFromNet,
       isActive: true,
     };
     if (editing) {
-      updateSource(editing.id, data);
+      updateAccount(editing.id, data);
     } else {
-      addSource(data);
+      addAccount(data);
     }
     setModalOpen(false);
   };
 
-  const activeSources   = sources.filter((s) => s.isActive);
-  const archivedSources = sources.filter((s) => !s.isActive);
+  const activeAccounts   = accounts.filter((s) => s.isActive);
+  const archivedAccounts = accounts.filter((s) => !s.isActive);
 
   return (
     <SettingsLayout>
@@ -88,7 +109,7 @@ export default function Sources() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold tracking-tight">Accounts</h2>
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Active Entities ({activeSources.length})</p>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Financial Entities ({activeAccounts.length})</p>
             </div>
             <Button size="sm" onClick={openAdd} className="h-9 gap-2">
               <Plus className="h-4 w-4" /> Add Account
@@ -97,28 +118,31 @@ export default function Sources() {
         </div>
 
         <div className="grid grid-cols-1 gap-3">
-          {activeSources.map((s) => {
-            const Icon = TYPE_ICONS[s.type] || Bookmark;
+          {activeAccounts.map((a) => {
+            const Icon = TYPE_ICONS[a.subType] || Bookmark;
             return (
-              <Card key={s.id} className="group border-border hover:border-primary/30 transition-all shadow-sm overflow-hidden">
+              <Card key={a.id} className="group border-border hover:border-primary/30 transition-all shadow-sm overflow-hidden">
                 <CardContent className="p-0">
                   <div className="flex items-center gap-4 p-4">
                     <div className="h-10 w-10 shrink-0 rounded-xl bg-accent flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                       <Icon className="h-5 w-5" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm tracking-tight">{s.name}</p>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{s.type}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-sm tracking-tight">{a.name}</p>
+                        {a.isSavings && <span className="text-[8px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black uppercase tracking-widest">Savings</span>}
+                      </div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{a.type} • {a.subType}</p>
                     </div>
                     <div className="text-right pr-2">
-                       <p className="text-xs font-bold mono">{settings.currencySymbol}{s.initialBalance.toLocaleString()}</p>
+                       <p className="text-xs font-bold mono">{settings.currencySymbol}{a.initialBalance.toLocaleString()}</p>
                        <p className="text-[9px] text-muted-foreground font-medium uppercase">Opening</p>
                     </div>
                     <div className="flex items-center gap-1 opacity-10 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(s)}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(a)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10" onClick={() => archiveSource(s.id)}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10" onClick={() => archiveAccount(a.id)}>
                         <Archive className="h-3.5 w-3.5" />
                       </Button>
                     </div>
@@ -129,14 +153,14 @@ export default function Sources() {
           })}
         </div>
 
-        {archivedSources.length > 0 && (
+        {archivedAccounts.length > 0 && (
           <div className="pt-8 space-y-4">
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 px-1">Archived Accounts</h4>
             <div className="grid grid-cols-1 gap-2">
-              {archivedSources.map((s) => (
-                <div key={s.id} className="flex items-center justify-between p-3 px-4 rounded-lg bg-accent/20 border border-transparent opacity-60">
-                  <span className="text-xs font-bold text-muted-foreground">{s.name}</span>
-                  <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider" onClick={() => updateSource(s.id, { isActive: true })}>
+              {archivedAccounts.map((a) => (
+                <div key={a.id} className="flex items-center justify-between p-3 px-4 rounded-lg bg-accent/20 border border-transparent opacity-60">
+                  <span className="text-xs font-bold text-muted-foreground">{a.name}</span>
+                  <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider" onClick={() => updateAccount(a.id, { isActive: true })}>
                     Restore
                   </Button>
                 </div>
@@ -165,28 +189,55 @@ export default function Sources() {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Account Type</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Class</Label>
                 <Select 
                   value={form.type} 
-                  onValueChange={(val) => setForm({ ...form, type: val as SourceType })}
+                  onValueChange={(val) => setForm({ ...form, type: val as AccountType })}
                 >
                   <SelectTrigger className="h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {SOURCE_TYPES.map((t) => (
+                    {ACCOUNT_CLASSES.map((t) => (
                       <SelectItem key={t} value={t}>{t}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Currency</Label>
-                <Input 
-                  value={form.currency} 
-                  onChange={(e) => setForm({ ...form, currency: e.target.value })} 
-                  className="h-10 border-border/50 focus:border-primary/30 font-bold mono"
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sub Type</Label>
+                <Select 
+                  value={form.subType} 
+                  onValueChange={(val) => setForm({ ...form, subType: val })}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ACCOUNT_SUBTYPES.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2 border rounded-lg p-3 border-border/50">
+                <Checkbox 
+                  id="isSavings" 
+                  checked={form.isSavings} 
+                  onCheckedChange={(val: boolean | 'indeterminate') => setForm({ ...form, isSavings: !!val })} 
                 />
+                <label htmlFor="isSavings" className="text-xs font-bold cursor-pointer">Savings Account</label>
+              </div>
+              <div className="flex items-center space-x-2 border rounded-lg p-3 border-border/50">
+                <Checkbox 
+                  id="excludeFromNet" 
+                  checked={form.excludeFromNet} 
+                  onCheckedChange={(val: boolean | 'indeterminate') => setForm({ ...form, excludeFromNet: !!val })} 
+                />
+                <label htmlFor="excludeFromNet" className="text-xs font-bold cursor-pointer text-muted-foreground">Exclude Net Worth</label>
               </div>
             </div>
             
