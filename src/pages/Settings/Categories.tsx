@@ -24,16 +24,15 @@ import {
 import { cn } from '@/lib/utils';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 
-const GROUPS: CategoryGroup[] = ['Needs', 'Wants', 'Savings', 'Investment', 'Debt', 'Income', 'Custom'];
+const GROUPS: CategoryGroup[] = ['Income', 'Needs', 'Wants', 'Invest', 'Lend', 'Borrow'];
 
 const GROUP_STYLES: Record<string, string> = {
+  Income: 'text-indigo-500 bg-indigo-500/10',
   Needs: 'text-rose-500 bg-rose-500/10',
   Wants: 'text-amber-500 bg-amber-500/10',
-  Savings: 'text-emerald-500 bg-emerald-500/10',
-  Investment: 'text-blue-500 bg-blue-500/10',
-  Debt: 'text-slate-500 bg-slate-500/10',
-  Income: 'text-indigo-500 bg-indigo-500/10',
-  Custom: 'text-muted-foreground bg-muted/20',
+  Invest: 'text-blue-500 bg-blue-500/10',
+  Lend: 'text-slate-500 bg-slate-500/10',
+  Borrow: 'text-slate-500 bg-slate-500/10',
 };
 
 export default function Categories() {
