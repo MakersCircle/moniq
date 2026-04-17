@@ -1,20 +1,21 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Source, PaymentMethod, Category, Transaction, Budget, UserSettings } from '../types';
+import type { Account, PaymentMethod, Category, Transaction, Budget, UserSettings } from '../types';
+import { LedgerEngine } from '../lib/ledger';
 
 // ── Default seed data for first-time users ──────────────────
 
-const defaultSources: Source[] = [
-  { id: 'src-1', name: 'Bank Account', type: 'Bank', initialBalance: 0, currency: 'INR', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'src-2', name: 'Cash Wallet', type: 'Cash', initialBalance: 0, currency: 'INR', isActive: true, createdAt: new Date().toISOString() },
+const defaultAccounts: Account[] = [
+  { id: 'acc-1', name: 'Bank Account', type: 'Asset', subType: 'Bank', initialBalance: 0, isSavings: false, isActive: true, createdAt: new Date().toISOString() },
+  { id: 'acc-2', name: 'Cash Wallet', type: 'Asset', subType: 'Cash', initialBalance: 0, isSavings: false, isActive: true, createdAt: new Date().toISOString() },
 ];
 
 const defaultMethods: PaymentMethod[] = [
-  { id: 'met-1', name: 'UPI', linkedSourceId: 'src-1', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'met-2', name: 'Cash', linkedSourceId: 'src-2', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'met-3', name: 'Debit Card', linkedSourceId: 'src-1', isActive: true, createdAt: new Date().toISOString() },
+  { id: 'met-1', name: 'UPI', linkedAccountId: 'acc-1', isActive: true, createdAt: new Date().toISOString() },
+  { id: 'met-2', name: 'Cash', linkedAccountId: 'acc-2', isActive: true, createdAt: new Date().toISOString() },
+  { id: 'met-3', name: 'Debit Card', linkedAccountId: 'acc-1', isActive: true, createdAt: new Date().toISOString() },
   { id: 'met-4', name: 'Credit Card', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'met-5', name: 'Net Banking', linkedSourceId: 'src-1', isActive: true, createdAt: new Date().toISOString() },
+  { id: 'met-5', name: 'Net Banking', linkedAccountId: 'acc-1', isActive: true, createdAt: new Date().toISOString() },
 ];
 
 const defaultCategories: Category[] = [
@@ -32,17 +33,13 @@ const defaultCategories: Category[] = [
   { id: 'cat-10', group: 'Wants', head: 'Entertainment', subHead: 'Movies', isActive: true, createdAt: new Date().toISOString() },
   { id: 'cat-11', group: 'Wants', head: 'Shopping', subHead: 'Clothing', isActive: true, createdAt: new Date().toISOString() },
   { id: 'cat-12', group: 'Wants', head: 'Shopping', subHead: 'Electronics', isActive: true, createdAt: new Date().toISOString() },
-  // Savings / Investment
-  { id: 'cat-13', group: 'Savings',    head: 'Savings', subHead: 'Emergency Fund', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-14', group: 'Investment', head: 'Investment', subHead: 'Mutual Funds', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-15', group: 'Investment', head: 'Investment', subHead: 'Stocks', isActive: true, createdAt: new Date().toISOString() },
-  // Debt
-  { id: 'cat-16', group: 'Debt', head: 'Debt', subHead: 'Loan EMI', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-17', group: 'Debt', head: 'Debt', subHead: 'Credit Card Bill', isActive: true, createdAt: new Date().toISOString() },
+  // Invest / Lend / Borrow
+  { id: 'cat-14', group: 'Invest',  head: 'Investment', subHead: 'Mutual Funds', isActive: true, createdAt: new Date().toISOString() },
+  { id: 'cat-15', group: 'Lend',    head: 'Lend', subHead: 'To Friend', isActive: true, createdAt: new Date().toISOString() },
+  { id: 'cat-16', group: 'Borrow',  head: 'Borrow', subHead: 'Bank Loan', isActive: true, createdAt: new Date().toISOString() },
   // Income
-  { id: 'cat-18', group: 'Income', head: 'Income', subHead: 'Salary', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-19', group: 'Income', head: 'Income', subHead: 'Freelance', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-20', group: 'Income', head: 'Income', subHead: 'Other', isActive: true, createdAt: new Date().toISOString() },
+  { id: 'cat-18', group: 'Income', head: 'Salary', isActive: true, createdAt: new Date().toISOString() },
+  { id: 'cat-19', group: 'Income', head: 'Freelance', isActive: true, createdAt: new Date().toISOString() },
 ];
 
 const defaultSettings: UserSettings = {
@@ -61,7 +58,7 @@ export interface UserProfile {
 }
 
 interface DataState {
-  sources: Source[];
+  accounts: Account[];
   methods: PaymentMethod[];
   categories: Category[];
   transactions: Transaction[];
@@ -80,10 +77,10 @@ interface DataState {
   setSpreadsheetId: (id: string | null) => void;
   setSyncState: (lastSyncedAt: string | null, isSyncing: boolean) => void;
 
-  // Sources
-  addSource: (s: Omit<Source, 'id' | 'createdAt'>) => void;
-  updateSource: (id: string, patch: Partial<Source>) => void;
-  archiveSource: (id: string) => void;
+  // Accounts
+  addAccount: (a: Omit<Account, 'id' | 'createdAt'>) => void;
+  updateAccount: (id: string, patch: Partial<Account>) => void;
+  archiveAccount: (id: string) => void;
 
   // Methods
   addMethod: (m: Omit<PaymentMethod, 'id' | 'createdAt'>) => void;
@@ -96,8 +93,17 @@ interface DataState {
   archiveCategory: (id: string) => void;
 
   // Transactions
-  addTransaction: (t: Omit<Transaction, 'id' | 'groupId' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => void;
-  addTransactionGroup: (txns: Omit<Transaction, 'id' | 'groupId' | 'createdAt' | 'updatedAt' | 'isDeleted'>[]) => void;
+  addTransaction: (params: {
+    date: string;
+    uiType: 'income' | 'expense' | 'transfer';
+    amount: number;
+    accountId: string;
+    targetId: string; // categoryId or toAccountId
+    methodId?: string;
+    note: string;
+    tags?: string[];
+  }) => void;
+  
   updateTransaction: (id: string, patch: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
 
@@ -116,7 +122,7 @@ const now = () => new Date().toISOString();
 export const useDataStore = create<DataState>()(
   persist(
     (set) => ({
-      sources: defaultSources,
+      accounts: defaultAccounts,
       methods: defaultMethods,
       categories: defaultCategories,
       transactions: [],
@@ -133,17 +139,21 @@ export const useDataStore = create<DataState>()(
       setSpreadsheetId: (id) => set({ spreadsheetId: id }),
       setSyncState: (lastSyncedAt, isSyncing) => set({ lastSyncedAt, isSyncing }),
 
-      // Sources
-      addSource: (s) => {
-        set((state) => ({ sources: [...state.sources, { ...s, id: uuid(), createdAt: now() }] }));
+      addAccount: (a) => {
+        const id = uuid();
+        const t = now();
+        set((state) => ({ 
+          accounts: [...state.accounts, { ...a, id, createdAt: t }],
+          methods: [...state.methods, { id: uuid(), name: `${a.name} (Default)`, linkedAccountId: id, isActive: true, createdAt: t }]
+        }));
         useDataStore.getState().triggerSync();
       },
-      updateSource: (id, patch) => {
-        set((state) => ({ sources: state.sources.map((s) => (s.id === id ? { ...s, ...patch } : s)) }));
+      updateAccount: (id, patch) => {
+        set((state) => ({ accounts: state.accounts.map((s) => (s.id === id ? { ...s, ...patch } : s)) }));
         useDataStore.getState().triggerSync();
       },
-      archiveSource: (id) => {
-        set((state) => ({ sources: state.sources.map((s) => (s.id === id ? { ...s, isActive: false } : s)) }));
+      archiveAccount: (id) => {
+        set((state) => ({ accounts: state.accounts.map((s) => (s.id === id ? { ...s, isActive: false } : s)) }));
         useDataStore.getState().triggerSync();
       },
 
@@ -176,26 +186,32 @@ export const useDataStore = create<DataState>()(
       },
 
       // Transactions
-      addTransaction: (t) => {
+      addTransaction: (params) => {
+        const { date, uiType, amount, accountId, targetId, methodId, note, tags } = params;
+        const entries = LedgerEngine.createEntries({ type: uiType, amount, accountId, targetId });
+        
         set((state) => ({
           transactions: [
             ...state.transactions,
-            { ...t, id: uuid(), groupId: uuid(), isDeleted: false, createdAt: now(), updatedAt: now() },
+            { 
+              id: uuid(), 
+              groupId: uuid(), 
+              date, 
+              amount,
+              entries, 
+              uiType, 
+              methodId, 
+              note, 
+              tags, 
+              isDeleted: false, 
+              createdAt: now(), 
+              updatedAt: now() 
+            },
           ],
         }));
         useDataStore.getState().triggerSync();
       },
-      addTransactionGroup: (txns) => {
-        const groupId = uuid();
-        const ts = now();
-        set((state) => ({
-          transactions: [
-            ...state.transactions,
-            ...txns.map((t) => ({ ...t, id: uuid(), groupId, isDeleted: false, createdAt: ts, updatedAt: ts })),
-          ],
-        }));
-        useDataStore.getState().triggerSync();
-      },
+
       updateTransaction: (id, patch) => {
         set((state) => ({
           transactions: state.transactions.map((t) =>
