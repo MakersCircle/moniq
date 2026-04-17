@@ -19,51 +19,54 @@ This document tracks the end-to-end implementation roadmap for **moniq**. Items 
 - [x] Set up basic local state sync.
 
 ## ⚙️ Phase 2: Master Data Management (CRUD)
-- [x] **Sources Management**
-  - [x] Add Form (Name, Type, Start Balance).
+- [x] **Accounts Management**
+  - [x] Add Form (Name, Class, Start Balance).
   - [x] List View & Edit Module.
 - [x] **Payment Methods Management**
-  - [x] Add Form (Name, Linked Source).
+  - [x] Add Form (Name, Linked Account).
   - [x] List View & Edit Module.
 - [x] **Categories Management**
   - [x] Define Head & Sub-head UI.
-  - [x] Group definitions (Needs/Wants/Save).
+  - [x] Group definitions (Income/Needs/Wants/Invest/Lend/Borrow).
   - [x] Grouped view with inline edit for Categories (Settings).
 
 ## 🤝 Phase 2.5: Contacts / Lending
-- [x] UI to add people as "Receivable" (Loan Given) or "Payable" (Loan Taken).
+- [x] Account flags for "Asset" vs "Liability" to handle Lending/Borrowing.
 
 ## ✍️ Phase 3: Core UX — Transaction Engine
 - [x] **New Transaction Experience**
   - [x] Layout the "New Transaction" Modal/Page.
   - [x] Implement robust Form Validation.
   - [x] "Allocated X of Y" logic for Split Transactions.
-- [ ] Submit to backend (Append row to `Transactions` sheet for new structures).
+- [x] **Double-Entry Ledger Engine**
+  - [x] Implement internal Debit/Credit logic.
+  - [x] Professional internal storage vs Simple external UI.
+- [x] Submit to backend (Append row to `Transactions` sheet with JSON ledger entries).
 - [x] Implement Local Optimistic Update.
 
 ## 📊 Phase 4: Ledger & Viewing
 - [x] **Redesigned Ledger**
   - [x] Spreadsheet table view with day dividers.
   - [x] Right detail panel sliding interface.
-- [ ] Context menus for quick actions (Edit/Delete/Copy).
+- [x] Context menus for quick actions (Edit/Delete/Copy).
 - [ ] Implement infinite scroll or pagination.
-- [x] Add filter logic (by Month, Category, Source, Type).
+- [x] Add filter logic (by Month, Category, Account, Type).
 - [x] Edit/Delete Transactions.
 
 ## 📈 Phase 5: Dashboards, Insights & Budgeting
 - [x] **Desktop Dashboard**
   - [x] 4 Stat cards (Net Worth, Income, Expenses, Savings Rate).
-  - [x] 50/50 split for Sources and Spending.
+  - [x] 50/50 split for Accounts and Spending.
 - [x] **Zero-based Budgeting Module:**
   - [x] Screen to view total monthly income (Salary).
   - [x] Income allocation vs Spending actuals.
   - [x] Inline-editable "Budgeted" cells.
 - [x] **Insights & Analytics:**
   - [x] Dedicated Insights page with category distribution and monthly trends.
-- [x] Compute real-time "Current Balances".
+- [x] Compute real-time "Current Balances" from Ledger.
 - [x] Track outstanding Lend/Borrow amounts on the Dashboard.
 - [x] **Reporting Exporter:**
-  - [x] UI button to Download CSV.
+  - [x] UI button to Download CSV (refactored for double-entry records).
 
 ## 🚀 Phase 6: Polish & PWA Support
 - [x] Make the UI adhere fully to `design_system.md`.

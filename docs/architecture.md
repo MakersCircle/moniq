@@ -18,48 +18,54 @@ To prioritize privacy and simplicity, it leverages the user's personal Google Dr
 
 Instead of a traditional SQL/NoSQL database, `moniq` uses Tabs in a Google Sheet.
 
-### 1. `Sources` Sheet
-Stores all custom accounts, wallets, etc. People who borrow money from you or lend to you are also tracked here as `Receivable` or `Payable` accounts.
+### 1. `Accounts` Sheet (formerly Sources)
+Stores all custom accounts, wallets, etc. These are the source of truth for money.
 * `id` (UUID)
-* `user_defined_name` (String: e.g., "SBI Savings", "John Doe (Loan)")
-* `type` (String: "Bank", "Wallet", "Investment", "Receivable", "Payable")
-* `initial_balance` (Number)
-* `currency` (String: e.g., "INR", "USD")
-* `is_active` (Boolean)
+* `name` (String: e.g., "SBI Savings", "HDFC Credit Card")
+* `class` (String: "Asset", "Liability")
+* `subType` (String: "Bank", "Cash", "Credit Card", "Investment", "Other")
+* `initialBalance` (Number)
+* `isSavings` (Boolean)
+* `excludeFromNet` (Boolean)
+* `isActive` (Boolean)
+* `createdAt` (ISO Date string)
 
 ### 2. `Methods` Sheet
-Stores payment channels.
+Stores payment channels (abstractions over accounts).
 * `id` (UUID)
-* `name` (String: e.g., "UPI", "Credit Card")
-* `linked_source_id` (UUID of Source, optional)
-* `is_active` (Boolean)
+* `name` (String: e.g., "UPI", "Net Banking")
+* `linkedAccountId` (UUID of Account)
+* `isActive` (Boolean)
+* `createdAt` (ISO Date string)
 
 ### 3. `Categories` Sheet
 Holds headers and subheaders for tracking.
 * `id` (UUID)
-* `group` (String: "Needs", "Wants", "Savings", "Investment", "Debt")
+* `group` (String: "Income", "Needs", "Wants", "Invest", "Lend", "Borrow")
 * `head` (String: e.g., "Food")
-* `sub_head` (String: e.g., "Groceries")
+* `subHead` (String: e.g., "Groceries")
+* `isActive` (Boolean)
 
 ### 4. `Transactions` Sheet
-The core event log. Note: For "Split Transactions" (multiple categories in one entry), multiple rows are appended sharing the same `group_id`.
+The core event log based on a **Double-Entry Ledger System**. 
 * `id` (UUID)
-* `group_id` (UUID, used to bind split transactions together)
+* `groupId` (UUID, used to bind related entries)
 * `date` (ISO Date string)
-* `type` (String: "Income", "Expense", "Transfer", "Adjustment")
-* `amount` (Number)
-* `source_id` (UUID from Sources)
-* `to_source_id` (UUID from Sources, for Transfers only)
-* `method_id` (UUID from Methods)
-* `category_id` (UUID from Categories)
-* `notes` (String)
+* `amount` (Number: Total transaction amount)
+* `entries` (JSON String: Balanced LedgerEntry objects `[{ accountId, type: 'DEBIT' | 'CREDIT', amount }]`)
+* `uiType` (String: "income", "expense", "transfer")
+* `methodId` (UUID from Methods)
+* `note` (String)
+* `isDeleted` (Boolean)
+* `updatedAt` (ISO Date string)
 
 ### 5. `Budgets` Sheet
-Handles monthly salary budgeting and category allocations (Zero-based budgeting).
+Handles monthly salary budgeting and category allocations.
 * `id` (UUID)
-* `category_id` (UUID)
-* `target_amount` (Number)
+* `categoryId` (UUID)
+* `amount` (Number)
 * `period` (String: "YYYY-MM")
+* `createdAt` (ISO Date string)
 
 ---
 

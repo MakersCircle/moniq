@@ -23,22 +23,22 @@ Allow a single user to define where their money lives, manually record all finan
 - Data changes sync directly to the Google Sheets API without storing user ledgers on an intermediate centralized database. Local changes are instantly captured via IndexedDB/LocalStorage.
 
 ### 3.2 Master Configurations
-- **Sources**: Users create, edit, and archive custom "Sources" where money resides (e.g., Bank, Wallet, Stash, Investment).
-- **Payment Methods**: Users define "Payment Methods" representing how money moves (e.g., UPI, Card, Cash) and optionally bind them to default Sources.
+- **Accounts**: Users create, edit, and archive custom "Accounts" where money resides (e.g., Bank, Wallet, Stash, Investment). These follow strict Asset/Liability classifications.
+- **Payment Methods**: Users define "Payment Methods" representing how money moves (e.g., UPI, Card, Cash) and bind them to specific Accounts.
 - **Categories**: A custom taxonomy for spend/income comprising Groups, Heads, and Sub-heads (e.g., Needs > Food > Groceries).
 
 ### 3.3 Transaction Logging (The Engine)
-- Transactions support 4 modes: Income, Expense, Transfer, Adjustment.
-- Forms handle "Transfers" distinctly, requiring `From Source` and `To Source` without enforcing a spending category.
+- **Double-Entry Ledger**: Every transaction is recorded as a set of balanced ledger entries (Debits/Credits) behind the scenes.
+- Transactions support 3 primary modes: Income, Expense, Transfer.
 - **Split Transactions**: Support multiple categories within a single transaction entry (e.g., a single supermarket receipt split into Groceries and Household Items).
 
 ### 3.4 Budgets & Lending
 - **Zero-based Budgeting**: A dedicated module for allocating monthly income into category buckets and tracking real-time spending against these allocations.
-- **Lend/Borrow**: Track lending money to friends (Loan Given) or borrowing (Loan Taken) using specific contact-based "Sources" to maintain receivable/payable ledgers.
+- **Lend/Borrow**: Track lending money to friends (Loan Given) or borrowing (Loan Taken) using specific "Accounts" to maintain receivable/payable ledgers.
 
 ### 3.5 Dashboards, Analytics & Export
-- **Desktop Command Center**: Balanced dashboard with high-level stats (Net Worth, Savings Rate) and detailed panel views for Sources and Spending.
-- **Global Search**: Command-palette style quick-find for transactions, sources, and navigation.
+- **Desktop Command Center**: Balanced dashboard with high-level stats (Net Worth, Savings Rate) and detailed panel views for Accounts and Spending.
+- **Global Search**: Command-palette style quick-find for transactions, accounts, and navigation.
 - **Insights Engine**: Dedicated analytics page with category distribution, monthly trends, and income vs. expense bars.
 - **Spreadsheet Ledger**: A high-density transaction log with right-side detail panels and inline filtering.
-- **Export functionality (CSV)**: Download filtered spending reports for external auditing.
+- **Export functionality (CSV)**: Download structured spending reports generated from the double-entry records.
