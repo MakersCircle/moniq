@@ -1,4 +1,4 @@
-import type { Transaction, Source, Category, PaymentMethod, UserSettings } from '../types';
+import type { Transaction, Account, Category, PaymentMethod, UserSettings } from '../types';
 
 // ── Format currency ──────────────────────────────────────────
 export function formatCurrency(amount: number, settings: UserSettings): string {
@@ -40,29 +40,43 @@ export function toMonthKey(date: Date): string {
 // ── CSV export ───────────────────────────────────────────────
 export function exportToCSV(
   transactions: Transaction[],
-  sources: Source[],
+  accounts: Account[],
   categories: Category[],
   methods: PaymentMethod[],
   filename = 'moniq-export.csv'
 ) {
-  const srcMap = Object.fromEntries(sources.map((s) => [s.id, s.name]));
+  const accMap = Object.fromEntries(accounts.map((s) => [s.id, s.name]));
   const catMap = Object.fromEntries(categories.map((c) => [c.id, `${c.head}${c.subHead ? ' / ' + c.subHead : ''}`]));
   const metMap = Object.fromEntries(methods.map((m) => [m.id, m.name]));
 
-  const header = ['Date', 'Type', 'Amount', 'Source', 'To Source', 'Category', 'Method', 'Note'];
+  const header = ['Date', 'Type', 'Amount', 'Primary Account', 'Target (Category/Account)', 'Method', 'Note'];
   const rows = transactions
     .filter((t) => !t.isDeleted)
     .sort((a, b) => b.date.localeCompare(a.date))
-    .map((t) => [
-      t.date,
-      t.type,
-      t.amount.toFixed(2),
-      srcMap[t.sourceId] || t.sourceId,
-      t.toSourceId ? srcMap[t.toSourceId] || t.toSourceId : '',
-      t.categoryId ? catMap[t.categoryId] || t.categoryId : '',
-      t.methodId ? metMap[t.methodId] || t.methodId : '',
-      `"${(t.note || '').replace(/"/g, '""')}"`,
-    ]);
+    .map((t) => {
+      const isIncome = t.uiType === 'income';
+      const isTransfer = t.uiType === 'transfer';
+      
+      const accEntry = t.entries.find(e => accounts.some(a => a.id === e.accountId) && (isIncome ? e.type === 'DEBIT' : e.type === 'CREDIT'));
+      const targetEntry = t.entries.find(e => e.accountId !== accEntry?.accountId);
+
+      let targetLabel = '';
+      if (isTransfer) {
+        targetLabel = accMap[targetEntry?.accountId || ''] || 'Unknown';
+      } else {
+        targetLabel = catMap[targetEntry?.accountId || ''] || 'Unknown';
+      }
+
+      return [
+        t.date,
+        t.uiType,
+        t.amount.toFixed(2),
+        accMap[accEntry?.accountId || ''] || 'Unknown',
+        targetLabel,
+        t.methodId ? metMap[t.methodId] || t.methodId : '',
+        `"${(t.note || '').replace(/"/g, '""')}"`,
+      ];
+    });
 
   const csv = [header, ...rows].map((r) => r.join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });

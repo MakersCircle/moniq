@@ -78,7 +78,7 @@ export async function initializeDatabase(accessToken: string): Promise<string> {
       properties: { title: DB_NAME },
       sheets: [
         { properties: { title: 'Transactions' } },
-        { properties: { title: 'Sources' } },
+        { properties: { title: 'Accounts' } },
         { properties: { title: 'Categories' } },
         { properties: { title: 'Methods' } },
         { properties: { title: 'Settings' } },
@@ -92,7 +92,6 @@ export async function initializeDatabase(accessToken: string): Promise<string> {
   const sheetId = createData.spreadsheetId;
 
   // 4. Move the newly created spreadsheet into the target folder
-  // Get current parents to remove them (typically 'root' folder)
   const fileRes = await fetch(`${DRIVE_API_URL}/files/${sheetId}?fields=parents`, { headers });
   const fileData = await fileRes.json();
   const previousParents = fileData.parents ? fileData.parents.join(',') : '';
@@ -116,12 +115,23 @@ export async function syncDataToGoogleSheets(
     'Content-Type': 'application/json',
   };
 
-  // 0. Ensure all required sheets exist (Add "Budgets" if missing from old DBs)
+  // 0. Ensure all required sheets exist
   try {
     const metaRes = await fetch(`${SHEETS_API_URL}/spreadsheets/${spreadsheetId}`, { headers });
     const metaData = await metaRes.json();
     const existingSheets = metaData.sheets.map((s: any) => s.properties.title);
     
+    // Add "Accounts" if missing and "Sources" exists (MIGRATION)
+    if (!existingSheets.includes('Accounts')) {
+      await fetch(`${SHEETS_API_URL}/spreadsheets/${spreadsheetId}:batchUpdate`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          requests: [{ addSheet: { properties: { title: 'Accounts' } } }]
+        })
+      });
+    }
+
     if (!existingSheets.includes('Budgets')) {
       await fetch(`${SHEETS_API_URL}/spreadsheets/${spreadsheetId}:batchUpdate`, {
         method: 'POST',
@@ -137,27 +147,37 @@ export async function syncDataToGoogleSheets(
 
   // 1. Prepare Transactions
   const txRows = state.transactions.map((t: any) => [
-    t.id, t.groupId || '', t.type, t.amount, t.date, t.sourceId, t.categoryId || '', t.note || '', t.isDeleted ? 'TRUE' : 'FALSE', t.createdAt, t.updatedAt
+    t.id, 
+    t.groupId || '', 
+    t.uiType, 
+    JSON.stringify(t.entries), // Store entries as JSON string
+    t.amount, 
+    t.date, 
+    t.methodId || '', 
+    t.note || '', 
+    t.isDeleted ? 'TRUE' : 'FALSE', 
+    t.createdAt, 
+    t.updatedAt
   ]);
-  txRows.unshift(['ID', 'Group ID', 'Type', 'Amount', 'Date', 'Source ID', 'Category ID', 'Note', 'Is Deleted', 'Created At', 'Updated At']);
+  txRows.unshift(['ID', 'Group ID', 'UI Type', 'Entries JSON', 'Amount', 'Date', 'Method ID', 'Note', 'Is Deleted', 'Created At', 'Updated At']);
 
-  // 2. Prepare Sources
-  const srcRows = state.sources.map((s: any) => [
-    s.id, s.name, s.type, s.initialBalance, s.currency || '', s.isActive ? 'TRUE' : 'FALSE', s.createdAt || ''
+  // 2. Prepare Accounts
+  const accRows = state.accounts.map((s: any) => [
+    s.id, s.name, s.type, s.subType || '', s.isSavings ? 'TRUE' : 'FALSE', s.initialBalance, s.excludeFromNet ? 'TRUE' : 'FALSE', s.isActive ? 'TRUE' : 'FALSE', s.createdAt || ''
   ]);
-  srcRows.unshift(['ID', 'Name', 'Type', 'Initial Balance', 'Currency', 'Is Active', 'Created At']);
+  accRows.unshift(['ID', 'Name', 'Type', 'Sub Type', 'Is Savings', 'Initial Balance', 'Exclude Net', 'Is Active', 'Created At']);
 
   // 3. Prepare Categories
   const catRows = state.categories.map((c: any) => [
-    c.id, c.group, c.head, c.subHead || '', c.isActive ? 'TRUE' : 'FALSE', c.createdAt || ''
+    c.id, c.group, c.head, c.subHead || '', c.initialBalance || 0, c.isActive ? 'TRUE' : 'FALSE', c.createdAt || ''
   ]);
-  catRows.unshift(['ID', 'Group', 'Head', 'Sub Head', 'Is Active', 'Created At']);
+  catRows.unshift(['ID', 'Group', 'Head', 'Sub Head', 'Initial Balance', 'Is Active', 'Created At']);
 
   // 4. Prepare Methods
   const metRows = state.methods.map((m: any) => [
-    m.id, m.name, m.linkedSourceId || '', m.isActive ? 'TRUE' : 'FALSE', m.createdAt || ''
+    m.id, m.name, m.linkedAccountId || '', m.isActive ? 'TRUE' : 'FALSE', m.createdAt || ''
   ]);
-  metRows.unshift(['ID', 'Name', 'Linked Source ID', 'Is Active', 'Created At']);
+  metRows.unshift(['ID', 'Name', 'Linked Account ID', 'Is Active', 'Created At']);
 
   // 5. Prepare Settings
   const setRows = Object.entries(state.settings || {}).map(([k, v]) => [k, String(v)]);
@@ -169,9 +189,9 @@ export async function syncDataToGoogleSheets(
   ]);
   budgetRows.unshift(['ID', 'Category ID', 'Period', 'Amount', 'Created At']);
 
-  // 7. First, clear the entire sheets to avoid lingering deleted row data
+  // 7. Clear sheets
   const clearBody = {
-    ranges: ['Transactions', 'Sources', 'Categories', 'Methods', 'Settings', 'Budgets']
+    ranges: ['Transactions', 'Accounts', 'Categories', 'Methods', 'Settings', 'Budgets']
   };
   await fetch(`${SHEETS_API_URL}/spreadsheets/${spreadsheetId}/values:batchClear`, {
     method: 'POST',
@@ -179,12 +199,12 @@ export async function syncDataToGoogleSheets(
     body: JSON.stringify(clearBody)
   });
 
-  // 8. Write all current local data back to the sheets
+  // 8. Write back
   const updateBody = {
     valueInputOption: "USER_ENTERED",
     data: [
       { range: 'Transactions!A1', values: txRows },
-      { range: 'Sources!A1', values: srcRows },
+      { range: 'Accounts!A1', values: accRows },
       { range: 'Categories!A1', values: catRows },
       { range: 'Methods!A1', values: metRows },
       { range: 'Settings!A1', values: setRows },
