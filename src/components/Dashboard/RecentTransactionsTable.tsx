@@ -10,12 +10,16 @@ interface RecentTransactionsTableProps {
 }
 
 export default function RecentTransactionsTable({ transactions }: RecentTransactionsTableProps) {
-  const { settings, categories } = useDataStore();
+  const { settings, categories, accounts } = useDataStore();
 
-  const getCategoryLabel = (catId?: string) => {
-    if (!catId) return '—';
-    const cat = categories.find(c => c.id === catId);
-    return cat ? `${cat.head}` : '—';
+  const getCategoryName = (txn: Transaction) => {
+    if (txn.uiType === 'transfer') {
+      const targetEntry = txn.entries.find(e => e.type === 'DEBIT');
+      return accounts.find(a => a.id === targetEntry?.accountId)?.name || 'Transfer';
+    }
+    const catEntry = txn.entries.find(e => categories.some(c => c.id === e.accountId));
+    const c = categories.find(c => c.id === catEntry?.accountId);
+    return c ? `${c.head}` : '—';
   };
 
   return (
@@ -25,7 +29,7 @@ export default function RecentTransactionsTable({ transactions }: RecentTransact
           <tr>
             <th className="px-4 py-3 font-bold border-b border-border">Date</th>
             <th className="px-4 py-3 font-bold border-b border-border">Description</th>
-            <th className="px-4 py-3 font-bold border-b border-border">Category</th>
+            <th className="px-4 py-3 font-bold border-b border-border">Category / Target</th>
             <th className="px-4 py-3 font-bold border-b border-border text-right">Amount</th>
             <th className="px-4 py-3 font-bold border-b border-border text-center">Type</th>
           </tr>
@@ -41,23 +45,23 @@ export default function RecentTransactionsTable({ transactions }: RecentTransact
               </td>
               <td className="px-4 py-3 text-muted-foreground">
                 <span className="px-2 py-0.5 rounded-md bg-accent/40 text-[11px]">
-                  {getCategoryLabel(t.categoryId)}
+                  {getCategoryName(t)}
                 </span>
               </td>
               <td className={cn(
                 "px-4 py-3 font-bold text-right mono",
-                t.type === 'income' ? 'text-income' : 'text-expense'
+                t.uiType === 'income' ? 'text-income' : 'text-expense'
               )}>
-                {t.type === 'income' ? '+' : ''}{formatCurrency(t.amount, settings)}
+                {t.uiType === 'income' ? '+' : ''}{formatCurrency(t.amount, settings)}
               </td>
               <td className="px-4 py-3 text-center">
                 <span className={cn(
                   "inline-block w-8 py-0.5 rounded text-[10px] font-bold uppercase",
-                  t.type === 'income' ? 'bg-income/10 text-income' : 
-                  t.type === 'expense' ? 'bg-expense/10 text-expense' : 
+                  t.uiType === 'income' ? 'bg-income/10 text-income' : 
+                  t.uiType === 'expense' ? 'bg-expense/10 text-expense' : 
                   'bg-blue-500/10 text-blue-500'
                 )}>
-                  {t.type.substring(0, 3)}
+                  {t.uiType.substring(0, 3)}
                 </span>
               </td>
             </tr>

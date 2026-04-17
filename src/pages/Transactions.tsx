@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { 
   Download, 
   Search, 
-  Calendar, 
   ChevronRight, 
   MoreVertical, 
   Pencil, 
@@ -35,7 +34,7 @@ import { cn } from '@/lib/utils';
 import TransactionDetailPanel from '@/components/Transactions/TransactionDetailPanel';
 
 export default function Transactions() {
-  const { sources, categories, methods, settings, transactions, deleteTransaction } = useDataStore();
+  const { accounts, categories, methods, settings, transactions, deleteTransaction } = useDataStore();
   
   const [filter, setFilter] = useState<TxnFilter>({
     month: toMonthKey(new Date()),
@@ -50,12 +49,12 @@ export default function Transactions() {
     setFilter((f) => ({ ...f, ...patch }));
 
   const handleExport = () => {
-    exportToCSV(txns, sources, categories, methods, `moniq-${filter.month || 'all'}.csv`);
+    exportToCSV(txns, accounts, categories, methods, `moniq-${filter.month || 'all'}.csv`);
   };
 
   const currentNet = txns.reduce((sum, t) => {
-    if (t.type === 'income') return sum + t.amount;
-    if (t.type === 'expense') return sum - t.amount;
+    if (t.uiType === 'income') return sum + t.amount;
+    if (t.uiType === 'expense') return sum - t.amount;
     return sum;
   }, 0);
 
@@ -65,6 +64,22 @@ export default function Transactions() {
 
   const handleDuplicate = (t: Transaction) => {
     (window as any).openTransactionModal.openDuplicate(t);
+  };
+
+  const getAccountName = (txn: Transaction) => {
+    const isIncome = txn.uiType === 'income';
+    const entry = txn.entries.find(e => accounts.some(a => a.id === e.accountId) && (isIncome ? e.type === 'DEBIT' : e.type === 'CREDIT'));
+    return accounts.find(a => a.id === entry?.accountId)?.name || 'Unknown';
+  };
+
+  const getCategoryName = (txn: Transaction) => {
+    if (txn.uiType === 'transfer') {
+      const targetEntry = txn.entries.find(e => e.type === 'DEBIT');
+      return accounts.find(a => a.id === targetEntry?.accountId)?.name || 'Transfer';
+    }
+    const catEntry = txn.entries.find(e => categories.some(c => c.id === e.accountId));
+    const c = categories.find(c => c.id === catEntry?.accountId);
+    return c ? `${c.head}${c.subHead ? ' · ' + c.subHead : ''}` : '—';
   };
 
   return (
@@ -124,7 +139,7 @@ export default function Transactions() {
               </SelectContent>
             </Select>
 
-            <Select value={filter.type || 'all'} onValueChange={(val) => updateFilter({ type: val === 'all' ? undefined : val as any })}>
+            <Select value={filter.uiType || 'all'} onValueChange={(val) => updateFilter({ uiType: val === 'all' ? undefined : val as any })}>
               <SelectTrigger className="h-9 w-[120px] text-xs">
                 <SelectValue placeholder="All Types" />
               </SelectTrigger>
@@ -136,13 +151,13 @@ export default function Transactions() {
               </SelectContent>
             </Select>
 
-            <Select value={filter.sourceId || 'all'} onValueChange={(val) => updateFilter({ sourceId: val === 'all' ? undefined : val })}>
+            <Select value={filter.accountId || 'all'} onValueChange={(val) => updateFilter({ accountId: val === 'all' ? undefined : val })}>
               <SelectTrigger className="h-9 w-[150px] text-xs">
-                <SelectValue placeholder="All Sources" />
+                <SelectValue placeholder="All Accounts" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Sources</SelectItem>
-                {sources.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                <SelectItem value="all">All Accounts</SelectItem>
+                {accounts.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -161,8 +176,8 @@ export default function Transactions() {
                   <tr>
                     <th className="px-5 py-3 border-b border-border">Date</th>
                     <th className="px-5 py-3 border-b border-border">Description</th>
-                    <th className="px-5 py-3 border-b border-border">Category</th>
-                    <th className="px-5 py-3 border-b border-border">Source</th>
+                    <th className="px-5 py-3 border-b border-border">Category / Target</th>
+                    <th className="px-5 py-3 border-b border-border">Account</th>
                     <th className="px-5 py-3 border-b border-border text-right">Amount</th>
                     <th className="px-5 py-3 border-b border-border w-10"></th>
                   </tr>
@@ -198,24 +213,21 @@ export default function Transactions() {
                              <div className="flex items-center gap-1.5">
                                <div className={cn(
                                  "h-1.5 w-1.5 rounded-full",
-                                 txn.type === 'income' ? 'bg-income' : txn.type === 'expense' ? 'bg-expense' : 'bg-blue-500'
+                                 txn.uiType === 'income' ? 'bg-income' : txn.uiType === 'expense' ? 'bg-expense' : 'bg-blue-500'
                                )} />
                                <span className="text-muted-foreground text-xs">
-                                 {(() => {
-                                   const c = categories.find(c => c.id === txn.categoryId);
-                                   return c ? `${c.head} · ${c.subHead || ''}` : '—';
-                                 })()}
+                                 {getCategoryName(txn)}
                                </span>
                              </div>
                           </td>
                           <td className="px-5 py-3 text-muted-foreground text-xs whitespace-nowrap">
-                            {sources.find(s => s.id === txn.sourceId)?.name || 'Unknown'}
+                            {getAccountName(txn)}
                           </td>
                           <td className={cn(
                             "px-5 py-3 font-bold text-right mono whitespace-nowrap",
-                            txn.type === 'income' ? 'text-income' : 'text-expense'
+                            txn.uiType === 'income' ? 'text-income' : 'text-expense'
                           )}>
-                            {txn.type === 'income' ? '+' : ''}{formatCurrency(txn.amount, settings)}
+                            {txn.uiType === 'income' ? '+' : ''}{formatCurrency(txn.amount, settings)}
                           </td>
                           <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenu>

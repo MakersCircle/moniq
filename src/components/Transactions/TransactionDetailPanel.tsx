@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { X, Trash2, Edit2, Calendar, Wallet, Tag, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -19,13 +20,39 @@ export default function TransactionDetailPanel({
   onDelete, 
   onEdit 
 }: TransactionDetailPanelProps) {
-  const { sources, categories, settings } = useDataStore();
+  const { accounts, categories, settings } = useDataStore();
 
-  if (!transaction) return null;
+  const details = useMemo(() => {
+    if (!transaction) return null;
 
-  const source = sources.find(s => s.id === transaction.sourceId);
-  const toSource = transaction.toSourceId ? sources.find(s => s.id === transaction.toSourceId) : null;
-  const category = categories.find(c => c.id === transaction.categoryId);
+    const isTransfer = transaction.uiType === 'transfer';
+    const isIncome = transaction.uiType === 'income';
+
+    const accountEntries = transaction.entries.filter(e => accounts.some(a => a.id === e.accountId));
+    const targetEntries = transaction.entries.filter(e => !accounts.some(a => a.id === e.accountId));
+
+    let account = null;
+    let toAccount = null;
+    let category = null;
+
+    if (isTransfer) {
+      const fromEntry = transaction.entries.find(e => e.type === 'CREDIT');
+      const toEntry = transaction.entries.find(e => e.type === 'DEBIT');
+      account = accounts.find(a => a.id === fromEntry?.accountId);
+      toAccount = accounts.find(a => a.id === toEntry?.accountId);
+    } else {
+      // For income, Account is in DEBIT. For expense, Account is in CREDIT.
+      const accEntry = transaction.entries.find(e => accounts.some(a => a.id === e.accountId));
+      account = accounts.find(a => a.id === accEntry?.accountId);
+      
+      const catEntry = transaction.entries.find(e => categories.some(c => c.id === e.accountId));
+      category = categories.find(c => c.id === catEntry?.accountId);
+    }
+
+    return { account, toAccount, category, isTransfer };
+  }, [transaction, accounts, categories]);
+
+  if (!transaction || !details) return null;
 
   return (
     <div className={cn(
@@ -45,17 +72,17 @@ export default function TransactionDetailPanel({
         <div className="text-center space-y-2">
           <p className={cn(
             "text-4xl font-extrabold tracking-tighter mono",
-            transaction.type === 'income' ? 'text-income' : 'text-expense'
+            transaction.uiType === 'income' ? 'text-income' : 'text-expense'
           )}>
-            {transaction.type === 'income' ? '+' : ''}{formatCurrency(transaction.amount, settings)}
+            {transaction.uiType === 'income' ? '+' : ''}{formatCurrency(transaction.amount, settings)}
           </p>
           <div className="flex items-center justify-center gap-2">
             <span className={cn(
               "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
-              transaction.type === 'income' ? 'bg-income/10 text-income' : 
-              transaction.type === 'expense' ? 'bg-expense/10 text-expense' : 'bg-blue-500/10 text-blue-500'
+              transaction.uiType === 'income' ? 'bg-income/10 text-income' : 
+              transaction.uiType === 'expense' ? 'bg-expense/10 text-expense' : 'bg-blue-500/10 text-blue-500'
             )}>
-              {transaction.type}
+              {transaction.uiType}
             </span>
             <span className="text-xs text-muted-foreground font-medium">
               {format(new Date(transaction.date), 'dd MMMM yyyy')}
@@ -71,21 +98,21 @@ export default function TransactionDetailPanel({
           />
           <DetailRow 
             icon={Wallet} 
-            label={transaction.type === 'transfer' ? 'From Account' : 'Account'} 
-            value={source?.name || 'Unknown'} 
+            label={details.isTransfer ? 'From Account' : 'Account'} 
+            value={details.account?.name || 'Unknown'} 
           />
-          {transaction.type === 'transfer' && (
+          {details.isTransfer && (
             <DetailRow 
               icon={Wallet} 
               label="To Account" 
-              value={toSource?.name || 'Unknown'} 
+              value={details.toAccount?.name || 'Unknown'} 
             />
           )}
-          {transaction.type !== 'transfer' && (
+          {!details.isTransfer && (
             <DetailRow 
               icon={Tag} 
               label="Category" 
-              value={category ? `${category.head}${category.subHead ? ' · ' + category.subHead : ''}` : 'Uncategorized'} 
+              value={details.category ? `${details.category.head}${details.category.subHead ? ' · ' + details.category.subHead : ''}` : 'Uncategorized'} 
             />
           )}
           <DetailRow 

@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import RecentTransactionsTable from '@/components/Dashboard/RecentTransactionsTable';
 
 export default function Dashboard() {
-  const { sources, transactions, settings } = useDataStore();
+  const { accounts, transactions, settings } = useDataStore();
   const balances = useAllBalances();
 
   const now = new Date();
@@ -27,10 +27,10 @@ export default function Dashboard() {
 
   // Stats Calculations
   const netWorth = useMemo(() => {
-    return sources
+    return accounts
       .filter((s) => s.isActive && !s.excludeFromNet)
       .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
-  }, [sources, balances]);
+  }, [accounts, balances]);
 
   const savingsRate = income > 0 ? ((income - expenses) / income) * 100 : 0;
 
@@ -95,11 +95,11 @@ export default function Dashboard() {
 
       {/* Lending & Debt Stats */}
       {(() => {
-        const totalReceivable = sources
-          .filter(s => s.type === 'Receivable' && s.isActive)
+        const totalReceivable = accounts
+          .filter(s => s.subType === 'Receivable' && s.isActive)
           .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
-        const totalPayable = sources
-          .filter(s => s.type === 'Payable' && s.isActive)
+        const totalPayable = accounts
+          .filter(s => s.subType === 'Payable' && s.isActive)
           .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
 
         if (totalReceivable === 0 && totalPayable === 0) return null;
@@ -130,18 +130,18 @@ export default function Dashboard() {
 
       {/* Middle Row — 50/50 Split */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
-        {/* Left Pane: Sources */}
+        {/* Left Pane: Accounts */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
               <Wallet className="h-4 w-4" />
-              Sources
+              Accounts
             </h3>
-            <Link to="/settings/sources" className="text-[10px] font-bold text-primary hover:underline">Manage ›</Link>
+            <Link to="/settings/accounts" className="text-[10px] font-bold text-primary hover:underline">Manage ›</Link>
           </div>
           <Card className="border-border">
             <div className="divide-y divide-border">
-              {sources.filter(s => s.isActive).slice(0, 5).map((s) => (
+              {accounts.filter(s => s.isActive).slice(0, 5).map((s) => (
                 <div key={s.id} className="flex items-center justify-between p-4 group hover:bg-accent/20 transition-colors">
                   <div>
                     <p className="text-sm font-semibold">{s.name}</p>
@@ -155,9 +155,9 @@ export default function Dashboard() {
                   </p>
                 </div>
               ))}
-              {sources.filter(s => s.isActive).length > 5 && (
-                <Link to="/settings/sources" className="block p-3 text-center text-xs font-medium text-muted-foreground hover:bg-accent transition-colors">
-                  View all sources
+              {accounts.filter(s => s.isActive).length > 5 && (
+                <Link to="/settings/accounts" className="block p-3 text-center text-xs font-medium text-muted-foreground hover:bg-accent transition-colors">
+                  View all accounts
                 </Link>
               )}
             </div>

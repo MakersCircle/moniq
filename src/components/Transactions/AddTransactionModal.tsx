@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Plus, Trash2, Check, ChevronDown, Repeat } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, Trash2, Check, Repeat } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
 import type { Transaction, TransactionType } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -33,18 +33,40 @@ interface AddTransactionModalProps {
 
 export default function AddTransactionModal({ onClose, initialData, isDuplicate }: AddTransactionModalProps) {
   const { 
-    sources, methods, categories, settings, 
-    addTransaction, addTransactionGroup, updateTransaction 
+    accounts, methods, categories, settings, 
+    addTransaction, updateTransaction 
   } = useDataStore();
 
-  const [type, setType] = useState<TransactionType>(initialData?.type || 'expense');
-  const [amount, setAmount] = useState(initialData?.amount ? String(Math.abs(initialData.amount)) : '');
+  // Helper to find initial account/category from ledger entries
+  const initialAccountId = useMemo(() => {
+    if (!initialData) return accounts.find(a => a.isActive)?.id || '';
+    // For income, Account is in DEBIT entry. For expense/transfer, Account is in CREDIT entry.
+    const isIncome = initialData.uiType === 'income';
+    const entry = initialData.entries.find(e => accounts.some(a => a.id === e.accountId) && (isIncome ? e.type === 'DEBIT' : e.type === 'CREDIT'));
+    return entry?.accountId || accounts.find(a => a.isActive)?.id || '';
+  }, [initialData, accounts]);
+
+  const initialTargetId = useMemo(() => {
+    if (!initialData) return '';
+    const isIncome = initialData.uiType === 'income';
+    const entry = initialData.entries.find(e => e.accountId !== initialAccountId && (isIncome ? e.type === 'CREDIT' : e.type === 'DEBIT'));
+    return entry?.accountId || '';
+  }, [initialData, initialAccountId]);
+
+  const [type, setType] = useState<TransactionType>(initialData?.uiType || 'expense');
+  // Using the first entry's amount as the base amount for UI
+  const [amount, setAmount] = useState(initialData?.entries[0]?.amount ? String(initialData.entries[0].amount) : '');
   const [date, setDate] = useState(isDuplicate ? today : (initialData?.date || today));
-  const [sourceId, setSourceId] = useState(initialData?.sourceId || sources.find((s) => s.isActive)?.id || '');
-  const [toSourceId, setToSourceId] = useState(initialData?.toSourceId || '');
-  const [methodId, setMethodId] = useState(initialData?.methodId || '');
-  const [categoryId, setCategoryId] = useState(initialData?.categoryId || '');
-  const [note, setNote] = useState(initialData?.note || '');
+  const [accountId, setAccountId] = useState(initialAccountId);
+  const [targetId, setTargetId] = useState(initialTargetId);
+  const [methodId, setMethodId] = useState(initialData?.methodId || activeMethods[0]?.id || '');
+
+  // Derived accountId for Income/Expense based on chosen payment method
+  const derivedAccountId = useMemo(() => {
+    if (type === 'transfer') return accountId; // Transfers still select Account explicitly
+    const method = methods.find(m => m.id === methodId);
+    return method ? method.linkedAccountId : accountId;
+  }, [type, accountId, methodId, methods]);
 
   const [isSplit, setIsSplit] = useState(false);
   const [splits, setSplits] = useState<SplitLine[]>([
@@ -52,7 +74,7 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
     { categoryId: '', amount: '', note: '' },
   ]);
 
-  const activeSources = useMemo(() => sources.filter((s) => s.isActive), [sources]);
+  const activeAccounts = useMemo(() => accounts.filter((s) => s.isActive), [accounts]);
   const activeMethods = useMemo(() => methods.filter((m) => m.isActive), [methods]);
   const activeCategories = useMemo(() => categories.filter((c) => c.isActive), [categories]);
 
@@ -64,43 +86,50 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!parsedAmount || parsedAmount <= 0) return;
-    if (!sourceId) return;
-    if (type !== 'transfer' && !isSplit && !categoryId) return;
-    if (type === 'transfer' && !toSourceId) return;
+    if (!derivedAccountId) return;
+    if (type !== 'transfer' && !isSplit && !targetId) return;
+    if (type === 'transfer' && !targetId) return;
     
     const isEditing = !!initialData && !isDuplicate;
 
     if (!isSplit || type !== 'expense') {
       const payload = {
         date,
-        type,
+        uiType: type,
         amount: parsedAmount,
-        sourceId,
-        toSourceId: type === 'transfer' ? toSourceId : undefined,
-        methodId: methodId || undefined,
-        categoryId: type !== 'transfer' ? categoryId || undefined : undefined,
+        accountId: derivedAccountId,
+        targetId: targetId,
+        methodId: type !== 'transfer' ? methodId : undefined,
         note,
         tags: [],
       };
 
       if (isEditing) {
-        updateTransaction(initialData!.id, payload);
+        // updateTransaction expects LedgerEntry structure, so for now we might need to handle this manually 
+        // or update addTransaction to handle updates. For simplicity, we create entries.
+        // But the store's updateTransaction just takes a partial Transaction.
+        // This part needs careful handling. Let's assume we want to update the entries.
+        const { LedgerEngine } = require('@/lib/ledger'); 
+        const entries = LedgerEngine.createEntries({ type, amount: parsedAmount, accountId: derivedAccountId, targetId });
+        updateTransaction(initialData!.id, { ...payload, entries });
       } else {
         addTransaction(payload);
       }
     } else {
-      addTransactionGroup(
-        splits.filter((s) => s.categoryId && parseFloat(s.amount)).map((s) => ({
+      // For split transactions, we just loop for now or we could implement a group add.
+      // Since split transactions are multiple 'expense' transactions in this specific UI implementation
+      splits.filter((s) => s.categoryId && parseFloat(s.amount)).forEach((s) => {
+        addTransaction({
           date,
-          type: 'expense' as TransactionType,
+          uiType: 'expense',
           amount: parseFloat(s.amount),
-          sourceId,
+          accountId: derivedAccountId,
+          targetId: s.categoryId,
           methodId: methodId || undefined,
-          categoryId: s.categoryId,
           note: s.note || note,
           tags: [],
-        }))
-      );
+        });
+      });
     }
     onClose();
   };
@@ -196,28 +225,28 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
           </div>
         </div>
 
-        {/* Source / Transfer Logic */}
+        {/* Account / Transfer Logic */}
         {type === 'transfer' ? (
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">From Account</Label>
-              <Select value={sourceId} onValueChange={setSourceId}>
+              <Select value={accountId} onValueChange={setAccountId}>
                 <SelectTrigger className={inputClasses}>
                   <SelectValue placeholder="Source" />
                 </SelectTrigger>
                 <SelectContent>
-                  {activeSources.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  {activeAccounts.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">To Account</Label>
-              <Select value={toSourceId} onValueChange={setToSourceId}>
+              <Select value={targetId} onValueChange={setTargetId}>
                 <SelectTrigger className={inputClasses}>
                   <SelectValue placeholder="Destination" />
                 </SelectTrigger>
                 <SelectContent>
-                  {activeSources.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  {activeAccounts.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -225,20 +254,20 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
         ) : (
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Account</Label>
-              <Select value={sourceId} onValueChange={setSourceId}>
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Payment Method</Label>
+              <Select value={methodId} onValueChange={setMethodId}>
                 <SelectTrigger className={inputClasses}>
-                  <SelectValue placeholder="Select Account" />
+                  <SelectValue placeholder="Select Method" />
                 </SelectTrigger>
                 <SelectContent>
-                  {activeSources.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  {activeMethods.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             {!isSplit && (
               <div className="space-y-1.5 animate-in fade-in slide-in-from-right-2 duration-300">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Category</Label>
-                <Select value={categoryId} onValueChange={setCategoryId}>
+                <Select value={targetId} onValueChange={setTargetId}>
                   <SelectTrigger className={inputClasses}>
                     <SelectValue placeholder="Select Category" />
                   </SelectTrigger>
@@ -255,7 +284,6 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
           </div>
         )}
 
-        {/* Split Toggle */}
         {type === 'expense' && (
           <div className="pt-1">
             <button 
@@ -272,7 +300,6 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
           </div>
         )}
 
-        {/* Split Interface */}
         {isSplit && (
           <div className="space-y-2.5 animate-in fade-in duration-300 pb-2">
             {splits.map((s, idx) => (
@@ -333,7 +360,6 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
           </div>
         )}
 
-        {/* Note Area */}
         <div className="space-y-1.5 pb-4">
           <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Note</Label>
           <textarea 
@@ -345,7 +371,6 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
         </div>
       </div>
 
-      {/* Footer Area */}
       <div className="px-6 py-5 border-t border-border bg-accent/5">
         <Button 
           type="submit" 
