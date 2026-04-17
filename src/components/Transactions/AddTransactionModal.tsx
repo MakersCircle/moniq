@@ -53,6 +53,10 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
     return entry?.accountId || '';
   }, [initialData, initialAccountId]);
 
+  const activeAccounts = useMemo(() => accounts.filter((s) => s.isActive), [accounts]);
+  const activeMethods = useMemo(() => methods.filter((m) => m.isActive), [methods]);
+  const activeCategories = useMemo(() => categories.filter((c) => c.isActive), [categories]);
+
   const [type, setType] = useState<TransactionType>(initialData?.uiType || 'expense');
   // Using the first entry's amount as the base amount for UI
   const [amount, setAmount] = useState(initialData?.entries[0]?.amount ? String(initialData.entries[0].amount) : '');
@@ -60,13 +64,7 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
   const [accountId, setAccountId] = useState(initialAccountId);
   const [targetId, setTargetId] = useState(initialTargetId);
   const [methodId, setMethodId] = useState(initialData?.methodId || activeMethods[0]?.id || '');
-
-  // Derived accountId for Income/Expense based on chosen payment method
-  const derivedAccountId = useMemo(() => {
-    if (type === 'transfer') return accountId; // Transfers still select Account explicitly
-    const method = methods.find(m => m.id === methodId);
-    return method ? method.linkedAccountId : accountId;
-  }, [type, accountId, methodId, methods]);
+  const [note, setNote] = useState(initialData?.note || '');
 
   const [isSplit, setIsSplit] = useState(false);
   const [splits, setSplits] = useState<SplitLine[]>([
@@ -74,9 +72,12 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
     { categoryId: '', amount: '', note: '' },
   ]);
 
-  const activeAccounts = useMemo(() => accounts.filter((s) => s.isActive), [accounts]);
-  const activeMethods = useMemo(() => methods.filter((m) => m.isActive), [methods]);
-  const activeCategories = useMemo(() => categories.filter((c) => c.isActive), [categories]);
+  // Derived accountId for Income/Expense based on chosen payment method
+  const derivedAccountId = useMemo(() => {
+    if (type === 'transfer') return accountId; // Transfers still select Account explicitly
+    const method = methods.find(m => m.id === methodId);
+    return method ? method.linkedAccountId : accountId;
+  }, [type, accountId, methodId, methods]);
 
   const parsedAmount = parseFloat(amount) || 0;
   const totalSplitAmount = splits.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
