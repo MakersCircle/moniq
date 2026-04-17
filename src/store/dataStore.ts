@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Account, PaymentMethod, Category, Transaction, Budget, UserSettings } from '../types';
 import { LedgerEngine } from '../lib/ledger';
+import { detectLocalSettings, getCurrencySymbol } from '../constants/currencies';
 
 // ── Default seed data for first-time users ──────────────────
 
@@ -42,11 +43,14 @@ const defaultCategories: Category[] = [
   { id: 'cat-19', group: 'Income', head: 'Freelance', isActive: true, createdAt: new Date().toISOString() },
 ];
 
+const detected = detectLocalSettings();
+
 const defaultSettings: UserSettings = {
-  currency: 'INR',
-  currencySymbol: '₹',
-  fiscalYearStartMonth: 4, // April (common in India)
-  dateFormat: 'dd/MM/yyyy',
+  currency: detected.currency,
+  currencySymbol: detected.symbol,
+  numberLocale: detected.locale,
+  fiscalYearStartMonth: detected.currency === 'INR' ? 4 : 1, // April for India, Jan for others
+  dateFormat: detected.currency === 'INR' ? 'dd/MM/yyyy' : 'MM/dd/yyyy',
 };
 
 // ── Store interface ──────────────────────────────────────────
@@ -245,7 +249,16 @@ export const useDataStore = create<DataState>()(
 
       // Settings
       updateSettings: (patch) => {
-        set((state) => ({ settings: { ...state.settings, ...patch } }));
+        set((state) => {
+          const nextSettings = { ...state.settings, ...patch };
+          
+          // Automatically update symbol if currency code changed
+          if (patch.currency && patch.currency !== state.settings.currency) {
+            nextSettings.currencySymbol = getCurrencySymbol(patch.currency, nextSettings.numberLocale);
+          }
+          
+          return { settings: nextSettings };
+        });
         useDataStore.getState().triggerSync();
       },
       setAccessToken: (token) =>

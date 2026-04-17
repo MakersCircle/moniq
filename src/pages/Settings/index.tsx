@@ -1,4 +1,5 @@
-import { LogOut, RefreshCw, Smartphone, Palette, Globe } from 'lucide-react';
+import { LogOut, RefreshCw, Smartphone, Palette, Globe, Target, Zap } from 'lucide-react';
+import { useMemo } from 'react';
 import { googleLogout } from '@react-oauth/google';
 import { useDataStore } from '@/store/dataStore';
 import { syncDataToGoogleSheets } from '@/api/google';
@@ -7,7 +8,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
+import { getAllCurrencies, COMMON_LOCALES, detectLocalSettings } from '@/constants/currencies';
+import { formatCurrency } from '@/utils/format';
 
 export default function SettingsIndex() {
   const { 
@@ -37,6 +47,13 @@ export default function SettingsIndex() {
       setSyncState(lastSyncedAt, false);
     }
   };
+
+  const currencies = useMemo(() => getAllCurrencies(settings.numberLocale), [settings.numberLocale]);
+
+  const currentCurrency = useMemo(() => 
+    currencies.find(c => c.code === settings.currency) || { code: settings.currency, name: settings.currency, symbol: settings.currencySymbol },
+    [currencies, settings.currency, settings.currencySymbol]
+  );
 
   return (
     <SettingsLayout>
@@ -104,38 +121,69 @@ export default function SettingsIndex() {
           </Card>
         </section>
 
-        {/* Preferences */}
+        {/* Regional Preferences */}
         <section className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">Regional Preferences</h3>
+          <div className="px-1">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Regional Preferences</h3>
+          </div>
           <Card className="border-border shadow-sm">
             <CardContent className="p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">Currency Symbol</Label>
-                  <Input
-                    value={settings.currencySymbol}
-                    onChange={(e) => updateSettings({ currencySymbol: e.target.value })}
-                    className="h-10 border-border/50 focus:border-primary/30"
-                  />
-                  <p className="text-[9px] text-muted-foreground">e.g. ₹, $, €</p>
+                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">Currency</Label>
+                  <Select 
+                    value={settings.currency} 
+                    onValueChange={(val) => updateSettings({ currency: val })}
+                  >
+                    <SelectTrigger className="h-10 border-border/50 focus:ring-primary/20">
+                      <SelectValue placeholder="Select currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currencies.map((c) => (
+                        <SelectItem key={c.code} value={c.code}>
+                          <span className="font-medium">{c.code}</span>
+                          <span className="mx-2 text-muted-foreground/50">—</span>
+                          <span className="text-xs text-muted-foreground">{c.name}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex items-center justify-between pt-1">
+                    <p className="text-[9px] text-muted-foreground italic">
+                      Selected: {currentCurrency.symbol} ({currentCurrency.name})
+                    </p>
+                  </div>
                 </div>
+
                 <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">Currency Code</Label>
-                  <Input
-                    value={settings.currency}
-                    onChange={(e) => updateSettings({ currency: e.target.value })}
-                    className="h-10 border-border/50 focus:border-primary/30"
-                  />
-                  <p className="text-[9px] text-muted-foreground">ISO code (e.g. INR, USD)</p>
+                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">Number Format (Separators)</Label>
+                  <Select 
+                    value={settings.numberLocale} 
+                    onValueChange={(val) => updateSettings({ numberLocale: val })}
+                  >
+                    <SelectTrigger className="h-10 border-border/50 focus:ring-primary/20">
+                      <SelectValue placeholder="Select format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COMMON_LOCALES.map((l) => (
+                        <SelectItem key={l.code} value={l.code}>
+                          {l.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[9px] text-muted-foreground italic">
+                    Preview: {formatCurrency(1234567.89, settings)}
+                  </p>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-border flex items-center justify-between opacity-50 pointer-events-none">
-                 <div className="flex items-center gap-2">
+              <div className="pt-4 border-t border-border flex items-center justify-between opacity-80">
+                 <div className="flex items-center gap-2 text-muted-foreground">
                     <Globe className="h-4 w-4" />
-                    <span className="text-xs font-medium">Language</span>
+                    <span className="text-xs font-medium uppercase tracking-wider text-[10px]">Locale Info</span>
                  </div>
-                 <span className="text-xs text-muted-foreground">English (India)</span>
+                 <span className="text-xs font-bold text-primary bg-primary/5 px-2 py-0.5 rounded text-[10px]">{settings.numberLocale}</span>
               </div>
             </CardContent>
           </Card>

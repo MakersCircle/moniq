@@ -3,17 +3,26 @@ import type { Transaction, Account, Category, PaymentMethod, UserSettings } from
 // ── Format currency ──────────────────────────────────────────
 export function formatCurrency(amount: number, settings: UserSettings): string {
   const abs = Math.abs(amount);
-  const formatted = new Intl.NumberFormat('en-IN', {
+  const formatted = new Intl.NumberFormat(settings.numberLocale || 'en-IN', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(abs);
-  return `${settings.currencySymbol}${formatted}`;
+  const sign = amount < 0 ? '-' : '';
+  return `${sign}${settings.currencySymbol}${formatted}`;
 }
 
 // ── Format short currency (no decimals if whole number) ──────
 export function formatCurrencyShort(amount: number, symbol = '₹'): string {
-  if (amount >= 10_00_000) return `${symbol}${(amount / 10_00_000).toFixed(1)}L`;
-  if (amount >= 1000)      return `${symbol}${(amount / 1000).toFixed(1)}K`;
+  const isLakh = (Intl.NumberFormat().resolvedOptions().locale === 'en-IN' || symbol === '₹');
+  
+  if (isLakh) {
+    if (amount >= 10_00_000) return `${symbol}${(amount / 10_00_000).toFixed(1)}L`;
+    if (amount >= 1000)      return `${symbol}${(amount / 1000).toFixed(1)}K`;
+  } else {
+    if (amount >= 1_000_000) return `${symbol}${(amount / 1_000_000).toFixed(1)}M`;
+    if (amount >= 1000)      return `${symbol}${(amount / 1000).toFixed(1)}K`;
+  }
+  
   return `${symbol}${amount.toFixed(0)}`;
 }
 

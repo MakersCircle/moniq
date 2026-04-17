@@ -75,6 +75,7 @@ export interface Budget {
 export interface UserSettings {
   currency: string;
   currencySymbol: string;
+  numberLocale: string;         // e.g. 'en-IN' or 'en-US'
   fiscalYearStartMonth: number; // 1 = Jan
   dateFormat: string;
 }
