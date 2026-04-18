@@ -8,7 +8,7 @@ export interface Account {
   id: string;
   name: string;
   type: AccountType;       // Strictly Asset or Liability
-  subType: string;         // e.g. 'Bank', 'Cash', 'Credit Card'
+  description?: string;    // Optional description (e.g. Bank name, 'Receivable', etc.)
   isSavings: boolean;      // ✅ Flag to designate saving accounts
   initialBalance: number;
   isActive: boolean;

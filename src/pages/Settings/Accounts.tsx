@@ -1,7 +1,20 @@
 import { useState } from 'react';
-import { Plus, Pencil, Archive, Landmark, Wallet, IndianRupee, PieChart, Bookmark, CreditCard } from 'lucide-react';
+import { Info, Plus, Pencil, Archive, Landmark, Wallet, IndianRupee, PieChart, Bookmark, CreditCard } from 'lucide-react';
 import { useDataStore } from '../../store/dataStore';
 import type { Account, AccountType } from '../../types';
+
+function InfoTooltip({ text, position = 'top' }: { text: string; position?: 'top' | 'bottom' }) {
+  return (
+    <div className="group relative inline-flex items-center justify-center">
+      <Info className="h-3.5 w-3.5 text-muted-foreground ml-1.5 flex-shrink-0 cursor-help transition-colors hover:text-foreground" />
+      <div className={`pointer-events-none absolute left-1/2 z-50 w-48 -translate-x-1/2 opacity-0 transition-opacity group-hover:opacity-100 ${position === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'}`}>
+        <div className="rounded-md bg-popover px-3 py-2 text-[10px] font-medium leading-tight text-popover-foreground shadow-md border border-border">
+          {text}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,34 +38,23 @@ import { Checkbox } from '@/components/ui/checkbox';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 
 const ACCOUNT_CLASSES: AccountType[] = ['Asset', 'Liability'];
-const ACCOUNT_SUBTYPES = ['Bank', 'Cash', 'Credit Card', 'Wallet', 'Investment', 'Loan', 'Custom'];
-
-const TYPE_ICONS: Record<string, any> = {
-  Bank: Landmark,
-  Wallet: Wallet,
-  Cash: IndianRupee,
-  'Credit Card': CreditCard,
-  Investment: PieChart,
-  Loan: Wallet,
-  Custom: Bookmark,
-};
 
 interface AccountForm {
   name: string;
   type: AccountType;
-  subType: string;
+  description: string;
   initialBalance: string;
   isSavings: boolean;
   excludeFromNet: boolean;
 }
 
-const emptyForm: AccountForm = { 
-  name: '', 
-  type: 'Asset', 
-  subType: 'Bank', 
-  initialBalance: '0', 
-  isSavings: false, 
-  excludeFromNet: false 
+const emptyForm: AccountForm = {
+  name: '',
+  type: 'Asset',
+  description: '',
+  initialBalance: '0',
+  isSavings: false,
+  excludeFromNet: false
 };
 
 export default function Accounts() {
@@ -60,32 +62,43 @@ export default function Accounts() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Account | null>(null);
   const [form, setForm] = useState<AccountForm>(emptyForm);
+  const [error, setError] = useState('');
 
   const openAdd = () => {
     setEditing(null);
     setForm(emptyForm);
+    setError('');
     setModalOpen(true);
   };
 
   const openEdit = (a: Account) => {
     setEditing(a);
-    setForm({ 
-      name: a.name, 
-      type: a.type, 
-      subType: a.subType, 
+    setForm({
+      name: a.name,
+      type: a.type,
+      description: a.description || '',
       initialBalance: String(a.initialBalance),
       isSavings: a.isSavings,
       excludeFromNet: !!a.excludeFromNet
     });
+    setError('');
     setModalOpen(true);
   };
 
   const handleSave = () => {
-    if (!form.name.trim()) return;
+    if (!form.name.trim()) {
+      setError('Display Name is required.');
+      return;
+    }
+    if (form.initialBalance === '') {
+      setError('Opening Balance is required. Enter 0 if none.');
+      return;
+    }
+    setError('');
     const data = {
       name: form.name.trim(),
       type: form.type,
-      subType: form.subType,
+      description: form.description.trim() || undefined,
       initialBalance: parseFloat(form.initialBalance) || 0,
       isSavings: form.isSavings,
       excludeFromNet: form.excludeFromNet,
@@ -99,7 +112,7 @@ export default function Accounts() {
     setModalOpen(false);
   };
 
-  const activeAccounts   = accounts.filter((s) => s.isActive);
+  const activeAccounts = accounts.filter((s) => s.isActive);
   const archivedAccounts = accounts.filter((s) => !s.isActive);
 
   return (
@@ -108,7 +121,10 @@ export default function Accounts() {
         <div className="sticky top-0 bg-background/95 backdrop-blur-md z-40 pb-4 pt-2 -mx-1 px-1">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold tracking-tight">Accounts</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold tracking-tight">Accounts</h2>
+                <InfoTooltip position="bottom" text="Accounts are the core of Moniq. They represent places where your money lives (like Bank Accounts or Wallets) or money you owe (like Credit Cards or Loans). Every transaction requires an account. You shoudl create an account for each place where your money lives or where you owe money like individual bank accounts, individual credit cards etc." />
+              </div>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Financial Entities ({activeAccounts.length})</p>
             </div>
             <Button size="sm" onClick={openAdd} className="h-9 gap-2">
@@ -119,7 +135,7 @@ export default function Accounts() {
 
         <div className="grid grid-cols-1 gap-3">
           {activeAccounts.map((a) => {
-            const Icon = TYPE_ICONS[a.subType] || Bookmark;
+            const Icon = a.type === 'Asset' ? Landmark : CreditCard;
             return (
               <Card key={a.id} className="group border-border hover:border-primary/30 transition-all shadow-sm overflow-hidden">
                 <CardContent className="p-0">
@@ -132,11 +148,11 @@ export default function Accounts() {
                         <p className="font-bold text-sm tracking-tight">{a.name}</p>
                         {a.isSavings && <span className="text-[8px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black uppercase tracking-widest">Savings</span>}
                       </div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{a.type} • {a.subType}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{a.type}{a.description ? ` • ${a.description}` : ''}</p>
                     </div>
                     <div className="text-right pr-2">
-                       <p className="text-xs font-bold mono">{settings.currencySymbol}{a.initialBalance.toLocaleString()}</p>
-                       <p className="text-[9px] text-muted-foreground font-medium uppercase">Opening</p>
+                      <p className="text-xs font-bold mono">{settings.currencySymbol}{a.initialBalance.toLocaleString()}</p>
+                      <p className="text-[9px] text-muted-foreground font-medium uppercase">Opening</p>
                     </div>
                     <div className="flex items-center gap-1 opacity-10 group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(a)}>
@@ -175,88 +191,107 @@ export default function Accounts() {
           <DialogHeader>
             <DialogTitle className="text-xl font-bold tracking-tight">{editing ? 'Edit Account' : 'New Account'}</DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Display Name</Label>
-              <Input 
-                placeholder="e.g., SBI Savings" 
-                value={form.name} 
-                onChange={(e) => setForm({ ...form, name: e.target.value })} 
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
+                Display Name
+                <InfoTooltip text="The name of your account (e.g., Main Checking, Cash Wallet). Used to identify it in transactions." />
+              </Label>
+              <Input
+                placeholder="e.g., Bank Account, Cash Wallet, Credit Card"
+                value={form.name}
+                onChange={(e) => { setForm({ ...form, name: e.target.value }); setError(''); }}
                 className="h-10 border-border/50 focus:border-primary/30"
               />
             </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Class</Label>
-                <Select 
-                  value={form.type} 
-                  onValueChange={(val) => setForm({ ...form, type: val as AccountType })}
-                >
-                  <SelectTrigger className="h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ACCOUNT_CLASSES.map((t) => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sub Type</Label>
-                <Select 
-                  value={form.subType} 
-                  onValueChange={(val) => setForm({ ...form, subType: val })}
-                >
-                  <SelectTrigger className="h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ACCOUNT_SUBTYPES.map((t) => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
+                Class
+                <InfoTooltip text="Asset: Money you own. Liability: Money you owe." />
+              </Label>
+              <Select
+                value={form.type}
+                onValueChange={(val) => setForm({ ...form, type: val as AccountType })}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ACCOUNT_CLASSES.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
+                Description
+                <InfoTooltip text="An optional note. Used only for your own identification. Not used for any calculation." />
+              </Label>
+              <textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                className="flex min-h-[80px] w-full rounded-md border border-border/50 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center space-x-2 border rounded-lg p-3 border-border/50">
-                <Checkbox 
-                  id="isSavings" 
-                  checked={form.isSavings} 
-                  onCheckedChange={(val: boolean | 'indeterminate') => setForm({ ...form, isSavings: !!val })} 
+              <div className="flex items-start space-x-2 border rounded-lg p-3 border-border/50">
+                <Checkbox
+                  id="isSavings"
+                  checked={form.isSavings}
+                  onCheckedChange={(val: boolean | 'indeterminate') => setForm({ ...form, isSavings: !!val })}
+                  className="mt-0.5"
                 />
-                <label htmlFor="isSavings" className="text-xs font-bold cursor-pointer">Savings Account</label>
+                <div className="flex flex-col">
+                  <label htmlFor="isSavings" className="text-xs font-bold cursor-pointer flex items-center">
+                    Savings Account
+                    <InfoTooltip text="Mark this if this is your dedicated savings account." />
+                  </label>
+                </div>
               </div>
-              <div className="flex items-center space-x-2 border rounded-lg p-3 border-border/50">
-                <Checkbox 
-                  id="excludeFromNet" 
-                  checked={form.excludeFromNet} 
-                  onCheckedChange={(val: boolean | 'indeterminate') => setForm({ ...form, excludeFromNet: !!val })} 
+              <div className="flex items-start space-x-2 border rounded-lg p-3 border-border/50">
+                <Checkbox
+                  id="excludeFromNet"
+                  checked={form.excludeFromNet}
+                  onCheckedChange={(val: boolean | 'indeterminate') => setForm({ ...form, excludeFromNet: !!val })}
+                  className="mt-0.5"
                 />
-                <label htmlFor="excludeFromNet" className="text-xs font-bold cursor-pointer text-muted-foreground">Exclude Net Worth</label>
+                <div className="flex flex-col">
+                  <label htmlFor="excludeFromNet" className="text-xs font-bold cursor-pointer text-muted-foreground flex items-center whitespace-nowrap">
+                    Exclude Net Worth
+                    <InfoTooltip text="Exclude this balance from your total Net Worth calculation." />
+                  </label>
+                </div>
               </div>
             </div>
-            
+
             <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Opening Balance</Label>
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
+                Opening Balance
+                <InfoTooltip text="The balance this account had when you started tracking in Moniq." />
+              </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">{settings.currencySymbol}</span>
-                <Input 
-                  type="number" 
-                  value={form.initialBalance} 
-                  onChange={(e) => setForm({ ...form, initialBalance: e.target.value })} 
+                <Input
+                  type="number"
+                  value={form.initialBalance}
+                  onChange={(e) => { setForm({ ...form, initialBalance: e.target.value }); setError(''); }}
                   className="h-12 pl-8 border-border/50 focus:border-primary/30 text-lg font-bold mono"
-                  inputMode="decimal" 
+                  inputMode="decimal"
                   step="any"
                 />
               </div>
             </div>
+
+            {error && (
+              <p className="text-sm font-medium text-destructive">{error}</p>
+            )}
           </div>
-          
+
           <DialogFooter className="pt-4">
             <Button variant="ghost" onClick={() => setModalOpen(false)} className="h-10 px-6 font-bold uppercase text-[10px] tracking-widest">
               Cancel

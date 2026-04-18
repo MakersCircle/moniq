@@ -163,9 +163,9 @@ export async function syncDataToGoogleSheets(
 
   // 2. Prepare Accounts
   const accRows = state.accounts.map((s: any) => [
-    s.id, s.name, s.type, s.subType || '', s.isSavings ? 'TRUE' : 'FALSE', s.initialBalance, s.excludeFromNet ? 'TRUE' : 'FALSE', s.isActive ? 'TRUE' : 'FALSE', s.createdAt || ''
+    s.id, s.name, s.type, s.description || '', s.isSavings ? 'TRUE' : 'FALSE', s.initialBalance, s.excludeFromNet ? 'TRUE' : 'FALSE', s.isActive ? 'TRUE' : 'FALSE', s.createdAt || ''
   ]);
-  accRows.unshift(['ID', 'Name', 'Type', 'Sub Type', 'Is Savings', 'Initial Balance', 'Exclude Net', 'Is Active', 'Created At']);
+  accRows.unshift(['ID', 'Name', 'Type', 'Description', 'Is Savings', 'Initial Balance', 'Exclude Net', 'Is Active', 'Created At']);
 
   // 3. Prepare Categories
   const catRows = state.categories.map((c: any) => [

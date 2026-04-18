@@ -7,8 +7,8 @@ import { detectLocalSettings, getCurrencySymbol } from '../constants/currencies'
 // ── Default seed data for first-time users ──────────────────
 
 const defaultAccounts: Account[] = [
-  { id: 'acc-1', name: 'Bank Account', type: 'Asset', subType: 'Bank', initialBalance: 0, isSavings: false, isActive: true, createdAt: new Date().toISOString() },
-  { id: 'acc-2', name: 'Cash Wallet', type: 'Asset', subType: 'Cash', initialBalance: 0, isSavings: false, isActive: true, createdAt: new Date().toISOString() },
+  { id: 'acc-1', name: 'Bank Account', type: 'Asset', description: 'Bank', initialBalance: 0, isSavings: false, isActive: true, createdAt: new Date().toISOString() },
+  { id: 'acc-2', name: 'Cash Wallet', type: 'Asset', description: 'Cash', initialBalance: 0, isSavings: false, isActive: true, createdAt: new Date().toISOString() },
 ];
 
 const defaultMethods: PaymentMethod[] = [

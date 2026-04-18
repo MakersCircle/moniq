@@ -4,8 +4,8 @@ import type { Account, Category, Transaction, LedgerEntry } from '../../types';
 
 describe('LedgerEngine', () => {
   const mockAccounts: Account[] = [
-    { id: 'acc-1', name: 'Savings Account', type: 'Asset', subType: 'Bank', initialBalance: 1000, isSavings: true, excludeFromNet: false, isActive: true, createdAt: '' },
-    { id: 'acc-2', name: 'Credit Card', type: 'Liability', subType: 'Credit Card', initialBalance: 0, isSavings: false, excludeFromNet: false, isActive: true, createdAt: '' },
+    { id: 'acc-1', name: 'Savings Account', type: 'Asset', description: 'Bank', initialBalance: 1000, isSavings: true, excludeFromNet: false, isActive: true, createdAt: '' },
+    { id: 'acc-2', name: 'Credit Card', type: 'Liability', description: 'Credit Card', initialBalance: 0, isSavings: false, excludeFromNet: false, isActive: true, createdAt: '' },
   ];
 
   const mockCategories: Category[] = [

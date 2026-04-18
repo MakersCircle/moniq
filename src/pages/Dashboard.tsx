@@ -63,11 +63,11 @@ export default function Dashboard() {
 
       {/* Top Stats Row — 4 Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
+        <StatCard // TODO: Implement actual net worth tracking and info button showing "excluding investments"
           label="Net Worth" 
           value={netWorth} 
           settings={settings}
-          detail="+5.2% vs last month" // Placeholder for now
+          detail="+5.2% vs last month" // Placeholder for now 
           detailColor="text-income"
         />
         <StatCard 
@@ -96,10 +96,10 @@ export default function Dashboard() {
       {/* Lending & Debt Stats */}
       {(() => {
         const totalReceivable = accounts
-          .filter(s => s.subType === 'Receivable' && s.isActive)
+          .filter(s => s.description?.toLowerCase() === 'receivable' && s.isActive)
           .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
         const totalPayable = accounts
-          .filter(s => s.subType === 'Payable' && s.isActive)
+          .filter(s => s.description?.toLowerCase() === 'payable' && s.isActive)
           .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
 
         if (totalReceivable === 0 && totalPayable === 0) return null;
