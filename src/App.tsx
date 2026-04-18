@@ -44,8 +44,12 @@ export default function App() {
         setSpreadsheetId(sheetId);
         
         // TODO: Initial sync down from sheets to populate store if returning user
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to initialize cloud database:', err);
+        // If the token is invalid/expired (e.g., 401), clear it to return the user to the login state
+        if (err.message === 'Failed to fetch user profile' || (err.message && err.message.includes('401'))) {
+          useDataStore.getState().setAccessToken(null);
+        }
       }
     }
 
