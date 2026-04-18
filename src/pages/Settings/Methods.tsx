@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Archive, Trash2, CreditCard, ArrowRight } from 'lucide-react';
+import { Info, Plus, Pencil, Archive, Trash2, CreditCard, ArrowRight } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
 import type { PaymentMethod } from '@/types';
 
@@ -23,19 +23,41 @@ import {
 } from "@/components/ui/select";
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 
+function InfoTooltip({ text, position = 'top' }: { text: string; position?: 'top' | 'bottom' }) {
+  return (
+    <div className="group relative inline-flex items-center justify-center">
+      <Info className="h-3.5 w-3.5 text-muted-foreground ml-1.5 flex-shrink-0 cursor-help transition-colors hover:text-foreground" />
+      <div className={`pointer-events-none absolute left-1/2 z-50 w-48 -translate-x-1/2 opacity-0 transition-opacity group-hover:opacity-100 ${position === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'}`}>
+        <div className="rounded-md bg-popover px-3 py-2 text-[10px] font-medium leading-tight text-popover-foreground shadow-md border border-border">
+          {text}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Methods() {
   const { methods, accounts, addMethod, updateMethod, archiveMethod, deleteMethod } = useDataStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<PaymentMethod | null>(null);
   const [form, setForm] = useState({ name: '', linkedAccountId: '' });
   const [deleteError, setDeleteError] = useState<Record<string, string>>({});
+  const [error, setError] = useState('');
 
-  const openAdd = () => { setEditing(null); setForm({ name: '', linkedAccountId: '' }); setModalOpen(true); };
-  const openEdit = (m: PaymentMethod) => { setEditing(m); setForm({ name: m.name, linkedAccountId: m.linkedAccountId || '' }); setModalOpen(true); };
+  const openAdd = () => { setEditing(null); setForm({ name: '', linkedAccountId: '' }); setError(''); setModalOpen(true); };
+  const openEdit = (m: PaymentMethod) => { setEditing(m); setForm({ name: m.name, linkedAccountId: m.linkedAccountId || '' }); setError(''); setModalOpen(true); };
 
   const handleSave = () => {
-    if (!form.name.trim()) return;
-    const data = { name: form.name.trim(), linkedAccountId: form.linkedAccountId === 'none' ? undefined : form.linkedAccountId || undefined, isActive: true };
+    if (!form.name.trim()) {
+      setError('Display Name is required.');
+      return;
+    }
+    if (!form.linkedAccountId) {
+      setError('A linked account is required.');
+      return;
+    }
+    setError('');
+    const data = { name: form.name.trim(), linkedAccountId: form.linkedAccountId, isActive: true };
     if (editing) updateMethod(editing.id, data);
     else addMethod(data);
     setModalOpen(false);
@@ -50,7 +72,10 @@ export default function Methods() {
         <div className="sticky top-0 bg-background/95 backdrop-blur-md z-40 pb-4 pt-2 -mx-1 px-1">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold tracking-tight">Payment Methods</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold tracking-tight">Payment Methods</h2>
+                <InfoTooltip position="bottom" text="Payment Methods represent how you pay — like UPI, Credit Card, or Cash. When you add a transaction, selecting a method auto-fills the linked account. A default method is created automatically for every new account." />
+              </div>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Active Methods ({active.length})</p>
             </div>
             <Button size="sm" onClick={openAdd} className="h-9 gap-2">
@@ -133,33 +158,41 @@ export default function Methods() {
           
           <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Display Name</Label>
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
+                Display Name
+                <InfoTooltip text="A recognizable name for this payment method (e.g., UPI, HDFC Debit Card). Used to identify it when adding transactions." />
+              </Label>
               <Input 
                 placeholder="e.g., UPI, HDFC Card" 
                 value={form.name} 
-                onChange={(e) => setForm({ ...form, name: e.target.value })} 
+                onChange={(e) => { setForm({ ...form, name: e.target.value }); setError(''); }}
                 className="h-10 border-border/50 focus:border-primary/30"
               />
             </div>
             
             <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Default Account (optional)</Label>
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
+                Linked Account
+                <InfoTooltip text="Link this method to an account. When you select this method during a transaction, the linked account will be auto-filled, saving you a step." />
+              </Label>
               <Select 
-                value={form.linkedAccountId || 'none'} 
-                onValueChange={(val) => setForm({ ...form, linkedAccountId: val })}
+                value={form.linkedAccountId || undefined} 
+                onValueChange={(val) => { setForm({ ...form, linkedAccountId: val }); setError(''); }}
               >
                 <SelectTrigger className="h-10">
                   <SelectValue placeholder="Select account" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Default Account (None)</SelectItem>
                   {accounts.filter((s) => s.isActive).map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-[9px] text-muted-foreground">When you pick this method, this account will be auto-selected.</p>
             </div>
+
+            {error && (
+              <p className="text-sm font-medium text-destructive">{error}</p>
+            )}
           </div>
           
           <DialogFooter className="pt-4">
