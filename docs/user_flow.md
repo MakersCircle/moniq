@@ -6,19 +6,22 @@ This document maps the visual architecture and interaction patterns of the **Mon
 
 ```mermaid
 graph TD
-    A[Public Landing] -->|Google Login| B[Dashboard]
-    B -->|Bottom Nav: Ledger| C[Transactions Ledger]
-    B -->|Bottom Nav: Add| D[Add Transaction Form]
-    B -->|Bottom Nav: Settings| E[Settings Index]
+    A[Public Landing] -->|Google Login| B{First Time?}
+    B -->|Yes| O[Onboarding Modal]
+    B -->|No| D[Dashboard]
+    O -->|Load Defaults or Start Scratch| D
+    D -->|Sidebar: Ledger| C[Transactions Ledger]
+    D -->|TopBar: Add Transaction| T[Add Transaction Modal]
+    D -->|Sidebar: Settings| E[Settings Index]
     
-    E -->|UI Card| F[Sources / Accounts]
-    E -->|UI Card| G[Category Management]
-    E -->|UI Card| H[Payment Methods]
+    E -->|Settings Nav| F[Accounts]
+    E -->|Settings Nav| G[Category Management]
+    E -->|Settings Nav| H[Payment Methods]
     
-    D -->|Submit| B
-    F -->|Back Arrow| E
-    G -->|Back Arrow| E
-    H -->|Back Arrow| E
+    T -->|Submit| D
+    F -->|Back| E
+    G -->|Back| E
+    H -->|Back| E
 ```
 
 ---
@@ -57,9 +60,9 @@ A tabular/list view of all historical data.
 
 ### 2.4 Settings & Configuration (Setup)
 The administrative layer for mapping the user's financial world.
-- **Sources (Accounts)**: CRUD management for where money lives (Banks, Wallets, Cash Stashes).
+- **Accounts**: CRUD management for where money lives (Banks, Wallets, Cash Stashes). Archive-first with safe permanent deletion.
 - **Categories**: Multi-tier taxonomy (Group -> Head -> Sub-head) for spending classification.
-- **Payment Methods**: Definitions for how money moves, with optional "Smart Binding" to default accounts.
+- **Payment Methods**: Definitions for how money moves, with optional "Smart Binding" to default accounts. Auto-created when accounts are added.
 
 ---
 
@@ -71,16 +74,21 @@ Every page except Login is wrapped in a `PageShell`.
 - **Title/Subtitle**: Standardized typography for context.
 - **Back Button**: Integrated navigation for sub-settings.
 
-### Bottom Navigation
-The primary anchor for the application.
-- **Home**: Return to Dashboard.
-- **Ledger**: View full history.
-- **Plus (+)**: Floating-style central button for quick transaction logging.
-- **Settings**: System configuration.
+### Navigation (Desktop Layout)
+The application uses a fixed **Sidebar + TopBar** layout.
+- **Sidebar (220px)**: Persistent left navigation with links to Dashboard, Ledger, Budget, Insights, and Settings.
+- **TopBar (48px)**: Contains global search and the primary "Add Transaction" button.
+- **Main Content**: Scrollable area with max-width constraint (1248px) centered.
+
+### Onboarding Modal
+Shown once for new users (empty accounts and `hasCompletedOnboarding` not set).
+- Displays curated default accounts in editable input fields.
+- Shows a summary of standard categories to be generated.
+- Two actions: "Start with Configuration" (load & customize defaults) or "Start from Scratch" (blank slate).
 
 ### Design Tokens
 - **Background**: Deep Zinc (#09090b).
 - **Primary Accent**: Vibrant Purple (#863bff).
 - **Success/Income**: Emerald Green.
-- **Error/Expense**: Rose Red.
+- **Error/Expense/Destructive**: Vivid Red (#ef4444).
 - **Typography**: Inter (UI) and JetBrains Mono (Financials).

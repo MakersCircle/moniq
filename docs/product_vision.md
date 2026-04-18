@@ -20,12 +20,13 @@ Allow a single user to define where their money lives, manually record all finan
 ### 3.1 Authentication & Data Storage
 - Users authenticate via Google Sign-In.
 - The app provisions a `Moniq Database` Spreadsheet inside a `moniq/` folder in the user's Drive.
-- Data changes sync directly to the Google Sheets API without storing user ledgers on an intermediate centralized database. Local changes are instantly captured via IndexedDB/LocalStorage.
+- Data changes sync directly to the Google Sheets API without storing user ledgers on an intermediate centralized database. Local state is persisted via `zustand/persist` with `localStorage`.
 
 ### 3.2 Master Configurations
-- **Accounts**: Users create, edit, and archive custom "Accounts" where money resides (e.g., Bank, Wallet, Stash, Investment). These follow strict Asset/Liability classifications.
-- **Payment Methods**: Users define "Payment Methods" representing how money moves (e.g., UPI, Card, Cash) and bind them to specific Accounts.
+- **Accounts**: Users create, edit, archive, and safely delete custom "Accounts" where money resides (e.g., Bank, Wallet, Stash, Investment). These follow strict Asset/Liability classifications. Deleting an account cascade-removes its linked payment methods (if unreferenced by transactions).
+- **Payment Methods**: Users define "Payment Methods" representing how money moves (e.g., UPI, Card, Cash) and bind them to specific Accounts. A default payment method is automatically created when a new account is added.
 - **Categories**: A custom taxonomy for spend/income comprising Groups, Heads, and Sub-heads (e.g., Needs > Food > Groceries).
+- **Onboarding**: New users are offered curated defaults (accounts & categories from `src/data/defaults.json`) via an interactive onboarding modal, or may start from a blank slate.
 
 ### 3.3 Transaction Logging (The Engine)
 - **Double-Entry Ledger**: Every transaction is recorded as a set of balanced ledger entries (Debits/Credits) behind the scenes.

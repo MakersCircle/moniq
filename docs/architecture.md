@@ -22,8 +22,8 @@ Instead of a traditional SQL/NoSQL database, `moniq` uses Tabs in a Google Sheet
 Stores all custom accounts, wallets, etc. These are the source of truth for money.
 * `id` (UUID)
 * `name` (String: e.g., "SBI Savings", "HDFC Credit Card")
-* `class` (String: "Asset", "Liability")
-* `subType` (String: "Bank", "Cash", "Credit Card", "Investment", "Other")
+* `type` (String: "Asset", "Liability")
+* `description` (String, optional: Free-text for user identification, e.g. "Bank", "Cash", "Receivable")
 * `initialBalance` (Number)
 * `isSavings` (Boolean)
 * `excludeFromNet` (Boolean)
@@ -90,5 +90,7 @@ The app will wrap Google Sheets API v4 with a client abstraction.
   - `DELETE`: Rather than deleting rows and messing up indices, use soft deletes (setting an `is_deleted` column to true or updating the row).
 
 ### 3. State Management (Client-Side)
-- **Local Caching:** Since the database is remote and has API limits, on initialization, the app fetches all rows and loads them into memory/IndexedDB.
-- **Optimistic UI:** When user adds a transaction, it updates the UI immediately and background pushes to Sheets. Can use Web Workers.
+- **Local Caching:** Since the database is remote and has API limits, on initialization, the app fetches all rows and loads them into memory. Local state is persisted via `zustand/persist` with `localStorage` (key: `moniq-data`).
+- **Optimistic UI:** When user adds a transaction, it updates the UI immediately and background pushes to Sheets.
+- **Onboarding:** New users are presented with an interactive onboarding modal that offers curated default accounts and categories from `src/data/defaults.json`, or the option to start from scratch.
+- **Deletion Safety:** Entities (accounts, categories, payment methods) can be archived (soft-delete) or permanently deleted only if no transactions reference them. Deleting an account cascade-removes its linked payment methods if they are also unreferenced.
