@@ -40,7 +40,6 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
   // Helper to find initial account/category from ledger entries
   const initialAccountId = useMemo(() => {
     if (!initialData) return accounts.find(a => a.isActive)?.id || '';
-    // For income, Account is in DEBIT entry. For expense/transfer, Account is in CREDIT entry.
     const isIncome = initialData.uiType === 'income';
     const entry = initialData.entries.find(e => accounts.some(a => a.id === e.accountId) && (isIncome ? e.type === 'DEBIT' : e.type === 'CREDIT'));
     return entry?.accountId || accounts.find(a => a.isActive)?.id || '';
@@ -57,14 +56,80 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
   const activeMethods = useMemo(() => methods.filter((m) => m.isActive), [methods]);
   const activeCategories = useMemo(() => categories.filter((c) => c.isActive), [categories]);
 
+  // Get unique category heads
+  const categoryHeads = useMemo(() => {
+    const heads = new Map<string, string>();
+    activeCategories.forEach(c => {
+      if (!heads.has(c.head)) heads.set(c.head, c.head);
+    });
+    return Array.from(heads.keys());
+  }, [activeCategories]);
+
   const [type, setType] = useState<TransactionType>(initialData?.uiType || 'expense');
-  // Using the first entry's amount as the base amount for UI
   const [amount, setAmount] = useState(initialData?.entries[0]?.amount ? String(initialData.entries[0].amount) : '');
   const [date, setDate] = useState(isDuplicate ? today : (initialData?.date || today));
   const [accountId, setAccountId] = useState(initialAccountId);
   const [targetId, setTargetId] = useState(initialTargetId);
   const [methodId, setMethodId] = useState(initialData?.methodId || activeMethods[0]?.id || '');
   const [note, setNote] = useState(initialData?.note || '');
+
+  // Category head/sub split state
+  const initialCategoryHead = useMemo(() => {
+    if (!initialData || initialData.uiType === 'transfer') return '';
+    const cat = activeCategories.find(c => c.id === initialTargetId);
+    return cat?.head || '';
+  }, [initialData, initialTargetId, activeCategories]);
+
+  const [selectedHead, setSelectedHead] = useState(initialCategoryHead);
+
+  // Sub-heads filtered by selected head
+  const subCategories = useMemo(() => {
+    if (!selectedHead) return [];
+    return activeCategories.filter(c => c.head === selectedHead);
+  }, [selectedHead, activeCategories]);
+
+  // Transfer: From/To using payment methods
+  const initialFromMethodId = useMemo(() => {
+    if (!initialData || initialData.uiType !== 'transfer') return '';
+    const sourceEntry = initialData.entries.find(e => e.type === 'CREDIT' && accounts.some(a => a.id === e.accountId));
+    if (sourceEntry) {
+      const m = activeMethods.find(pm => pm.linkedAccountId === sourceEntry.accountId);
+      return m?.id || '';
+    }
+    return '';
+  }, [initialData, accounts, activeMethods]);
+
+  const initialToMethodId = useMemo(() => {
+    if (!initialData || initialData.uiType !== 'transfer') return '';
+    const destEntry = initialData.entries.find(e => e.type === 'DEBIT' && accounts.some(a => a.id === e.accountId));
+    if (destEntry) {
+      const m = activeMethods.find(pm => pm.linkedAccountId === destEntry.accountId);
+      return m?.id || '';
+    }
+    return '';
+  }, [initialData, accounts, activeMethods]);
+
+  const [fromMethodId, setFromMethodId] = useState(initialFromMethodId);
+  const [toMethodId, setToMethodId] = useState(initialToMethodId);
+
+  // For transfers: derive account IDs from selected methods
+  const fromAccountId = useMemo(() => {
+    const m = methods.find(pm => pm.id === fromMethodId);
+    return m?.linkedAccountId || '';
+  }, [fromMethodId, methods]);
+
+  const toAccountId = useMemo(() => {
+    const m = methods.find(pm => pm.id === toMethodId);
+    return m?.linkedAccountId || '';
+  }, [toMethodId, methods]);
+
+  // Filter "To" methods: exclude methods linked to the same account as "From"
+  const toMethodOptions = useMemo(() => {
+    if (!fromMethodId) return activeMethods;
+    const fromMethod = methods.find(pm => pm.id === fromMethodId);
+    if (!fromMethod?.linkedAccountId) return activeMethods;
+    return activeMethods.filter(m => m.linkedAccountId !== fromMethod.linkedAccountId);
+  }, [fromMethodId, methods, activeMethods]);
 
   const [isSplit, setIsSplit] = useState(false);
   const [splits, setSplits] = useState<SplitLine[]>([
@@ -74,10 +139,16 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
 
   // Derived accountId for Income/Expense based on chosen payment method
   const derivedAccountId = useMemo(() => {
-    if (type === 'transfer') return accountId; // Transfers still select Account explicitly
-    const method = methods.find(m => m.id === methodId);
-    return method ? method.linkedAccountId : accountId;
-  }, [type, accountId, methodId, methods]);
+    if (type === 'transfer') return fromAccountId;
+    const method = methods.find(pm => pm.id === methodId);
+    return method?.linkedAccountId || accountId;
+  }, [type, accountId, methodId, methods, fromAccountId]);
+
+  // Derived targetId for transfers
+  const derivedTargetId = useMemo(() => {
+    if (type === 'transfer') return toAccountId;
+    return targetId;
+  }, [type, targetId, toAccountId]);
 
   const parsedAmount = parseFloat(amount) || 0;
   const totalSplitAmount = splits.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
@@ -88,8 +159,8 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
     e.preventDefault();
     if (!parsedAmount || parsedAmount <= 0) return;
     if (!derivedAccountId) return;
-    if (type !== 'transfer' && !isSplit && !targetId) return;
-    if (type === 'transfer' && !targetId) return;
+    if (type !== 'transfer' && !isSplit && !derivedTargetId) return;
+    if (type === 'transfer' && !derivedTargetId) return;
     
     const isEditing = !!initialData && !isDuplicate;
 
@@ -99,26 +170,20 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
         uiType: type,
         amount: parsedAmount,
         accountId: derivedAccountId,
-        targetId: targetId,
+        targetId: derivedTargetId,
         methodId: type !== 'transfer' ? methodId : undefined,
         note,
         tags: [],
       };
 
       if (isEditing) {
-        // updateTransaction expects LedgerEntry structure, so for now we might need to handle this manually 
-        // or update addTransaction to handle updates. For simplicity, we create entries.
-        // But the store's updateTransaction just takes a partial Transaction.
-        // This part needs careful handling. Let's assume we want to update the entries.
         const { LedgerEngine } = require('@/lib/ledger'); 
-        const entries = LedgerEngine.createEntries({ type, amount: parsedAmount, accountId: derivedAccountId, targetId });
+        const entries = LedgerEngine.createEntries({ type, amount: parsedAmount, accountId: derivedAccountId, targetId: derivedTargetId });
         updateTransaction(initialData!.id, { ...payload, entries });
       } else {
         addTransaction(payload);
       }
     } else {
-      // For split transactions, we just loop for now or we could implement a group add.
-      // Since split transactions are multiple 'expense' transactions in this specific UI implementation
       splits.filter((s) => s.categoryId && parseFloat(s.amount)).forEach((s) => {
         addTransaction({
           date,
@@ -203,86 +268,136 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
 
       {/* Form Content Area */}
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 custom-scrollbar min-h-[400px]">
-        {/* Core Details Grid */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Date</Label>
-            <DatePicker 
-              date={date} 
-              onChange={setDate} 
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Method</Label>
-            <Select value={methodId} onValueChange={setMethodId}>
-              <SelectTrigger className={inputClasses}>
-                <SelectValue placeholder="Select Method" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_none">None</SelectItem>
-                {activeMethods.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Account / Transfer Logic */}
+        
         {type === 'transfer' ? (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">From Account</Label>
-              <Select value={accountId} onValueChange={setAccountId}>
-                <SelectTrigger className={inputClasses}>
-                  <SelectValue placeholder="Source" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeAccounts.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+          <>
+            {/* Transfer: Date */}
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Date</Label>
+                <DatePicker date={date} onChange={setDate} />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">To Account</Label>
-              <Select value={targetId} onValueChange={setTargetId}>
-                <SelectTrigger className={inputClasses}>
-                  <SelectValue placeholder="Destination" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeAccounts.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Payment Method</Label>
-              <Select value={methodId} onValueChange={setMethodId}>
-                <SelectTrigger className={inputClasses}>
-                  <SelectValue placeholder="Select Method" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeMethods.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            {!isSplit && (
-              <div className="space-y-1.5 animate-in fade-in slide-in-from-right-2 duration-300">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Category</Label>
-                <Select value={targetId} onValueChange={setTargetId}>
+
+            {/* Transfer: From / To using payment methods */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">From</Label>
+                <Select value={fromMethodId || undefined} onValueChange={(val) => { setFromMethodId(val); if (val === toMethodId) setToMethodId(''); }}>
                   <SelectTrigger className={inputClasses}>
-                    <SelectValue placeholder="Select Category" />
+                    <SelectValue placeholder="Select method" />
                   </SelectTrigger>
                   <SelectContent>
-                    {activeCategories.map(c => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.head} {c.subHead ? `· ${c.subHead}` : ''}
-                      </SelectItem>
-                    ))}
+                    {activeMethods.map(m => {
+                      const acct = activeAccounts.find(a => a.id === m.linkedAccountId);
+                      return (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.name}{acct ? ` · ${acct.name}` : ''}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
+                {fromAccountId && (
+                  <p className="text-[9px] text-muted-foreground px-0.5">
+                    Account: {activeAccounts.find(a => a.id === fromAccountId)?.name}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">To</Label>
+                <Select value={toMethodId || undefined} onValueChange={setToMethodId}>
+                  <SelectTrigger className={inputClasses}>
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {toMethodOptions.map(m => {
+                      const acct = activeAccounts.find(a => a.id === m.linkedAccountId);
+                      return (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.name}{acct ? ` · ${acct.name}` : ''}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                {toAccountId && (
+                  <p className="text-[9px] text-muted-foreground px-0.5">
+                    Account: {activeAccounts.find(a => a.id === toAccountId)?.name}
+                  </p>
+                )}
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Income/Expense: Date + Payment Method */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Date</Label>
+                <DatePicker date={date} onChange={setDate} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Payment Method</Label>
+                <Select value={methodId} onValueChange={setMethodId}>
+                  <SelectTrigger className={inputClasses}>
+                    <SelectValue placeholder="Select Method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeMethods.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {derivedAccountId && (
+                  <p className="text-[9px] text-muted-foreground px-0.5">
+                    Account: {activeAccounts.find(a => a.id === derivedAccountId)?.name}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Category: Head + Sub-head as separate dropdowns */}
+            {!isSplit && (
+              <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-right-2 duration-300">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Category</Label>
+                  <Select value={selectedHead || undefined} onValueChange={(val) => { setSelectedHead(val); const subs = activeCategories.filter(c => c.head === val); setTargetId(subs.length === 1 ? subs[0].id : ''); }}>
+                    <SelectTrigger className={inputClasses}>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categoryHeads.map(h => (
+                        <SelectItem key={h} value={h}>{h}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Sub-category</Label>
+                  {subCategories.length <= 1 ? (
+                    <div className={cn(inputClasses, "flex items-center px-3 rounded-md text-sm", !selectedHead && "opacity-50")}>
+                      {subCategories.length === 1
+                        ? <span className="truncate">{subCategories[0].subHead || subCategories[0].head}</span>
+                        : <span className="text-muted-foreground">{selectedHead ? '—' : 'Pick category first'}</span>
+                      }
+                    </div>
+                  ) : (
+                    <Select value={targetId || undefined} onValueChange={setTargetId}>
+                      <SelectTrigger className={inputClasses}>
+                        <SelectValue placeholder="Select sub-category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subCategories.map(c => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.subHead || c.head}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
               </div>
             )}
-          </div>
+          </>
         )}
 
         {type === 'expense' && (
@@ -319,7 +434,7 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
                     </SelectTrigger>
                     <SelectContent>
                       {activeCategories.map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.head} · {c.subHead}</SelectItem>
+                        <SelectItem key={c.id} value={c.id}>{c.head}{c.subHead ? ` · ${c.subHead}` : ''}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
