@@ -78,4 +78,5 @@ export interface UserSettings {
   numberLocale: string;         // e.g. 'en-IN' or 'en-US'
   fiscalYearStartMonth: number; // 1 = Jan
   dateFormat: string;
+  hasCompletedOnboarding?: boolean;
 }

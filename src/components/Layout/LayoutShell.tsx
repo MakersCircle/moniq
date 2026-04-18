@@ -1,6 +1,8 @@
 import { type ReactNode } from 'react';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
+import { useDataStore } from '@/store/dataStore';
+import OnboardingModal from '@/components/Onboarding/OnboardingModal';
 
 interface LayoutShellProps {
   children: ReactNode;
@@ -8,8 +10,12 @@ interface LayoutShellProps {
 }
 
 export default function LayoutShell({ children, onNewTransaction }: LayoutShellProps) {
+  const { settings, accounts } = useDataStore();
+  const showOnboarding = accounts.length === 0 && !settings.hasCompletedOnboarding;
+
   return (
     <div className="h-screen bg-background text-foreground overflow-hidden">
+      {showOnboarding && <OnboardingModal />}
       <Sidebar />
       <TopBar onNewTransaction={onNewTransaction} />
       <div className="pl-[220px] pt-[48px] h-screen">

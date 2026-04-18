@@ -1,0 +1,26 @@
+{
+  "accounts": [
+    { "name": "Bank Account", "type": "Asset", "description": "Bank", "initialBalance": 0, "isSavings": false, "isActive": true },
+    { "name": "Cash Wallet", "type": "Asset", "description": "Cash", "initialBalance": 0, "isSavings": false, "isActive": true },
+    { "name": "Credit Card", "type": "Liability", "description": "Credit", "initialBalance": 0, "isSavings": false, "isActive": true }
+  ],
+  "categories": [
+    { "group": "Needs", "head": "Food", "subHead": "Groceries", "isActive": true },
+    { "group": "Needs", "head": "Food", "subHead": "Dining Out", "isActive": true },
+    { "group": "Needs", "head": "Transport", "subHead": "Fuel", "isActive": true },
+    { "group": "Needs", "head": "Transport", "subHead": "Cab / Auto", "isActive": true },
+    { "group": "Needs", "head": "Utilities", "subHead": "Electricity", "isActive": true },
+    { "group": "Needs", "head": "Utilities", "subHead": "Internet", "isActive": true },
+    { "group": "Needs", "head": "Housing", "subHead": "Rent", "isActive": true },
+    { "group": "Needs", "head": "Health", "subHead": "Medicine", "isActive": true },
+    { "group": "Wants", "head": "Entertainment", "subHead": "OTT/Streaming", "isActive": true },
+    { "group": "Wants", "head": "Entertainment", "subHead": "Movies", "isActive": true },
+    { "group": "Wants", "head": "Shopping", "subHead": "Clothing", "isActive": true },
+    { "group": "Wants", "head": "Shopping", "subHead": "Electronics", "isActive": true },
+    { "group": "Invest", "head": "Investment", "subHead": "Mutual Funds", "isActive": true },
+    { "group": "Lend", "head": "Lend", "subHead": "To Friend", "isActive": true },
+    { "group": "Borrow", "head": "Borrow", "subHead": "Bank Loan", "isActive": true },
+    { "group": "Income", "head": "Salary", "isActive": true },
+    { "group": "Income", "head": "Freelance", "isActive": true }
+  ]
+}

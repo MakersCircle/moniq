@@ -4,44 +4,7 @@ import type { Account, PaymentMethod, Category, Transaction, Budget, UserSetting
 import { LedgerEngine } from '../lib/ledger';
 import { detectLocalSettings, getCurrencySymbol } from '../constants/currencies';
 
-// ── Default seed data for first-time users ──────────────────
-
-const defaultAccounts: Account[] = [
-  { id: 'acc-1', name: 'Bank Account', type: 'Asset', description: 'Bank', initialBalance: 0, isSavings: false, isActive: true, createdAt: new Date().toISOString() },
-  { id: 'acc-2', name: 'Cash Wallet', type: 'Asset', description: 'Cash', initialBalance: 0, isSavings: false, isActive: true, createdAt: new Date().toISOString() },
-];
-
-const defaultMethods: PaymentMethod[] = [
-  { id: 'met-1', name: 'UPI', linkedAccountId: 'acc-1', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'met-2', name: 'Cash', linkedAccountId: 'acc-2', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'met-3', name: 'Debit Card', linkedAccountId: 'acc-1', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'met-4', name: 'Credit Card', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'met-5', name: 'Net Banking', linkedAccountId: 'acc-1', isActive: true, createdAt: new Date().toISOString() },
-];
-
-const defaultCategories: Category[] = [
-  // Needs
-  { id: 'cat-1', group: 'Needs', head: 'Food', subHead: 'Groceries', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-2', group: 'Needs', head: 'Food', subHead: 'Dining Out', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-3', group: 'Needs', head: 'Transport', subHead: 'Fuel', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-4', group: 'Needs', head: 'Transport', subHead: 'Cab / Auto', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-5', group: 'Needs', head: 'Utilities', subHead: 'Electricity', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-6', group: 'Needs', head: 'Utilities', subHead: 'Internet', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-7', group: 'Needs', head: 'Housing', subHead: 'Rent', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-8', group: 'Needs', head: 'Health', subHead: 'Medicine', isActive: true, createdAt: new Date().toISOString() },
-  // Wants
-  { id: 'cat-9',  group: 'Wants', head: 'Entertainment', subHead: 'OTT/Streaming', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-10', group: 'Wants', head: 'Entertainment', subHead: 'Movies', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-11', group: 'Wants', head: 'Shopping', subHead: 'Clothing', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-12', group: 'Wants', head: 'Shopping', subHead: 'Electronics', isActive: true, createdAt: new Date().toISOString() },
-  // Invest / Lend / Borrow
-  { id: 'cat-14', group: 'Invest',  head: 'Investment', subHead: 'Mutual Funds', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-15', group: 'Lend',    head: 'Lend', subHead: 'To Friend', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-16', group: 'Borrow',  head: 'Borrow', subHead: 'Bank Loan', isActive: true, createdAt: new Date().toISOString() },
-  // Income
-  { id: 'cat-18', group: 'Income', head: 'Salary', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'cat-19', group: 'Income', head: 'Freelance', isActive: true, createdAt: new Date().toISOString() },
-];
+// ── Default settings & helpers ─────────────────────────────────
 
 const detected = detectLocalSettings();
 
@@ -117,18 +80,19 @@ interface DataState {
   // Settings
   updateSettings: (patch: Partial<UserSettings>) => void;
   setAccessToken: (token: string | null) => void;
+  completeOnboarding: (accounts?: Omit<Account, 'id' | 'createdAt'>[], categories?: Omit<Category, 'id' | 'createdAt'>[]) => void;
   triggerSync: () => Promise<void>;
 }
 
-const uuid = () => crypto.randomUUID();
-const now = () => new Date().toISOString();
+export const uuid = () => crypto.randomUUID();
+export const now = () => new Date().toISOString();
 
 export const useDataStore = create<DataState>()(
   persist(
     (set) => ({
-      accounts: defaultAccounts,
-      methods: defaultMethods,
-      categories: defaultCategories,
+      accounts: [],
+      methods: [],
+      categories: [],
       transactions: [],
       budgets: [],
       settings: defaultSettings,
@@ -142,6 +106,23 @@ export const useDataStore = create<DataState>()(
       setUserProfile: (profile) => set({ userProfile: profile }),
       setSpreadsheetId: (id) => set({ spreadsheetId: id }),
       setSyncState: (lastSyncedAt, isSyncing) => set({ lastSyncedAt, isSyncing }),
+
+      completeOnboarding: (accs, cats) => {
+        set((state) => {
+          const t = now();
+          const newAccounts = (accs || []).map(a => ({ ...a, id: uuid(), createdAt: t } as Account));
+          const newCategories = (cats || []).map(c => ({ ...c, id: uuid(), createdAt: t } as Category));
+          const newMethods = newAccounts.map(a => ({ id: uuid(), name: `${a.name}`, linkedAccountId: a.id, isActive: true, createdAt: t } as PaymentMethod));
+          
+          return {
+            accounts: [...state.accounts, ...newAccounts],
+            categories: [...state.categories, ...newCategories],
+            methods: [...state.methods, ...newMethods],
+            settings: { ...state.settings, hasCompletedOnboarding: true }
+          };
+        });
+        useDataStore.getState().triggerSync();
+      },
 
       addAccount: (a) => {
         const id = uuid();
