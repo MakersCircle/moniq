@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Plus, Pencil, Archive, Trash2, Check, Tag } from 'lucide-react';
-import { useDataStore } from '../../store/dataStore';
-import type { Category, CategoryGroup } from '../../types';
+import { Plus, Pencil, Archive, Trash2, Tag } from 'lucide-react';
+import { useDataStore } from '@/store/dataStore';
+import type { Category, CategoryGroup } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

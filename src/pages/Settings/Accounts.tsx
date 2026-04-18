@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Info, Plus, Pencil, Archive, Trash2, Landmark, Wallet, IndianRupee, PieChart, Bookmark, CreditCard } from 'lucide-react';
-import { useDataStore } from '../../store/dataStore';
-import type { Account, AccountType } from '../../types';
+import { Info, Plus, Pencil, Archive, Trash2, Landmark, CreditCard } from 'lucide-react';
+import { useDataStore } from '@/store/dataStore';
+import type { Account, AccountType } from '@/types';
 
 function InfoTooltip({ text, position = 'top' }: { text: string; position?: 'top' | 'bottom' }) {
   return (

@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { version } from '../../../package.json';
 import { 
   LayoutDashboard, 
   ReceiptText, 
@@ -62,7 +63,7 @@ export default function Sidebar() {
           Settings
         </NavLink>
         <div className="pt-2 px-3 pb-1">
-          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">moniq v0.1</p>
+          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">moniq v{version}</p>
         </div>
       </div>
     </aside>

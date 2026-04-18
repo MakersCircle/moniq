@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Plus, Pencil, Archive, Trash2, Check, CreditCard, ArrowRight } from 'lucide-react';
-import { useDataStore } from '../../store/dataStore';
-import type { PaymentMethod } from '../../types';
+import { Plus, Pencil, Archive, Trash2, CreditCard, ArrowRight } from 'lucide-react';
+import { useDataStore } from '@/store/dataStore';
+import type { PaymentMethod } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from '@/lib/utils';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 
 export default function Methods() {
