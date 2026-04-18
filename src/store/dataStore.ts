@@ -48,16 +48,19 @@ interface DataState {
   addAccount: (a: Omit<Account, 'id' | 'createdAt'>) => void;
   updateAccount: (id: string, patch: Partial<Account>) => void;
   archiveAccount: (id: string) => void;
+  deleteAccount: (id: string) => { success: boolean; reason?: string };
 
   // Methods
   addMethod: (m: Omit<PaymentMethod, 'id' | 'createdAt'>) => void;
   updateMethod: (id: string, patch: Partial<PaymentMethod>) => void;
   archiveMethod: (id: string) => void;
+  deleteMethod: (id: string) => { success: boolean; reason?: string };
 
   // Categories
   addCategory: (c: Omit<Category, 'id' | 'createdAt'>) => void;
   updateCategory: (id: string, patch: Partial<Category>) => void;
   archiveCategory: (id: string) => void;
+  deleteCategory: (id: string) => { success: boolean; reason?: string };
 
   // Transactions
   addTransaction: (params: {
@@ -90,11 +93,11 @@ export const now = () => new Date().toISOString();
 export const useDataStore = create<DataState>()(
   persist(
     (set) => ({
-      accounts: [],
-      methods: [],
-      categories: [],
-      transactions: [],
-      budgets: [],
+      accounts: [] as Account[],
+      methods: [] as PaymentMethod[],
+      categories: [] as Category[],
+      transactions: [] as Transaction[],
+      budgets: [] as Budget[],
       settings: defaultSettings,
       accessToken: null,
       userProfile: null,
@@ -141,6 +144,29 @@ export const useDataStore = create<DataState>()(
         set((state) => ({ accounts: state.accounts.map((s) => (s.id === id ? { ...s, isActive: false } : s)) }));
         useDataStore.getState().triggerSync();
       },
+      deleteAccount: (id): { success: boolean; reason?: string } => {
+        const state = useDataStore.getState();
+        // Check if any non-deleted transaction references this account in its entries
+        const hasTransactions = state.transactions.some(t => !t.isDeleted && t.entries.some(e => e.accountId === id));
+        if (hasTransactions) return { success: false, reason: 'This account is referenced by existing transactions. Archive it instead.' };
+        // Check if any linked payment methods are referenced by transactions
+        const linkedMethods = state.methods.filter(m => m.linkedAccountId === id);
+        const methodsInUse = linkedMethods.filter(m => state.transactions.some(t => !t.isDeleted && t.methodId === m.id));
+        if (methodsInUse.length > 0) {
+          const names = methodsInUse.map(m => m.name).join(', ');
+          return { success: false, reason: `Linked payment method(s) "${names}" are used in transactions. Archive the account instead.` };
+        }
+        // Check if any budgets reference this account
+        const hasBudgets = state.budgets.some(b => b.categoryId === id);
+        if (hasBudgets) return { success: false, reason: 'This account is referenced by a budget. Remove the budget first.' };
+        // Safe to delete — cascade-remove all linked payment methods too
+        set((s) => ({
+          accounts: s.accounts.filter(a => a.id !== id),
+          methods: s.methods.filter(m => m.linkedAccountId !== id),
+        }));
+        useDataStore.getState().triggerSync();
+        return { success: true };
+      },
 
       // Methods
       addMethod: (m) => {
@@ -155,6 +181,23 @@ export const useDataStore = create<DataState>()(
         set((state) => ({ methods: state.methods.map((m) => (m.id === id ? { ...m, isActive: false } : m)) }));
         useDataStore.getState().triggerSync();
       },
+      deleteMethod: (id): { success: boolean; reason?: string } => {
+        const state = useDataStore.getState();
+        const method = state.methods.find(m => m.id === id);
+        if (!method) return { success: false, reason: 'Method not found.' };
+        // Check if any non-deleted transaction references this method
+        const hasTransactions = state.transactions.some(t => !t.isDeleted && t.methodId === id);
+        if (hasTransactions) return { success: false, reason: 'This method is used in existing transactions. Archive it instead.' };
+        // If linked to an account, check if that account has at least one other active method
+        if (method.linkedAccountId) {
+          const otherMethods = state.methods.filter(m => m.id !== id && m.linkedAccountId === method.linkedAccountId && m.isActive);
+          if (otherMethods.length === 0) return { success: false, reason: 'This is the only active payment method for its linked account. Create another method first, or unlink and then delete.' };
+        }
+        // Safe to delete
+        set((s) => ({ methods: s.methods.filter(m => m.id !== id) }));
+        useDataStore.getState().triggerSync();
+        return { success: true };
+      },
 
       // Categories
       addCategory: (c) => {
@@ -168,6 +211,19 @@ export const useDataStore = create<DataState>()(
       archiveCategory: (id) => {
         set((state) => ({ categories: state.categories.map((c) => (c.id === id ? { ...c, isActive: false } : c)) }));
         useDataStore.getState().triggerSync();
+      },
+      deleteCategory: (id): { success: boolean; reason?: string } => {
+        const state = useDataStore.getState();
+        // Check if any non-deleted transaction references this category in its entries
+        const hasTransactions = state.transactions.some(t => !t.isDeleted && t.entries.some(e => e.accountId === id));
+        if (hasTransactions) return { success: false, reason: 'This category is referenced by existing transactions.' };
+        // Check if any budgets reference this category
+        const hasBudgets = state.budgets.some(b => b.categoryId === id);
+        if (hasBudgets) return { success: false, reason: 'This category has a budget assigned. Remove the budget first.' };
+        // Safe to delete
+        set((s) => ({ categories: s.categories.filter(c => c.id !== id) }));
+        useDataStore.getState().triggerSync();
+        return { success: true };
       },
 
       // Transactions

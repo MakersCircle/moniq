@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Archive, Check, Tag } from 'lucide-react';
+import { Plus, Pencil, Archive, Trash2, Check, Tag } from 'lucide-react';
 import { useDataStore } from '../../store/dataStore';
 import type { Category, CategoryGroup } from '../../types';
 
@@ -36,10 +36,11 @@ const GROUP_STYLES: Record<string, string> = {
 };
 
 export default function Categories() {
-  const { categories, addCategory, updateCategory, archiveCategory } = useDataStore();
+  const { categories, addCategory, updateCategory, archiveCategory, deleteCategory } = useDataStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [form, setForm] = useState({ group: 'Needs' as CategoryGroup, head: '', subHead: '' });
+  const [deleteError, setDeleteError] = useState<Record<string, string>>({});
 
   const openAdd = () => { setEditing(null); setForm({ group: 'Needs', head: '', subHead: '' }); setModalOpen(true); };
   const openEdit = (c: Category) => { setEditing(c); setForm({ group: c.group, head: c.head, subHead: c.subHead || '' }); setModalOpen(true); };
@@ -119,11 +120,25 @@ export default function Categories() {
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 px-1">Archived Categories</h4>
             <div className="grid grid-cols-1 gap-2">
               {archived.map((c) => (
-                <div key={c.id} className="flex items-center justify-between p-3 px-4 rounded-lg bg-accent/20 border border-transparent opacity-60">
-                  <span className="text-xs font-bold text-muted-foreground">{c.head} {c.subHead ? `· ${c.subHead}` : ''}</span>
-                  <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider" onClick={() => updateCategory(c.id, { isActive: true })}>
-                    Restore
-                  </Button>
+                <div key={c.id}>
+                  <div className="flex items-center justify-between p-3 px-4 rounded-lg bg-accent/20 border border-transparent opacity-60">
+                    <span className="text-xs font-bold text-muted-foreground">{c.head} {c.subHead ? `· ${c.subHead}` : ''}</span>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider" onClick={() => { setDeleteError(prev => { const n = {...prev}; delete n[c.id]; return n; }); updateCategory(c.id, { isActive: true }); }}>
+                        Restore
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => {
+                        const result = deleteCategory(c.id);
+                        if (!result.success) setDeleteError(prev => ({ ...prev, [c.id]: result.reason || 'Cannot delete.' }));
+                        else setDeleteError(prev => { const n = {...prev}; delete n[c.id]; return n; });
+                      }}>
+                        <Trash2 className="h-3 w-3 mr-1" /> Delete
+                      </Button>
+                    </div>
+                  </div>
+                  {deleteError[c.id] && (
+                    <p className="text-[10px] font-medium text-destructive mt-1 ml-4">{deleteError[c.id]}</p>
+                  )}
                 </div>
               ))}
             </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Archive, Check, CreditCard, ArrowRight } from 'lucide-react';
+import { Plus, Pencil, Archive, Trash2, Check, CreditCard, ArrowRight } from 'lucide-react';
 import { useDataStore } from '../../store/dataStore';
 import type { PaymentMethod } from '../../types';
 
@@ -25,10 +25,11 @@ import { cn } from '@/lib/utils';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 
 export default function Methods() {
-  const { methods, accounts, addMethod, updateMethod, archiveMethod } = useDataStore();
+  const { methods, accounts, addMethod, updateMethod, archiveMethod, deleteMethod } = useDataStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<PaymentMethod | null>(null);
   const [form, setForm] = useState({ name: '', linkedAccountId: '' });
+  const [deleteError, setDeleteError] = useState<Record<string, string>>({});
 
   const openAdd = () => { setEditing(null); setForm({ name: '', linkedAccountId: '' }); setModalOpen(true); };
   const openEdit = (m: PaymentMethod) => { setEditing(m); setForm({ name: m.name, linkedAccountId: m.linkedAccountId || '' }); setModalOpen(true); };
@@ -99,11 +100,25 @@ export default function Methods() {
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 px-1">Archived Methods</h4>
             <div className="grid grid-cols-1 gap-2">
               {archived.map((m) => (
-                <div key={m.id} className="flex items-center justify-between p-3 px-4 rounded-lg bg-accent/20 border border-transparent opacity-60">
-                  <span className="text-xs font-bold text-muted-foreground">{m.name}</span>
-                  <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider" onClick={() => updateMethod(m.id, { isActive: true })}>
-                    Restore
-                  </Button>
+                <div key={m.id}>
+                  <div className="flex items-center justify-between p-3 px-4 rounded-lg bg-accent/20 border border-transparent opacity-60">
+                    <span className="text-xs font-bold text-muted-foreground">{m.name}</span>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider" onClick={() => { setDeleteError(prev => { const n = {...prev}; delete n[m.id]; return n; }); updateMethod(m.id, { isActive: true }); }}>
+                        Restore
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => {
+                        const result = deleteMethod(m.id);
+                        if (!result.success) setDeleteError(prev => ({ ...prev, [m.id]: result.reason || 'Cannot delete.' }));
+                        else setDeleteError(prev => { const n = {...prev}; delete n[m.id]; return n; });
+                      }}>
+                        <Trash2 className="h-3 w-3 mr-1" /> Delete
+                      </Button>
+                    </div>
+                  </div>
+                  {deleteError[m.id] && (
+                    <p className="text-[10px] font-medium text-destructive mt-1 ml-4">{deleteError[m.id]}</p>
+                  )}
                 </div>
               ))}
             </div>

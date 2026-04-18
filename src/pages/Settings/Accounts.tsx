@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Info, Plus, Pencil, Archive, Landmark, Wallet, IndianRupee, PieChart, Bookmark, CreditCard } from 'lucide-react';
+import { Info, Plus, Pencil, Archive, Trash2, Landmark, Wallet, IndianRupee, PieChart, Bookmark, CreditCard } from 'lucide-react';
 import { useDataStore } from '../../store/dataStore';
 import type { Account, AccountType } from '../../types';
 
@@ -58,11 +58,12 @@ const emptyForm: AccountForm = {
 };
 
 export default function Accounts() {
-  const { accounts, settings, addAccount, updateAccount, archiveAccount } = useDataStore();
+  const { accounts, settings, addAccount, updateAccount, archiveAccount, deleteAccount } = useDataStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Account | null>(null);
   const [form, setForm] = useState<AccountForm>(emptyForm);
   const [error, setError] = useState('');
+  const [deleteError, setDeleteError] = useState<Record<string, string>>({});
 
   const openAdd = () => {
     setEditing(null);
@@ -174,11 +175,25 @@ export default function Accounts() {
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 px-1">Archived Accounts</h4>
             <div className="grid grid-cols-1 gap-2">
               {archivedAccounts.map((a) => (
-                <div key={a.id} className="flex items-center justify-between p-3 px-4 rounded-lg bg-accent/20 border border-transparent opacity-60">
-                  <span className="text-xs font-bold text-muted-foreground">{a.name}</span>
-                  <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider" onClick={() => updateAccount(a.id, { isActive: true })}>
-                    Restore
-                  </Button>
+                <div key={a.id}>
+                  <div className="flex items-center justify-between p-3 px-4 rounded-lg bg-accent/20 border border-transparent opacity-60">
+                    <span className="text-xs font-bold text-muted-foreground">{a.name}</span>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider" onClick={() => { setDeleteError(prev => { const n = {...prev}; delete n[a.id]; return n; }); updateAccount(a.id, { isActive: true }); }}>
+                        Restore
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => {
+                        const result = deleteAccount(a.id);
+                        if (!result.success) setDeleteError(prev => ({ ...prev, [a.id]: result.reason || 'Cannot delete.' }));
+                        else setDeleteError(prev => { const n = {...prev}; delete n[a.id]; return n; });
+                      }}>
+                        <Trash2 className="h-3 w-3 mr-1" /> Delete
+                      </Button>
+                    </div>
+                  </div>
+                  {deleteError[a.id] && (
+                    <p className="text-[10px] font-medium text-destructive mt-1 ml-4">{deleteError[a.id]}</p>
+                  )}
                 </div>
               ))}
             </div>
