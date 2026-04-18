@@ -129,7 +129,7 @@ export const useDataStore = create<DataState>()(
         const t = now();
         set((state) => ({ 
           accounts: [...state.accounts, { ...a, id, createdAt: t }],
-          methods: [...state.methods, { id: uuid(), name: `${a.name} (Default)`, linkedAccountId: id, isActive: true, createdAt: t }]
+          methods: [...state.methods, { id: uuid(), name: a.name, linkedAccountId: id, isActive: true, createdAt: t }]
         }));
         useDataStore.getState().triggerSync();
       },
