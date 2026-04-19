@@ -168,8 +168,15 @@ export const useDataStore = create<DataState>()(
         const userSettings = { ...defaultSettings };
         if (Object.keys(settings).length > 0) {
           if (settings.currency) userSettings.currency = settings.currency;
-          if (settings.currencySymbol) userSettings.currencySymbol = settings.currencySymbol;
           if (settings.numberLocale) userSettings.numberLocale = settings.numberLocale;
+          
+          // Ensure currency symbol is correctly set from DB or recalculated if missing
+          if (settings.currencySymbol) {
+            userSettings.currencySymbol = settings.currencySymbol;
+          } else if (settings.currency) {
+            userSettings.currencySymbol = getCurrencySymbol(userSettings.currency, userSettings.numberLocale);
+          }
+
           if (settings.fiscalYearStartMonth) userSettings.fiscalYearStartMonth = Number(settings.fiscalYearStartMonth);
           if (settings.dateFormat) userSettings.dateFormat = settings.dateFormat;
           if (settings.hasCompletedOnboarding) {
@@ -444,9 +451,16 @@ export const useDataStore = create<DataState>()(
     updateSettings: (patch) => {
       set((state) => {
         const nextSettings = { ...state.settings, ...patch };
-        if (patch.currency && patch.currency !== state.settings.currency) {
-          nextSettings.currencySymbol = getCurrencySymbol(patch.currency, nextSettings.numberLocale);
+        
+        // If currency or locale changes, recalculate and persist the symbol
+        const currencyChanged = patch.currency && patch.currency !== state.settings.currency;
+        const localeChanged = patch.numberLocale && patch.numberLocale !== state.settings.numberLocale;
+        
+        if (currencyChanged || localeChanged) {
+          nextSettings.currencySymbol = getCurrencySymbol(nextSettings.currency, nextSettings.numberLocale);
+          putSetting('currencySymbol', nextSettings.currencySymbol);
         }
+
         for (const [k, v] of Object.entries(patch)) {
           putSetting(k, String(v));
         }
