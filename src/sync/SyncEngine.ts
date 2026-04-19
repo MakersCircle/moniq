@@ -3,9 +3,9 @@ import { SheetClient } from './SheetClient';
 import { reconcile, computeChecksum } from './ConflictResolver';
 import { SHEET_NAMES, SHEET_HEADERS, DEFAULT_SYNC_CONFIG, type SyncConfig, type RowIndex, type RowIndexMap, type SyncStatus } from './types';
 import {
-  getAll, putMany, clearStore, addToSyncQueue,
-  getAllSyncQueue, removeSyncOp, clearSyncQueue, clearRemoteSnapshot,
-  setMeta, getMeta, putSetting,
+  putMany, addToSyncQueue,
+  getAllSyncQueue, clearSyncQueue,
+  setMeta, putSetting,
 } from '../lib/db';
 
 // ── Utility helpers ──────────────────────────────────────────────
@@ -611,13 +611,7 @@ export class SyncEngine {
     await this.client.overwriteSheet('Settings', rows);
   }
 
-  private async startInitialSync(): Promise<void> {
-    const { useDataStore } = await import('../store/dataStore');
-    const state = useDataStore.getState();
-    if (!state.accessToken || !state.spreadsheetId) return;
-    const data = await this.initialize(state.spreadsheetId);
-    if (data) state.hydrateFromSync(data);
-  }
+
 
   /** Orchestrates a complete wipe of remote and local data. */
   async performHardReset(): Promise<void> {

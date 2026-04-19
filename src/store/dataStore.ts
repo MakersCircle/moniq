@@ -1,12 +1,11 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Account, PaymentMethod, Category, Transaction, Budget, UserSettings, SyncStatus } from '../types';
 import { LedgerEngine } from '../lib/ledger';
 import { detectLocalSettings, getCurrencySymbol } from '../constants/currencies';
 import { SyncEngine } from '../sync/SyncEngine';
 import { 
   getAll, put, del, putMany,
-  getSetting, putSetting, getAllSettings,
+  putSetting, getAllSettings,
   getMeta, setMeta, delMeta, clearStore
 } from '../lib/db';
 
@@ -145,9 +144,8 @@ export const useDataStore = create<DataState>()(
     setSyncStatus: (syncStatus, pendingCount, lastSyncError) => set({ syncStatus, pendingCount, lastSyncError }),
     setLastSyncedAt: (timestamp) => set({ lastSyncedAt: timestamp }),
 
-    initializeFromDB: async () => {
       try {
-        const [accounts, methods, categories, transactions, budgets, settings, lastSyncedAt, accessToken, tokenExpiresAt, userProfileStr] = await Promise.all([
+        const [accounts, methods, categories, , budgets, settings, lastSyncedAt, accessToken, tokenExpiresAt, userProfileStr] = await Promise.all([
           getAll<Account>('accounts'),
           getAll<PaymentMethod>('methods'),
           getAll<Category>('categories'),

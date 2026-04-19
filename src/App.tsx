@@ -22,8 +22,6 @@ import AddTransactionModal from './components/Transactions/AddTransactionModal';
 export default function App() {
   const accessToken = useDataStore((s) => s.accessToken);
   const tokenExpiresAt = useDataStore((s) => s.tokenExpiresAt);
-  const setAccessToken = useDataStore((s) => s.setAccessToken);
-  const transactions = useDataStore((s) => s.transactions);
   const setUserProfile = useDataStore((s) => s.setUserProfile);
   const setSpreadsheetId = useDataStore((s) => s.setSpreadsheetId);
   const setSyncStatus = useDataStore((s) => s.setSyncStatus);

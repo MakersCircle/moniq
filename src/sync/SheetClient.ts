@@ -1,7 +1,7 @@
 import { googleService } from '../lib/google';
 import { SHEET_HEADERS } from './types';
 
-const SHEETS_API_URL = 'https://sheets.googleapis.com/v4';
+
 
 /**
  * Low-level Google Sheets API wrapper.
@@ -86,7 +86,6 @@ export class SheetClient {
 
   /** Update a specific row (1-based index) with new data. */
   async updateRow(sheetName: string, rowIndex: number, data: string[]): Promise<void> {
-    const range = `${sheetName}!A${rowIndex}`;
     await this.writeRange(sheetName, `A${rowIndex}`, [data]);
   }
 
@@ -176,21 +175,6 @@ export class SheetClient {
 
   /** Clear all data rows from all registered application sheets (keeping headers). */
   async clearAllData(sheetNames: string[]): Promise<void> {
-    const requests = sheetNames.map(name => ({
-      updateCells: {
-        range: {
-          sheetId: -1, // We'll need to find the actual IDs or use the title-based clear
-        },
-        fields: 'userEnteredValue'
-      }
-    }));
-    
-    // Actually, title-based clear is simpler if we don't have IDs handy.
-    // Let's use the Values:clear endpoint in a loop or batch.
-    // Batch clear is not directly available via values API for content, 
-    // but we can just loop through readSheet and clear.
-    // Wait, let's use the 'values:batchClear' endpoint.
-    
     const url = `/spreadsheets/${this.spreadsheetId}/values:batchClear`;
     const res = await googleService.sheetsRequest(url, {
       method: 'POST',

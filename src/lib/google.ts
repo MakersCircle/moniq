@@ -13,10 +13,10 @@ export class GoogleService {
   private refreshPromise: Promise<string | null> | null = null;
 
   static getInstance() {
-    if (!GoogleService.instance) {
-      GoogleService.instance = new GoogleService();
+    if (!this.instance) {
+      this.instance = new GoogleService();
     }
-    return GoogleService.instance;
+    return this.instance;
   }
 
   // ── Auth Logic ──────────────────────────────────────────────────
