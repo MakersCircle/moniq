@@ -26,9 +26,6 @@ export default function TransactionDetailPanel({
     if (!transaction) return null;
 
     const isTransfer = transaction.uiType === 'transfer';
-    const isIncome = transaction.uiType === 'income';
-
-
 
     let account = null;
     let toAccount = null;
@@ -37,15 +34,14 @@ export default function TransactionDetailPanel({
     if (isTransfer) {
       const fromEntry = transaction.entries.find(e => e.type === 'CREDIT');
       const toEntry = transaction.entries.find(e => e.type === 'DEBIT');
-      account = accounts.find(a => a.id === fromEntry?.accountId);
-      toAccount = accounts.find(a => a.id === toEntry?.accountId);
+      account = accounts.find(a => a.id === fromEntry?.accountId) || null;
+      toAccount = accounts.find(a => a.id === toEntry?.accountId) || null;
     } else {
-      // For income, Account is in DEBIT. For expense, Account is in CREDIT.
       const accEntry = transaction.entries.find(e => accounts.some(a => a.id === e.accountId));
-      account = accounts.find(a => a.id === accEntry?.accountId);
+      account = accounts.find(a => a.id === accEntry?.accountId) || null;
       
       const catEntry = transaction.entries.find(e => categories.some(c => c.id === e.accountId));
-      category = categories.find(c => c.id === catEntry?.accountId);
+      category = categories.find(c => c.id === catEntry?.accountId) || null;
     }
 
     return { account, toAccount, category, isTransfer };
