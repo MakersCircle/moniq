@@ -36,6 +36,7 @@ Stores payment channels (abstractions over accounts).
 * `name` (String: e.g., "UPI", "Net Banking")
 * `linkedAccountId` (UUID of Account)
 * `isActive` (Boolean)
+* `sortOrder` (Number, optional)
 * `createdAt` (ISO Date string)
 
 ### 3. `Categories` Sheet
@@ -45,6 +46,7 @@ Holds headers and subheaders for tracking.
 * `head` (String: e.g., "Food")
 * `subHead` (String: e.g., "Groceries")
 * `isActive` (Boolean)
+* `sortOrder` (Number, optional)
 
 ### 4. `Transactions` Sheet
 The core event log based on a **Double-Entry Ledger System**. 
