@@ -68,6 +68,8 @@ This document tracks the end-to-end implementation roadmap for **moniq**. Items 
 - [x] **Context Menus in Ledger**: 3-dot menu for Duplicate, Edit, and Delete in the spreadsheet view.
 - [x] **Cloud Sync Refinements**: Automated sync on every state change and support for Budget data.
 - [x] **Lending Statistics**: Dashboard indicators for total receivable/payable amounts.
+- [x] **Universal Contextual Help**: Tooltips explaining core concepts (Accounts, Methods, Categories).
+- [x] **Category Head Combobox**: Reducing friction in category creation with suggestions.
 - [ ] **Custom Ordering System**: Allow reordering of Payment Methods and Categories logically in Settings to reflect in dropdowns.
 - [ ] **Background Synchronization**: Use Service Workers to sync while the tab is closed.
 - [ ] **Intelligent Auto-Categorization**: Suggesting categories for manual entries based on past similar notes.
