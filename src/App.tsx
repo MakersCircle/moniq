@@ -8,6 +8,7 @@ import SettingsIndex from './pages/Settings/index';
 import Accounts from './pages/Settings/Accounts';
 import Methods from './pages/Settings/Methods';
 import Categories from './pages/Settings/Categories';
+import SettingsTrash from './pages/Settings/Trash';
 import Home from './pages/Home';
 import LayoutShell from './components/Layout/LayoutShell';
 import { useDataStore } from './store/dataStore';
@@ -110,6 +111,7 @@ export default function App() {
                   <Route path="settings/accounts" element={<Accounts />} />
                   <Route path="settings/methods" element={<Methods />} />
                   <Route path="settings/categories" element={<Categories />} />
+                  <Route path="settings/trash" element={<SettingsTrash />} />
                   <Route path="*" element={<Navigate to={hasTransactions ? "/dashboard" : "/"} replace />} />
                 </Routes>
               </LayoutShell>

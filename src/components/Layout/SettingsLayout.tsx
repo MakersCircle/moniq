@@ -5,7 +5,8 @@ import {
   CreditCard, 
   Tag, 
   Database, 
-  ChevronRight 
+  ChevronRight,
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDataStore } from '@/store/dataStore';
@@ -15,15 +16,17 @@ const SETTINGS_NAV = [
   { icon: Landmark, label: 'Accounts', to: '/settings/accounts' },
   { icon: CreditCard, label: 'Pay Methods', to: '/settings/methods' },
   { icon: Tag, label: 'Categories', to: '/settings/categories' },
+  { icon: Trash2, label: 'Recently Deleted', to: '/settings/trash' },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
-  const { accounts, methods, categories } = useDataStore();
+  const { accounts, methods, categories, transactions } = useDataStore();
 
   const getCount = (label: string) => {
     if (label === 'Accounts') return accounts.filter(s => s.isActive).length;
     if (label === 'Pay Methods') return methods.filter(m => m.isActive).length;
     if (label === 'Categories') return categories.filter(c => c.isActive).length;
+    if (label === 'Recently Deleted') return transactions.filter(t => t.isDeleted).length;
     return null;
   };
 
