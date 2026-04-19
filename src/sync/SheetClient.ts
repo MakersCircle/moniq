@@ -67,6 +67,11 @@ export class SheetClient {
     }
   }
 
+  /** Write/Overwrite the header row of a sheet. */
+  async writeHeader(sheetName: string, headers: string[]): Promise<void> {
+    await this.writeRange(sheetName, 'A1', [headers]);
+  }
+
   /** Append rows to the bottom of a sheet. Returns the number of rows appended. */
   async appendRows(sheetName: string, rows: string[][]): Promise<number> {
     if (rows.length === 0) return 0;

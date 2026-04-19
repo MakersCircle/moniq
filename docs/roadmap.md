@@ -18,32 +18,15 @@ This document tracks the end-to-end implementation roadmap for **moniq**. Items 
 - [x] Build the "Initialize Database" routine.
 - [x] Set up basic local state sync.
 
-## ⚙️ Phase 2: Master Data Management (CRUD)
-- [x] **Accounts Management**
-  - [x] Add Form (Name, Class, Start Balance).
-  - [x] List View & Edit Module.
-  - [x] InfoTooltips for every form field.
-  - [x] Form validation with inline errors.
-- [x] **Payment Methods Management**
-  - [x] Add Form (Name, Linked Account).
-  - [x] List View & Edit Module.
-  - [x] Auto-create a payment method (same name) when a new account is created.
-- [x] **Categories Management**
-  - [x] Define Head & Sub-head UI.
-  - [x] Group definitions (Income/Needs/Wants/Invest/Lend/Borrow).
-  - [x] Grouped view with inline edit for Categories (Settings).
-- [x] **Onboarding Flow**
-  - [x] Removed hardcoded default data from store initialization.
-  - [x] Created `src/data/defaults.json` with curated defaults.
-  - [x] Interactive onboarding modal with editable account names.
-  - [x] "Start from Scratch" option for blank-slate users.
-- [x] **Enhanced Deletion & Archiving**
-  - [x] Archive-first flow (archive button on active items).
-  - [x] Safe permanent delete for archived items with inline error feedback.
-  - [x] Cascade-delete linked payment methods when deleting an account.
-  - [x] Safety checks: block deletion if transactions, budgets, or methods reference the entity.
-## 🤝 Phase 2.5: Contacts / Lending
-- [x] Account flags for "Asset" vs "Liability" to handle Lending/Borrowing.
+## ⚙️ Phase 2: Sync Engine Reliability & Migration (v0.3.0)
+- [x] **Dynamic Schema Mapping**
+  - [x] Move away from fixed column indexes to name-based mapping.
+  - [x] Robust parsing for serial dates (recovery logic for numeric dates).
+- [x] **Sheet Repair & Migration**
+  - [x] Automatic header repair for outdated spreadsheets.
+  - [x] Migration logic for legacy "Sources" data.
+- [x] **ID-based Deduplication**
+  - [x] Ensure ledger integrity by merging duplicate remote rows during sync.
 
 ## ✍️ Phase 3: Core UX — Transaction Engine
 - [x] **New Transaction Experience**

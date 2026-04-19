@@ -1,4 +1,4 @@
-  import type { Account, PaymentMethod, Category, Transaction, Budget, SyncOperation, SyncEntityType } from '../types';
+import type { Account, PaymentMethod, Category, Transaction, Budget, SyncOperation, SyncEntityType } from '../types';
 import { SheetClient } from './SheetClient';
 import { reconcile, computeChecksum } from './ConflictResolver';
 import { SHEET_NAMES, SHEET_HEADERS, DEFAULT_SYNC_CONFIG, type SyncConfig, type RowIndex, type RowIndexMap, type SyncStatus } from './types';
@@ -7,6 +7,33 @@ import {
   getAllSyncQueue, removeSyncOp, clearSyncQueue, clearRemoteSnapshot,
   setMeta, getMeta,
 } from '../lib/db';
+
+// ── Utility helpers ──────────────────────────────────────────────
+
+/**
+ * Converts a Google Sheets serial date (number of days since 1899-12-30) 
+ * back into an ISO YYYY-MM-DD date string.
+ */
+function unserialDate(val: any): string {
+  if (!val || typeof val !== 'string' || !/^\d+(\.\d+)?$/.test(val.trim())) {
+    return val || '';
+  }
+  
+  const serial = parseFloat(val.trim());
+  if (serial < 30000 || serial > 60000) return val; // Likely not a serial date within our range
+
+  // Excel/Sheets serial dates start from Dec 30, 1899
+  const baseDate = new Date(1899, 11, 30);
+  const targetDate = new Date(baseDate.getTime() + serial * 86400000);
+  
+  return targetDate.toISOString().split('T')[0];
+}
+
+function getValue(row: string[], header: string[], field: string): string {
+  const idx = header.indexOf(field);
+  if (idx === -1) return '';
+  return row[idx] || '';
+}
 
 // ── Serialization helpers ────────────────────────────────────────
 
@@ -52,70 +79,71 @@ function serializeBudget(b: Budget): string[] {
 
 // ── Deserialization helpers ──────────────────────────────────────
 
-function deserializeTransaction(row: string[]): Transaction {
+function deserializeTransaction(row: string[], header: string[]): Transaction {
+  const entriesRaw = getValue(row, header, 'Entries JSON');
   return {
-    id: row[0],
-    groupId: row[1] || '',
-    uiType: (row[2] as Transaction['uiType']) || 'expense',
-    entries: row[3] ? JSON.parse(row[3]) : [],
-    amount: Number(row[4]) || 0,
-    date: row[5] || '',
-    methodId: row[6] || undefined,
-    note: row[7] || '',
-    tags: row[8] ? row[8].split(',').filter(Boolean) : undefined,
-    isDeleted: row[9] === 'TRUE',
-    createdAt: row[10] || '',
-    updatedAt: row[11] || row[10] || '',
+    id: getValue(row, header, 'ID'),
+    groupId: getValue(row, header, 'Group ID'),
+    uiType: (getValue(row, header, 'UI Type') as Transaction['uiType']) || 'expense',
+    entries: entriesRaw ? JSON.parse(entriesRaw) : [],
+    amount: Number(getValue(row, header, 'Amount')) || 0,
+    date: unserialDate(getValue(row, header, 'Date')),
+    methodId: getValue(row, header, 'Method ID') || undefined,
+    note: getValue(row, header, 'Note'),
+    tags: getValue(row, header, 'Tags').split(',').filter(Boolean),
+    isDeleted: getValue(row, header, 'Is Deleted') === 'TRUE',
+    createdAt: getValue(row, header, 'Created At'),
+    updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
   };
 }
 
-function deserializeAccount(row: string[]): Account {
+function deserializeAccount(row: string[], header: string[]): Account {
   return {
-    id: row[0],
-    name: row[1] || '',
-    type: (row[2] as Account['type']) || 'Asset',
-    description: row[3] || undefined,
-    isSavings: row[4] === 'TRUE',
-    initialBalance: Number(row[5]) || 0,
-    excludeFromNet: row[6] === 'TRUE',
-    isActive: row[7] === 'TRUE',
-    createdAt: row[8] || '',
-    updatedAt: row[9] || row[8] || '',
+    id: getValue(row, header, 'ID'),
+    name: getValue(row, header, 'Name'),
+    type: (getValue(row, header, 'Type') as Account['type']) || 'Asset',
+    description: getValue(row, header, 'Description') || undefined,
+    isSavings: getValue(row, header, 'Is Savings') === 'TRUE',
+    initialBalance: Number(getValue(row, header, 'Initial Balance')) || 0,
+    excludeFromNet: getValue(row, header, 'Exclude Net') === 'TRUE',
+    isActive: getValue(row, header, 'Is Active') === 'TRUE',
+    createdAt: getValue(row, header, 'Created At'),
+    updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
   };
 }
 
-function deserializeMethod(row: string[]): PaymentMethod {
+function deserializeMethod(row: string[], header: string[]): PaymentMethod {
   return {
-    id: row[0],
-    name: row[1] || '',
-    linkedAccountId: row[2] || undefined,
-    isActive: row[3] === 'TRUE',
-    createdAt: row[4] || '',
-    updatedAt: row[5] || row[4] || '',
+    id: getValue(row, header, 'ID'),
+    name: getValue(row, header, 'Name'),
+    linkedAccountId: getValue(row, header, 'Linked Account ID') || undefined,
+    isActive: getValue(row, header, 'Is Active') === 'TRUE',
+    createdAt: getValue(row, header, 'Created At'),
+    updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
   };
 }
 
-function deserializeCategory(row: string[]): Category {
+function deserializeCategory(row: string[], header: string[]): Category {
   return {
-    id: row[0],
-    group: (row[1] as Category['group']) || 'Needs',
-    head: row[2] || '',
-    subHead: row[3] || undefined,
-    initialBalance: Number(row[4]) || undefined,
-    isActive: row[5] === 'TRUE',
-    createdAt: row[6] || '',
-    updatedAt: row[7] || row[6] || '',
+    id: getValue(row, header, 'ID'),
+    group: (getValue(row, header, 'Group') as Category['group']) || 'Needs',
+    head: getValue(row, header, 'Head'),
+    subHead: getValue(row, header, 'Sub Head') || undefined,
+    initialBalance: Number(getValue(row, header, 'Initial Balance')) || undefined,
+    isActive: getValue(row, header, 'Is Active') === 'TRUE',
+    createdAt: getValue(row, header, 'Created At'),
+    updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
   };
 }
 
-function deserializeBudget(row: string[]): Budget {
+function deserializeBudget(row: string[], header: string[]): Budget {
   return {
-    id: row[0],
-    categoryId: row[1] || '',
-    period: row[2] || '',
-    amount: Number(row[3]) || 0,
-    createdAt: row[4] || '',
-    updatedAt: row[5] || row[4] || '',
+    id: getValue(row, header, 'ID'),
+    categoryId: getValue(row, header, 'Category ID'),
+    period: getValue(row, header, 'Period'),
+    amount: Number(getValue(row, header, 'Amount')) || 0,
+    createdAt: getValue(row, header, 'Created At'),
+    updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
   };
 }
 
@@ -236,6 +264,17 @@ export class SyncEngine {
       // Ensure all sheet tabs exist
       await this.client.ensureSheetTabs(Object.values(SHEET_NAMES));
 
+      // Check for legacy sheets (e.g., "Sources")
+      const legacyRows = await this.client.readSheet('Sources');
+      if (legacyRows.length > 1) {
+        // Only migrate if we haven't already
+        const methodsRes = await this.client.readSheet('Methods');
+        if (methodsRes.length <= 1) {
+          console.warn('Found legacy "Sources" sheet and "Methods" is empty. Attempting migration...');
+          await this.migrateLegacySources(legacyRows);
+        }
+      }
+
       // Ensure headers exist on each sheet
       for (const sheetName of Object.values(SHEET_NAMES)) {
         await this.client.ensureHeaders(sheetName);
@@ -252,11 +291,17 @@ export class SyncEngine {
       ]);
 
       // Parse remote data (skip header rows)
-      const remoteTxns = txRows.slice(1).filter(r => r[0]).map(deserializeTransaction);
-      const remoteAccs = accRows.slice(1).filter(r => r[0]).map(deserializeAccount);
-      const remoteMets = metRows.slice(1).filter(r => r[0]).map(deserializeMethod);
-      const remoteCats = catRows.slice(1).filter(r => r[0]).map(deserializeCategory);
-      const remoteBuds = budRows.slice(1).filter(r => r[0]).map(deserializeBudget);
+      const txHeader = txRows[0] || [];
+      const accHeader = accRows[0] || [];
+      const metHeader = metRows[0] || [];
+      const catHeader = catRows[0] || [];
+      const budHeader = budRows[0] || [];
+
+      const remoteTxns = txRows.slice(1).filter(r => r[0]).map(r => deserializeTransaction(r, txHeader));
+      const remoteAccs = accRows.slice(1).filter(r => r[0]).map(r => deserializeAccount(r, accHeader));
+      const remoteMets = metRows.slice(1).filter(r => r[0]).map(r => deserializeMethod(r, metHeader));
+      const remoteCats = catRows.slice(1).filter(r => r[0]).map(r => deserializeCategory(r, catHeader));
+      const remoteBuds = budRows.slice(1).filter(r => r[0]).map(r => deserializeBudget(r, budHeader));
 
       // Parse remote settings
       const remoteSettings: Record<string, string> = {};
@@ -282,9 +327,40 @@ export class SyncEngine {
       const catChecksums = buildChecksumMap(catRows);
       const budChecksums = buildChecksumMap(budRows);
 
-      // Read local data from Zustand store (which is properly persisted by idbStorage)
+      // Check for header mismatches and trigger repairs if needed
+      const repairs: Promise<void>[] = [];
+      const checkAndRepair = (name: string, rows: string[][], target: string[]) => {
+        const current = rows[0] || [];
+        const mismatch = current.length !== target.length || current.some((h, i) => h !== target[i]);
+        if (mismatch && rows.length > 0) {
+          console.warn(`Header mismatch in "${name}". Triggering repair...`);
+          repairs.push(this.client!.overwriteSheet(name, rows.slice(1)));
+        }
+      };
+      
+      checkAndRepair('Transactions', txRows, SHEET_HEADERS.Transactions);
+      checkAndRepair('Accounts', accRows, SHEET_HEADERS.Accounts);
+      checkAndRepair('Methods', metRows, SHEET_HEADERS.Methods);
+      checkAndRepair('Categories', catRows, SHEET_HEADERS.Categories);
+      checkAndRepair('Budgets', budRows, SHEET_HEADERS.Budgets);
+
+      if (repairs.length > 0) {
+        await Promise.all(repairs);
+        // If we repaired, we should probably re-read or just trust the next sync will be clean.
+        // For now, let's just proceed with the data we already parsed (which was using the dynamic header mapping anyway).
+      }
+
+      // Read local data from Zustand store
       const { useDataStore } = await import('../store/dataStore');
       const state = useDataStore.getState();
+      
+      // De-duplicate remote data before reconciliation
+      const remoteTxnsDeduped = this.deduplicate(remoteTxns);
+      const remoteAccsDeduped = this.deduplicate(remoteAccs);
+      const remoteMetsDeduped = this.deduplicate(remoteMets);
+      const remoteCatsDeduped = this.deduplicate(remoteCats);
+      const remoteBudsDeduped = this.deduplicate(remoteBuds);
+
       const localTxns = state.transactions;
       const localAccs = state.accounts;
       const localMets = state.methods;
@@ -292,11 +368,11 @@ export class SyncEngine {
       const localBuds = state.budgets;
 
       // Reconcile each entity type
-      const txResult = reconcile(localTxns, remoteTxns, txChecksums, makeEntityChecksumFn(serializeTransaction));
-      const accResult = reconcile(localAccs, remoteAccs, accChecksums, makeEntityChecksumFn(serializeAccount));
-      const metResult = reconcile(localMets, remoteMets, metChecksums, makeEntityChecksumFn(serializeMethod));
-      const catResult = reconcile(localCats, remoteCats, catChecksums, makeEntityChecksumFn(serializeCategory));
-      const budResult = reconcile(localBuds, remoteBuds, budChecksums, makeEntityChecksumFn(serializeBudget));
+      const txResult = reconcile(localTxns, remoteTxnsDeduped, txChecksums, makeEntityChecksumFn(serializeTransaction));
+      const accResult = reconcile(localAccs, remoteAccsDeduped, accChecksums, makeEntityChecksumFn(serializeAccount));
+      const metResult = reconcile(localMets, remoteMetsDeduped, metChecksums, makeEntityChecksumFn(serializeMethod));
+      const catResult = reconcile(localCats, remoteCatsDeduped, catChecksums, makeEntityChecksumFn(serializeCategory));
+      const budResult = reconcile(localBuds, remoteBudsDeduped, budChecksums, makeEntityChecksumFn(serializeBudget));
 
       // Hydration will be handled by App.tsx using the returned reconciled data
 
@@ -573,6 +649,46 @@ export class SyncEngine {
   }
 
   // ── Helpers ────────────────────────────────────────────────────
+
+  private async migrateLegacySources(sources: string[][]): Promise<void> {
+    const header = sources[0] || [];
+    const methodsHeader = SHEET_HEADERS.Methods;
+    const migratedMethods: string[][] = [];
+
+    for (const row of sources.slice(1)) {
+      if (!row[0]) continue;
+      // Map legacy Source to Method
+      // Sources: ID, Name, Type, Initial Balance, Currency, Is Active, Created At
+      // Methods: ID, Name, Linked Account ID, Is Active, Created At, Updated At, Checksum
+      const name = getValue(row, header, 'Name');
+      const id = getValue(row, header, 'ID');
+      const isActive = getValue(row, header, 'Is Active') === 'TRUE' ? 'TRUE' : 'FALSE';
+      const createdAt = getValue(row, header, 'Created At');
+
+      const migratedRow = [
+        id, name, '', isActive, createdAt, createdAt, '',
+      ];
+      migratedRow[6] = checksumFromRow(migratedRow);
+      migratedMethods.push(migratedRow);
+    }
+
+    if (migratedMethods.length > 0) {
+      await this.client!.appendRows('Methods', migratedMethods);
+      // Optional: Rename or clear Sources to prevent re-migration
+      // For safety, let's just leave it but it won't be read again if Methods is populated now.
+    }
+  }
+
+  private deduplicate<T extends { id: string; updatedAt: string }>(items: T[]): T[] {
+    const latest = new Map<string, T>();
+    for (const item of items) {
+      const existing = latest.get(item.id);
+      if (!existing || new Date(item.updatedAt) > new Date(existing.updatedAt)) {
+        latest.set(item.id, item);
+      }
+    }
+    return Array.from(latest.values());
+  }
 
   private deduplicateQueue(queue: SyncOperation[]): SyncOperation[] {
     // For each entity+entityId combo, keep only the latest operation
