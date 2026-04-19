@@ -39,6 +39,7 @@ interface DataState {
   budgets: Budget[];
   settings: UserSettings;
   accessToken: string | null;
+  tokenExpiresAt: number | null;
   
   // Cloud Sync properties
   userProfile: UserProfile | null;
@@ -92,7 +93,7 @@ interface DataState {
 
   // Settings
   updateSettings: (patch: Partial<UserSettings>) => void;
-  setAccessToken: (token: string | null) => void;
+  setAccessToken: (token: string | null, expiresAt?: number | null) => void;
   completeOnboarding: (accounts?: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>[], categories?: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>[]) => void;
 
   // Sync Engine
@@ -130,6 +131,7 @@ export const useDataStore = create<DataState>()(
     budgets: [] as Budget[],
     settings: defaultSettings,
     accessToken: null,
+    tokenExpiresAt: null,
     userProfile: null,
     spreadsheetId: null,
     lastSyncedAt: null,
@@ -145,7 +147,7 @@ export const useDataStore = create<DataState>()(
 
     initializeFromDB: async () => {
       try {
-        const [accounts, methods, categories, transactions, budgets, settings, lastSyncedAt, accessToken, userProfileStr] = await Promise.all([
+        const [accounts, methods, categories, transactions, budgets, settings, lastSyncedAt, accessToken, tokenExpiresAt, userProfileStr] = await Promise.all([
           getAll<Account>('accounts'),
           getAll<PaymentMethod>('methods'),
           getAll<Category>('categories'),
@@ -154,6 +156,7 @@ export const useDataStore = create<DataState>()(
           getAllSettings(),
           getMeta('lastSyncedAt'),
           getMeta('accessToken'),
+          getMeta('tokenExpiresAt'),
           getMeta('userProfile'),
         ]);
 
@@ -169,7 +172,9 @@ export const useDataStore = create<DataState>()(
           if (settings.numberLocale) userSettings.numberLocale = settings.numberLocale;
           if (settings.fiscalYearStartMonth) userSettings.fiscalYearStartMonth = Number(settings.fiscalYearStartMonth);
           if (settings.dateFormat) userSettings.dateFormat = settings.dateFormat;
-          if (settings.hasCompletedOnboarding) userSettings.hasCompletedOnboarding = settings.hasCompletedOnboarding === 'true';
+          if (settings.hasCompletedOnboarding) {
+            userSettings.hasCompletedOnboarding = String(settings.hasCompletedOnboarding).toLowerCase() === 'true';
+          }
         }
 
         set({
@@ -180,6 +185,7 @@ export const useDataStore = create<DataState>()(
           settings: userSettings,
           lastSyncedAt: lastSyncedAt || null,
           accessToken: accessToken || null,
+          tokenExpiresAt: tokenExpiresAt ? Number(tokenExpiresAt) : null,
           userProfile,
           isHydrated: true,
         });
@@ -448,10 +454,18 @@ export const useDataStore = create<DataState>()(
       });
       markDirty('settings', 'settings', 'update');
     },
-    setAccessToken: (token) => {
-      set(() => ({ accessToken: token }));
-      if (token) setMeta('accessToken', token);
-      else delMeta('accessToken'); // Assuming we have or will add delMeta
+     setAccessToken: (token, expiresAt) => {
+      set(() => ({ 
+        accessToken: token, 
+        tokenExpiresAt: expiresAt || null 
+      }));
+      if (token) {
+        setMeta('accessToken', token);
+        if (expiresAt) setMeta('tokenExpiresAt', String(expiresAt));
+      } else {
+        delMeta('accessToken');
+        delMeta('tokenExpiresAt');
+      }
     },
     setUserProfile: (profile) => {
       set({ userProfile: profile });
@@ -477,7 +491,7 @@ export const useDataStore = create<DataState>()(
             else if (key === 'numberLocale') current.numberLocale = value;
             else if (key === 'fiscalYearStartMonth') current.fiscalYearStartMonth = Number(value);
             else if (key === 'dateFormat') current.dateFormat = value;
-            else if (key === 'hasCompletedOnboarding') current.hasCompletedOnboarding = value === 'true';
+            else if (key === 'hasCompletedOnboarding') current.hasCompletedOnboarding = String(value).toLowerCase() === 'true';
           }
           nextState.settings = current;
         }

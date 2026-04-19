@@ -1,3 +1,4 @@
+import { googleService } from '../lib/google';
 import { SHEET_HEADERS } from './types';
 
 const SHEETS_API_URL = 'https://sheets.googleapis.com/v4';
@@ -7,27 +8,18 @@ const SHEETS_API_URL = 'https://sheets.googleapis.com/v4';
  * Handles reading/writing specific rows and ranges — replaces the old full-overwrite approach.
  */
 export class SheetClient {
-  private accessToken: string;
   private spreadsheetId: string;
 
-  constructor(accessToken: string, spreadsheetId: string) {
-    this.accessToken = accessToken;
+  constructor(spreadsheetId: string) {
     this.spreadsheetId = spreadsheetId;
-  }
-
-  private get headers() {
-    return {
-      Authorization: `Bearer ${this.accessToken}`,
-      'Content-Type': 'application/json',
-    };
   }
 
   // ── Read Operations ─────────────────────────────────────────
 
   /** Read all rows from a sheet tab (including header row). */
   async readSheet(sheetName: string): Promise<string[][]> {
-    const url = `${SHEETS_API_URL}/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(sheetName)}`;
-    const res = await fetch(url, { headers: this.headers });
+    const url = `/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(sheetName)}`;
+    const res = await googleService.sheetsRequest(url);
     
     if (!res.ok) {
       if (res.status === 400) {
@@ -45,8 +37,8 @@ export class SheetClient {
   /** Read a specific row by 1-based index. */
   async readRow(sheetName: string, rowIndex: number): Promise<string[] | null> {
     const range = `${sheetName}!A${rowIndex}:Z${rowIndex}`;
-    const url = `${SHEETS_API_URL}/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(range)}`;
-    const res = await fetch(url, { headers: this.headers });
+    const url = `/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(range)}`;
+    const res = await googleService.sheetsRequest(url);
     
     if (!res.ok) return null;
     
@@ -77,11 +69,10 @@ export class SheetClient {
     if (rows.length === 0) return 0;
 
     const range = `${sheetName}!A1`;
-    const url = `${SHEETS_API_URL}/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+    const url = `/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
     
-    const res = await fetch(url, {
+    const res = await googleService.sheetsRequest(url, {
       method: 'POST',
-      headers: this.headers,
       body: JSON.stringify({ values: rows }),
     });
 
@@ -108,10 +99,9 @@ export class SheetClient {
       values: [u.data],
     }));
 
-    const url = `${SHEETS_API_URL}/spreadsheets/${this.spreadsheetId}/values:batchUpdate`;
-    const res = await fetch(url, {
+    const url = `/spreadsheets/${this.spreadsheetId}/values:batchUpdate`;
+    const res = await googleService.sheetsRequest(url, {
       method: 'POST',
-      headers: this.headers,
       body: JSON.stringify({ valueInputOption: 'USER_ENTERED', data }),
     });
 
@@ -124,11 +114,10 @@ export class SheetClient {
   /** Write data to a specific range. */
   private async writeRange(sheetName: string, startCell: string, values: string[][]): Promise<void> {
     const range = `${sheetName}!${startCell}`;
-    const url = `${SHEETS_API_URL}/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+    const url = `/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
     
-    const res = await fetch(url, {
+    const res = await googleService.sheetsRequest(url, {
       method: 'PUT',
-      headers: this.headers,
       body: JSON.stringify({ values }),
     });
 
@@ -143,8 +132,8 @@ export class SheetClient {
   /** Clear a sheet and write all data (header + rows). Used for force sync. */
   async overwriteSheet(sheetName: string, rows: string[][]): Promise<void> {
     // Clear existing data
-    const clearUrl = `${SHEETS_API_URL}/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(sheetName)}:clear`;
-    await fetch(clearUrl, { method: 'POST', headers: this.headers });
+    const clearUrl = `/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(sheetName)}:clear`;
+    await googleService.sheetsRequest(clearUrl, { method: 'POST' });
 
     // Write header + rows
     const headerDef = SHEET_HEADERS[sheetName];
@@ -159,8 +148,8 @@ export class SheetClient {
 
   /** Ensure required sheet tabs exist. Creates missing ones. */
   async ensureSheetTabs(requiredSheets: string[]): Promise<void> {
-    const metaUrl = `${SHEETS_API_URL}/spreadsheets/${this.spreadsheetId}`;
-    const metaRes = await fetch(metaUrl, { headers: this.headers });
+    const metaUrl = `/spreadsheets/${this.spreadsheetId}`;
+    const metaRes = await googleService.sheetsRequest(metaUrl);
     
     if (!metaRes.ok) throw new Error('Failed to fetch spreadsheet metadata');
     
@@ -174,10 +163,9 @@ export class SheetClient {
       addSheet: { properties: { title } },
     }));
 
-    const batchUrl = `${SHEETS_API_URL}/spreadsheets/${this.spreadsheetId}:batchUpdate`;
-    const res = await fetch(batchUrl, {
+    const batchUrl = `/spreadsheets/${this.spreadsheetId}:batchUpdate`;
+    const res = await googleService.sheetsRequest(batchUrl, {
       method: 'POST',
-      headers: this.headers,
       body: JSON.stringify({ requests }),
     });
 
@@ -203,10 +191,9 @@ export class SheetClient {
     // but we can just loop through readSheet and clear.
     // Wait, let's use the 'values:batchClear' endpoint.
     
-    const url = `${SHEETS_API_URL}/spreadsheets/${this.spreadsheetId}/values:batchClear`;
-    const res = await fetch(url, {
+    const url = `/spreadsheets/${this.spreadsheetId}/values:batchClear`;
+    const res = await googleService.sheetsRequest(url, {
       method: 'POST',
-      headers: this.headers,
       body: JSON.stringify({
         ranges: sheetNames.map(name => `${name}!A2:Z1000`)
       }),

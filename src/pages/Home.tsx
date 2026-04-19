@@ -12,7 +12,8 @@ export default function Home() {
   const login = useGoogleLogin({
     onSuccess: (tokenResponse) => {
       console.log('Login Success:', tokenResponse);
-      setAccessToken(tokenResponse.access_token);
+      const expiresAt = Date.now() + (Number(tokenResponse.expires_in) || 3600) * 1000;
+      setAccessToken(tokenResponse.access_token, expiresAt);
       navigate('/dashboard');
     },
     onError: (error) => console.error('Login Failed:', error),

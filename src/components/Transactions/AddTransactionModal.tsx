@@ -32,9 +32,9 @@ interface AddTransactionModalProps {
 }
 
 export default function AddTransactionModal({ onClose, initialData, isDuplicate }: AddTransactionModalProps) {
-  const { 
-    accounts, methods, categories, settings, 
-    addTransaction, updateTransaction 
+  const {
+    accounts, methods, categories, settings,
+    addTransaction, updateTransaction
   } = useDataStore();
 
   // Helper to find initial account/category from ledger entries
@@ -161,7 +161,7 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
     if (!derivedAccountId) return;
     if (type !== 'transfer' && !isSplit && !derivedTargetId) return;
     if (type === 'transfer' && !derivedTargetId) return;
-    
+
     const isEditing = !!initialData && !isDuplicate;
 
     if (!isSplit || type !== 'expense') {
@@ -177,7 +177,7 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
       };
 
       if (isEditing) {
-        const { LedgerEngine } = require('@/lib/ledger'); 
+        const { LedgerEngine } = require('@/lib/ledger');
         const entries = LedgerEngine.createEntries({ type, amount: parsedAmount, accountId: derivedAccountId, targetId: derivedTargetId });
         updateTransaction(initialData!.id, { ...payload, entries });
       } else {
@@ -210,20 +210,20 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
           <h2 className="text-lg font-bold tracking-tight">
             {initialData && !isDuplicate ? 'Edit' : 'New'} Transaction
           </h2>
-          <Tabs value={type} onValueChange={(v) => { 
-            setType(v as TransactionType); 
+          <Tabs value={type} onValueChange={(v) => {
+            setType(v as TransactionType);
             setIsSplit(false);
           }} className="w-auto">
             <TabsList className="bg-transparent border-b rounded-none h-auto p-0 gap-4">
               {['expense', 'income', 'transfer'].map((t) => (
-                <TabsTrigger 
+                <TabsTrigger
                   key={t}
-                  value={t} 
+                  value={t}
                   className={cn(
                     "rounded-none border-b-2 border-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 pb-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground transition-all",
                     t === 'expense' ? "data-[state=active]:border-expense data-[state=active]:text-expense" :
-                    t === 'income' ? "data-[state=active]:border-income data-[state=active]:text-income" :
-                    "data-[state=active]:border-primary data-[state=active]:text-foreground"
+                      t === 'income' ? "data-[state=active]:border-income data-[state=active]:text-income" :
+                        "data-[state=active]:border-primary data-[state=active]:text-foreground"
                   )}
                 >
                   {t}
@@ -258,8 +258,8 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
               "mt-2 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider transition-colors",
               isFullyAllocated ? "bg-income/10 text-income border border-income/20" : "bg-expense/10 text-expense border border-expense/20"
             )}>
-              {isFullyAllocated 
-                ? "✓ All Split" 
+              {isFullyAllocated
+                ? "✓ All Split"
                 : `Allocated ${formatCurrency(totalSplitAmount, settings)} of ${formatCurrency(parsedAmount, settings)}`}
             </div>
           )}
@@ -268,7 +268,7 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
 
       {/* Form Content Area */}
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 custom-scrollbar min-h-[400px]">
-        
+
         {type === 'transfer' ? (
           <>
             {/* Transfer: Date */}
@@ -402,7 +402,7 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
 
         {type === 'expense' && (
           <div className="pt-1">
-            <button 
+            <button
               type="button"
               onClick={() => setIsSplit(!isSplit)}
               className={cn(
@@ -421,8 +421,8 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
             {splits.map((s, idx) => (
               <div key={idx} className="flex gap-2 items-center bg-accent/5 p-1.5 rounded-lg border border-border/10">
                 <div className="flex-1">
-                  <Select 
-                    value={s.categoryId} 
+                  <Select
+                    value={s.categoryId}
                     onValueChange={(val) => {
                       const next = [...splits];
                       next[idx].categoryId = val;
@@ -440,9 +440,9 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
                   </Select>
                 </div>
                 <div className="w-24">
-                  <Input 
-                    type="number" 
-                    placeholder="Amt" 
+                  <Input
+                    type="number"
+                    placeholder="Amt"
                     className="h-8 text-xs mono bg-background border-transparent"
                     value={s.amount}
                     onChange={(e) => {
@@ -452,10 +452,10 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
                     }}
                   />
                 </div>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
                   className="h-8 w-8 text-muted-foreground hover:text-expense hover:bg-expense/10 shrink-0"
                   onClick={() => setSplits(splits.filter((_, i) => i !== idx))}
                   disabled={splits.length <= 1}
@@ -464,10 +464,10 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
                 </Button>
               </div>
             ))}
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="sm" 
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
               className="w-full text-[9px] font-bold uppercase tracking-[0.2em] h-7 border-dashed border-muted-foreground/30 text-muted-foreground hover:text-primary hover:border-primary/50 bg-transparent"
               onClick={() => setSplits([...splits, { categoryId: '', amount: '', note: '' }])}
             >
@@ -478,8 +478,8 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
 
         <div className="space-y-1.5 pb-4">
           <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Note</Label>
-          <textarea 
-            placeholder="What was this for?" 
+          <textarea
+            placeholder="What was this for?"
             className="w-full min-h-[60px] p-3 rounded-md bg-muted/40 border-transparent focus:ring-1 focus:ring-primary/20 text-xs outline-none resize-none transition-all placeholder:text-muted-foreground/50"
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -488,13 +488,13 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
       </div>
 
       <div className="px-6 py-5 border-t border-border bg-accent/5">
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           className={cn(
             "w-full h-11 text-xs font-bold uppercase tracking-[0.2em] transition-all",
-            type === 'income' ? 'bg-income hover:bg-income/90 text-white shadow-income/20' : 
-            type === 'expense' ? 'bg-expense hover:bg-expense/90 text-white shadow-expense/20' : 
-            'bg-primary hover:bg-primary/90 text-white shadow-primary/20'
+            type === 'income' ? 'bg-income hover:bg-income/90 text-white shadow-income/20' :
+              type === 'expense' ? 'bg-expense hover:bg-expense/90 text-white shadow-expense/20' :
+                'bg-primary hover:bg-primary/90 text-white shadow-primary/20'
           )}
           disabled={!parsedAmount || parsedAmount <= 0 || (isSplit && !isFullyAllocated)}
         >

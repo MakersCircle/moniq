@@ -175,13 +175,13 @@ export default function Accounts() {
                   <div className="flex items-center justify-between p-3 px-4 rounded-lg bg-accent/20 border border-transparent opacity-60">
                     <span className="text-xs font-bold text-muted-foreground">{a.name}</span>
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider" onClick={() => { setDeleteError(prev => { const n = {...prev}; delete n[a.id]; return n; }); updateAccount(a.id, { isActive: true }); }}>
+                      <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider" onClick={() => { setDeleteError(prev => { const n = { ...prev }; delete n[a.id]; return n; }); updateAccount(a.id, { isActive: true }); }}>
                         Restore
                       </Button>
                       <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => {
                         const result = deleteAccount(a.id);
                         if (!result.success) setDeleteError(prev => ({ ...prev, [a.id]: result.reason || 'Cannot delete.' }));
-                        else setDeleteError(prev => { const n = {...prev}; delete n[a.id]; return n; });
+                        else setDeleteError(prev => { const n = { ...prev }; delete n[a.id]; return n; });
                       }}>
                         <Trash2 className="h-3 w-3 mr-1" /> Delete
                       </Button>

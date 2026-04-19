@@ -14,12 +14,15 @@ import LayoutShell from './components/Layout/LayoutShell';
 import { useDataStore } from './store/dataStore';
 import { fetchUserProfile, initializeDatabase } from './api/google';
 import { SyncEngine } from './sync/SyncEngine';
+import { googleService } from './lib/google';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 import AddTransactionModal from './components/Transactions/AddTransactionModal';
 
 export default function App() {
   const accessToken = useDataStore((s) => s.accessToken);
+  const tokenExpiresAt = useDataStore((s) => s.tokenExpiresAt);
+  const setAccessToken = useDataStore((s) => s.setAccessToken);
   const transactions = useDataStore((s) => s.transactions);
   const setUserProfile = useDataStore((s) => s.setUserProfile);
   const setSpreadsheetId = useDataStore((s) => s.setSpreadsheetId);
@@ -44,12 +47,31 @@ export default function App() {
     initializeFromDB();
   }, [initializeFromDB]);
 
-  // 2. Cloud initialization (Google Sheets)
+  // 2. Periodic Token Refresh (every 50 minutes)
+  useEffect(() => {
+    if (!accessToken) return;
+
+    const interval = setInterval(() => {
+      console.log('[App] Proactive token refresh...');
+      googleService.silentRefresh();
+    }, 50 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [accessToken]);
+
+  // 3. Cloud initialization (Google Sheets)
   useEffect(() => {
     if (!accessToken || !isHydrated) return;
 
     async function initCloud() {
       try {
+        // If token is expired, try silent refresh first
+        if (tokenExpiresAt && Date.now() > tokenExpiresAt - 60000) {
+          console.log('[App] Token expired or near expiry, refreshing...');
+          const newToken = await googleService.silentRefresh();
+          if (!newToken) return; // Will redirect to home via token=null change
+        }
+
         const profile = await fetchUserProfile(accessToken!);
         setUserProfile(profile);
 
@@ -64,7 +86,7 @@ export default function App() {
           setSyncStatus(status, pendingCount, error);
         });
 
-        const reconciledData = await engine.initialize(accessToken!, sheetId);
+        const reconciledData = await engine.initialize(sheetId);
         if (reconciledData) {
           hydrateFromSync(reconciledData);
         }
@@ -73,15 +95,12 @@ export default function App() {
         return () => unsubscribe();
       } catch (err: any) {
         console.error('Failed to initialize cloud database:', err);
-        // If the token is invalid/expired (e.g., 401), clear it to return the user to the login state
-        if (err.message === 'Failed to fetch user profile' || (err.message && err.message.includes('401'))) {
-          useDataStore.getState().setAccessToken(null);
-        }
+        // Unauthorized/Expired handled by googleService clearing the token
       }
     }
 
     initCloud();
-  }, [accessToken, isHydrated, setUserProfile, setSpreadsheetId, setSyncStatus, hydrateFromSync]);
+  }, [accessToken, tokenExpiresAt, isHydrated, setUserProfile, setSpreadsheetId, setSyncStatus, hydrateFromSync]);
 
   const hasCompletedOnboarding = settings.hasCompletedOnboarding;
 

@@ -63,7 +63,7 @@ export default function Methods() {
     setModalOpen(false);
   };
 
-  const active   = methods.filter((m) => m.isActive);
+  const active = methods.filter((m) => m.isActive);
   const archived = methods.filter((m) => !m.isActive);
 
   return (
@@ -128,13 +128,13 @@ export default function Methods() {
                   <div className="flex items-center justify-between p-3 px-4 rounded-lg bg-accent/20 border border-transparent opacity-60">
                     <span className="text-xs font-bold text-muted-foreground">{m.name}</span>
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider" onClick={() => { setDeleteError(prev => { const n = {...prev}; delete n[m.id]; return n; }); updateMethod(m.id, { isActive: true }); }}>
+                      <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider" onClick={() => { setDeleteError(prev => { const n = { ...prev }; delete n[m.id]; return n; }); updateMethod(m.id, { isActive: true }); }}>
                         Restore
                       </Button>
                       <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => {
                         const result = deleteMethod(m.id);
                         if (!result.success) setDeleteError(prev => ({ ...prev, [m.id]: result.reason || 'Cannot delete.' }));
-                        else setDeleteError(prev => { const n = {...prev}; delete n[m.id]; return n; });
+                        else setDeleteError(prev => { const n = { ...prev }; delete n[m.id]; return n; });
                       }}>
                         <Trash2 className="h-3 w-3 mr-1" /> Delete
                       </Button>
@@ -155,28 +155,28 @@ export default function Methods() {
           <DialogHeader>
             <DialogTitle className="text-xl font-bold tracking-tight">{editing ? 'Edit Method' : 'New Method'}</DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-6 py-4">
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
                 Display Name
                 <InfoTooltip text="A recognizable name for this payment method (e.g., UPI, HDFC Debit Card). Used to identify it when adding transactions." />
               </Label>
-              <Input 
-                placeholder="e.g., UPI, HDFC Card" 
-                value={form.name} 
+              <Input
+                placeholder="e.g., UPI, HDFC Card"
+                value={form.name}
                 onChange={(e) => { setForm({ ...form, name: e.target.value }); setError(''); }}
                 className="h-10 border-border/50 focus:border-primary/30"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
                 Linked Account
                 <InfoTooltip text="Link this method to an account. When you select this method during a transaction, the linked account will be auto-filled, saving you a step." />
               </Label>
-              <Select 
-                value={form.linkedAccountId || undefined} 
+              <Select
+                value={form.linkedAccountId || undefined}
                 onValueChange={(val) => { setForm({ ...form, linkedAccountId: val }); setError(''); }}
               >
                 <SelectTrigger className="h-10">
@@ -194,7 +194,7 @@ export default function Methods() {
               <p className="text-sm font-medium text-destructive">{error}</p>
             )}
           </div>
-          
+
           <DialogFooter className="pt-4">
             <Button variant="ghost" onClick={() => setModalOpen(false)} className="h-10 px-6 font-bold uppercase text-[10px] tracking-widest">
               Cancel

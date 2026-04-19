@@ -237,21 +237,18 @@ export class SyncEngine {
     }
   }
 
-  private async ensureClient(accessToken?: string, spreadsheetId?: string): Promise<boolean> {
+  private async ensureClient(spreadsheetId?: string): Promise<boolean> {
     if (this.client) return true;
 
-    let token = accessToken;
     let sId = spreadsheetId;
 
-    if (!token || !sId) {
+    if (!sId) {
       const { useDataStore } = await import('../store/dataStore');
-      const state = useDataStore.getState();
-      token = state.accessToken || undefined;
-      sId = state.spreadsheetId || undefined;
+      sId = useDataStore.getState().spreadsheetId || undefined;
     }
 
-    if (token && sId) {
-      this.client = new SheetClient(token, sId);
+    if (sId) {
+      this.client = new SheetClient(sId);
       return true;
     }
 
@@ -261,7 +258,6 @@ export class SyncEngine {
   // ── Initialization (Pull + Reconcile) ──────────────────────────
 
   async initialize(
-    accessToken: string,
     spreadsheetId: string,
   ): Promise<{
     accounts: Account[];
@@ -271,7 +267,7 @@ export class SyncEngine {
     budgets: Budget[];
     settings: Record<string, string>;
   } | null> {
-    if (!(await this.ensureClient(accessToken, spreadsheetId))) return null;
+    if (!(await this.ensureClient(spreadsheetId))) return null;
 
     try {
       this.setStatus('pulling');
@@ -619,7 +615,7 @@ export class SyncEngine {
     const { useDataStore } = await import('../store/dataStore');
     const state = useDataStore.getState();
     if (!state.accessToken || !state.spreadsheetId) return;
-    const data = await this.initialize(state.accessToken, state.spreadsheetId);
+    const data = await this.initialize(state.spreadsheetId);
     if (data) state.hydrateFromSync(data);
   }
 

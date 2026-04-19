@@ -50,7 +50,7 @@ export default function SettingsIndex() {
     try {
       // Execute a full two-way pull + push and hydrate store with any remote updates
       const engine = SyncEngine.getInstance();
-      const reconciledData = await engine.initialize(accessToken, spreadsheetId);
+      const reconciledData = await engine.initialize(spreadsheetId);
       if (reconciledData) {
         hydrateFromSync(reconciledData);
       }

@@ -1,29 +1,22 @@
+import { googleService } from '../lib/google';
 import type { UserProfile } from '../store/dataStore';
 
-const DRIVE_API_URL = 'https://www.googleapis.com/drive/v3';
-const SHEETS_API_URL = 'https://sheets.googleapis.com/v4';
-const USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo';
+/** Fetches the Google User Profile (Name, Email, Picture) */
+export async function fetchUserProfile(_accessToken: string): Promise<UserProfile> {
+  const data = await googleService.fetchUserProfile();
+  return {
+    name: data.name,
+    email: data.email,
+    picture: data.picture || data.avatar,
+  };
+}
 
 const DB_NAME = 'Moniq Database';
 const FOLDER_NAME = 'moniq';
 
-/** Fetches the Google User Profile (Name, Email, Picture) */
-export async function fetchUserProfile(accessToken: string): Promise<UserProfile> {
-  const res = await fetch(USERINFO_URL, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!res.ok) throw new Error('Failed to fetch user profile');
-  const data = await res.json();
-  return {
-    name: data.name,
-    email: data.email,
-    picture: data.picture,
-  };
-}
-
-async function getOrCreateFolder(accessToken: string, headers: any): Promise<string> {
+async function getOrCreateFolder(): Promise<string> {
   const query = encodeURIComponent(`name='${FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-  const searchRes = await fetch(`${DRIVE_API_URL}/files?q=${query}&fields=files(id)`, { headers });
+  const searchRes = await googleService.driveRequest(`/files?q=${query}&fields=files(id)`);
   if (!searchRes.ok) throw new Error('Failed to query Google Drive API for folder');
   
   const searchData = await searchRes.json();
@@ -32,9 +25,8 @@ async function getOrCreateFolder(accessToken: string, headers: any): Promise<str
   }
 
   // Create folder
-  const createRes = await fetch(`${DRIVE_API_URL}/files`, {
+  const createRes = await googleService.driveRequest('/files', {
     method: 'POST',
-    headers,
     body: JSON.stringify({
       name: FOLDER_NAME,
       mimeType: 'application/vnd.google-apps.folder',
@@ -46,18 +38,13 @@ async function getOrCreateFolder(accessToken: string, headers: any): Promise<str
 }
 
 /** Finds existing Moniq Database or creates a new one inside the moniq folder. Returns Spreadsheet ID. */
-export async function initializeDatabase(accessToken: string): Promise<string> {
-  const headers = {
-    Authorization: `Bearer ${accessToken}`,
-    'Content-Type': 'application/json',
-  };
-
+export async function initializeDatabase(_accessToken: string): Promise<string> {
   // 1. Ensure the parent folder exists
-  const folderId = await getOrCreateFolder(accessToken, headers);
+  const folderId = await getOrCreateFolder();
 
   // 2. Search Drive for existing spreadsheet specifically inside our folder
   const query = encodeURIComponent(`name='${DB_NAME}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false and '${folderId}' in parents`);
-  const searchRes = await fetch(`${DRIVE_API_URL}/files?q=${query}&fields=files(id, name)`, { headers });
+  const searchRes = await googleService.driveRequest(`/files?q=${query}&fields=files(id, name)`);
   
   if (!searchRes.ok) {
     throw new Error('Failed to query Google Drive API for spreadsheet');
@@ -71,9 +58,8 @@ export async function initializeDatabase(accessToken: string): Promise<string> {
 
   // 3. Create new spreadsheet if not found
   console.log('Database not found in folder, creating new one...');
-  const createRes = await fetch(`${SHEETS_API_URL}/spreadsheets`, {
+  const createRes = await googleService.sheetsRequest('/spreadsheets', {
     method: 'POST',
-    headers,
     body: JSON.stringify({
       properties: { title: DB_NAME },
       sheets: [
@@ -92,13 +78,12 @@ export async function initializeDatabase(accessToken: string): Promise<string> {
   const sheetId = createData.spreadsheetId;
 
   // 4. Move the newly created spreadsheet into the target folder
-  const fileRes = await fetch(`${DRIVE_API_URL}/files/${sheetId}?fields=parents`, { headers });
+  const fileRes = await googleService.driveRequest(`/files/${sheetId}?fields=parents`);
   const fileData = await fileRes.json();
   const previousParents = fileData.parents ? fileData.parents.join(',') : '';
 
-  await fetch(`${DRIVE_API_URL}/files/${sheetId}?addParents=${folderId}&removeParents=${previousParents}`, {
+  await googleService.driveRequest(`/files/${sheetId}?addParents=${folderId}&removeParents=${previousParents}`, {
     method: 'PATCH',
-    headers,
   });
 
   return sheetId;
