@@ -28,8 +28,7 @@ export default function TransactionDetailPanel({
     const isTransfer = transaction.uiType === 'transfer';
     const isIncome = transaction.uiType === 'income';
 
-    const accountEntries = transaction.entries.filter(e => accounts.some(a => a.id === e.accountId));
-    const targetEntries = transaction.entries.filter(e => !accounts.some(a => a.id === e.accountId));
+
 
     let account = null;
     let toAccount = null;

@@ -68,6 +68,7 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
   const [type, setType] = useState<TransactionType>(initialData?.uiType || 'expense');
   const [amount, setAmount] = useState(initialData?.entries[0]?.amount ? String(initialData.entries[0].amount) : '');
   const [date, setDate] = useState(isDuplicate ? today : (initialData?.date || today));
+  const accountId = initialAccountId;
   const [targetId, setTargetId] = useState(initialTargetId);
   const [methodId, setMethodId] = useState(initialData?.methodId || activeMethods[0]?.id || '');
   const [note, setNote] = useState(initialData?.note || '');

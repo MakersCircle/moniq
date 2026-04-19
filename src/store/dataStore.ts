@@ -143,7 +143,7 @@ export const useDataStore = create<DataState>()(
     setSpreadsheetId: (id) => set({ spreadsheetId: id }),
     setSyncStatus: (syncStatus, pendingCount, lastSyncError) => set({ syncStatus, pendingCount, lastSyncError }),
     setLastSyncedAt: (timestamp) => set({ lastSyncedAt: timestamp }),
-
+    initializeFromDB: async () => {
       try {
         const [accounts, methods, categories, , budgets, settings, lastSyncedAt, accessToken, tokenExpiresAt, userProfileStr] = await Promise.all([
           getAll<Account>('accounts'),
