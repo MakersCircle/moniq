@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Plus, Pencil, Archive, Trash2, Tag } from 'lucide-react';
+import { Plus, Pencil, Archive, Trash2, Tag, Landmark, CreditCard } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
+import { useMemo } from 'react';
 import type { Category, CategoryGroup } from '@/types';
 
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from '@/lib/utils';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
+import { InfoTooltip } from '@/components/ui/info-tooltip';
 
 const GROUPS: CategoryGroup[] = ['Income', 'Needs', 'Wants', 'Invest', 'Lend', 'Borrow'];
 
@@ -41,6 +43,10 @@ export default function Categories() {
   const [editing, setEditing] = useState<Category | null>(null);
   const [form, setForm] = useState({ group: 'Needs' as CategoryGroup, head: '', subHead: '' });
   const [deleteError, setDeleteError] = useState<Record<string, string>>({});
+
+  const existingHeads = useMemo(() => 
+    Array.from(new Set(categories.filter(c => c.isActive).map(c => c.head))).sort()
+  , [categories]);
 
   const openAdd = () => { setEditing(null); setForm({ group: 'Needs', head: '', subHead: '' }); setModalOpen(true); };
   const openEdit = (c: Category) => { setEditing(c); setForm({ group: c.group, head: c.head, subHead: c.subHead || '' }); setModalOpen(true); };
@@ -68,10 +74,11 @@ export default function Categories() {
       <div className="space-y-8">
         <div className="sticky top-0 bg-background/95 backdrop-blur-md z-40 pb-4 pt-2 -mx-1 px-1">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex items-center gap-2">
               <h2 className="text-xl font-bold tracking-tight">Categories</h2>
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Expense & Income Classification</p>
+              <InfoTooltip position="bottom" text="Categories organize your income and expenses into a hierarchy. Every transaction is assigned to a category to help you see where your money goes." />
             </div>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Expense & Income Classification</p>
             <Button size="sm" onClick={openAdd} className="h-9 gap-2">
               <Plus className="h-4 w-4" /> Add Category
             </Button>
@@ -154,7 +161,10 @@ export default function Categories() {
           
           <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Category Group</Label>
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
+                Category Group
+                <InfoTooltip text="Income: Earnings. Needs: Essential spending. Wants: Lifestyle/Hobbies. Invest: Future-building. Lend: Money given to others. Borrow: Money you owe back." />
+              </Label>
               <Select 
                 value={form.group} 
                 onValueChange={(val) => setForm({ ...form, group: val as CategoryGroup })}
@@ -172,16 +182,28 @@ export default function Categories() {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Main Head</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
+                  Main Head
+                  <InfoTooltip text="The primary name for this category (e.g., Food, Transport, Rent)." />
+                </Label>
                 <Input 
                   placeholder="e.g., Food" 
                   value={form.head} 
                   onChange={(e) => setForm({ ...form, head: e.target.value })} 
                   className="h-10 border-border/50 focus:border-primary/30 font-bold"
+                  list="category-heads"
                 />
+                <datalist id="category-heads">
+                  {existingHeads.map(h => (
+                    <option key={h} value={h} />
+                  ))}
+                </datalist>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sub Head</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
+                  Sub Head
+                  <InfoTooltip text="Optional details to break down a main category (e.g., Groceries under Food, or Petrol under Transport)." />
+                </Label>
                 <Input 
                   placeholder="e.g., Groceries" 
                   value={form.subHead} 
