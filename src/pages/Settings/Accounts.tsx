@@ -52,7 +52,7 @@ const emptyForm: AccountForm = {
   name: '',
   type: 'Asset',
   description: '',
-  initialBalance: '0',
+  initialBalance: '',
   isSavings: false,
   excludeFromNet: false
 };
@@ -89,10 +89,6 @@ export default function Accounts() {
   const handleSave = () => {
     if (!form.name.trim()) {
       setError('Display Name is required.');
-      return;
-    }
-    if (form.initialBalance === '') {
-      setError('Opening Balance is required. Enter 0 if none.');
       return;
     }
     setError('');
@@ -295,6 +291,7 @@ export default function Accounts() {
                   type="number"
                   value={form.initialBalance}
                   onChange={(e) => { setForm({ ...form, initialBalance: e.target.value }); setError(''); }}
+                  placeholder="0"
                   className="h-12 pl-8 border-border/50 focus:border-primary/30 text-lg font-bold mono"
                   inputMode="decimal"
                   step="any"
