@@ -1,6 +1,7 @@
 import { LogOut, RefreshCw, Smartphone, Palette, Globe, Target, Zap, AlertCircle, Cloud, CloudOff, Trash2, AlertTriangle } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { googleLogout } from '@react-oauth/google';
+import { useNavigate } from 'react-router-dom';
 import { useDataStore } from '@/store/dataStore';
 import { SyncEngine } from '@/sync/SyncEngine';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,7 @@ export default function SettingsIndex() {
     accessToken, spreadsheetId, hydrateFromSync
   } = useDataStore();
 
+  const navigate = useNavigate();
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [isResetting, setIsResetting] = useState(false);
@@ -65,7 +67,8 @@ export default function SettingsIndex() {
       const engine = SyncEngine.getInstance();
       await engine.performHardReset();
       setResetModalOpen(false);
-      // Redirect happens automatically because hasCompletedOnboarding becomes false
+      // Redirect to home/onboarding
+      navigate('/', { replace: true });
     } catch (err) {
       console.error('Hard reset failed:', err);
     } finally {

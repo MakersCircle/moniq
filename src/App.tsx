@@ -26,6 +26,8 @@ export default function App() {
   const setSyncStatus = useDataStore((s) => s.setSyncStatus);
   const hydrateFromSync = useDataStore((s) => s.hydrateFromSync);
   const settings = useDataStore((s) => s.settings);
+  const isHydrated = useDataStore((s) => s.isHydrated);
+  const initializeFromDB = useDataStore((s) => s.initializeFromDB);
   
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -37,8 +39,14 @@ export default function App() {
   const openEdit = (data: any) => setModalState({ isOpen: true, initialData: data });
   const openDuplicate = (data: any) => setModalState({ isOpen: true, initialData: data, isDuplicate: true });
 
+  // 1. Initial hydration from IndexedDB (structured)
   useEffect(() => {
-    if (!accessToken) return;
+    initializeFromDB();
+  }, [initializeFromDB]);
+
+  // 2. Cloud initialization (Google Sheets)
+  useEffect(() => {
+    if (!accessToken || !isHydrated) return;
 
     async function initCloud() {
       try {
@@ -73,15 +81,23 @@ export default function App() {
     }
 
     initCloud();
-  }, [accessToken, setUserProfile, setSpreadsheetId, setSyncStatus, hydrateFromSync]);
+  }, [accessToken, isHydrated, setUserProfile, setSpreadsheetId, setSyncStatus, hydrateFromSync]);
 
   const hasCompletedOnboarding = settings.hasCompletedOnboarding;
 
-  // To allow child pages to trigger the modal, we'll store the trigger functions in a window object 
-  // or a better yet, just pass them down or use a global store for UI state. 
-  // For now, I'll add them to window for quick access from the Ledger.
   if (accessToken) {
     (window as any).openTransactionModal = { openNew, openEdit, openDuplicate };
+  }
+
+  if (!isHydrated) {
+    return (
+      <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-zinc-800 border-t-zinc-400 rounded-full animate-spin" />
+          <p className="text-zinc-500 font-medium">Loading your space...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

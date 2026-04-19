@@ -157,6 +157,11 @@ export async function setMeta(key: string, value: string): Promise<void> {
   await db.put('meta', { key, value });
 }
 
+export async function delMeta(key: string): Promise<void> {
+  const db = await getDB();
+  await db.delete('meta', key);
+}
+
 // ── Settings helpers ────────────────────────────────────────────
 
 export async function getSetting(key: string): Promise<string | undefined> {

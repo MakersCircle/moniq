@@ -5,7 +5,7 @@ import { SHEET_NAMES, SHEET_HEADERS, DEFAULT_SYNC_CONFIG, type SyncConfig, type 
 import {
   getAll, putMany, clearStore, addToSyncQueue,
   getAllSyncQueue, removeSyncOp, clearSyncQueue, clearRemoteSnapshot,
-  setMeta, getMeta,
+  setMeta, getMeta, putSetting,
 } from '../lib/db';
 
 // ── Utility helpers ──────────────────────────────────────────────
@@ -237,6 +237,27 @@ export class SyncEngine {
     }
   }
 
+  private async ensureClient(accessToken?: string, spreadsheetId?: string): Promise<boolean> {
+    if (this.client) return true;
+
+    let token = accessToken;
+    let sId = spreadsheetId;
+
+    if (!token || !sId) {
+      const { useDataStore } = await import('../store/dataStore');
+      const state = useDataStore.getState();
+      token = state.accessToken || undefined;
+      sId = state.spreadsheetId || undefined;
+    }
+
+    if (token && sId) {
+      this.client = new SheetClient(token, sId);
+      return true;
+    }
+
+    return false;
+  }
+
   // ── Initialization (Pull + Reconcile) ──────────────────────────
 
   async initialize(
@@ -250,27 +271,27 @@ export class SyncEngine {
     budgets: Budget[];
     settings: Record<string, string>;
   } | null> {
-    if (!this.client) return null;
+    if (!(await this.ensureClient(accessToken, spreadsheetId))) return null;
 
     try {
       this.setStatus('pulling');
 
       // Ensure all sheet tabs exist
-      await this.client.ensureSheetTabs(Object.values(SHEET_NAMES));
+      await this.client!.ensureSheetTabs(Object.values(SHEET_NAMES));
 
       // Ensure headers exist on each sheet
       for (const sheetName of Object.values(SHEET_NAMES)) {
-        await this.client.ensureHeaders(sheetName);
+        await this.client!.ensureHeaders(sheetName);
       }
 
       // Pull all data from sheets
       const [txRows, accRows, metRows, catRows, budRows, setRows] = await Promise.all([
-        this.client.readSheet('Transactions'),
-        this.client.readSheet('Accounts'),
-        this.client.readSheet('Methods'),
-        this.client.readSheet('Categories'),
-        this.client.readSheet('Budgets'),
-        this.client.readSheet('Settings'),
+        this.client!.readSheet('Transactions'),
+        this.client!.readSheet('Accounts'),
+        this.client!.readSheet('Methods'),
+        this.client!.readSheet('Categories'),
+        this.client!.readSheet('Budgets'),
+        this.client!.readSheet('Settings'),
       ]);
 
       // Parse remote data (skip header rows)
@@ -363,6 +384,19 @@ export class SyncEngine {
       await this.pushReconciled('Methods', metResult.toUpload, serializeMethod);
       await this.pushReconciled('Categories', catResult.toUpload, serializeCategory);
       await this.pushReconciled('Budgets', budResult.toUpload, serializeBudget);
+
+      // PERSIST Reconciliation results to structured IndexedDB
+      // This is crucial now that we are removing the Zustand blob
+      await putMany('accounts', accResult.merged);
+      await putMany('methods', metResult.merged);
+      await putMany('categories', catResult.merged);
+      await putMany('transactions', txResult.merged);
+      await putMany('budgets', budResult.merged);
+      
+      // Save settings to structured DB
+      for (const [key, value] of Object.entries(remoteSettings)) {
+        await putSetting(key, value);
+      }
 
       await clearSyncQueue();
 
@@ -457,7 +491,8 @@ export class SyncEngine {
   }
 
   private async flush(): Promise<void> {
-    if (!this.client || this._status === 'syncing') return;
+    if (this._status === 'syncing') return;
+    if (!(await this.ensureClient())) return;
 
     const queue = await getAllSyncQueue();
     if (queue.length === 0) {
@@ -590,16 +625,20 @@ export class SyncEngine {
 
   /** Orchestrates a complete wipe of remote and local data. */
   async performHardReset(): Promise<void> {
-    if (!this.client) return;
+    if (!(await this.ensureClient())) {
+      throw new Error('Cannot perform reset: No access token or spreadsheet ID found.');
+    }
     
     const { useDataStore } = await import('../store/dataStore');
+    const state = useDataStore.getState();
+    
     this.setStatus('syncing');
     try {
       // 1. Wipe remote sheets
-      await this.client.clearAllData(Object.values(SHEET_NAMES));
+      await this.client!.clearAllData(Object.values(SHEET_NAMES));
       
       // 2. Wipe local store
-      useDataStore.getState().resetData();
+      state.resetData();
       
       this.setStatus('idle');
     } catch (err: any) {
