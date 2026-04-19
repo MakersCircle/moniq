@@ -186,6 +186,38 @@ export class SheetClient {
     }
   }
 
+  /** Clear all data rows from all registered application sheets (keeping headers). */
+  async clearAllData(sheetNames: string[]): Promise<void> {
+    const requests = sheetNames.map(name => ({
+      updateCells: {
+        range: {
+          sheetId: -1, // We'll need to find the actual IDs or use the title-based clear
+        },
+        fields: 'userEnteredValue'
+      }
+    }));
+    
+    // Actually, title-based clear is simpler if we don't have IDs handy.
+    // Let's use the Values:clear endpoint in a loop or batch.
+    // Batch clear is not directly available via values API for content, 
+    // but we can just loop through readSheet and clear.
+    // Wait, let's use the 'values:batchClear' endpoint.
+    
+    const url = `${SHEETS_API_URL}/spreadsheets/${this.spreadsheetId}/values:batchClear`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify({
+        ranges: sheetNames.map(name => `${name}!A2:Z1000`)
+      }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`Failed to batch clear sheets: ${res.status} ${errorText}`);
+    }
+  }
+
   /** Get the total number of data rows in a sheet (excluding header). */
   async getRowCount(sheetName: string): Promise<number> {
     const rows = await this.readSheet(sheetName);

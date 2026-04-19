@@ -239,13 +239,6 @@ export class SyncEngine {
 
   // ── Initialization (Pull + Reconcile) ──────────────────────────
 
-  /**
-   * Initialize the sync engine. On first load:
-   * 1. Read all sheets from Google
-   * 2. Write to IDB remote_snapshot
-   * 3. Reconcile with local IDB
-   * 4. Return reconciled data for Zustand hydration
-   */
   async initialize(
     accessToken: string,
     spreadsheetId: string,
@@ -257,23 +250,13 @@ export class SyncEngine {
     budgets: Budget[];
     settings: Record<string, string>;
   } | null> {
-    this.client = new SheetClient(accessToken, spreadsheetId);
-    this.setStatus('pulling');
+    if (!this.client) return null;
 
     try {
+      this.setStatus('pulling');
+
       // Ensure all sheet tabs exist
       await this.client.ensureSheetTabs(Object.values(SHEET_NAMES));
-
-      // Check for legacy sheets (e.g., "Sources")
-      const legacyRows = await this.client.readSheet('Sources');
-      if (legacyRows.length > 1) {
-        // Only migrate if we haven't already
-        const methodsRes = await this.client.readSheet('Methods');
-        if (methodsRes.length <= 1) {
-          console.warn('Found legacy "Sources" sheet and "Methods" is empty. Attempting migration...');
-          await this.migrateLegacySources(legacyRows);
-        }
-      }
 
       // Ensure headers exist on each sheet
       for (const sheetName of Object.values(SHEET_NAMES)) {
@@ -333,7 +316,6 @@ export class SyncEngine {
         const current = rows[0] || [];
         const mismatch = current.length !== target.length || current.some((h, i) => h !== target[i]);
         if (mismatch && rows.length > 0) {
-          console.warn(`Header mismatch in "${name}". Triggering repair...`);
           repairs.push(this.client!.overwriteSheet(name, rows.slice(1)));
         }
       };
@@ -346,8 +328,6 @@ export class SyncEngine {
 
       if (repairs.length > 0) {
         await Promise.all(repairs);
-        // If we repaired, we should probably re-read or just trust the next sync will be clean.
-        // For now, let's just proceed with the data we already parsed (which was using the dynamic header mapping anyway).
       }
 
       // Read local data from Zustand store
@@ -374,8 +354,6 @@ export class SyncEngine {
       const catResult = reconcile(localCats, remoteCatsDeduped, catChecksums, makeEntityChecksumFn(serializeCategory));
       const budResult = reconcile(localBuds, remoteBudsDeduped, budChecksums, makeEntityChecksumFn(serializeBudget));
 
-      // Hydration will be handled by App.tsx using the returned reconciled data
-
       // Build row indexes from current sheet data
       this.buildRowIndexes(txRows, accRows, metRows, catRows, budRows);
 
@@ -386,10 +364,6 @@ export class SyncEngine {
       await this.pushReconciled('Categories', catResult.toUpload, serializeCategory);
       await this.pushReconciled('Budgets', budResult.toUpload, serializeBudget);
 
-      // The sync_queue tracks delta mutations (dirty state).
-      // Since we just ran object-by-object global reconciliation and pushed all local-wins
-      // back to Google Sheets, the entire dataset is clean. Pending tracking is redundant 
-      // and flushing it now could cause duplicate appends.
       await clearSyncQueue();
 
       await setMeta('lastSyncedAt', new Date().toISOString());
@@ -407,7 +381,6 @@ export class SyncEngine {
     } catch (err: any) {
       console.error('[SyncEngine] Initialization failed:', err);
       this.setStatus('error', err.message || 'Initialization failed');
-      // Return null — the app should still work with local data
       return null;
     }
   }
@@ -607,10 +580,32 @@ export class SyncEngine {
     await this.client.overwriteSheet('Settings', rows);
   }
 
-  private async flushQueue(): Promise<void> {
-    const queue = await getAllSyncQueue();
-    if (queue.length > 0) {
-      await this.flush();
+  private async startInitialSync(): Promise<void> {
+    const { useDataStore } = await import('../store/dataStore');
+    const state = useDataStore.getState();
+    if (!state.accessToken || !state.spreadsheetId) return;
+    const data = await this.initialize(state.accessToken, state.spreadsheetId);
+    if (data) state.hydrateFromSync(data);
+  }
+
+  /** Orchestrates a complete wipe of remote and local data. */
+  async performHardReset(): Promise<void> {
+    if (!this.client) return;
+    
+    const { useDataStore } = await import('../store/dataStore');
+    this.setStatus('syncing');
+    try {
+      // 1. Wipe remote sheets
+      await this.client.clearAllData(Object.values(SHEET_NAMES));
+      
+      // 2. Wipe local store
+      useDataStore.getState().resetData();
+      
+      this.setStatus('idle');
+    } catch (err: any) {
+      console.error('Hard Reset failed:', err);
+      this.setStatus('error', err.message);
+      throw err;
     }
   }
 
@@ -648,36 +643,11 @@ export class SyncEngine {
     }
   }
 
+  // ── Legacy Compatibility & Migration ──────────────────────────
+
+  // (Migration logic removed for greenfield cleanup)
+
   // ── Helpers ────────────────────────────────────────────────────
-
-  private async migrateLegacySources(sources: string[][]): Promise<void> {
-    const header = sources[0] || [];
-    const methodsHeader = SHEET_HEADERS.Methods;
-    const migratedMethods: string[][] = [];
-
-    for (const row of sources.slice(1)) {
-      if (!row[0]) continue;
-      // Map legacy Source to Method
-      // Sources: ID, Name, Type, Initial Balance, Currency, Is Active, Created At
-      // Methods: ID, Name, Linked Account ID, Is Active, Created At, Updated At, Checksum
-      const name = getValue(row, header, 'Name');
-      const id = getValue(row, header, 'ID');
-      const isActive = getValue(row, header, 'Is Active') === 'TRUE' ? 'TRUE' : 'FALSE';
-      const createdAt = getValue(row, header, 'Created At');
-
-      const migratedRow = [
-        id, name, '', isActive, createdAt, createdAt, '',
-      ];
-      migratedRow[6] = checksumFromRow(migratedRow);
-      migratedMethods.push(migratedRow);
-    }
-
-    if (migratedMethods.length > 0) {
-      await this.client!.appendRows('Methods', migratedMethods);
-      // Optional: Rename or clear Sources to prevent re-migration
-      // For safety, let's just leave it but it won't be read again if Methods is populated now.
-    }
-  }
 
   private deduplicate<T extends { id: string; updatedAt: string }>(items: T[]): T[] {
     const latest = new Map<string, T>();

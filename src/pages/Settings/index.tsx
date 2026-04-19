@@ -1,5 +1,5 @@
-import { LogOut, RefreshCw, Smartphone, Palette, Globe, Target, Zap, AlertCircle, Cloud, CloudOff } from 'lucide-react';
-import { useMemo } from 'react';
+import { LogOut, RefreshCw, Smartphone, Palette, Globe, Target, Zap, AlertCircle, Cloud, CloudOff, Trash2, AlertTriangle } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { googleLogout } from '@react-oauth/google';
 import { useDataStore } from '@/store/dataStore';
 import { SyncEngine } from '@/sync/SyncEngine';
@@ -15,6 +15,10 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 import { getAllCurrencies, COMMON_LOCALES, detectLocalSettings } from '@/constants/currencies';
 import { formatCurrency } from '@/utils/format';
@@ -23,9 +27,13 @@ export default function SettingsIndex() {
   const { 
     settings, updateSettings, 
     userProfile, lastSyncedAt, syncStatus, pendingCount, lastSyncError,
-    setAccessToken, setUserProfile, setSpreadsheetId,
+    setAccessToken, setUserProfile, setSpreadsheetId, resetData,
     accessToken, spreadsheetId, hydrateFromSync
   } = useDataStore();
+
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
 
   const handleLogout = () => {
     googleLogout();
@@ -46,6 +54,22 @@ export default function SettingsIndex() {
       }
     } catch (err) {
       console.error('Manual sync failed:', err);
+    }
+  };
+
+  const handleHardReset = async () => {
+    if (resetConfirmText !== 'RESET') return;
+    
+    setIsResetting(true);
+    try {
+      const engine = SyncEngine.getInstance();
+      await engine.performHardReset();
+      setResetModalOpen(false);
+      // Redirect happens automatically because hasCompletedOnboarding becomes false
+    } catch (err) {
+      console.error('Hard reset failed:', err);
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -214,7 +238,94 @@ export default function SettingsIndex() {
             </CardContent>
           </Card>
         </section>
+
+        {/* Danger Zone */}
+        <section className="space-y-4 pt-4">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-destructive/70 px-1">Danger Zone</h3>
+          <Card className="border-destructive/20 bg-destructive/5 shadow-sm">
+             <CardContent className="p-6">
+                <div className="flex items-center justify-between gap-6">
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-destructive">Reset All Data</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed max-w-md">
+                      Permanently wipe all transactions, accounts, and categories from this device and your Google Sheet. This action cannot be undone.
+                    </p>
+                  </div>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    onClick={() => {
+                      setResetConfirmText('');
+                      setResetModalOpen(true);
+                    }}
+                    className="h-9 px-4 shrink-0 shadow-sm"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Reset Data
+                  </Button>
+                </div>
+             </CardContent>
+          </Card>
+        </section>
       </div>
+
+      {/* Hard Reset Modal */}
+      <Dialog open={resetModalOpen} onOpenChange={setResetModalOpen}>
+        <DialogContent className="max-w-md border-none shadow-2xl p-0 overflow-hidden bg-background">
+          <div className="p-6 space-y-6">
+            <div className="flex items-center gap-4 text-destructive">
+              <div className="h-12 w-12 rounded-2xl bg-destructive/10 flex items-center justify-center">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold tracking-tight">Are you absolutely sure?</h3>
+                <p className="text-sm text-muted-foreground">This action is irreversible.</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 rounded-xl bg-muted/50 p-4 border border-border">
+              <ul className="text-xs space-y-2 text-muted-foreground list-disc list-inside">
+                <li>All <span className="text-foreground font-medium">local data</span> will be wiped.</li>
+                <li>All data in your <span className="text-foreground font-medium">Google Sheet</span> will be cleared.</li>
+                <li>The app will return to the <span className="text-foreground font-medium">onboarding</span> state.</li>
+              </ul>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Type <span className="text-destructive underline decoration-2 underline-offset-4">RESET</span> to confirm</Label>
+              <Input 
+                value={resetConfirmText}
+                onChange={(e) => setResetConfirmText(e.target.value.toUpperCase())}
+                placeholder="Type RESET here..."
+                className="h-11 border-border focus-visible:ring-destructive"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                className="flex-1 h-11 font-medium" 
+                onClick={() => setResetModalOpen(false)}
+                disabled={isResetting}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                className="flex-1 h-11 font-bold shadow-lg shadow-destructive/20" 
+                disabled={resetConfirmText !== 'RESET' || isResetting}
+                onClick={handleHardReset}
+              >
+                {isResetting ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Delete Everything"
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </SettingsLayout>
   );
 }

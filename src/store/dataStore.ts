@@ -16,6 +16,7 @@ const defaultSettings: UserSettings = {
   numberLocale: detected.locale,
   fiscalYearStartMonth: detected.currency === 'INR' ? 4 : 1, // April for India, Jan for others
   dateFormat: detected.currency === 'INR' ? 'dd/MM/yyyy' : 'MM/dd/yyyy',
+  hasCompletedOnboarding: false,
 };
 
 // ── Store interface ──────────────────────────────────────────
@@ -99,6 +100,7 @@ interface DataState {
     budgets: Budget[];
     settings: Record<string, string>;
   }) => void;
+  resetData: () => void;
 }
 
 export const uuid = () => crypto.randomUUID();
@@ -385,6 +387,21 @@ export const useDataStore = create<DataState>()(
 
           return nextState;
         });
+      },
+      resetData: () => {
+        set(() => ({
+          accounts: [],
+          methods: [],
+          categories: [],
+          transactions: [],
+          budgets: [],
+          settings: defaultSettings,
+          spreadsheetId: null,
+          lastSyncedAt: null,
+          syncStatus: 'idle',
+          pendingCount: 0,
+          lastSyncError: undefined,
+        }));
       },
     }),
     { 

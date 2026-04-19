@@ -25,6 +25,7 @@ export default function App() {
   const setSpreadsheetId = useDataStore((s) => s.setSpreadsheetId);
   const setSyncStatus = useDataStore((s) => s.setSyncStatus);
   const hydrateFromSync = useDataStore((s) => s.hydrateFromSync);
+  const settings = useDataStore((s) => s.settings);
   
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -74,7 +75,7 @@ export default function App() {
     initCloud();
   }, [accessToken, setUserProfile, setSpreadsheetId, setSyncStatus, hydrateFromSync]);
 
-  const hasTransactions = transactions.length > 0;
+  const hasCompletedOnboarding = settings.hasCompletedOnboarding;
 
   // To allow child pages to trigger the modal, we'll store the trigger functions in a window object 
   // or a better yet, just pass them down or use a global store for UI state. 
@@ -90,7 +91,7 @@ export default function App() {
         <Route 
           path="/" 
           element={
-            accessToken && hasTransactions 
+            accessToken && hasCompletedOnboarding 
               ? <Navigate to="/dashboard" replace /> 
               : <Home />
           } 
@@ -112,7 +113,7 @@ export default function App() {
                   <Route path="settings/methods" element={<Methods />} />
                   <Route path="settings/categories" element={<Categories />} />
                   <Route path="settings/trash" element={<SettingsTrash />} />
-                  <Route path="*" element={<Navigate to={hasTransactions ? "/dashboard" : "/"} replace />} />
+                  <Route path="*" element={<Navigate to={hasCompletedOnboarding ? "/dashboard" : "/"} replace />} />
                 </Routes>
               </LayoutShell>
             ) : (
