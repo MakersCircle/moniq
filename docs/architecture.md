@@ -89,8 +89,15 @@ The app will wrap Google Sheets API v4 with a client abstraction.
   - `PUT`: `spreadsheets.values.update` for editing existing records (updating specific cells).
   - `DELETE`: Rather than deleting rows and messing up indices, use soft deletes (setting an `is_deleted` column to true or updating the row).
 
-### 3. State Management (Client-Side)
-- **Local Caching:** Since the database is remote and has API limits, on initialization, the app fetches all rows and loads them into memory. Local state is persisted via `zustand/persist` with `localStorage` (key: `moniq-data`).
-- **Optimistic UI:** When user adds a transaction, it updates the UI immediately and background pushes to Sheets.
+### 3. State Management & Sync (Client-Side)
+- **Local Storage:** `zustand/persist` with a custom IndexedDB adapter (`idb` library). The IDB database `moniq-db` stores entities across dedicated object stores (accounts, methods, categories, transactions, budgets, settings, sync_queue, remote_snapshot, meta).
+- **Optimistic UI:** Mutations update the Zustand store immediately. The SyncEngine is notified via `markDirty()` and debounces writes (3s window) before flushing only changed rows to Google Sheets.
+- **SyncEngine (`src/sync/`):**
+  - **Pull (initialization):** On login, reads all sheet tabs → writes to IDB shadow tables → reconciles local vs remote using `updatedAt` timestamps and row checksums → hydrates the Zustand store with the reconciled result.
+  - **Push (flush):** Groups dirty operations by entity type. Uses `append` for new rows and `batchUpdate` for existing rows (via a maintained row-index map). Never clear-and-rewrite.
+  - **Conflict resolution:** Sheet is source of truth. Checksum column on each row detects manual sheet edits (where `updatedAt` doesn't change). Newer `updatedAt` wins; ties go to remote.
+  - **Retry:** Failed operations stay in a persistent sync queue (IDB) and retry with exponential backoff (1s → 2s → 4s → ... → 60s cap).
+  - **Status:** Reactive `syncStatus` (`idle` | `syncing` | `pulling` | `error` | `offline`) and `pendingCount` exposed to the UI.
 - **Onboarding:** New users are presented with an interactive onboarding modal that offers curated default accounts and categories from `src/data/defaults.json`, or the option to start from scratch.
 - **Deletion Safety:** Entities (accounts, categories, payment methods) can be archived (soft-delete) or permanently deleted only if no transactions reference them. Deleting an account cascade-removes its linked payment methods if they are also unreferenced.
+

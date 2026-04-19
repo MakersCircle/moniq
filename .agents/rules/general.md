@@ -8,5 +8,6 @@ Review `docs/architecture.md` and `docs/design_system.md` before making structur
 
 After completing feature implementations, check `docs/roadmap.md` and update it accordingly.
 
+If a particular change is important enough, update all docs/* accordingly.
 
-keep a version for our code. bump up the version after change accordingly.
+Keep a version for our code. bump up the version after change accordingly.

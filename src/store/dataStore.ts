@@ -1,8 +1,10 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { Account, PaymentMethod, Category, Transaction, Budget, UserSettings } from '../types';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import type { Account, PaymentMethod, Category, Transaction, Budget, UserSettings, SyncStatus } from '../types';
 import { LedgerEngine } from '../lib/ledger';
 import { detectLocalSettings, getCurrencySymbol } from '../constants/currencies';
+import { idbStorage } from '../lib/idbStorage';
+import { SyncEngine } from '../sync/SyncEngine';
 
 // ── Default settings & helpers ─────────────────────────────────
 
@@ -37,27 +39,30 @@ interface DataState {
   userProfile: UserProfile | null;
   spreadsheetId: string | null;
   lastSyncedAt: string | null;
-  isSyncing: boolean;
+  syncStatus: SyncStatus;
+  pendingCount: number;
+  lastSyncError: string | undefined;
 
   // Cloud Actions
   setUserProfile: (profile: UserProfile | null) => void;
   setSpreadsheetId: (id: string | null) => void;
-  setSyncState: (lastSyncedAt: string | null, isSyncing: boolean) => void;
+  setSyncStatus: (status: SyncStatus, pendingCount: number, error?: string) => void;
+  setLastSyncedAt: (timestamp: string) => void;
 
   // Accounts
-  addAccount: (a: Omit<Account, 'id' | 'createdAt'>) => void;
+  addAccount: (a: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateAccount: (id: string, patch: Partial<Account>) => void;
   archiveAccount: (id: string) => void;
   deleteAccount: (id: string) => { success: boolean; reason?: string };
 
   // Methods
-  addMethod: (m: Omit<PaymentMethod, 'id' | 'createdAt'>) => void;
+  addMethod: (m: Omit<PaymentMethod, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateMethod: (id: string, patch: Partial<PaymentMethod>) => void;
   archiveMethod: (id: string) => void;
   deleteMethod: (id: string) => { success: boolean; reason?: string };
 
   // Categories
-  addCategory: (c: Omit<Category, 'id' | 'createdAt'>) => void;
+  addCategory: (c: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateCategory: (id: string, patch: Partial<Category>) => void;
   archiveCategory: (id: string) => void;
   deleteCategory: (id: string) => { success: boolean; reason?: string };
@@ -83,12 +88,30 @@ interface DataState {
   // Settings
   updateSettings: (patch: Partial<UserSettings>) => void;
   setAccessToken: (token: string | null) => void;
-  completeOnboarding: (accounts?: Omit<Account, 'id' | 'createdAt'>[], categories?: Omit<Category, 'id' | 'createdAt'>[]) => void;
-  triggerSync: () => Promise<void>;
+  completeOnboarding: (accounts?: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>[], categories?: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>[]) => void;
+
+  // Sync Engine
+  hydrateFromSync: (data: {
+    accounts: Account[];
+    methods: PaymentMethod[];
+    categories: Category[];
+    transactions: Transaction[];
+    budgets: Budget[];
+    settings: Record<string, string>;
+  }) => void;
 }
 
 export const uuid = () => crypto.randomUUID();
 export const now = () => new Date().toISOString();
+
+/** Helper to notify the SyncEngine about a dirty entity */
+const markDirty = (entity: 'transaction' | 'account' | 'method' | 'category' | 'budget' | 'settings', entityId: string, action: 'create' | 'update' | 'delete') => {
+  try {
+    SyncEngine.getInstance().markDirty(entity, entityId, action);
+  } catch {
+    // SyncEngine may not be initialized yet (before login)
+  }
+};
 
 export const useDataStore = create<DataState>()(
   persist(
@@ -103,20 +126,28 @@ export const useDataStore = create<DataState>()(
       userProfile: null,
       spreadsheetId: null,
       lastSyncedAt: null,
-      isSyncing: false,
+      syncStatus: 'idle' as SyncStatus,
+      pendingCount: 0,
+      lastSyncError: undefined,
 
       // Cloud actions
       setUserProfile: (profile) => set({ userProfile: profile }),
       setSpreadsheetId: (id) => set({ spreadsheetId: id }),
-      setSyncState: (lastSyncedAt, isSyncing) => set({ lastSyncedAt, isSyncing }),
+      setSyncStatus: (syncStatus, pendingCount, lastSyncError) => set({ syncStatus, pendingCount, lastSyncError }),
+      setLastSyncedAt: (timestamp) => set({ lastSyncedAt: timestamp }),
 
       completeOnboarding: (accs, cats) => {
         set((state) => {
           const t = now();
-          const newAccounts = (accs || []).map(a => ({ ...a, id: uuid(), createdAt: t } as Account));
-          const newCategories = (cats || []).map(c => ({ ...c, id: uuid(), createdAt: t } as Category));
-          const newMethods = newAccounts.map(a => ({ id: uuid(), name: `${a.name}`, linkedAccountId: a.id, isActive: true, createdAt: t } as PaymentMethod));
+          const newAccounts = (accs || []).map(a => ({ ...a, id: uuid(), createdAt: t, updatedAt: t } as Account));
+          const newCategories = (cats || []).map(c => ({ ...c, id: uuid(), createdAt: t, updatedAt: t } as Category));
+          const newMethods = newAccounts.map(a => ({ id: uuid(), name: `${a.name}`, linkedAccountId: a.id, isActive: true, createdAt: t, updatedAt: t } as PaymentMethod));
           
+          // Mark all new entities dirty
+          for (const a of newAccounts) markDirty('account', a.id, 'create');
+          for (const c of newCategories) markDirty('category', c.id, 'create');
+          for (const m of newMethods) markDirty('method', m.id, 'create');
+
           return {
             accounts: [...state.accounts, ...newAccounts],
             categories: [...state.categories, ...newCategories],
@@ -124,25 +155,27 @@ export const useDataStore = create<DataState>()(
             settings: { ...state.settings, hasCompletedOnboarding: true }
           };
         });
-        useDataStore.getState().triggerSync();
+        markDirty('settings', 'hasCompletedOnboarding', 'update');
       },
 
       addAccount: (a) => {
         const id = uuid();
         const t = now();
+        const methodId = uuid();
         set((state) => ({ 
-          accounts: [...state.accounts, { ...a, id, createdAt: t }],
-          methods: [...state.methods, { id: uuid(), name: a.name, linkedAccountId: id, isActive: true, createdAt: t }]
+          accounts: [...state.accounts, { ...a, id, createdAt: t, updatedAt: t }],
+          methods: [...state.methods, { id: methodId, name: a.name, linkedAccountId: id, isActive: true, createdAt: t, updatedAt: t }]
         }));
-        useDataStore.getState().triggerSync();
+        markDirty('account', id, 'create');
+        markDirty('method', methodId, 'create');
       },
       updateAccount: (id, patch) => {
-        set((state) => ({ accounts: state.accounts.map((s) => (s.id === id ? { ...s, ...patch } : s)) }));
-        useDataStore.getState().triggerSync();
+        set((state) => ({ accounts: state.accounts.map((s) => (s.id === id ? { ...s, ...patch, updatedAt: now() } : s)) }));
+        markDirty('account', id, 'update');
       },
       archiveAccount: (id) => {
-        set((state) => ({ accounts: state.accounts.map((s) => (s.id === id ? { ...s, isActive: false } : s)) }));
-        useDataStore.getState().triggerSync();
+        set((state) => ({ accounts: state.accounts.map((s) => (s.id === id ? { ...s, isActive: false, updatedAt: now() } : s)) }));
+        markDirty('account', id, 'update');
       },
       deleteAccount: (id): { success: boolean; reason?: string } => {
         const state = useDataStore.getState();
@@ -160,26 +193,30 @@ export const useDataStore = create<DataState>()(
         const hasBudgets = state.budgets.some(b => b.categoryId === id);
         if (hasBudgets) return { success: false, reason: 'This account is referenced by a budget. Remove the budget first.' };
         // Safe to delete — cascade-remove all linked payment methods too
+        const deletedMethodIds = linkedMethods.map(m => m.id);
         set((s) => ({
           accounts: s.accounts.filter(a => a.id !== id),
           methods: s.methods.filter(m => m.linkedAccountId !== id),
         }));
-        useDataStore.getState().triggerSync();
+        markDirty('account', id, 'delete');
+        for (const mId of deletedMethodIds) markDirty('method', mId, 'delete');
         return { success: true };
       },
 
       // Methods
       addMethod: (m) => {
-        set((state) => ({ methods: [...state.methods, { ...m, id: uuid(), createdAt: now() }] }));
-        useDataStore.getState().triggerSync();
+        const id = uuid();
+        const t = now();
+        set((state) => ({ methods: [...state.methods, { ...m, id, createdAt: t, updatedAt: t }] }));
+        markDirty('method', id, 'create');
       },
       updateMethod: (id, patch) => {
-        set((state) => ({ methods: state.methods.map((m) => (m.id === id ? { ...m, ...patch } : m)) }));
-        useDataStore.getState().triggerSync();
+        set((state) => ({ methods: state.methods.map((m) => (m.id === id ? { ...m, ...patch, updatedAt: now() } : m)) }));
+        markDirty('method', id, 'update');
       },
       archiveMethod: (id) => {
-        set((state) => ({ methods: state.methods.map((m) => (m.id === id ? { ...m, isActive: false } : m)) }));
-        useDataStore.getState().triggerSync();
+        set((state) => ({ methods: state.methods.map((m) => (m.id === id ? { ...m, isActive: false, updatedAt: now() } : m)) }));
+        markDirty('method', id, 'update');
       },
       deleteMethod: (id): { success: boolean; reason?: string } => {
         const state = useDataStore.getState();
@@ -195,22 +232,24 @@ export const useDataStore = create<DataState>()(
         }
         // Safe to delete
         set((s) => ({ methods: s.methods.filter(m => m.id !== id) }));
-        useDataStore.getState().triggerSync();
+        markDirty('method', id, 'delete');
         return { success: true };
       },
 
       // Categories
       addCategory: (c) => {
-        set((state) => ({ categories: [...state.categories, { ...c, id: uuid(), createdAt: now() }] }));
-        useDataStore.getState().triggerSync();
+        const id = uuid();
+        const t = now();
+        set((state) => ({ categories: [...state.categories, { ...c, id, createdAt: t, updatedAt: t }] }));
+        markDirty('category', id, 'create');
       },
       updateCategory: (id, patch) => {
-        set((state) => ({ categories: state.categories.map((c) => (c.id === id ? { ...c, ...patch } : c)) }));
-        useDataStore.getState().triggerSync();
+        set((state) => ({ categories: state.categories.map((c) => (c.id === id ? { ...c, ...patch, updatedAt: now() } : c)) }));
+        markDirty('category', id, 'update');
       },
       archiveCategory: (id) => {
-        set((state) => ({ categories: state.categories.map((c) => (c.id === id ? { ...c, isActive: false } : c)) }));
-        useDataStore.getState().triggerSync();
+        set((state) => ({ categories: state.categories.map((c) => (c.id === id ? { ...c, isActive: false, updatedAt: now() } : c)) }));
+        markDirty('category', id, 'update');
       },
       deleteCategory: (id): { success: boolean; reason?: string } => {
         const state = useDataStore.getState();
@@ -222,7 +261,7 @@ export const useDataStore = create<DataState>()(
         if (hasBudgets) return { success: false, reason: 'This category has a budget assigned. Remove the budget first.' };
         // Safe to delete
         set((s) => ({ categories: s.categories.filter(c => c.id !== id) }));
-        useDataStore.getState().triggerSync();
+        markDirty('category', id, 'delete');
         return { success: true };
       },
 
@@ -230,12 +269,14 @@ export const useDataStore = create<DataState>()(
       addTransaction: (params) => {
         const { date, uiType, amount, accountId, targetId, methodId, note, tags } = params;
         const entries = LedgerEngine.createEntries({ type: uiType, amount, accountId, targetId });
+        const id = uuid();
+        const t = now();
         
         set((state) => ({
           transactions: [
             ...state.transactions,
             { 
-              id: uuid(), 
+              id, 
               groupId: uuid(), 
               date, 
               amount,
@@ -245,12 +286,12 @@ export const useDataStore = create<DataState>()(
               note, 
               tags, 
               isDeleted: false, 
-              createdAt: now(), 
-              updatedAt: now() 
+              createdAt: t, 
+              updatedAt: t,
             },
           ],
         }));
-        useDataStore.getState().triggerSync();
+        markDirty('transaction', id, 'create');
       },
 
       updateTransaction: (id, patch) => {
@@ -259,7 +300,7 @@ export const useDataStore = create<DataState>()(
             t.id === id ? { ...t, ...patch, updatedAt: now() } : t
           ),
         }));
-        useDataStore.getState().triggerSync();
+        markDirty('transaction', id, 'update');
       },
       deleteTransaction: (id) => {
         set((state) => ({
@@ -267,21 +308,25 @@ export const useDataStore = create<DataState>()(
             t.id === id ? { ...t, isDeleted: true, updatedAt: now() } : t
           ),
         }));
-        useDataStore.getState().triggerSync();
+        markDirty('transaction', id, 'update'); // Soft delete = update
       },
 
       // Budgets
       updateBudget: (categoryId, period, amount) => {
         set((state) => {
           const existingIdx = state.budgets.findIndex(b => b.categoryId === categoryId && b.period === period);
+          const t = now();
           if (existingIdx >= 0) {
             const next = [...state.budgets];
-            next[existingIdx] = { ...next[existingIdx], amount };
+            const existingId = next[existingIdx].id;
+            next[existingIdx] = { ...next[existingIdx], amount, updatedAt: t };
+            markDirty('budget', existingId, 'update');
             return { budgets: next };
           }
-          return { budgets: [...state.budgets, { id: uuid(), categoryId, period, amount, createdAt: now() }] };
+          const id = uuid();
+          markDirty('budget', id, 'create');
+          return { budgets: [...state.budgets, { id, categoryId, period, amount, createdAt: t, updatedAt: t }] };
         });
-        useDataStore.getState().triggerSync();
       },
 
       // Settings
@@ -296,27 +341,55 @@ export const useDataStore = create<DataState>()(
           
           return { settings: nextSettings };
         });
-        useDataStore.getState().triggerSync();
+        markDirty('settings', 'settings', 'update');
       },
       setAccessToken: (token) =>
         set(() => ({ accessToken: token })),
 
-      triggerSync: async () => {
-        const state = useDataStore.getState();
-        if (!state.accessToken || !state.spreadsheetId || state.isSyncing) return;
-        
-        const { syncDataToGoogleSheets } = await import('../api/google');
-        
-        set({ isSyncing: true });
-        try {
-          await syncDataToGoogleSheets(state.accessToken, state.spreadsheetId, state);
-          set({ lastSyncedAt: new Date().toISOString(), isSyncing: false });
-        } catch (err) {
-          console.error("Auto-sync failed:", err);
-          set({ isSyncing: false });
-        }
-      }
+      // Hydrate from SyncEngine reconciliation
+      hydrateFromSync: (data) => {
+        set((state) => {
+          const nextState: Partial<DataState> = {};
+
+          if (data.accounts.length > 0 || state.accounts.length === 0) {
+            nextState.accounts = data.accounts;
+          }
+          if (data.methods.length > 0 || state.methods.length === 0) {
+            nextState.methods = data.methods;
+          }
+          if (data.categories.length > 0 || state.categories.length === 0) {
+            nextState.categories = data.categories;
+          }
+          if (data.transactions.length > 0 || state.transactions.length === 0) {
+            nextState.transactions = data.transactions;
+          }
+          if (data.budgets.length > 0 || state.budgets.length === 0) {
+            nextState.budgets = data.budgets;
+          }
+
+          // Merge remote settings if present
+          if (Object.keys(data.settings).length > 0) {
+            const remoteSettings: Partial<UserSettings> = {};
+            for (const [key, value] of Object.entries(data.settings)) {
+              if (key === 'currency') remoteSettings.currency = value;
+              else if (key === 'currencySymbol') remoteSettings.currencySymbol = value;
+              else if (key === 'numberLocale') remoteSettings.numberLocale = value;
+              else if (key === 'fiscalYearStartMonth') remoteSettings.fiscalYearStartMonth = Number(value);
+              else if (key === 'dateFormat') remoteSettings.dateFormat = value;
+              else if (key === 'hasCompletedOnboarding') remoteSettings.hasCompletedOnboarding = value === 'true';
+            }
+            nextState.settings = { ...state.settings, ...remoteSettings };
+          }
+
+          nextState.lastSyncedAt = new Date().toISOString();
+
+          return nextState;
+        });
+      },
     }),
-    { name: 'moniq-data' }
+    { 
+      name: 'moniq-data',
+      storage: createJSONStorage(() => idbStorage),
+    }
   )
 );

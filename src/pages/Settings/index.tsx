@@ -1,8 +1,8 @@
-import { LogOut, RefreshCw, Smartphone, Palette, Globe, Target, Zap } from 'lucide-react';
+import { LogOut, RefreshCw, Smartphone, Palette, Globe, Target, Zap, AlertCircle, Cloud, CloudOff } from 'lucide-react';
 import { useMemo } from 'react';
 import { googleLogout } from '@react-oauth/google';
 import { useDataStore } from '@/store/dataStore';
-import { syncDataToGoogleSheets } from '@/api/google';
+import { SyncEngine } from '@/sync/SyncEngine';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,13 +22,14 @@ import { formatCurrency } from '@/utils/format';
 export default function SettingsIndex() {
   const { 
     settings, updateSettings, 
-    userProfile, lastSyncedAt, isSyncing, setAccessToken, 
-    setUserProfile, setSpreadsheetId, setSyncState, 
-    accessToken, spreadsheetId 
+    userProfile, lastSyncedAt, syncStatus, pendingCount, lastSyncError,
+    setAccessToken, setUserProfile, setSpreadsheetId,
+    accessToken, spreadsheetId, hydrateFromSync
   } = useDataStore();
 
   const handleLogout = () => {
     googleLogout();
+    SyncEngine.reset();
     setAccessToken(null);
     setUserProfile(null);
     setSpreadsheetId(null);
@@ -36,15 +37,15 @@ export default function SettingsIndex() {
 
   const handleManualSync = async () => {
     if (!accessToken || !spreadsheetId) return;
-    setSyncState(lastSyncedAt, true);
-    
     try {
-      const fullState = useDataStore.getState();
-      await syncDataToGoogleSheets(accessToken, spreadsheetId, fullState);
-      setSyncState(new Date().toISOString(), false);
+      // Execute a full two-way pull + push and hydrate store with any remote updates
+      const engine = SyncEngine.getInstance();
+      const reconciledData = await engine.initialize(accessToken, spreadsheetId);
+      if (reconciledData) {
+        hydrateFromSync(reconciledData);
+      }
     } catch (err) {
-      console.error(err);
-      setSyncState(lastSyncedAt, false);
+      console.error('Manual sync failed:', err);
     }
   };
 
@@ -93,25 +94,50 @@ export default function SettingsIndex() {
              <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                      <RefreshCw className={cn("h-5 w-5", isSyncing && "animate-spin")} />
+                    <div className={cn(
+                      "h-10 w-10 rounded-full flex items-center justify-center",
+                      syncStatus === 'idle' && "bg-emerald-500/10 text-emerald-500",
+                      syncStatus === 'syncing' && "bg-blue-500/10 text-blue-500",
+                      syncStatus === 'pulling' && "bg-blue-500/10 text-blue-500",
+                      syncStatus === 'error' && "bg-red-500/10 text-red-500",
+                      syncStatus === 'offline' && "bg-zinc-500/10 text-zinc-500",
+                    )}>
+                      {syncStatus === 'error' ? (
+                        <AlertCircle className="h-5 w-5" />
+                      ) : syncStatus === 'offline' ? (
+                        <CloudOff className="h-5 w-5" />
+                      ) : (
+                        <RefreshCw className={cn("h-5 w-5", (syncStatus === 'syncing' || syncStatus === 'pulling') && "animate-spin")} />
+                      )}
                     </div>
                     <div>
                       <p className="text-sm font-bold tracking-tight">Google Sheets Database</p>
                       <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                         {lastSyncedAt ? `Last active ${new Date(lastSyncedAt).toLocaleString()}` : 'No sync recorded'}
+                         {syncStatus === 'syncing' ? 'Syncing changes…' 
+                           : syncStatus === 'pulling' ? 'Pulling from sheets…'
+                           : syncStatus === 'error' ? 'Sync error'
+                           : syncStatus === 'offline' ? 'Offline'
+                           : lastSyncedAt ? `Last synced ${new Date(lastSyncedAt).toLocaleString()}` : 'No sync recorded'}
                       </p>
+                      {pendingCount > 0 && syncStatus === 'idle' && (
+                        <p className="text-[10px] text-amber-500 font-medium mt-0.5">{pendingCount} change{pendingCount > 1 ? 's' : ''} pending</p>
+                      )}
                     </div>
                   </div>
                   <Button 
                     onClick={handleManualSync}
-                    disabled={isSyncing}
+                    disabled={syncStatus === 'syncing' || syncStatus === 'pulling'}
                     size="sm"
                     className="h-9 px-6 font-bold uppercase text-[10px] tracking-widest"
                   >
                     Sync Now
                   </Button>
                 </div>
+                {lastSyncError && syncStatus === 'error' && (
+                  <div className="p-3 bg-red-500/5 rounded-lg border border-red-500/20 mb-4">
+                    <p className="text-[10px] text-red-400 leading-relaxed font-medium">{lastSyncError}</p>
+                  </div>
+                )}
                 <div className="p-3 bg-accent/30 rounded-lg border border-border/50">
                   <p className="text-[10px] text-muted-foreground leading-relaxed">
                     Your financial data is 100% private. Moniq does not have a central database; instead, all your transactions and settings are securely backed up to a dedicated spreadsheet inside your personal Google Drive.

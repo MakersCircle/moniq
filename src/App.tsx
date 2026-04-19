@@ -12,6 +12,7 @@ import Home from './pages/Home';
 import LayoutShell from './components/Layout/LayoutShell';
 import { useDataStore } from './store/dataStore';
 import { fetchUserProfile, initializeDatabase } from './api/google';
+import { SyncEngine } from './sync/SyncEngine';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 import AddTransactionModal from './components/Transactions/AddTransactionModal';
@@ -21,6 +22,8 @@ export default function App() {
   const transactions = useDataStore((s) => s.transactions);
   const setUserProfile = useDataStore((s) => s.setUserProfile);
   const setSpreadsheetId = useDataStore((s) => s.setSpreadsheetId);
+  const setSyncStatus = useDataStore((s) => s.setSyncStatus);
+  const hydrateFromSync = useDataStore((s) => s.hydrateFromSync);
   
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -43,7 +46,21 @@ export default function App() {
         const sheetId = await initializeDatabase(accessToken!);
         setSpreadsheetId(sheetId);
         
-        // TODO: Initial sync down from sheets to populate store if returning user
+        // Initialize SyncEngine — pulls from sheets, reconciles, and hydrates store
+        const engine = SyncEngine.getInstance();
+        
+        // Subscribe to sync status changes
+        const unsubscribe = engine.subscribe((status, pendingCount, error) => {
+          setSyncStatus(status, pendingCount, error);
+        });
+
+        const reconciledData = await engine.initialize(accessToken!, sheetId);
+        if (reconciledData) {
+          hydrateFromSync(reconciledData);
+        }
+
+        // Cleanup subscription on unmount
+        return () => unsubscribe();
       } catch (err: any) {
         console.error('Failed to initialize cloud database:', err);
         // If the token is invalid/expired (e.g., 401), clear it to return the user to the login state
@@ -54,7 +71,7 @@ export default function App() {
     }
 
     initCloud();
-  }, [accessToken, setUserProfile, setSpreadsheetId]);
+  }, [accessToken, setUserProfile, setSpreadsheetId, setSyncStatus, hydrateFromSync]);
 
   const hasTransactions = transactions.length > 0;
 

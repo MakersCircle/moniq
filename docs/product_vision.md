@@ -20,7 +20,7 @@ Allow a single user to define where their money lives, manually record all finan
 ### 3.1 Authentication & Data Storage
 - Users authenticate via Google Sign-In.
 - The app provisions a `Moniq Database` Spreadsheet inside a `moniq/` folder in the user's Drive.
-- Data changes sync directly to the Google Sheets API without storing user ledgers on an intermediate centralized database. Local state is persisted via `zustand/persist` with `localStorage`.
+- Data changes sync directly to the Google Sheets API without storing user ledgers on an intermediate centralized database. Local state is persisted via `zustand/persist` with IndexedDB (`idb` library) and synced to Google Sheets via a client-side SyncEngine with conflict resolution, debounced writes, and retry logic.
 
 ### 3.2 Master Configurations
 - **Accounts**: Users create, edit, archive, and safely delete custom "Accounts" where money resides (e.g., Bank, Wallet, Stash, Investment). These follow strict Asset/Liability classifications. Deleting an account cascade-removes its linked payment methods (if unreferenced by transactions).

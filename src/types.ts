@@ -14,6 +14,7 @@ export interface Account {
   isActive: boolean;
   excludeFromNet?: boolean;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface PaymentMethod {
@@ -22,6 +23,7 @@ export interface PaymentMethod {
   linkedAccountId?: string; // Links to Account
   isActive: boolean;
   createdAt: string;
+  updatedAt: string;
 }
 
 export type CategoryGroup = 'Income' | 'Needs' | 'Wants' | 'Invest' | 'Lend' | 'Borrow';
@@ -35,6 +37,7 @@ export interface Category {
   color?: string;
   isActive: boolean;
   createdAt: string;
+  updatedAt: string;
 }
 
 export type EntryType = 'DEBIT' | 'CREDIT';
@@ -70,6 +73,7 @@ export interface Budget {
   amount: number;
   period: string; // "YYYY-MM"
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface UserSettings {
@@ -79,4 +83,22 @@ export interface UserSettings {
   fiscalYearStartMonth: number; // 1 = Jan
   dateFormat: string;
   hasCompletedOnboarding?: boolean;
+}
+
+// ============================================================
+// Sync Engine types
+// ============================================================
+
+export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline' | 'pulling';
+
+export type SyncEntityType = 'transaction' | 'account' | 'method' | 'category' | 'budget' | 'settings';
+
+export interface SyncOperation {
+  id: string;
+  entity: SyncEntityType;
+  action: 'create' | 'update' | 'delete';
+  entityId: string;
+  timestamp: string;
+  retryCount: number;
+  lastError?: string;
 }

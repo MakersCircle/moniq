@@ -4,13 +4,13 @@ import type { Account, Category, Transaction, LedgerEntry } from '../../types';
 
 describe('LedgerEngine', () => {
   const mockAccounts: Account[] = [
-    { id: 'acc-1', name: 'Savings Account', type: 'Asset', description: 'Bank', initialBalance: 1000, isSavings: true, excludeFromNet: false, isActive: true, createdAt: '' },
-    { id: 'acc-2', name: 'Credit Card', type: 'Liability', description: 'Credit Card', initialBalance: 0, isSavings: false, excludeFromNet: false, isActive: true, createdAt: '' },
+    { id: 'acc-1', name: 'Savings Account', type: 'Asset', description: 'Bank', initialBalance: 1000, isSavings: true, excludeFromNet: false, isActive: true, createdAt: '', updatedAt: '' },
+    { id: 'acc-2', name: 'Credit Card', type: 'Liability', description: 'Credit Card', initialBalance: 0, isSavings: false, excludeFromNet: false, isActive: true, createdAt: '', updatedAt: '' },
   ];
 
   const mockCategories: Category[] = [
-    { id: 'cat-1', group: 'Needs', head: 'Food', subHead: 'Groceries', isActive: true, createdAt: '' },
-    { id: 'cat-2', group: 'Income', head: 'Salary', isActive: true, createdAt: '' },
+    { id: 'cat-1', group: 'Needs', head: 'Food', subHead: 'Groceries', isActive: true, createdAt: '', updatedAt: '' },
+    { id: 'cat-2', group: 'Income', head: 'Salary', isActive: true, createdAt: '', updatedAt: '' },
   ];
 
   describe('validate()', () => {
