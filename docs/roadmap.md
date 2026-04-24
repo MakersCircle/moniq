@@ -27,6 +27,9 @@ This document tracks the end-to-end implementation roadmap for **moniq**. Items 
   - [x] Migration logic for legacy "Sources" data.
 - [x] **ID-based Deduplication**
   - [x] Ensure ledger integrity by merging duplicate remote rows during sync.
+- [x] **Sync & Handshake Polish**
+  - [x] Prevent race-condition onboarding for existing users on new devices.
+  - [x] Real-time sync feedback ("Pulling your data...") on the initialization screen.
 
 ## ✍️ Phase 3: Core UX — Transaction Engine
 - [x] **New Transaction Experience**
