@@ -72,6 +72,7 @@ This document tracks the end-to-end implementation roadmap for **moniq**. Items 
 - [x] **Cloud Sync Refinements**: Automated sync on every state change and support for Budget data.
 - [x] **Lending Statistics**: Dashboard indicators for total receivable/payable amounts.
 - [x] **Universal Contextual Help**: Tooltips explaining core concepts (Accounts, Methods, Categories).
+- [x] **Soft-Delete Architecture & Trash Management**: Centralized tabbed workspace for restoring transactions, accounts, and methods with dependency safety.
 - [x] **Category Head Combobox**: Reducing friction in category creation with suggestions.
 - [x] **Proactive OAuth Refresh & Session UX**: Automatic token healing 5 mins before expiry and "Reconnect" banner fallback.
 - [ ] **Custom Ordering System**: Allow reordering of Payment Methods and Categories logically in Settings to reflect in dropdowns.

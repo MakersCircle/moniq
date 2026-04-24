@@ -28,7 +28,9 @@ Stores all custom accounts, wallets, etc. These are the source of truth for mone
 * `isSavings` (Boolean)
 * `excludeFromNet` (Boolean)
 * `isActive` (Boolean)
+* `isDeleted` (Boolean)
 * `createdAt` (ISO Date string)
+* `updatedAt` (ISO Date string)
 
 ### 2. `Methods` Sheet
 Stores payment channels (abstractions over accounts).
@@ -36,8 +38,10 @@ Stores payment channels (abstractions over accounts).
 * `name` (String: e.g., "UPI", "Net Banking")
 * `linkedAccountId` (UUID of Account)
 * `isActive` (Boolean)
+* `isDeleted` (Boolean)
 * `sortOrder` (Number, optional)
 * `createdAt` (ISO Date string)
+* `updatedAt` (ISO Date string)
 
 ### 3. `Categories` Sheet
 Holds headers and subheaders for tracking.
@@ -46,7 +50,9 @@ Holds headers and subheaders for tracking.
 * `head` (String: e.g., "Food")
 * `subHead` (String: e.g., "Groceries")
 * `isActive` (Boolean)
+* `isDeleted` (Boolean)
 * `sortOrder` (Number, optional)
+* `updatedAt` (ISO Date string)
 
 ### 4. `Transactions` Sheet
 The core event log based on a **Double-Entry Ledger System**. 
@@ -67,7 +73,9 @@ Handles monthly salary budgeting and category allocations.
 * `categoryId` (UUID)
 * `amount` (Number)
 * `period` (String: "YYYY-MM")
+* `isDeleted` (Boolean)
 * `createdAt` (ISO Date string)
+* `updatedAt` (ISO Date string)
 
 ---
 
@@ -101,5 +109,10 @@ The app will wrap Google Sheets API v4 with a client abstraction.
   - **Retry:** Failed operations stay in a persistent sync queue (IDB) and retry with exponential backoff (1s → 2s → 4s → ... → 60s cap).
   - **Status:** Reactive `syncStatus` (`idle` | `syncing` | `pulling` | `error` | `offline`) and `pendingCount` exposed to the UI.
 - **Onboarding:** New users are presented with an interactive onboarding modal that offers curated default accounts and categories from `src/data/defaults.json`, or the option to start from scratch.
-- **Deletion Safety:** Entities (accounts, categories, payment methods) can be archived (soft-delete) or permanently deleted only if no transactions reference them. Deleting an account cascade-removes its linked payment methods if they are also unreferenced.
+- **Deletion Safety & Trash Management:** 
+  - Entities (accounts, categories, payment methods) can be archived (setting `isActive: false`) or soft-deleted (setting `isDeleted: true`).
+  - **The Trash Workspace** serves as a centralized hub for all deleted entities, organized by tabs.
+  - **Cascading Restoration:** Restoring an account automatically restores its linked payment methods that were deleted alongside it, ensuring state consistency.
+  - **Dependency Validation:** The UI prevents restoring "orphaned" entries (e.g., a payment method cannot be restored if its parent account is still deleted).
+  - Permanent deletion only occurs when records are manually purged (future feature) or if they were never synced.
 
