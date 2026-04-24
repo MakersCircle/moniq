@@ -28,6 +28,9 @@ export default function App() {
   const hydrateFromSync = useDataStore((s) => s.hydrateFromSync);
   const settings = useDataStore((s) => s.settings);
   const isHydrated = useDataStore((s) => s.isHydrated);
+  const isCloudInitialized = useDataStore((s) => s.isCloudInitialized);
+  const setCloudInitialized = useDataStore((s) => s.setCloudInitialized);
+  const syncStatus = useDataStore((s) => s.syncStatus);
   const initializeFromDB = useDataStore((s) => s.initializeFromDB);
   
   const [modalState, setModalState] = useState<{
@@ -87,12 +90,15 @@ export default function App() {
         const reconciledData = await engine.initialize(sheetId);
         if (reconciledData) {
           hydrateFromSync(reconciledData);
+        } else {
+          setCloudInitialized(true);
         }
 
         // Cleanup subscription on unmount
         return () => unsubscribe();
       } catch (err: any) {
         console.error('Failed to initialize cloud database:', err);
+        setCloudInitialized(true);
         // Unauthorized/Expired handled by googleService clearing the token
       }
     }
@@ -106,12 +112,18 @@ export default function App() {
     (window as any).openTransactionModal = { openNew, openEdit, openDuplicate };
   }
 
-  if (!isHydrated) {
+  if (!isHydrated || (accessToken && !isCloudInitialized)) {
+    const message = !isHydrated 
+      ? "Loading your space..." 
+      : syncStatus === 'pulling' 
+        ? "Pulling your data from Google Drive..." 
+        : "Syncing your data...";
+
     return (
       <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-zinc-800 border-t-zinc-400 rounded-full animate-spin" />
-          <p className="text-zinc-500 font-medium">Loading your space...</p>
+          <div className="w-12 h-12 border-4 border-zinc-800 border-t-purple-500 rounded-full animate-spin" />
+          <p className="text-zinc-400 font-medium animate-pulse">{message}</p>
         </div>
       </div>
     );

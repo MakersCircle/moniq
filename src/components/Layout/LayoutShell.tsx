@@ -10,8 +10,8 @@ interface LayoutShellProps {
 }
 
 export default function LayoutShell({ children, onNewTransaction }: LayoutShellProps) {
-  const { settings, accounts } = useDataStore();
-  const showOnboarding = accounts.length === 0 && !settings.hasCompletedOnboarding;
+  const { settings, accounts, isCloudInitialized } = useDataStore();
+  const showOnboarding = isCloudInitialized && accounts.length === 0 && !settings.hasCompletedOnboarding;
 
   return (
     <div className="h-screen bg-background text-foreground overflow-hidden">

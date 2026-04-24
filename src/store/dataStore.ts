@@ -53,6 +53,7 @@ interface DataState {
   setSpreadsheetId: (id: string | null) => void;
   setSyncStatus: (status: SyncStatus, pendingCount: number, error?: string) => void;
   setLastSyncedAt: (timestamp: string) => void;
+  setCloudInitialized: (initialized: boolean) => void;
 
   // Accounts
   addAccount: (a: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -107,6 +108,7 @@ interface DataState {
   resetData: () => void;
   initializeFromDB: () => Promise<void>;
   isHydrated: boolean;
+  isCloudInitialized: boolean;
 }
 
 export const uuid = () => crypto.randomUUID();
@@ -138,11 +140,13 @@ export const useDataStore = create<DataState>()(
     pendingCount: 0,
     lastSyncError: undefined,
     isHydrated: false,
+    isCloudInitialized: false,
 
     // Cloud actions
     setSpreadsheetId: (id) => set({ spreadsheetId: id }),
     setSyncStatus: (syncStatus, pendingCount, lastSyncError) => set({ syncStatus, pendingCount, lastSyncError }),
     setLastSyncedAt: (timestamp) => set({ lastSyncedAt: timestamp }),
+    setCloudInitialized: (isCloudInitialized) => set({ isCloudInitialized }),
     initializeFromDB: async () => {
       try {
         const [accounts, methods, categories, , budgets, settings, lastSyncedAt, accessToken, tokenExpiresAt, userProfileStr] = await Promise.all([
@@ -193,10 +197,11 @@ export const useDataStore = create<DataState>()(
           tokenExpiresAt: tokenExpiresAt ? Number(tokenExpiresAt) : null,
           userProfile,
           isHydrated: true,
+          isCloudInitialized: !!accessToken && !!lastSyncedAt, // If we have an access token and a lastSyncedAt, we assume we're initialized from cache
         });
       } catch (err) {
         console.error('Failed to initialize from DB:', err);
-        set({ isHydrated: true });
+        set({ isHydrated: true, isCloudInitialized: true });
       }
     },
 
@@ -478,6 +483,9 @@ export const useDataStore = create<DataState>()(
         delMeta('accessToken');
         delMeta('tokenExpiresAt');
       }
+      if (!token) {
+        set({ isCloudInitialized: false });
+      }
     },
     setUserProfile: (profile) => {
       set({ userProfile: profile });
@@ -509,6 +517,7 @@ export const useDataStore = create<DataState>()(
         }
 
         nextState.lastSyncedAt = new Date().toISOString();
+        nextState.isCloudInitialized = true;
         return nextState;
       });
     },
