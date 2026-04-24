@@ -56,19 +56,20 @@ interface DataState {
   setCloudInitialized: (initialized: boolean) => void;
 
   // Accounts
-  addAccount: (a: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  addAccount: (a: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => void;
   updateAccount: (id: string, patch: Partial<Account>) => void;
   archiveAccount: (id: string) => void;
+  restoreAccount: (id: string) => void;
   deleteAccount: (id: string) => { success: boolean; reason?: string };
 
   // Methods
-  addMethod: (m: Omit<PaymentMethod, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  addMethod: (m: Omit<PaymentMethod, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => void;
   updateMethod: (id: string, patch: Partial<PaymentMethod>) => void;
   archiveMethod: (id: string) => void;
   deleteMethod: (id: string) => { success: boolean; reason?: string };
 
   // Categories
-  addCategory: (c: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  addCategory: (c: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => void;
   updateCategory: (id: string, patch: Partial<Category>) => void;
   archiveCategory: (id: string) => void;
   deleteCategory: (id: string) => { success: boolean; reason?: string };
@@ -94,7 +95,7 @@ interface DataState {
   // Settings
   updateSettings: (patch: Partial<UserSettings>) => void;
   setAccessToken: (token: string | null, expiresAt?: number | null) => void;
-  completeOnboarding: (accounts?: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>[], categories?: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>[]) => void;
+  completeOnboarding: (accounts?: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>[], categories?: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>[]) => void;
 
   // Sync Engine
   hydrateFromSync: (data: {
@@ -212,9 +213,9 @@ export const useDataStore = create<DataState>()(
     completeOnboarding: (accs, cats) => {
       set((state) => {
         const t = now();
-        const newAccounts = (accs || []).map(a => ({ ...a, id: uuid(), createdAt: t, updatedAt: t } as Account));
-        const newCategories = (cats || []).map(c => ({ ...c, id: uuid(), createdAt: t, updatedAt: t } as Category));
-        const newMethods = newAccounts.map(a => ({ id: uuid(), name: `${a.name}`, linkedAccountId: a.id, isActive: true, createdAt: t, updatedAt: t } as PaymentMethod));
+        const newAccounts = (accs || []).map(a => ({ ...a, id: uuid(), isActive: true, isDeleted: false, createdAt: t, updatedAt: t } as Account));
+        const newCategories = (cats || []).map(c => ({ ...c, id: uuid(), isActive: true, isDeleted: false, createdAt: t, updatedAt: t } as Category));
+        const newMethods = newAccounts.map(a => ({ id: uuid(), name: `${a.name}`, linkedAccountId: a.id, isActive: true, isDeleted: false, createdAt: t, updatedAt: t } as PaymentMethod));
         
         // Mark all new entities dirty
         for (const a of newAccounts) markDirty('account', a.id, 'create');
@@ -243,8 +244,8 @@ export const useDataStore = create<DataState>()(
       const id = uuid();
       const t = now();
       const methodId = uuid();
-      const newAccount = { ...a, id, createdAt: t, updatedAt: t };
-      const newMethod = { id: methodId, name: a.name, linkedAccountId: id, isActive: true, createdAt: t, updatedAt: t };
+      const newAccount = { ...a, id, isDeleted: false, createdAt: t, updatedAt: t } as Account;
+      const newMethod = { id: methodId, name: a.name, linkedAccountId: id, isActive: true, isDeleted: false, createdAt: t, updatedAt: t } as PaymentMethod;
       
       set((state) => ({ 
         accounts: [...state.accounts, newAccount],
@@ -274,29 +275,62 @@ export const useDataStore = create<DataState>()(
       });
       markDirty('account', id, 'update');
     },
+    restoreAccount: (id) => {
+      const t = now();
+      set((state) => {
+        // Restore the account
+        const nextAccounts = state.accounts.map((a) => (a.id === id ? { ...a, isDeleted: false, updatedAt: t } : a));
+        
+        // Find methods linked to this account that are currently deleted
+        // We restore them too to keep the state consistent
+        const nextMethods = state.methods.map((m) => 
+          (m.linkedAccountId === id && m.isDeleted) ? { ...m, isDeleted: false, updatedAt: t } : m
+        );
+
+        const updatedAcc = nextAccounts.find(a => a.id === id);
+        if (updatedAcc) put('accounts', updatedAcc);
+        
+        // Put all restored methods back to DB
+        nextMethods.forEach(m => {
+          if (m.linkedAccountId === id && nextMethods.find(x => x.id === m.id && !x.isDeleted)) {
+            put('methods', m);
+            markDirty('method', m.id, 'update');
+          }
+        });
+
+        return { accounts: nextAccounts, methods: nextMethods };
+      });
+      markDirty('account', id, 'update');
+    },
     deleteAccount: (id): { success: boolean; reason?: string } => {
       const state = useDataStore.getState();
       const hasTransactions = state.transactions.some(t => !t.isDeleted && t.entries.some(e => e.accountId === id));
       if (hasTransactions) return { success: false, reason: 'This account is referenced by existing transactions. Archive it instead.' };
-      const linkedMethods = state.methods.filter(m => m.linkedAccountId === id);
+      const linkedMethods = state.methods.filter(m => !m.isDeleted && m.linkedAccountId === id);
       const methodsInUse = linkedMethods.filter(m => state.transactions.some(t => !t.isDeleted && t.methodId === m.id));
       if (methodsInUse.length > 0) {
         const names = methodsInUse.map(m => m.name).join(', ');
         return { success: false, reason: `Linked payment method(s) "${names}" are used in transactions. Archive the account instead.` };
       }
-      const hasBudgets = state.budgets.some(b => b.categoryId === id);
+      const hasBudgets = state.budgets.some(b => !b.isDeleted && b.categoryId === id);
       if (hasBudgets) return { success: false, reason: 'This account is referenced by a budget. Remove the budget first.' };
       
+      const t = now();
       const deletedMethodIds = linkedMethods.map(m => m.id);
       set((s) => ({
-        accounts: s.accounts.filter(a => a.id !== id),
-        methods: s.methods.filter(m => m.linkedAccountId !== id),
+        accounts: s.accounts.map(a => a.id === id ? { ...a, isDeleted: true, updatedAt: t } : a),
+        methods: s.methods.map(m => m.linkedAccountId === id ? { ...m, isDeleted: true, updatedAt: t } : m),
       }));
 
-      del('accounts', id);
-      for (const mId of deletedMethodIds) del('methods', mId);
-      markDirty('account', id, 'delete');
-      for (const mId of deletedMethodIds) markDirty('method', mId, 'delete');
+      const account = useDataStore.getState().accounts.find(a => a.id === id);
+      if (account) put('accounts', account);
+      for (const mId of deletedMethodIds) {
+        const method = useDataStore.getState().methods.find(m => m.id === mId);
+        if (method) put('methods', method);
+      }
+
+      markDirty('account', id, 'update');
+      for (const mId of deletedMethodIds) markDirty('method', mId, 'update');
       return { success: true };
     },
 
@@ -304,7 +338,7 @@ export const useDataStore = create<DataState>()(
     addMethod: (m) => {
       const id = uuid();
       const t = now();
-      const newMethod = { ...m, id, createdAt: t, updatedAt: t };
+      const newMethod = { ...m, id, isDeleted: false, createdAt: t, updatedAt: t } as PaymentMethod;
       set((state) => ({ methods: [...state.methods, newMethod] }));
       put('methods', newMethod);
       markDirty('method', id, 'create');
@@ -330,16 +364,19 @@ export const useDataStore = create<DataState>()(
     deleteMethod: (id): { success: boolean; reason?: string } => {
       const state = useDataStore.getState();
       const method = state.methods.find(m => m.id === id);
-      if (!method) return { success: false, reason: 'Method not found.' };
+      if (!method || method.isDeleted) return { success: false, reason: 'Method not found.' };
       const hasTransactions = state.transactions.some(t => !t.isDeleted && t.methodId === id);
       if (hasTransactions) return { success: false, reason: 'This method is used in existing transactions. Archive it instead.' };
       if (method.linkedAccountId) {
-        const otherMethods = state.methods.filter(m => m.id !== id && m.linkedAccountId === method.linkedAccountId && m.isActive);
+        const otherMethods = state.methods.filter(m => m.id !== id && m.linkedAccountId === method.linkedAccountId && m.isActive && !m.isDeleted);
         if (otherMethods.length === 0) return { success: false, reason: 'This is the only active payment method for its linked account. Create another method first, or unlink and then delete.' };
       }
-      set((s) => ({ methods: s.methods.filter(m => m.id !== id) }));
-      del('methods', id);
-      markDirty('method', id, 'delete');
+      
+      const t = now();
+      set((s) => ({ methods: s.methods.map(m => m.id === id ? { ...m, isDeleted: true, updatedAt: t } : m) }));
+      const updated = useDataStore.getState().methods.find(m => m.id === id);
+      if (updated) put('methods', updated);
+      markDirty('method', id, 'update');
       return { success: true };
     },
 
@@ -347,7 +384,7 @@ export const useDataStore = create<DataState>()(
     addCategory: (c) => {
       const id = uuid();
       const t = now();
-      const next = { ...c, id, createdAt: t, updatedAt: t };
+      const next = { ...c, id, isDeleted: false, createdAt: t, updatedAt: t } as Category;
       set((state) => ({ categories: [...state.categories, next] }));
       put('categories', next);
       markDirty('category', id, 'create');
@@ -374,12 +411,14 @@ export const useDataStore = create<DataState>()(
       const state = useDataStore.getState();
       const hasTransactions = state.transactions.some(t => !t.isDeleted && t.entries.some(e => e.accountId === id));
       if (hasTransactions) return { success: false, reason: 'This category is referenced by existing transactions.' };
-      const hasBudgets = state.budgets.some(b => b.categoryId === id);
+      const hasBudgets = state.budgets.some(b => !b.isDeleted && b.categoryId === id);
       if (hasBudgets) return { success: false, reason: 'This category has a budget assigned. Remove the budget first.' };
       
-      set((s) => ({ categories: s.categories.filter(c => c.id !== id) }));
-      del('categories', id);
-      markDirty('category', id, 'delete');
+      const t = now();
+      set((s) => ({ categories: s.categories.map(c => c.id === id ? { ...c, isDeleted: true, updatedAt: t } : c) }));
+      const updated = useDataStore.getState().categories.find(c => c.id === id);
+      if (updated) put('categories', updated);
+      markDirty('category', id, 'update');
       return { success: true };
     },
 
@@ -437,7 +476,7 @@ export const useDataStore = create<DataState>()(
     // Budgets
     updateBudget: (categoryId, period, amount) => {
       set((state) => {
-        const existingIdx = state.budgets.findIndex(b => b.categoryId === categoryId && b.period === period);
+        const existingIdx = state.budgets.findIndex(b => b.categoryId === categoryId && b.period === period && !b.isDeleted);
         const t = now();
         if (existingIdx >= 0) {
           const next = [...state.budgets];
@@ -447,7 +486,7 @@ export const useDataStore = create<DataState>()(
           return { budgets: next };
         }
         const id = uuid();
-        const next = { id, categoryId, period, amount, createdAt: t, updatedAt: t };
+        const next = { id, categoryId, period, amount, isDeleted: false, createdAt: t, updatedAt: t };
         put('budgets', next);
         markDirty('budget', id, 'create');
         return { budgets: [...state.budgets, next] };

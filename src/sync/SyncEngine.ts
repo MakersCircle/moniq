@@ -51,6 +51,7 @@ function serializeAccount(a: Account): string[] {
     a.id, a.name, a.type, a.description || '',
     a.isSavings ? 'TRUE' : 'FALSE', String(a.initialBalance),
     a.excludeFromNet ? 'TRUE' : 'FALSE', a.isActive ? 'TRUE' : 'FALSE',
+    a.isDeleted ? 'TRUE' : 'FALSE',
     a.createdAt, a.updatedAt, '',
   ];
 }
@@ -58,7 +59,8 @@ function serializeAccount(a: Account): string[] {
 function serializeMethod(m: PaymentMethod): string[] {
   return [
     m.id, m.name, m.linkedAccountId || '',
-    m.isActive ? 'TRUE' : 'FALSE', m.createdAt, m.updatedAt, '',
+    m.isActive ? 'TRUE' : 'FALSE', m.isDeleted ? 'TRUE' : 'FALSE', 
+    m.createdAt, m.updatedAt, '',
   ];
 }
 
@@ -66,6 +68,7 @@ function serializeCategory(c: Category): string[] {
   return [
     c.id, c.group, c.head, c.subHead || '',
     String(c.initialBalance || 0), c.isActive ? 'TRUE' : 'FALSE',
+    c.isDeleted ? 'TRUE' : 'FALSE',
     c.createdAt, c.updatedAt, '',
   ];
 }
@@ -73,6 +76,7 @@ function serializeCategory(c: Category): string[] {
 function serializeBudget(b: Budget): string[] {
   return [
     b.id, b.categoryId, b.period, String(b.amount),
+    b.isDeleted ? 'TRUE' : 'FALSE',
     b.createdAt, b.updatedAt, '',
   ];
 }
@@ -107,6 +111,7 @@ function deserializeAccount(row: string[], header: string[]): Account {
     initialBalance: Number(getValue(row, header, 'Initial Balance')) || 0,
     excludeFromNet: getValue(row, header, 'Exclude Net') === 'TRUE',
     isActive: getValue(row, header, 'Is Active') === 'TRUE',
+    isDeleted: getValue(row, header, 'Is Deleted') === 'TRUE',
     createdAt: getValue(row, header, 'Created At'),
     updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
   };
@@ -118,6 +123,7 @@ function deserializeMethod(row: string[], header: string[]): PaymentMethod {
     name: getValue(row, header, 'Name'),
     linkedAccountId: getValue(row, header, 'Linked Account ID') || undefined,
     isActive: getValue(row, header, 'Is Active') === 'TRUE',
+    isDeleted: getValue(row, header, 'Is Deleted') === 'TRUE',
     createdAt: getValue(row, header, 'Created At'),
     updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
   };
@@ -131,6 +137,7 @@ function deserializeCategory(row: string[], header: string[]): Category {
     subHead: getValue(row, header, 'Sub Head') || undefined,
     initialBalance: Number(getValue(row, header, 'Initial Balance')) || undefined,
     isActive: getValue(row, header, 'Is Active') === 'TRUE',
+    isDeleted: getValue(row, header, 'Is Deleted') === 'TRUE',
     createdAt: getValue(row, header, 'Created At'),
     updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
   };
@@ -142,6 +149,7 @@ function deserializeBudget(row: string[], header: string[]): Budget {
     categoryId: getValue(row, header, 'Category ID'),
     period: getValue(row, header, 'Period'),
     amount: Number(getValue(row, header, 'Amount')) || 0,
+    isDeleted: getValue(row, header, 'Is Deleted') === 'TRUE',
     createdAt: getValue(row, header, 'Created At'),
     updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
   };

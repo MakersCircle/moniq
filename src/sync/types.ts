@@ -49,10 +49,10 @@ export const SHEET_NAMES: Record<SyncEntityType, string> = {
 /** Column headers for each sheet tab */
 export const SHEET_HEADERS: Record<string, string[]> = {
   Transactions: ['ID', 'Group ID', 'UI Type', 'Entries JSON', 'Amount', 'Date', 'Method ID', 'Note', 'Tags', 'Is Deleted', 'Created At', 'Updated At', 'Checksum'],
-  Accounts: ['ID', 'Name', 'Type', 'Description', 'Is Savings', 'Initial Balance', 'Exclude Net', 'Is Active', 'Created At', 'Updated At', 'Checksum'],
-  Methods: ['ID', 'Name', 'Linked Account ID', 'Is Active', 'Created At', 'Updated At', 'Checksum'],
-  Categories: ['ID', 'Group', 'Head', 'Sub Head', 'Initial Balance', 'Is Active', 'Created At', 'Updated At', 'Checksum'],
-  Budgets: ['ID', 'Category ID', 'Period', 'Amount', 'Created At', 'Updated At', 'Checksum'],
+  Accounts: ['ID', 'Name', 'Type', 'Description', 'Is Savings', 'Initial Balance', 'Exclude Net', 'Is Active', 'Is Deleted', 'Created At', 'Updated At', 'Checksum'],
+  Methods: ['ID', 'Name', 'Linked Account ID', 'Is Active', 'Is Deleted', 'Created At', 'Updated At', 'Checksum'],
+  Categories: ['ID', 'Group', 'Head', 'Sub Head', 'Initial Balance', 'Is Active', 'Is Deleted', 'Created At', 'Updated At', 'Checksum'],
+  Budgets: ['ID', 'Category ID', 'Period', 'Amount', 'Is Deleted', 'Created At', 'Updated At', 'Checksum'],
   Settings: ['Key', 'Value', 'Checksum'],
 };
 

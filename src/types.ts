@@ -12,6 +12,7 @@ export interface Account {
   isSavings: boolean;      // ✅ Flag to designate saving accounts
   initialBalance: number;
   isActive: boolean;
+  isDeleted: boolean;      // ✅ Soft delete flag for sync
   excludeFromNet?: boolean;
   createdAt: string;
   updatedAt: string;
@@ -22,6 +23,7 @@ export interface PaymentMethod {
   name: string;
   linkedAccountId?: string; // Links to Account
   isActive: boolean;
+  isDeleted: boolean;      // ✅ Soft delete flag for sync
   createdAt: string;
   updatedAt: string;
 }
@@ -36,6 +38,7 @@ export interface Category {
   initialBalance?: number; // ✅ For Invest, Lend, Borrow opening balances
   color?: string;
   isActive: boolean;
+  isDeleted: boolean;      // ✅ Soft delete flag for sync
   createdAt: string;
   updatedAt: string;
 }
@@ -72,6 +75,7 @@ export interface Budget {
   categoryId: string;
   amount: number;
   period: string; // "YYYY-MM"
+  isDeleted: boolean; // ✅ Soft delete flag for sync
   createdAt: string;
   updatedAt: string;
 }
