@@ -157,7 +157,7 @@ export default function Transactions() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Accounts</SelectItem>
-                {accounts.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                {accounts.filter(a => !a.isDeleted).map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

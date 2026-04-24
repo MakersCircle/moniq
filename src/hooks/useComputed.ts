@@ -21,7 +21,7 @@ export function useAllBalances(): Record<string, number> {
 
   return useMemo(() => {
     const balances: Record<string, number> = {};
-    for (const acc of accounts) {
+    for (const acc of accounts.filter(a => !a.isDeleted)) {
       balances[acc.id] = LedgerEngine.getNormalBalance(acc.id, transactions, accounts, categories);
     }
     return balances;
@@ -184,8 +184,8 @@ export function useBudgetSummary(year: number, month: number) {
     const groups: Record<string, any[]> = {};
     let totalAllocated = 0;
 
-    for (const cat of categories.filter(c => c.isActive && c.group !== 'Income')) {
-      const budget = budgets.find(b => b.categoryId === cat.id && b.period === period);
+    for (const cat of categories.filter(c => c.isActive && !c.isDeleted && c.group !== 'Income')) {
+      const budget = budgets.find(b => b.categoryId === cat.id && b.period === period && !b.isDeleted);
       
       // Calculate spent amount based on ledger entries for this category
       const spent = monthTxns

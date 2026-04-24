@@ -59,8 +59,8 @@ export default function Categories() {
     setModalOpen(false);
   };
 
-  const active = categories.filter((c) => c.isActive);
-  const archived = categories.filter((c) => !c.isActive);
+  const active = categories.filter((c) => c.isActive && !c.isDeleted);
+  const archived = categories.filter((c) => !c.isActive && !c.isDeleted);
 
   // Group by category group
   const grouped = GROUPS.reduce<Record<string, Category[]>>((acc, g) => {

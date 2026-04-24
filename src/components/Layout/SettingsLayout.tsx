@@ -23,10 +23,15 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   const { accounts, methods, categories, transactions } = useDataStore();
 
   const getCount = (label: string) => {
-    if (label === 'Accounts') return accounts.filter(s => s.isActive).length;
-    if (label === 'Pay Methods') return methods.filter(m => m.isActive).length;
-    if (label === 'Categories') return categories.filter(c => c.isActive).length;
-    if (label === 'Recently Deleted') return transactions.filter(t => t.isDeleted).length;
+    if (label === 'Accounts') return accounts.filter(s => s.isActive && !s.isDeleted).length;
+    if (label === 'Pay Methods') return methods.filter(m => m.isActive && !m.isDeleted).length;
+    if (label === 'Categories') return categories.filter(c => c.isActive && !c.isDeleted).length;
+    if (label === 'Recently Deleted') {
+      const deletedTxns = transactions.filter(t => t.isDeleted).length;
+      const deletedAccounts = accounts.filter(a => a.isDeleted).length;
+      const deletedMethods = methods.filter(m => m.isDeleted).length;
+      return deletedTxns + deletedAccounts + deletedMethods;
+    }
     return null;
   };
 

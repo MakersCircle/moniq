@@ -52,9 +52,9 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
     return entry?.accountId || '';
   }, [initialData, initialAccountId]);
 
-  const activeAccounts = useMemo(() => accounts.filter((s) => s.isActive), [accounts]);
-  const activeMethods = useMemo(() => methods.filter((m) => m.isActive), [methods]);
-  const activeCategories = useMemo(() => categories.filter((c) => c.isActive), [categories]);
+  const activeAccounts = useMemo(() => accounts.filter((s) => s.isActive && !s.isDeleted), [accounts]);
+  const activeMethods = useMemo(() => methods.filter((m) => m.isActive && !m.isDeleted), [methods]);
+  const activeCategories = useMemo(() => categories.filter((c) => c.isActive && !c.isDeleted), [categories]);
 
   // Get unique category heads
   const categoryHeads = useMemo(() => {

@@ -52,8 +52,8 @@ export default function Methods() {
     setModalOpen(false);
   };
 
-  const active = methods.filter((m) => m.isActive);
-  const archived = methods.filter((m) => !m.isActive);
+  const active = methods.filter((m) => m.isActive && !m.isDeleted);
+  const archived = methods.filter((m) => !m.isActive && !m.isDeleted);
 
   return (
     <SettingsLayout>
@@ -172,7 +172,7 @@ export default function Methods() {
                   <SelectValue placeholder="Select account" />
                 </SelectTrigger>
                 <SelectContent>
-                  {accounts.filter((s) => s.isActive).map((s) => (
+                  {accounts.filter((s) => s.isActive && !s.isDeleted).map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
                 </SelectContent>

@@ -98,8 +98,8 @@ export default function Accounts() {
     setModalOpen(false);
   };
 
-  const activeAccounts = accounts.filter((s) => s.isActive);
-  const archivedAccounts = accounts.filter((s) => !s.isActive);
+  const activeAccounts = accounts.filter((s) => s.isActive && !s.isDeleted);
+  const archivedAccounts = accounts.filter((s) => !s.isActive && !s.isDeleted);
 
   return (
     <SettingsLayout>

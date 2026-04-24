@@ -28,7 +28,7 @@ export default function Dashboard() {
   // Stats Calculations
   const netWorth = useMemo(() => {
     return accounts
-      .filter((s) => s.isActive && !s.excludeFromNet)
+      .filter((s) => s.isActive && !s.isDeleted && !s.excludeFromNet)
       .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
   }, [accounts, balances]);
 
@@ -96,10 +96,10 @@ export default function Dashboard() {
       {/* Lending & Debt Stats */}
       {(() => {
         const totalReceivable = accounts
-          .filter(s => s.description?.toLowerCase() === 'receivable' && s.isActive)
+          .filter(s => s.description?.toLowerCase() === 'receivable' && s.isActive && !s.isDeleted)
           .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
         const totalPayable = accounts
-          .filter(s => s.description?.toLowerCase() === 'payable' && s.isActive)
+          .filter(s => s.description?.toLowerCase() === 'payable' && s.isActive && !s.isDeleted)
           .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
 
         if (totalReceivable === 0 && totalPayable === 0) return null;
@@ -141,7 +141,7 @@ export default function Dashboard() {
           </div>
           <Card className="border-border">
             <div className="divide-y divide-border">
-              {accounts.filter(s => s.isActive).slice(0, 5).map((s) => (
+              {accounts.filter(s => s.isActive && !s.isDeleted).slice(0, 5).map((s) => (
                 <div key={s.id} className="flex items-center justify-between p-4 group hover:bg-accent/20 transition-colors">
                   <div>
                     <p className="text-sm font-semibold">{s.name}</p>
@@ -155,7 +155,7 @@ export default function Dashboard() {
                   </p>
                 </div>
               ))}
-              {accounts.filter(s => s.isActive).length > 5 && (
+              {accounts.filter(s => s.isActive && !s.isDeleted).length > 5 && (
                 <Link to="/settings/accounts" className="block p-3 text-center text-xs font-medium text-muted-foreground hover:bg-accent transition-colors">
                   View all accounts
                 </Link>
