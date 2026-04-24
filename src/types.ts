@@ -83,6 +83,12 @@ export interface UserSettings {
   fiscalYearStartMonth: number; // 1 = Jan
   dateFormat: string;
   hasCompletedOnboarding?: boolean;
+
+  // Backup Metadata
+  lastDailyBackup?: string;
+  lastWeeklyBackup?: string;
+  lastMonthlyBackup?: string;
+  lastYearlyBackup?: string;
 }
 
 // ============================================================

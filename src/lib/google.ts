@@ -136,6 +136,68 @@ export class GoogleService {
   async sheetsRequest(path: string, options: RequestInit = {}): Promise<Response> {
     return this.fetch(`${SHEETS_API_URL}${path}`, options);
   }
+
+  // ── Drive API Helpers ──────────────────────────────────────────
+
+  /** Find a folder by name. Returns folder ID or null. */
+  async findFolder(name: string): Promise<string | null> {
+    const q = encodeURIComponent(`name = '${name}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`);
+    const res = await this.driveRequest(`/files?q=${q}&fields=files(id)`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.files?.[0]?.id || null;
+  }
+
+  /** Create a new folder. Returns the folder ID. */
+  async createFolder(name: string): Promise<string> {
+    const res = await this.driveRequest('/files', {
+      method: 'POST',
+      body: JSON.stringify({
+        name,
+        mimeType: 'application/vnd.google-apps.folder',
+      }),
+    });
+    if (!res.ok) throw new Error(`Failed to create folder: ${res.statusText}`);
+    const data = await res.json();
+    return data.id;
+  }
+
+  /** Copy a file to a specific folder with a new name. */
+  async copyFile(fileId: string, folderId: string, newName: string): Promise<string> {
+    const res = await this.driveRequest(`/files/${fileId}/copy`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: newName,
+        parents: [folderId],
+      }),
+    });
+    if (!res.ok) throw new Error(`Failed to copy file: ${res.statusText}`);
+    const data = await res.json();
+    return data.id;
+  }
+
+  /** List files in a folder matching a prefix. */
+  async listFiles(folderId: string, prefix?: string): Promise<any[]> {
+    let q = `'${folderId}' in parents and trashed = false`;
+    if (prefix) {
+      q += ` and name contains '${prefix}'`;
+    }
+    const encodedQ = encodeURIComponent(q);
+    const res = await this.driveRequest(`/files?q=${encodedQ}&fields=files(id, name, createdTime)&orderBy=createdTime desc`);
+    if (!res.ok) throw new Error(`Failed to list files: ${res.statusText}`);
+    const data = await res.json();
+    return data.files || [];
+  }
+
+  /** Delete a file by ID. */
+  async deleteFile(fileId: string): Promise<void> {
+    const res = await this.driveRequest(`/files/${fileId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok && res.status !== 404) {
+      throw new Error(`Failed to delete file: ${res.statusText}`);
+    }
+  }
 }
 
 export const googleService = GoogleService.getInstance();

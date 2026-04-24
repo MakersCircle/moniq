@@ -73,10 +73,12 @@ This document tracks the end-to-end implementation roadmap for **moniq**. Items 
 - [x] **Lending Statistics**: Dashboard indicators for total receivable/payable amounts.
 - [x] **Universal Contextual Help**: Tooltips explaining core concepts (Accounts, Methods, Categories).
 - [x] **Category Head Combobox**: Reducing friction in category creation with suggestions.
+- [x] **Proactive OAuth Refresh & Session UX**: Automatic token healing 5 mins before expiry and "Reconnect" banner fallback.
 - [ ] **Custom Ordering System**: Allow reordering of Payment Methods and Categories logically in Settings to reflect in dropdowns.
 - [ ] **Background Synchronization**: Use Service Workers to sync while the tab is closed.
 - [ ] **Intelligent Auto-Categorization**: Suggesting categories for manual entries based on past similar notes.
 - [ ] **Data Export and Reports**: Full PDF or Excel generation of monthly summaries.
+- [x] **Automated Tiered Backup System**: [Plan](file:///home/don/.gemini/antigravity/brain/a8eda8c6-0b26-4832-9c05-536f03537399/backups_implementation_plan.md) - Tiered retention (Daily/Weekly/Monthly/Yearly) in a dedicated Drive folder.
 - [ ] **Sheets Auto-Archiving Tool**.
 
 ## 🔮 Phase 7: Future Optimizations (Scale & UX)

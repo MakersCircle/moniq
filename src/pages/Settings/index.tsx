@@ -1,4 +1,4 @@
-import { LogOut, RefreshCw, Smartphone, Palette, Globe, Target, Zap, AlertCircle, Cloud, CloudOff, Trash2, AlertTriangle } from 'lucide-react';
+import { LogOut, RefreshCw, Smartphone, Palette, Globe, Target, Zap, AlertCircle, Cloud, CloudOff, Trash2, AlertTriangle, ShieldCheck, History } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { googleLogout } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
@@ -36,6 +36,7 @@ export default function SettingsIndex() {
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  const [isBackingUp, setIsBackingUp] = useState(false);
 
   const handleLogout = () => {
     googleLogout();
@@ -169,6 +170,74 @@ export default function SettingsIndex() {
                   <p className="text-[10px] text-muted-foreground leading-relaxed">
                     Your financial data is 100% private. Moniq does not have a central database; instead, all your transactions and settings are securely backed up to a dedicated spreadsheet inside your personal Google Drive.
                   </p>
+                </div>
+             </CardContent>
+          </Card>
+        </section>
+
+        {/* Backups */}
+        <section className="space-y-4">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">Automated Backups</h3>
+          <Card className="border-border shadow-sm">
+             <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                      <ShieldCheck className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold tracking-tight">Tiered Retention System</p>
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                        Snapshots stored in "Moniq Backups" folder
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={async () => {
+                      setIsBackingUp(true);
+                      try {
+                        const { BackupManager } = await import('@/sync/BackupManager');
+                        await BackupManager.getInstance().runBackupCycle();
+                      } finally {
+                        setIsBackingUp(false);
+                      }
+                    }}
+                    disabled={isBackingUp}
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-4 font-bold uppercase text-[9px] tracking-widest min-w-[100px]"
+                  >
+                    {isBackingUp ? (
+                      <RefreshCw className="h-3 w-3 animate-spin mr-2" />
+                    ) : null}
+                    {isBackingUp ? 'Backing up...' : 'Backup Now'}
+                  </Button>
+                </div>
+
+                <div className="p-3 bg-accent/30 rounded-lg border border-border/50 mb-6">
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">
+                    Moniq automatically creates snapshots of your data at specific intervals. Clicking <strong>Backup Now</strong> manually triggers this cycle—if a scheduled backup is due today, it will be created immediately. This ensures your financial history is preserved across multiple time-horizons even if the automated sync hasn't run yet.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {[
+                    { label: 'Daily', date: settings.lastDailyBackup, limit: '7 Days' },
+                    { label: 'Weekly', date: settings.lastWeeklyBackup, limit: '5 Weeks' },
+                    { label: 'Monthly', date: settings.lastMonthlyBackup, limit: '12 Months' },
+                    { label: 'Yearly', date: settings.lastYearlyBackup, limit: 'Infinite' },
+                  ].map((tier) => (
+                    <div key={tier.label} className="p-3 bg-accent/30 rounded-xl border border-border/50 flex flex-col gap-1">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{tier.label}</p>
+                      <p className="text-xs font-bold truncate">
+                        {tier.date || 'Never'}
+                      </p>
+                      <div className="flex items-center gap-1 mt-1 text-[8px] text-muted-foreground/70 font-medium uppercase tracking-tighter">
+                        <History className="h-2 w-2" />
+                        <span>Retain: {tier.limit}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
              </CardContent>
           </Card>

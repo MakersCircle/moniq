@@ -524,6 +524,12 @@ export class SyncEngine {
       
       const { useDataStore } = await import('../store/dataStore');
       useDataStore.getState().setLastSyncedAt(syncTime);
+
+      // Trigger Backup Cycle (non-blocking)
+      const { BackupManager } = await import('./BackupManager');
+      BackupManager.getInstance().runBackupCycle().catch(err => {
+        console.warn('[SyncEngine] Triggering backup failed:', err);
+      });
     } catch (err: any) {
       console.error('[SyncEngine] Flush failed:', err);
       this.setStatus('error', err.message || 'Sync failed');
