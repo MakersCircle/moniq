@@ -48,17 +48,25 @@ export default function App() {
     initializeFromDB();
   }, [initializeFromDB]);
 
-  // 2. Periodic Token Refresh (every 50 minutes)
+  // 2. Proactive Token Refresh (checks every 5 minutes)
   useEffect(() => {
     if (!accessToken) return;
 
-    const interval = setInterval(() => {
-      console.log('[App] Proactive token refresh...');
-      googleService.silentRefresh();
-    }, 50 * 60 * 1000);
+    const check = () => {
+      const fiveMinutes = 5 * 60 * 1000;
+      const isAboutToExpire = tokenExpiresAt && (Date.now() > (tokenExpiresAt - fiveMinutes));
+      
+      if (isAboutToExpire) {
+        console.log('[App] Token about to expire, triggering proactive refresh...');
+        googleService.silentRefresh();
+      }
+    };
+
+    check(); // Check immediately on mount or dependency change
+    const interval = setInterval(check, 60 * 1000); // And then every minute
 
     return () => clearInterval(interval);
-  }, [accessToken]);
+  }, [accessToken, tokenExpiresAt]);
 
   // 3. Cloud initialization (Google Sheets)
   useEffect(() => {
@@ -66,8 +74,8 @@ export default function App() {
 
     async function initCloud() {
       try {
-        // If token is expired, try silent refresh first
-        if (tokenExpiresAt && Date.now() > tokenExpiresAt - 60000) {
+        // If token is expired or near expiry, try silent refresh first
+        if (tokenExpiresAt && Date.now() > tokenExpiresAt - 300000) {
           console.log('[App] Token expired or near expiry, refreshing...');
           const newToken = await googleService.silentRefresh();
           if (!newToken) return; // Will redirect to home via token=null change
@@ -146,7 +154,7 @@ export default function App() {
         <Route
           path="*"
           element={
-            accessToken ? (
+            accessToken || isCloudInitialized ? (
               <LayoutShell onNewTransaction={openNew}>
                 <Routes>
                   <Route path="dashboard" element={<Dashboard />} />

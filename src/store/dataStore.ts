@@ -197,7 +197,7 @@ export const useDataStore = create<DataState>()(
           tokenExpiresAt: tokenExpiresAt ? Number(tokenExpiresAt) : null,
           userProfile,
           isHydrated: true,
-          isCloudInitialized: !!accessToken && !!lastSyncedAt, // If we have an access token and a lastSyncedAt, we assume we're initialized from cache
+          isCloudInitialized: !!lastSyncedAt, // If we have a lastSyncedAt, we are a returning cloud user
         });
       } catch (err) {
         console.error('Failed to initialize from DB:', err);
@@ -540,3 +540,7 @@ export const useDataStore = create<DataState>()(
     },
   })
 );
+// Expose store for debugging
+if (import.meta.env.DEV) {
+  (window as any).useDataStore = useDataStore;
+}

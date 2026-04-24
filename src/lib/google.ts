@@ -72,24 +72,30 @@ export class GoogleService {
    * Handles Authorization header, 401 detection, and automatic silent refresh retry.
    */
   async fetch(url: string, options: RequestInit = {}): Promise<Response> {
-    const store = useDataStore.getState();
-    let token = store.accessToken;
+    const { accessToken: token, tokenExpiresAt: expiresAt } = useDataStore.getState();
+    
+    // Refresh if token is missing OR expiring in less than 5 minutes
+    const fiveMinutes = 5 * 60 * 1000;
+    const isAboutToExpire = expiresAt && (Date.now() > (expiresAt - fiveMinutes));
 
-    if (!token) {
-      // Try a silent refresh if we think we should have a token but don't
-      token = await this.silentRefresh();
-      if (!token) throw new Error('Unauthenticated: No access token found');
+    let currentToken = token;
+
+    if (!currentToken || isAboutToExpire) {
+      if (isAboutToExpire) console.log('[GoogleService] Token about to expire, refreshing...');
+      currentToken = await this.silentRefresh();
+      if (!currentToken) throw new Error('Unauthenticated: No access token found');
     }
 
-    const headers = {
-      ...options.headers,
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    };
+    let response = await fetch(url, { 
+      ...options, 
+      headers: {
+        ...options.headers,
+        Authorization: `Bearer ${currentToken}`,
+        'Content-Type': 'application/json',
+      }
+    });
 
-    let response = await fetch(url, { ...options, headers });
-
-    // Handle 401 Unauthorized
+    // Handle 401 Unauthorized (fallback reactive refresh)
     if (response.status === 401) {
       console.warn('[GoogleService] 401 detected, attempting silent refresh...');
       const newToken = await this.silentRefresh();
@@ -97,15 +103,17 @@ export class GoogleService {
       if (newToken) {
         // Retry the request once with the new token
         console.log('[GoogleService] Retrying request with new token');
-        const retryHeaders = {
-          ...options.headers,
-          Authorization: `Bearer ${newToken}`,
-          'Content-Type': 'application/json',
-        };
-        response = await fetch(url, { ...options, headers: retryHeaders });
+        response = await fetch(url, { 
+          ...options, 
+          headers: {
+            ...options.headers,
+            Authorization: `Bearer ${newToken}`,
+            'Content-Type': 'application/json',
+          }
+        });
       } else {
         // Refresh failed, user needs to log in manually
-        store.setAccessToken(null);
+        useDataStore.getState().setAccessToken(null);
         throw new Error('Unauthenticated: Session expired');
       }
     }
