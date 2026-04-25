@@ -80,6 +80,7 @@ This document tracks the end-to-end implementation roadmap for **moniq**. Items 
 - [ ] **Intelligent Auto-Categorization**: Suggesting categories for manual entries based on past similar notes.
 - [ ] **Data Export and Reports**: Full PDF or Excel generation of monthly summaries.
 - [x] **Automated Tiered Backup System**: [Plan](file:///home/don/.gemini/antigravity/brain/a8eda8c6-0b26-4832-9c05-536f03537399/backups_implementation_plan.md) - Tiered retention (Daily/Weekly/Monthly/Yearly) in a dedicated Drive folder.
+- [x] **Code Audit & Documentation**: [Audit Report](file:///home/don/.gemini/antigravity/brain/3b8e4b59-b56b-482a-ba31-27d2dec63d1a/audit_report.md) - Comprehensive dependency mapping and user/technical documentation.
 - [ ] **Sheets Auto-Archiving Tool**.
 
 ## 🔮 Phase 7: Future Optimizations (Scale & UX)
@@ -89,3 +90,4 @@ This document tracks the end-to-end implementation roadmap for **moniq**. Items 
 - [ ] **Smart Budget Rollover**.
 - [ ] **Household Sharing (Joint Accounts)**.
 - [ ] **Sheets Auto-Archiving Tool**.
+- [ ] **Automated Tiered Backup System**.

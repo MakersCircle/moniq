@@ -1,0 +1,34 @@
+# Frequently Asked Questions (FAQ)
+
+## 🔐 Privacy & Security
+
+### Where is my data stored?
+Your data lives in two places:
+1. **Locally**: In your browser's IndexedDB.
+2. **Cloud**: In a private spreadsheet named `moniq-database` in your own Google Drive.
+We never see, store, or sell your financial data.
+
+### Why does Moniq need "Full Drive Access"?
+Moniq uses the Google Sheets API to create and manage its own database file. While the permission scope says "See and manage all your files," Moniq *only* interacts with files it creates or files named `moniq-database`.
+
+## ⚙️ Synchronization
+
+### Can I use Moniq offline?
+Yes! You can add, edit, or delete transactions while offline. Moniq will queue these changes and sync them automatically the next time you have an internet connection.
+
+### How do I sync across multiple devices?
+Just sign in with the same Google Account on any device. Moniq will automatically find your `moniq-database` file and pull your data.
+
+### What if I accidentally delete the Google Sheet?
+If the sheet is in your Trash, restore it. If it's permanently deleted, Moniq will try to re-upload your local data the next time you sync, but it's recommended to keep the sheet safe as it is your primary backup.
+
+## 💰 Features
+
+### How do I track Lending or Borrowing?
+Create a Category for "Lent" or "Borrowed". When you give money, it's an "Expense" to the "Lent" category. When you receive it back, it's "Income" from the "Lent" category. The Dashboard will show your net receivable/payable amounts.
+
+### Can I change my currency?
+Yes. Go to **Settings > General** to change your currency and number formatting. Moniq uses the browser's native `Intl` API for accurate formatting.
+
+---
+**Still have questions?** Open an issue on GitHub or contact the developer.
