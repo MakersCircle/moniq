@@ -9,8 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **MDX Documentation**: Implemented an in-app help system using MDX at the `/docs` route. Includes user guides (Getting Started, FAQ, Scenarios) and technical architecture docs.
+- **Dynamic Help Routing**: Documentation pages are dynamically loaded and styled using Tailwind Typography with custom high-contrast theme overrides.
+
+### Changed
+- **Documentation Consolidation**: Migrated and removed redundant root-level documentation files (`user_guide.md`, `faq.md`, `architecture.md`, etc.) into the new integrated help system.
+
 ### Fixed
-- **Backups**: Clicking "Backup Now" in Settings was silently doing nothing if a backup had already run automatically earlier that day. It now always creates a fresh backup immediately, regardless of schedule — so what you click is what you get. Each manual backup creates a new copy in your "Moniq Backups" Drive folder rather than replacing the existing one, so your previous backups are never overwritten.
+- **API Types**: Resolved TypeScript errors in Google API routines related to `UserProfile` definitions.
+- **Linting**: Cleaned up unused imports and parameters across the documentation and sync modules.
+- **Backups**: Clicking "Backup Now" in Settings was silently doing nothing if a backup had already run automatically earlier that day. It now always creates a fresh backup immediately, regardless of schedule. Each manual backup creates a new copy in your "Moniq Backups" Drive folder.
 
 ---
 
