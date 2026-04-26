@@ -10,7 +10,7 @@ import type {
 } from '../../types';
 import { defaultSettings } from './settingsSlice';
 import { getCurrencySymbol } from '../../constants/currencies';
-import { getAll, getAllSettings, getMeta, clearStore } from '../../lib/db';
+import { getAll, getAllSettings, getMeta, setMeta, delMeta, clearStore } from '../../lib/db';
 
 export interface SyncSlice {
   spreadsheetId: string | null;
