@@ -47,7 +47,11 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
   isHydrated: false,
   isCloudInitialized: false,
 
-  setSpreadsheetId: id => set({ spreadsheetId: id }),
+  setSpreadsheetId: id => {
+    set({ spreadsheetId: id });
+    if (id) setMeta('spreadsheetId', id);
+    else delMeta('spreadsheetId');
+  },
   setSyncStatus: (syncStatus, pendingCount, lastSyncError) =>
     set({ syncStatus, pendingCount, lastSyncError }),
   setLastSyncedAt: timestamp => set({ lastSyncedAt: timestamp }),
@@ -120,13 +124,14 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         accounts,
         methods,
         categories,
-        ,
+        transactions,
         budgets,
         settings,
         lastSyncedAt,
         accessToken,
         tokenExpiresAt,
         userProfileStr,
+        spreadsheetId,
       ] = await Promise.all([
         getAll<Account>('accounts'),
         getAll<PaymentMethod>('methods'),
@@ -138,6 +143,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         getMeta('accessToken'),
         getMeta('tokenExpiresAt'),
         getMeta('userProfile'),
+        getMeta('spreadsheetId'),
       ]);
 
       let userProfile = null;
@@ -178,8 +184,10 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         accounts,
         methods,
         categories,
+        transactions,
         budgets: budgets as Budget[],
         settings: userSettings,
+        spreadsheetId: spreadsheetId || null,
         lastSyncedAt: lastSyncedAt || null,
         accessToken: accessToken || null,
         tokenExpiresAt: tokenExpiresAt ? Number(tokenExpiresAt) : null,
