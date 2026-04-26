@@ -2,11 +2,11 @@
 
 ***
 
-[moniq-app](../../../modules.mdx) / [sync/SyncEngine](../index.mdx) / SyncEngine
+[moniq-app](../../../index.mdx) / [sync/SyncEngine](../index.mdx) / SyncEngine
 
 # Class: SyncEngine
 
-Defined in: [sync/SyncEngine.ts:232](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/sync/SyncEngine.ts#L232)
+Defined in: [sync/SyncEngine.ts:232](https://github.com/MakersCircle/moniq/blob/77fb7539cb49521af3eb30e3b5291c35b2435357/src/sync/SyncEngine.ts#L232)
 
 ## Accessors
 
@@ -16,7 +16,7 @@ Defined in: [sync/SyncEngine.ts:232](https://github.com/MakersCircle/moniq/blob/
 
 > **get** **lastError**(): `string` \| `undefined`
 
-Defined in: [sync/SyncEngine.ts:281](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/sync/SyncEngine.ts#L281)
+Defined in: [sync/SyncEngine.ts:281](https://github.com/MakersCircle/moniq/blob/77fb7539cb49521af3eb30e3b5291c35b2435357/src/sync/SyncEngine.ts#L281)
 
 ##### Returns
 
@@ -30,7 +30,7 @@ Defined in: [sync/SyncEngine.ts:281](https://github.com/MakersCircle/moniq/blob/
 
 > **get** **pendingCount**(): `number`
 
-Defined in: [sync/SyncEngine.ts:278](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/sync/SyncEngine.ts#L278)
+Defined in: [sync/SyncEngine.ts:278](https://github.com/MakersCircle/moniq/blob/77fb7539cb49521af3eb30e3b5291c35b2435357/src/sync/SyncEngine.ts#L278)
 
 ##### Returns
 
@@ -44,7 +44,7 @@ Defined in: [sync/SyncEngine.ts:278](https://github.com/MakersCircle/moniq/blob/
 
 > **get** **status**(): [`SyncStatus`](../../../types/type-aliases/SyncStatus.mdx)
 
-Defined in: [sync/SyncEngine.ts:275](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/sync/SyncEngine.ts#L275)
+Defined in: [sync/SyncEngine.ts:275](https://github.com/MakersCircle/moniq/blob/77fb7539cb49521af3eb30e3b5291c35b2435357/src/sync/SyncEngine.ts#L275)
 
 ##### Returns
 
@@ -56,7 +56,7 @@ Defined in: [sync/SyncEngine.ts:275](https://github.com/MakersCircle/moniq/blob/
 
 > **destroy**(): `void`
 
-Defined in: [sync/SyncEngine.ts:862](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/sync/SyncEngine.ts#L862)
+Defined in: [sync/SyncEngine.ts:862](https://github.com/MakersCircle/moniq/blob/77fb7539cb49521af3eb30e3b5291c35b2435357/src/sync/SyncEngine.ts#L862)
 
 #### Returns
 
@@ -68,7 +68,7 @@ Defined in: [sync/SyncEngine.ts:862](https://github.com/MakersCircle/moniq/blob/
 
 > **forceSync**(): `Promise`\<`void`\>
 
-Defined in: [sync/SyncEngine.ts:599](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/sync/SyncEngine.ts#L599)
+Defined in: [sync/SyncEngine.ts:599](https://github.com/MakersCircle/moniq/blob/77fb7539cb49521af3eb30e3b5291c35b2435357/src/sync/SyncEngine.ts#L599)
 
 Force an immediate flush of all pending operations.
 
@@ -82,7 +82,7 @@ Force an immediate flush of all pending operations.
 
 > **initialize**(`spreadsheetId`): `Promise`\<\{ `accounts`: [`Account`](../../../types/interfaces/Account.mdx)[]; `budgets`: [`Budget`](../../../types/interfaces/Budget.mdx)[]; `categories`: [`Category`](../../../types/interfaces/Category.mdx)[]; `methods`: [`PaymentMethod`](../../../types/interfaces/PaymentMethod.mdx)[]; `settings`: `Record`\<`string`, `string`\>; `transactions`: [`Transaction`](../../../types/interfaces/Transaction.mdx)[]; \} \| `null`\>
 
-Defined in: [sync/SyncEngine.ts:328](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/sync/SyncEngine.ts#L328)
+Defined in: [sync/SyncEngine.ts:328](https://github.com/MakersCircle/moniq/blob/77fb7539cb49521af3eb30e3b5291c35b2435357/src/sync/SyncEngine.ts#L328)
 
 #### Parameters
 
@@ -100,7 +100,7 @@ Defined in: [sync/SyncEngine.ts:328](https://github.com/MakersCircle/moniq/blob/
 
 > **markDirty**(`entity`, `entityId`, `action`): `Promise`\<`void`\>
 
-Defined in: [sync/SyncEngine.ts:570](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/sync/SyncEngine.ts#L570)
+Defined in: [sync/SyncEngine.ts:570](https://github.com/MakersCircle/moniq/blob/77fb7539cb49521af3eb30e3b5291c35b2435357/src/sync/SyncEngine.ts#L570)
 
 Called by the data store after each mutation.
 Adds an operation to the sync queue and schedules a debounced flush.
@@ -129,7 +129,7 @@ Adds an operation to the sync queue and schedules a debounced flush.
 
 > **performHardReset**(): `Promise`\<`void`\>
 
-Defined in: [sync/SyncEngine.ts:741](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/sync/SyncEngine.ts#L741)
+Defined in: [sync/SyncEngine.ts:741](https://github.com/MakersCircle/moniq/blob/77fb7539cb49521af3eb30e3b5291c35b2435357/src/sync/SyncEngine.ts#L741)
 
 Orchestrates a complete wipe of remote and local data.
 
@@ -143,7 +143,7 @@ Orchestrates a complete wipe of remote and local data.
 
 > **subscribe**(`listener`): () => `void`
 
-Defined in: [sync/SyncEngine.ts:285](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/sync/SyncEngine.ts#L285)
+Defined in: [sync/SyncEngine.ts:285](https://github.com/MakersCircle/moniq/blob/77fb7539cb49521af3eb30e3b5291c35b2435357/src/sync/SyncEngine.ts#L285)
 
 #### Parameters
 
@@ -161,7 +161,7 @@ Defined in: [sync/SyncEngine.ts:285](https://github.com/MakersCircle/moniq/blob/
 
 > `static` **getInstance**(`config?`): `SyncEngine`
 
-Defined in: [sync/SyncEngine.ts:258](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/sync/SyncEngine.ts#L258)
+Defined in: [sync/SyncEngine.ts:258](https://github.com/MakersCircle/moniq/blob/77fb7539cb49521af3eb30e3b5291c35b2435357/src/sync/SyncEngine.ts#L258)
 
 #### Parameters
 
@@ -179,7 +179,7 @@ Defined in: [sync/SyncEngine.ts:258](https://github.com/MakersCircle/moniq/blob/
 
 > `static` **reset**(): `void`
 
-Defined in: [sync/SyncEngine.ts:266](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/sync/SyncEngine.ts#L266)
+Defined in: [sync/SyncEngine.ts:266](https://github.com/MakersCircle/moniq/blob/77fb7539cb49521af3eb30e3b5291c35b2435357/src/sync/SyncEngine.ts#L266)
 
 Reset the singleton (for testing or logout)
 

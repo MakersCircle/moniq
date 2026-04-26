@@ -3,5 +3,6 @@
   "out": "src/docs/api",
   "plugin": ["typedoc-plugin-markdown"],
   "entryFileName": "index.mdx",
-  "fileExtension": ".mdx"
+  "fileExtension": ".mdx",
+  "readme": "none"
 }
