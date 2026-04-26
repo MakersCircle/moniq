@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.3.2] - 2026-04-26
+
 ### Added
 - **Environment Stabilization**: Integrated ESLint, Prettier, Husky, and lint-staged for consistent code quality.
 - **Type Safety Pass**: Conducted a comprehensive pass to remove `any` types and improve TypeScript definitions (Step 2).
