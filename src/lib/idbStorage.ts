@@ -3,11 +3,11 @@ import { getDB } from './db';
 
 /**
  * Custom Zustand persist storage adapter backed by IndexedDB.
- * 
+ *
  * Zustand's persist middleware expects a StateStorage interface with
  * getItem / setItem / removeItem. This adapter stores the serialized
  * Zustand state in the IDB `meta` store under a single key.
- * 
+ *
  * This replaces the default localStorage adapter and removes the ~5MB cap.
  */
 export const idbStorage: StateStorage = {

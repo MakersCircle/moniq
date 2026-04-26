@@ -22,7 +22,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 
@@ -43,11 +43,12 @@ const emptyForm: AccountForm = {
   description: '',
   initialBalance: '',
   isSavings: false,
-  excludeFromNet: false
+  excludeFromNet: false,
 };
 
 export default function Accounts() {
-  const { accounts, settings, addAccount, updateAccount, archiveAccount, deleteAccount } = useDataStore();
+  const { accounts, settings, addAccount, updateAccount, archiveAccount, deleteAccount } =
+    useDataStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Account | null>(null);
   const [form, setForm] = useState<AccountForm>(emptyForm);
@@ -69,7 +70,7 @@ export default function Accounts() {
       description: a.description || '',
       initialBalance: String(a.initialBalance),
       isSavings: a.isSavings,
-      excludeFromNet: !!a.excludeFromNet
+      excludeFromNet: !!a.excludeFromNet,
     });
     setError('');
     setModalOpen(true);
@@ -98,8 +99,8 @@ export default function Accounts() {
     setModalOpen(false);
   };
 
-  const activeAccounts = accounts.filter((s) => s.isActive && !s.isDeleted);
-  const archivedAccounts = accounts.filter((s) => !s.isActive && !s.isDeleted);
+  const activeAccounts = accounts.filter(s => s.isActive && !s.isDeleted);
+  const archivedAccounts = accounts.filter(s => !s.isActive && !s.isDeleted);
 
   return (
     <SettingsLayout>
@@ -109,9 +110,14 @@ export default function Accounts() {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold tracking-tight">Accounts</h2>
-                <InfoTooltip position="bottom" text="Accounts are the core of Moniq. They represent places where your money lives (like Bank Accounts or Wallets) or money you owe (like Credit Cards or Loans). Every transaction requires an account. You shoudl create an account for each place where your money lives or where you owe money like individual bank accounts, individual credit cards etc." />
+                <InfoTooltip
+                  position="bottom"
+                  text="Accounts are the core of Moniq. They represent places where your money lives (like Bank Accounts or Wallets) or money you owe (like Credit Cards or Loans). Every transaction requires an account. You shoudl create an account for each place where your money lives or where you owe money like individual bank accounts, individual credit cards etc."
+                />
               </div>
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Financial Entities ({activeAccounts.length})</p>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                Financial Entities ({activeAccounts.length})
+              </p>
             </div>
             <Button size="sm" onClick={openAdd} className="h-9 gap-2">
               <Plus className="h-4 w-4" /> Add Account
@@ -120,10 +126,13 @@ export default function Accounts() {
         </div>
 
         <div className="grid grid-cols-1 gap-3">
-          {activeAccounts.map((a) => {
+          {activeAccounts.map(a => {
             const Icon = a.type === 'Asset' ? Landmark : CreditCard;
             return (
-              <Card key={a.id} className="group border-border hover:border-primary/30 transition-all shadow-sm overflow-hidden">
+              <Card
+                key={a.id}
+                className="group border-border hover:border-primary/30 transition-all shadow-sm overflow-hidden"
+              >
                 <CardContent className="p-0">
                   <div className="flex items-center gap-4 p-4">
                     <div className="h-10 w-10 shrink-0 rounded-xl bg-accent flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
@@ -132,19 +141,41 @@ export default function Accounts() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-sm tracking-tight">{a.name}</p>
-                        {a.isSavings && <span className="text-[8px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black uppercase tracking-widest">Savings</span>}
+                        {a.isSavings && (
+                          <span className="text-[8px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black uppercase tracking-widest">
+                            Savings
+                          </span>
+                        )}
                       </div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{a.type}{a.description ? ` • ${a.description}` : ''}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+                        {a.type}
+                        {a.description ? ` • ${a.description}` : ''}
+                      </p>
                     </div>
                     <div className="text-right pr-2">
-                      <p className="text-xs font-bold mono">{settings.currencySymbol}{a.initialBalance.toLocaleString()}</p>
-                      <p className="text-[9px] text-muted-foreground font-medium uppercase">Opening</p>
+                      <p className="text-xs font-bold mono">
+                        {settings.currencySymbol}
+                        {a.initialBalance.toLocaleString()}
+                      </p>
+                      <p className="text-[9px] text-muted-foreground font-medium uppercase">
+                        Opening
+                      </p>
                     </div>
                     <div className="flex items-center gap-1 opacity-10 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(a)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => openEdit(a)}
+                      >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10" onClick={() => archiveAccount(a.id)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => archiveAccount(a.id)}
+                      >
                         <Archive className="h-3.5 w-3.5" />
                       </Button>
                     </div>
@@ -157,27 +188,57 @@ export default function Accounts() {
 
         {archivedAccounts.length > 0 && (
           <div className="pt-8 space-y-4">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 px-1">Archived Accounts</h4>
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 px-1">
+              Archived Accounts
+            </h4>
             <div className="grid grid-cols-1 gap-2">
-              {archivedAccounts.map((a) => (
+              {archivedAccounts.map(a => (
                 <div key={a.id}>
                   <div className="flex items-center justify-between p-3 px-4 rounded-lg bg-accent/20 border border-transparent opacity-60">
                     <span className="text-xs font-bold text-muted-foreground">{a.name}</span>
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider" onClick={() => { setDeleteError(prev => { const n = { ...prev }; delete n[a.id]; return n; }); updateAccount(a.id, { isActive: true }); }}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-[10px] font-bold uppercase tracking-wider"
+                        onClick={() => {
+                          setDeleteError(prev => {
+                            const n = { ...prev };
+                            delete n[a.id];
+                            return n;
+                          });
+                          updateAccount(a.id, { isActive: true });
+                        }}
+                      >
                         Restore
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-wider text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => {
-                        const result = deleteAccount(a.id);
-                        if (!result.success) setDeleteError(prev => ({ ...prev, [a.id]: result.reason || 'Cannot delete.' }));
-                        else setDeleteError(prev => { const n = { ...prev }; delete n[a.id]; return n; });
-                      }}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-[10px] font-bold uppercase tracking-wider text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          const result = deleteAccount(a.id);
+                          if (!result.success)
+                            setDeleteError(prev => ({
+                              ...prev,
+                              [a.id]: result.reason || 'Cannot delete.',
+                            }));
+                          else
+                            setDeleteError(prev => {
+                              const n = { ...prev };
+                              delete n[a.id];
+                              return n;
+                            });
+                        }}
+                      >
                         <Trash2 className="h-3 w-3 mr-1" /> Delete
                       </Button>
                     </div>
                   </div>
                   {deleteError[a.id] && (
-                    <p className="text-[10px] font-medium text-destructive mt-1 ml-4">{deleteError[a.id]}</p>
+                    <p className="text-[10px] font-medium text-destructive mt-1 ml-4">
+                      {deleteError[a.id]}
+                    </p>
                   )}
                 </div>
               ))}
@@ -189,7 +250,9 @@ export default function Accounts() {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold tracking-tight">{editing ? 'Edit Account' : 'New Account'}</DialogTitle>
+            <DialogTitle className="text-xl font-bold tracking-tight">
+              {editing ? 'Edit Account' : 'New Account'}
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6 py-4">
@@ -201,7 +264,10 @@ export default function Accounts() {
               <Input
                 placeholder="e.g., Bank Account, Cash Wallet, Credit Card"
                 value={form.name}
-                onChange={(e) => { setForm({ ...form, name: e.target.value }); setError(''); }}
+                onChange={e => {
+                  setForm({ ...form, name: e.target.value });
+                  setError('');
+                }}
                 className="h-10 border-border/50 focus:border-primary/30"
               />
             </div>
@@ -213,14 +279,16 @@ export default function Accounts() {
               </Label>
               <Select
                 value={form.type}
-                onValueChange={(val) => setForm({ ...form, type: val as AccountType })}
+                onValueChange={val => setForm({ ...form, type: val as AccountType })}
               >
                 <SelectTrigger className="h-10">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {ACCOUNT_CLASSES.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  {ACCOUNT_CLASSES.map(t => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -233,7 +301,7 @@ export default function Accounts() {
               </Label>
               <textarea
                 value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                onChange={e => setForm({ ...form, description: e.target.value })}
                 className="flex min-h-[80px] w-full rounded-md border border-border/50 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
               />
             </div>
@@ -243,11 +311,16 @@ export default function Accounts() {
                 <Checkbox
                   id="isSavings"
                   checked={form.isSavings}
-                  onCheckedChange={(val: boolean | 'indeterminate') => setForm({ ...form, isSavings: !!val })}
+                  onCheckedChange={(val: boolean | 'indeterminate') =>
+                    setForm({ ...form, isSavings: !!val })
+                  }
                   className="mt-0.5"
                 />
                 <div className="flex flex-col">
-                  <label htmlFor="isSavings" className="text-xs font-bold cursor-pointer flex items-center">
+                  <label
+                    htmlFor="isSavings"
+                    className="text-xs font-bold cursor-pointer flex items-center"
+                  >
                     Savings Account
                     <InfoTooltip text="Mark this if this is your dedicated savings account." />
                   </label>
@@ -257,11 +330,16 @@ export default function Accounts() {
                 <Checkbox
                   id="excludeFromNet"
                   checked={form.excludeFromNet}
-                  onCheckedChange={(val: boolean | 'indeterminate') => setForm({ ...form, excludeFromNet: !!val })}
+                  onCheckedChange={(val: boolean | 'indeterminate') =>
+                    setForm({ ...form, excludeFromNet: !!val })
+                  }
                   className="mt-0.5"
                 />
                 <div className="flex flex-col">
-                  <label htmlFor="excludeFromNet" className="text-xs font-bold cursor-pointer text-muted-foreground flex items-center whitespace-nowrap">
+                  <label
+                    htmlFor="excludeFromNet"
+                    className="text-xs font-bold cursor-pointer text-muted-foreground flex items-center whitespace-nowrap"
+                  >
                     Exclude Net Worth
                     <InfoTooltip text="Exclude this balance from your total Net Worth calculation." />
                   </label>
@@ -275,11 +353,16 @@ export default function Accounts() {
                 <InfoTooltip text="The balance this account had when you started tracking in Moniq." />
               </Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">{settings.currencySymbol}</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
+                  {settings.currencySymbol}
+                </span>
                 <Input
                   type="number"
                   value={form.initialBalance}
-                  onChange={(e) => { setForm({ ...form, initialBalance: e.target.value }); setError(''); }}
+                  onChange={e => {
+                    setForm({ ...form, initialBalance: e.target.value });
+                    setError('');
+                  }}
                   placeholder="0"
                   className="h-12 pl-8 border-border/50 focus:border-primary/30 text-lg font-bold mono"
                   inputMode="decimal"
@@ -288,16 +371,21 @@ export default function Accounts() {
               </div>
             </div>
 
-            {error && (
-              <p className="text-sm font-medium text-destructive">{error}</p>
-            )}
+            {error && <p className="text-sm font-medium text-destructive">{error}</p>}
           </div>
 
           <DialogFooter className="pt-4">
-            <Button variant="ghost" onClick={() => setModalOpen(false)} className="h-10 px-6 font-bold uppercase text-[10px] tracking-widest">
+            <Button
+              variant="ghost"
+              onClick={() => setModalOpen(false)}
+              className="h-10 px-6 font-bold uppercase text-[10px] tracking-widest"
+            >
               Cancel
             </Button>
-            <Button onClick={handleSave} className="h-10 px-8 font-bold uppercase text-[10px] tracking-widest">
+            <Button
+              onClick={handleSave}
+              className="h-10 px-8 font-bold uppercase text-[10px] tracking-widest"
+            >
               {editing ? 'Update Account' : 'Create Account'}
             </Button>
           </DialogFooter>

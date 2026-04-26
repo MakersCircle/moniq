@@ -1,6 +1,6 @@
-import React, { Component, type ErrorInfo, type ReactNode } from "react";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle, RefreshCcw } from "lucide-react";
+import React, { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle, RefreshCcw } from 'lucide-react';
 
 interface Props {
   children?: ReactNode;
@@ -21,7 +21,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("Uncaught error:", error, errorInfo);
+    console.error('Uncaught error:', error, errorInfo);
   }
 
   public render() {
@@ -33,16 +33,20 @@ export class ErrorBoundary extends Component<Props, State> {
           </div>
           <h1 className="text-2xl font-bold tracking-tight mb-2">Something went wrong</h1>
           <p className="text-muted-foreground mb-8 max-w-md">
-            The application encountered an unexpected error. This might be due to a data sync issue or a temporary glitch.
+            The application encountered an unexpected error. This might be due to a data sync issue
+            or a temporary glitch.
           </p>
           <div className="flex gap-4">
             <Button onClick={() => window.location.reload()}>
               <RefreshCcw className="mr-2 h-4 w-4" /> Reload Application
             </Button>
-            <Button variant="outline" onClick={() => {
-              localStorage.clear();
-              window.location.reload();
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                localStorage.clear();
+                window.location.reload();
+              }}
+            >
               Clear Local Data
             </Button>
           </div>
@@ -58,4 +62,3 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-

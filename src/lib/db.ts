@@ -1,19 +1,35 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type {
-  Account, PaymentMethod, Category, Transaction, Budget, SyncOperation,
+  Account,
+  PaymentMethod,
+  Category,
+  Transaction,
+  Budget,
+  SyncOperation,
 } from '../types';
 
 // ── IDB Schema ─────────────────────────────────────────────────
 
 interface MoniqDB extends DBSchema {
   accounts: { key: string; value: Account; indexes: { 'by-updatedAt': string } };
-  methods: { key: string; value: PaymentMethod; indexes: { 'by-updatedAt': string; 'by-linkedAccountId': string } };
+  methods: {
+    key: string;
+    value: PaymentMethod;
+    indexes: { 'by-updatedAt': string; 'by-linkedAccountId': string };
+  };
   categories: { key: string; value: Category; indexes: { 'by-updatedAt': string } };
-  transactions: { key: string; value: Transaction; indexes: { 'by-updatedAt': string; 'by-date': string } };
+  transactions: {
+    key: string;
+    value: Transaction;
+    indexes: { 'by-updatedAt': string; 'by-date': string };
+  };
   budgets: { key: string; value: Budget; indexes: { 'by-updatedAt': string } };
   settings: { key: string; value: { key: string; value: string } };
   sync_queue: { key: string; value: SyncOperation; indexes: { 'by-timestamp': string } };
-  remote_snapshot: { key: string; value: { id: string; store: string; data: any; checksum: string } };
+  remote_snapshot: {
+    key: string;
+    value: { id: string; store: string; data: any; checksum: string };
+  };
   meta: { key: string; value: { key: string; value: string } };
 }
 
@@ -81,12 +97,18 @@ export async function getById<T>(storeName: EntityStore, id: string): Promise<T 
   return db.get(storeName, id) as Promise<T | undefined>;
 }
 
-export async function put<T extends { id: string }>(storeName: EntityStore, item: T): Promise<void> {
+export async function put<T extends { id: string }>(
+  storeName: EntityStore,
+  item: T
+): Promise<void> {
   const db = await getDB();
   await db.put(storeName, item as any);
 }
 
-export async function putMany<T extends { id: string }>(storeName: EntityStore, items: T[]): Promise<void> {
+export async function putMany<T extends { id: string }>(
+  storeName: EntityStore,
+  items: T[]
+): Promise<void> {
   const db = await getDB();
   const tx = db.transaction(storeName, 'readwrite');
   for (const item of items) {
@@ -100,7 +122,9 @@ export async function del(storeName: EntityStore, id: string): Promise<void> {
   await db.delete(storeName, id);
 }
 
-export async function clearStore(storeName: EntityStore | 'sync_queue' | 'remote_snapshot' | 'settings' | 'meta'): Promise<void> {
+export async function clearStore(
+  storeName: EntityStore | 'sync_queue' | 'remote_snapshot' | 'settings' | 'meta'
+): Promise<void> {
   const db = await getDB();
   await db.clear(storeName);
 }
@@ -129,12 +153,19 @@ export async function clearSyncQueue(): Promise<void> {
 
 // ── Remote Snapshot helpers ─────────────────────────────────────
 
-export async function saveRemoteSnapshot(id: string, store: string, data: any, checksum: string): Promise<void> {
+export async function saveRemoteSnapshot(
+  id: string,
+  store: string,
+  data: any,
+  checksum: string
+): Promise<void> {
   const db = await getDB();
   await db.put('remote_snapshot', { id, store, data, checksum });
 }
 
-export async function getRemoteSnapshot(id: string): Promise<{ id: string; store: string; data: any; checksum: string } | undefined> {
+export async function getRemoteSnapshot(
+  id: string
+): Promise<{ id: string; store: string; data: any; checksum: string } | undefined> {
   const db = await getDB();
   return db.get('remote_snapshot', id);
 }

@@ -1,56 +1,52 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { format, parseISO, isValid, parse } from "date-fns"
-import { Calendar as CalendarIcon } from "lucide-react"
+import * as React from 'react';
+import { format, parseISO, isValid, parse } from 'date-fns';
+import { Calendar as CalendarIcon } from 'lucide-react';
 
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
-} from "@/components/ui/input-group"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
+} from '@/components/ui/input-group';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 interface DatePickerProps {
-  date: string
-  onChange: (date: string) => void
+  date: string;
+  onChange: (date: string) => void;
 }
 
 export function DatePicker({ date, onChange }: DatePickerProps) {
-  const [open, setOpen] = React.useState(false)
-  const [inputValue, setInputValue] = React.useState("")
-  const [month, setMonth] = React.useState<Date | undefined>()
+  const [open, setOpen] = React.useState(false);
+  const [inputValue, setInputValue] = React.useState('');
+  const [month, setMonth] = React.useState<Date | undefined>();
 
   // sync display value
   React.useEffect(() => {
-    const d = parseISO(date)
+    const d = parseISO(date);
     if (isValid(d)) {
-      setInputValue(format(d, "dd/MM/yyyy"))
-      setMonth(d)
+      setInputValue(format(d, 'dd/MM/yyyy'));
+      setMonth(d);
     }
-  }, [date])
+  }, [date]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value
-    setInputValue(val)
+    const val = e.target.value;
+    setInputValue(val);
 
-    const parsed = parse(val, "dd/MM/yyyy", new Date())
+    const parsed = parse(val, 'dd/MM/yyyy', new Date());
     if (isValid(parsed)) {
-      onChange(format(parsed, "yyyy-MM-dd"))
-      setMonth(parsed)
+      onChange(format(parsed, 'yyyy-MM-dd'));
+      setMonth(parsed);
     }
-  }
+  };
 
   const selectedDate = React.useMemo(() => {
-    const d = parseISO(date)
-    return isValid(d) ? d : undefined
-  }, [date])
+    const d = parseISO(date);
+    return isValid(d) ? d : undefined;
+  }, [date]);
 
   return (
     <InputGroup>
@@ -59,9 +55,9 @@ export function DatePicker({ date, onChange }: DatePickerProps) {
         onChange={handleInputChange}
         placeholder="DD/MM/YYYY"
         onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-          if (e.key === "ArrowDown") {
-            e.preventDefault()
-            setOpen(true)
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setOpen(true);
           }
         }}
       />
@@ -69,30 +65,21 @@ export function DatePicker({ date, onChange }: DatePickerProps) {
       <InputGroupAddon align="inline-end">
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
-            <InputGroupButton
-              variant="ghost"
-              size="icon-xs"
-              aria-label="Select date"
-            >
+            <InputGroupButton variant="ghost" size="icon-xs" aria-label="Select date">
               <CalendarIcon />
             </InputGroupButton>
           </PopoverTrigger>
 
-          <PopoverContent
-            className="w-auto p-0"
-            align="end"
-            alignOffset={-8}
-            sideOffset={10}
-          >
+          <PopoverContent className="w-auto p-0" align="end" alignOffset={-8} sideOffset={10}>
             <Calendar
               mode="single"
               selected={selectedDate}
               month={month}
               onMonthChange={setMonth}
-              onSelect={(d) => {
+              onSelect={d => {
                 if (d) {
-                  onChange(format(d, "yyyy-MM-dd"))
-                  setOpen(false)
+                  onChange(format(d, 'yyyy-MM-dd'));
+                  setOpen(false);
                 }
               }}
             />
@@ -100,5 +87,5 @@ export function DatePicker({ date, onChange }: DatePickerProps) {
         </Popover>
       </InputGroupAddon>
     </InputGroup>
-  )
+  );
 }

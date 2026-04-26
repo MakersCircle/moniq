@@ -1,13 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Download, 
-  Search, 
-  ChevronRight, 
-  MoreVertical, 
-  Pencil, 
-  Copy, 
-  Trash2 
-} from 'lucide-react';
+import { Download, Search, ChevronRight, MoreVertical, Pencil, Copy, Trash2 } from 'lucide-react';
 import { useDataStore } from '../store/dataStore';
 import { useFilteredTransactions } from '../hooks/useComputed';
 import { groupByDate, exportToCSV, toMonthKey, formatCurrency } from '../utils/format';
@@ -22,20 +14,21 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import TransactionDetailPanel from '@/components/Transactions/TransactionDetailPanel';
 
 export default function Transactions() {
-  const { accounts, categories, methods, settings, transactions, deleteTransaction } = useDataStore();
-  
+  const { accounts, categories, methods, settings, transactions, deleteTransaction } =
+    useDataStore();
+
   const [filter, setFilter] = useState<TxnFilter>({
     month: toMonthKey(new Date()),
   });
@@ -43,10 +36,9 @@ export default function Transactions() {
 
   const txns = useFilteredTransactions(filter);
   const grouped = useMemo(() => groupByDate(txns), [txns]);
-  const selectedTxn = transactions.find((t) => t.id === selectedTxnId) || null;
+  const selectedTxn = transactions.find(t => t.id === selectedTxnId) || null;
 
-  const updateFilter = (patch: Partial<TxnFilter>) =>
-    setFilter((f) => ({ ...f, ...patch }));
+  const updateFilter = (patch: Partial<TxnFilter>) => setFilter(f => ({ ...f, ...patch }));
 
   const handleExport = () => {
     exportToCSV(txns, accounts, categories, methods, `moniq-${filter.month || 'all'}.csv`);
@@ -68,7 +60,11 @@ export default function Transactions() {
 
   const getAccountName = (txn: Transaction) => {
     const isIncome = txn.uiType === 'income';
-    const entry = txn.entries.find(e => accounts.some(a => a.id === e.accountId) && (isIncome ? e.type === 'DEBIT' : e.type === 'CREDIT'));
+    const entry = txn.entries.find(
+      e =>
+        accounts.some(a => a.id === e.accountId) &&
+        (isIncome ? e.type === 'DEBIT' : e.type === 'CREDIT')
+    );
     return accounts.find(a => a.id === entry?.accountId)?.name || 'Unknown';
   };
 
@@ -85,19 +81,27 @@ export default function Transactions() {
   return (
     <div className="flex h-full relative overflow-hidden -m-8">
       {/* Main Table Area */}
-      <div className={cn(
-        "flex-1 flex flex-col transition-all duration-300",
-        selectedTxnId ? "pr-[400px]" : ""
-      )}>
+      <div
+        className={cn(
+          'flex-1 flex flex-col transition-all duration-300',
+          selectedTxnId ? 'pr-[400px]' : ''
+        )}
+      >
         {/* Sticky Header with Filters */}
         <div className="sticky top-0 bg-background/80 backdrop-blur-md z-20 border-b border-border p-8 pb-4 space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Ledger</h1>
               <p className="text-sm text-muted-foreground">
-                {txns.length} transactions · Net: 
-                <span className={cn("ml-1 font-bold mono", currentNet >= 0 ? "text-income" : "text-expense")}>
-                   {currentNet >= 0 ? '+' : ''}{formatCurrency(currentNet, settings)}
+                {txns.length} transactions · Net:
+                <span
+                  className={cn(
+                    'ml-1 font-bold mono',
+                    currentNet >= 0 ? 'text-income' : 'text-expense'
+                  )}
+                >
+                  {currentNet >= 0 ? '+' : ''}
+                  {formatCurrency(currentNet, settings)}
                 </span>
               </p>
             </div>
@@ -116,11 +120,14 @@ export default function Transactions() {
                 placeholder="Search description..."
                 className="pl-9 h-9 text-xs"
                 value={filter.search || ''}
-                onChange={(e) => updateFilter({ search: e.target.value || undefined })}
+                onChange={e => updateFilter({ search: e.target.value || undefined })}
               />
             </div>
 
-            <Select value={filter.month || 'all'} onValueChange={(val) => updateFilter({ month: val === 'all' ? undefined : val })}>
+            <Select
+              value={filter.month || 'all'}
+              onValueChange={val => updateFilter({ month: val === 'all' ? undefined : val })}
+            >
               <SelectTrigger className="h-9 w-[160px] text-xs">
                 <SelectValue placeholder="All time" />
               </SelectTrigger>
@@ -139,7 +146,12 @@ export default function Transactions() {
               </SelectContent>
             </Select>
 
-            <Select value={filter.uiType || 'all'} onValueChange={(val) => updateFilter({ uiType: val === 'all' ? undefined : val as any })}>
+            <Select
+              value={filter.uiType || 'all'}
+              onValueChange={val =>
+                updateFilter({ uiType: val === 'all' ? undefined : (val as any) })
+              }
+            >
               <SelectTrigger className="h-9 w-[120px] text-xs">
                 <SelectValue placeholder="All Types" />
               </SelectTrigger>
@@ -151,13 +163,22 @@ export default function Transactions() {
               </SelectContent>
             </Select>
 
-            <Select value={filter.accountId || 'all'} onValueChange={(val) => updateFilter({ accountId: val === 'all' ? undefined : val })}>
+            <Select
+              value={filter.accountId || 'all'}
+              onValueChange={val => updateFilter({ accountId: val === 'all' ? undefined : val })}
+            >
               <SelectTrigger className="h-9 w-[150px] text-xs">
                 <SelectValue placeholder="All Accounts" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Accounts</SelectItem>
-                {accounts.filter(a => !a.isDeleted).map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                {accounts
+                  .filter(a => !a.isDeleted)
+                  .map(s => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -167,7 +188,9 @@ export default function Transactions() {
         <div className="flex-1 overflow-auto p-8 pt-4">
           {grouped.length === 0 ? (
             <div className="py-20 text-center border-2 border-dashed border-border rounded-2xl bg-accent/5">
-              <p className="text-muted-foreground font-medium">No transactions found matching your filters.</p>
+              <p className="text-muted-foreground font-medium">
+                No transactions found matching your filters.
+              </p>
             </div>
           ) : (
             <div className="rounded-xl border border-border overflow-hidden bg-card shadow-sm">
@@ -183,56 +206,81 @@ export default function Transactions() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {grouped.map((group) => (
+                  {grouped.map(group => (
                     <React.Fragment key={group.label}>
                       {/* Day Divider Row */}
                       <tr className="bg-accent/10 pointer-events-none">
-                        <td colSpan={6} className="px-5 py-1.5 text-[10px] uppercase font-bold text-muted-foreground/70">
+                        <td
+                          colSpan={6}
+                          className="px-5 py-1.5 text-[10px] uppercase font-bold text-muted-foreground/70"
+                        >
                           {group.label}
                         </td>
                       </tr>
-                      {group.items.map((txn) => (
-                        <tr 
-                          key={txn.id} 
+                      {group.items.map(txn => (
+                        <tr
+                          key={txn.id}
                           onClick={() => setSelectedTxnId(txn.id === selectedTxnId ? null : txn.id)}
                           className={cn(
-                            "group cursor-pointer transition-colors",
-                            selectedTxnId === txn.id ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-accent/20"
+                            'group cursor-pointer transition-colors',
+                            selectedTxnId === txn.id
+                              ? 'bg-primary/5 hover:bg-primary/10'
+                              : 'hover:bg-accent/20'
                           )}
                         >
                           <td className="px-5 py-3 whitespace-nowrap text-muted-foreground text-xs">
-                            {new Date(txn.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                            {new Date(txn.date).toLocaleDateString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                            })}
                           </td>
                           <td className="px-5 py-3">
                             <div className="flex items-center justify-between">
-                              <span className="font-medium truncate">{txn.note || 'No description'}</span>
-                              {selectedTxnId === txn.id && <ChevronRight className="h-3.5 w-3.5 text-primary" />}
+                              <span className="font-medium truncate">
+                                {txn.note || 'No description'}
+                              </span>
+                              {selectedTxnId === txn.id && (
+                                <ChevronRight className="h-3.5 w-3.5 text-primary" />
+                              )}
                             </div>
                           </td>
                           <td className="px-5 py-3">
-                             <div className="flex items-center gap-1.5">
-                               <div className={cn(
-                                 "h-1.5 w-1.5 rounded-full",
-                                 txn.uiType === 'income' ? 'bg-income' : txn.uiType === 'expense' ? 'bg-expense' : 'bg-blue-500'
-                               )} />
-                               <span className="text-muted-foreground text-xs">
-                                 {getCategoryName(txn)}
-                               </span>
-                             </div>
+                            <div className="flex items-center gap-1.5">
+                              <div
+                                className={cn(
+                                  'h-1.5 w-1.5 rounded-full',
+                                  txn.uiType === 'income'
+                                    ? 'bg-income'
+                                    : txn.uiType === 'expense'
+                                      ? 'bg-expense'
+                                      : 'bg-blue-500'
+                                )}
+                              />
+                              <span className="text-muted-foreground text-xs">
+                                {getCategoryName(txn)}
+                              </span>
+                            </div>
                           </td>
                           <td className="px-5 py-3 text-muted-foreground text-xs whitespace-nowrap">
                             {getAccountName(txn)}
                           </td>
-                          <td className={cn(
-                            "px-5 py-3 font-bold text-right mono whitespace-nowrap",
-                            txn.uiType === 'income' ? 'text-income' : 'text-expense'
-                          )}>
-                            {txn.uiType === 'income' ? '+' : ''}{formatCurrency(txn.amount, settings)}
+                          <td
+                            className={cn(
+                              'px-5 py-3 font-bold text-right mono whitespace-nowrap',
+                              txn.uiType === 'income' ? 'text-income' : 'text-expense'
+                            )}
+                          >
+                            {txn.uiType === 'income' ? '+' : ''}
+                            {formatCurrency(txn.amount, settings)}
                           </td>
-                          <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
+                          <td className="px-2 py-3" onClick={e => e.stopPropagation()}>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
@@ -240,12 +288,15 @@ export default function Transactions() {
                                 <DropdownMenuItem onClick={() => handleEdit(txn)} className="gap-2">
                                   <Pencil className="h-3.5 w-3.5" /> Edit
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDuplicate(txn)} className="gap-2">
+                                <DropdownMenuItem
+                                  onClick={() => handleDuplicate(txn)}
+                                  className="gap-2"
+                                >
                                   <Copy className="h-3.5 w-3.5" /> Duplicate
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  onClick={() => deleteTransaction(txn.id)} 
+                                <DropdownMenuItem
+                                  onClick={() => deleteTransaction(txn.id)}
                                   className="gap-2 text-destructive focus:text-destructive"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" /> Delete
@@ -265,10 +316,13 @@ export default function Transactions() {
       </div>
 
       {/* Slide-in Detail Panel */}
-      <TransactionDetailPanel 
+      <TransactionDetailPanel
         transaction={selectedTxn}
         onClose={() => setSelectedTxnId(null)}
-        onDelete={(id) => { deleteTransaction(id); setSelectedTxnId(null); }}
+        onDelete={id => {
+          deleteTransaction(id);
+          setSelectedTxnId(null);
+        }}
         onEdit={handleEdit}
       />
     </div>

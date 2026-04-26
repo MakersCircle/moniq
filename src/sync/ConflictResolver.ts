@@ -16,14 +16,14 @@ export function computeChecksum(fields: string[]): string {
 
 /**
  * Reconciles local and remote entity arrays.
- * 
+ *
  * Policy:
  * - Entity only in remote → download (new from sheet or local was cleared)
  * - Entity only in local → upload (pending local change)
  * - In both, checksums differ (sheet was manually edited) → remote wins
  * - In both, `updatedAt` differs → newer wins; tie → remote wins
  * - In both, identical → no action
- * 
+ *
  * @param local - Entities from local IndexedDB
  * @param remote - Entities parsed from Google Sheets
  * @param remoteChecksums - Map of entityId → checksum as stored in the sheet
@@ -33,7 +33,7 @@ export function reconcile<T extends { id: string; updatedAt: string }>(
   local: T[],
   remote: T[],
   remoteChecksums: Map<string, string>,
-  computeLocalChecksum: (entity: T) => string,
+  computeLocalChecksum: (entity: T) => string
 ): ReconcileResult<T> {
   const localMap = new Map(local.map(e => [e.id, e]));
   const remoteMap = new Map(remote.map(e => [e.id, e]));
@@ -58,7 +58,7 @@ export function reconcile<T extends { id: string; updatedAt: string }>(
     // Both exist — check for manual sheet edits via checksum
     const storedChecksum = remoteChecksums.get(id);
     const localChecksum = computeLocalChecksum(localEntity);
-    
+
     // If the remote data's computed checksum differs from the stored one,
     // someone manually edited the sheet → remote wins regardless of updatedAt
     const remoteDataChecksum = computeLocalChecksum(remoteEntity);

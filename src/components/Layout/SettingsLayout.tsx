@@ -1,13 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { 
-  Settings, 
-  Landmark, 
-  CreditCard, 
-  Tag, 
-  Database, 
-  ChevronRight,
-  Trash2
-} from 'lucide-react';
+import { Settings, Landmark, CreditCard, Tag, Database, ChevronRight, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDataStore } from '@/store/dataStore';
 
@@ -43,19 +35,21 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
           Settings
         </h2>
         <div className="space-y-1">
-          {SETTINGS_NAV.map((item) => {
+          {SETTINGS_NAV.map(item => {
             const count = getCount(item.label);
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.to === '/settings'}
-                className={({ isActive }) => cn(
-                  "flex items-center justify-between px-4 py-2 rounded-lg text-sm font-medium transition-all group",
-                  isActive 
-                    ? "bg-primary/10 text-primary shadow-sm" 
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                )}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center justify-between px-4 py-2 rounded-lg text-sm font-medium transition-all group',
+                    isActive
+                      ? 'bg-primary/10 text-primary shadow-sm'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  )
+                }
               >
                 <div className="flex items-center gap-3">
                   <item.icon className="h-4 w-4" />
@@ -70,7 +64,6 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             );
           })}
         </div>
-
       </aside>
 
       {/* Settings Content Area Area */}

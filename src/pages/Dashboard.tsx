@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Wallet, 
+import {
+  TrendingUp,
+  TrendingDown,
+  Wallet,
   PieChart as PieChartIcon,
-  ArrowRight
+  ArrowRight,
 } from 'lucide-react';
 import { useDataStore } from '../store/dataStore';
 import { useAllBalances, useMonthSummary, useCategorySpend } from '../hooks/useComputed';
@@ -28,7 +28,7 @@ export default function Dashboard() {
   // Stats Calculations
   const netWorth = useMemo(() => {
     return accounts
-      .filter((s) => s.isActive && !s.isDeleted && !s.excludeFromNet)
+      .filter(s => s.isActive && !s.isDeleted && !s.excludeFromNet)
       .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
   }, [accounts, balances]);
 
@@ -36,7 +36,7 @@ export default function Dashboard() {
 
   const recentTxns = useMemo(() => {
     return transactions
-      .filter((t) => !t.isDeleted)
+      .filter(t => !t.isDeleted)
       .sort((a, b) => b.date.localeCompare(a.date))
       .slice(0, 5);
   }, [transactions]);
@@ -52,40 +52,35 @@ export default function Dashboard() {
           <p className="text-sm text-muted-foreground">{monthLabel}</p>
         </div>
         <div className="flex items-center gap-2">
-           <Link to="/transactions">
-             <Button variant="outline" size="sm" className="h-9 gap-2 text-xs">
-                View Ledger
-                <ArrowRight className="h-3.5 w-3.5" />
-             </Button>
-           </Link>
+          <Link to="/transactions">
+            <Button variant="outline" size="sm" className="h-9 gap-2 text-xs">
+              View Ledger
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </Link>
         </div>
       </div>
 
       {/* Top Stats Row — 4 Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard // TODO: Implement actual net worth tracking and info button showing "excluding investments"
-          label="Net Worth" 
-          value={netWorth} 
+          label="Net Worth"
+          value={netWorth}
           settings={settings}
-          detail="+5.2% vs last month" // Placeholder for now 
+          detail="+5.2% vs last month" // Placeholder for now
           detailColor="text-income"
         />
-        <StatCard 
-          label="Income" 
-          value={income} 
-          settings={settings}
-          detail="This Month"
-        />
-        <StatCard 
-          label="Expenses" 
-          value={expenses} 
+        <StatCard label="Income" value={income} settings={settings} detail="This Month" />
+        <StatCard
+          label="Expenses"
+          value={expenses}
           settings={settings}
           detail="This Month"
           valueColor="text-expense"
         />
-        <StatCard 
-          label="Savings Rate" 
-          value={savingsRate} 
+        <StatCard
+          label="Savings Rate"
+          value={savingsRate}
           settings={settings}
           isPercent
           detail={`${formatCurrency(income - expenses, settings)} remaining`}
@@ -108,8 +103,12 @@ export default function Dashboard() {
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-accent/10 border border-border rounded-xl p-4 flex items-center justify-between">
               <div>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Total Receivable</p>
-                <p className="text-base font-bold mono text-income">{formatCurrency(totalReceivable, settings)}</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Total Receivable
+                </p>
+                <p className="text-base font-bold mono text-income">
+                  {formatCurrency(totalReceivable, settings)}
+                </p>
               </div>
               <div className="h-8 w-8 rounded-full bg-income/10 flex items-center justify-center text-income">
                 <TrendingUp className="h-4 w-4" />
@@ -117,8 +116,12 @@ export default function Dashboard() {
             </div>
             <div className="bg-accent/10 border border-border rounded-xl p-4 flex items-center justify-between">
               <div>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Total Payable</p>
-                <p className="text-base font-bold mono text-expense">{formatCurrency(totalPayable, settings)}</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Total Payable
+                </p>
+                <p className="text-base font-bold mono text-expense">
+                  {formatCurrency(totalPayable, settings)}
+                </p>
               </div>
               <div className="h-8 w-8 rounded-full bg-expense/10 flex items-center justify-center text-expense">
                 <TrendingDown className="h-4 w-4" />
@@ -137,26 +140,44 @@ export default function Dashboard() {
               <Wallet className="h-4 w-4" />
               Accounts
             </h3>
-            <Link to="/settings/accounts" className="text-[10px] font-bold text-primary hover:underline">Manage ›</Link>
+            <Link
+              to="/settings/accounts"
+              className="text-[10px] font-bold text-primary hover:underline"
+            >
+              Manage ›
+            </Link>
           </div>
           <Card className="border-border">
             <div className="divide-y divide-border">
-              {accounts.filter(s => s.isActive && !s.isDeleted).slice(0, 5).map((s) => (
-                <div key={s.id} className="flex items-center justify-between p-4 group hover:bg-accent/20 transition-colors">
-                  <div>
-                    <p className="text-sm font-semibold">{s.name}</p>
-                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">{s.type}</p>
+              {accounts
+                .filter(s => s.isActive && !s.isDeleted)
+                .slice(0, 5)
+                .map(s => (
+                  <div
+                    key={s.id}
+                    className="flex items-center justify-between p-4 group hover:bg-accent/20 transition-colors"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold">{s.name}</p>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">
+                        {s.type}
+                      </p>
+                    </div>
+                    <p
+                      className={cn(
+                        'font-bold mono',
+                        (balances[s.id] || 0) < 0 ? 'text-expense' : 'text-foreground'
+                      )}
+                    >
+                      {formatCurrency(balances[s.id] || 0, settings)}
+                    </p>
                   </div>
-                  <p className={cn(
-                    "font-bold mono",
-                    (balances[s.id] || 0) < 0 ? 'text-expense' : 'text-foreground'
-                  )}>
-                    {formatCurrency(balances[s.id] || 0, settings)}
-                  </p>
-                </div>
-              ))}
+                ))}
               {accounts.filter(s => s.isActive && !s.isDeleted).length > 5 && (
-                <Link to="/settings/accounts" className="block p-3 text-center text-xs font-medium text-muted-foreground hover:bg-accent transition-colors">
+                <Link
+                  to="/settings/accounts"
+                  className="block p-3 text-center text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
+                >
                   View all accounts
                 </Link>
               )}
@@ -171,7 +192,9 @@ export default function Dashboard() {
               <PieChartIcon className="h-4 w-4" />
               Spending This Month
             </h3>
-            <Link to="/insights" className="text-[10px] font-bold text-primary hover:underline">Analysis ›</Link>
+            <Link to="/insights" className="text-[10px] font-bold text-primary hover:underline">
+              Analysis ›
+            </Link>
           </div>
           <Card className="p-6 border-border h-full min-h-[200px]">
             {categorySpend.length === 0 ? (
@@ -180,22 +203,27 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="space-y-5">
-                {categorySpend.slice(0, 5).map((c) => {
-                  const percent = categorySpend.reduce((s, x) => s + x.amount, 0) > 0 
-                    ? (c.amount / categorySpend.reduce((s, x) => s + x.amount, 0)) * 100 
-                    : 0;
+                {categorySpend.slice(0, 5).map(c => {
+                  const percent =
+                    categorySpend.reduce((s, x) => s + x.amount, 0) > 0
+                      ? (c.amount / categorySpend.reduce((s, x) => s + x.amount, 0)) * 100
+                      : 0;
                   return (
                     <div key={c.label} className="space-y-1.5">
                       <div className="flex items-center justify-between text-sm">
                         <span className="font-medium">{c.label}</span>
                         <div className="text-right">
-                          <span className="mono font-bold mr-2">{formatCurrencyShort(c.amount, settings.currencySymbol)}</span>
-                          <span className="text-[10px] text-muted-foreground font-bold">({percent.toFixed(0)}%)</span>
+                          <span className="mono font-bold mr-2">
+                            {formatCurrencyShort(c.amount, settings.currencySymbol)}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground font-bold">
+                            ({percent.toFixed(0)}%)
+                          </span>
                         </div>
                       </div>
                       <div className="h-2 w-full bg-accent/30 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary/80 transition-all duration-500" 
+                        <div
+                          className="h-full bg-primary/80 transition-all duration-500"
                           style={{ width: `${percent}%` }}
                         />
                       </div>
@@ -211,8 +239,12 @@ export default function Dashboard() {
       {/* Bottom Row — Recent Transactions */}
       <section className="space-y-4 pt-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Recent Transactions</h3>
-          <Link to="/transactions" className="text-[10px] font-bold text-primary hover:underline">View Ledger ›</Link>
+          <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+            Recent Transactions
+          </h3>
+          <Link to="/transactions" className="text-[10px] font-bold text-primary hover:underline">
+            View Ledger ›
+          </Link>
         </div>
         <Card className="border-border overflow-hidden">
           {recentTxns.length === 0 ? (
@@ -238,19 +270,31 @@ interface StatCardProps {
   valueColor?: string;
 }
 
-function StatCard({ label, value, settings, isPercent, detail, detailColor, valueColor }: StatCardProps) {
+function StatCard({
+  label,
+  value,
+  settings,
+  isPercent,
+  detail,
+  detailColor,
+  valueColor,
+}: StatCardProps) {
   return (
     <Card className="border-border shadow-sm hover:border-primary/30 transition-colors">
       <CardContent className="p-6">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">{label}</p>
-        <p className={cn(
-          "text-2xl font-bold mono tracking-tight mb-1",
-          valueColor || "text-foreground"
-        )}>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
+          {label}
+        </p>
+        <p
+          className={cn(
+            'text-2xl font-bold mono tracking-tight mb-1',
+            valueColor || 'text-foreground'
+          )}
+        >
           {isPercent ? `${value.toFixed(1)}%` : formatCurrency(value, settings)}
         </p>
         {detail && (
-          <p className={cn("text-[11px] font-medium", detailColor || "text-muted-foreground")}>
+          <p className={cn('text-[11px] font-medium', detailColor || 'text-muted-foreground')}>
             {detail}
           </p>
         )}

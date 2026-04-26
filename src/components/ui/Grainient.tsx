@@ -152,7 +152,7 @@ const Grainient: React.FC<GrainientProps> = ({
   color1 = '#FF9FFC',
   color2 = '#5227FF',
   color3 = '#B497CF',
-  className = ''
+  className = '',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -163,7 +163,7 @@ const Grainient: React.FC<GrainientProps> = ({
       webgl: 2,
       alpha: true,
       antialias: false,
-      dpr: Math.min(window.devicePixelRatio || 1, 2)
+      dpr: Math.min(window.devicePixelRatio || 1, 2),
     });
 
     const gl = renderer.gl;
@@ -202,8 +202,8 @@ const Grainient: React.FC<GrainientProps> = ({
         uZoom: { value: zoom },
         uColor1: { value: new Float32Array(hexToRgb(color1)) },
         uColor2: { value: new Float32Array(hexToRgb(color2)) },
-        uColor3: { value: new Float32Array(hexToRgb(color3)) }
-      }
+        uColor3: { value: new Float32Array(hexToRgb(color3)) },
+      },
     });
 
     const mesh = new Mesh(gl, { geometry, program });
@@ -262,7 +262,7 @@ const Grainient: React.FC<GrainientProps> = ({
     zoom,
     color1,
     color2,
-    color3
+    color3,
   ]);
 
   return <div ref={containerRef} className={`grainient-container ${className}`.trim()} />;

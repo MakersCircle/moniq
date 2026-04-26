@@ -2,13 +2,13 @@ import type { Account, Category, Transaction, LedgerEntry, EntryType } from '../
 
 /**
  * LedgerEngine handles the core professional accounting logic.
- * It follows standard Double-Entry principles while providing 
+ * It follows standard Double-Entry principles while providing
  * easy-to-use helpers for the UI.
  */
 export class LedgerEngine {
   /**
    * Calculates the 'normal' balance for a specific node (Account or Category).
-   * 
+   *
    * Assets (Cash, Bank) -> Debit(+) Credit(-)
    * Liabilities (Loans, Credit Card) -> Credit(+) Debit(-)
    * Revenue/Income -> Credit(+) Debit(-)
@@ -20,8 +20,8 @@ export class LedgerEngine {
     accounts: Account[],
     categories: Category[]
   ): number {
-    const account = accounts.find((a) => a.id === id);
-    const category = categories.find((c) => c.id === id);
+    const account = accounts.find(a => a.id === id);
+    const category = categories.find(c => c.id === id);
 
     let balance = 0;
 
@@ -30,7 +30,7 @@ export class LedgerEngine {
     if (category?.initialBalance) balance = category.initialBalance;
 
     // 2. Aggregate Ledger Entries
-    const activeTxns = transactions.filter((t) => !t.isDeleted);
+    const activeTxns = transactions.filter(t => !t.isDeleted);
     for (const t of activeTxns) {
       for (const entry of t.entries) {
         if (entry.accountId === id) {
@@ -78,9 +78,9 @@ export class LedgerEngine {
    * Validates that a transaction is 'balanced' (Sum of debits === Sum of credits).
    */
   static validate(entries: LedgerEntry[]): boolean {
-    const debits = entries.filter((e) => e.type === 'DEBIT').reduce((s, e) => s + e.amount, 0);
-    const credits = entries.filter((e) => e.type === 'CREDIT').reduce((s, e) => s + e.amount, 0);
-    
+    const debits = entries.filter(e => e.type === 'DEBIT').reduce((s, e) => s + e.amount, 0);
+    const credits = entries.filter(e => e.type === 'CREDIT').reduce((s, e) => s + e.amount, 0);
+
     // Using a small epsilon for floating point safety if we ever move to complex decimals,
     // though for currency we usually use integers or fixed precision.
     return Math.abs(debits - credits) < 0.001;
@@ -99,21 +99,21 @@ export class LedgerEngine {
 
     if (type === 'expense') {
       return [
-        { accountId: targetId, type: 'DEBIT', amount },  // Expense increased
+        { accountId: targetId, type: 'DEBIT', amount }, // Expense increased
         { accountId: accountId, type: 'CREDIT', amount }, // Asset decreased
       ];
     }
 
     if (type === 'income') {
       return [
-        { accountId: accountId, type: 'DEBIT', amount },  // Asset increased
+        { accountId: accountId, type: 'DEBIT', amount }, // Asset increased
         { accountId: targetId, type: 'CREDIT', amount }, // Revenue increased
       ];
     }
 
     if (type === 'transfer') {
       return [
-        { accountId: targetId, type: 'DEBIT', amount },   // Destination Asset increased
+        { accountId: targetId, type: 'DEBIT', amount }, // Destination Asset increased
         { accountId: accountId, type: 'CREDIT', amount }, // Source Asset decreased
       ];
     }

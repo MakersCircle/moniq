@@ -32,23 +32,23 @@ export class BackupManager {
     const { spreadsheetId, settings } = state;
     if (!spreadsheetId) return;
 
-    const requiredTiers = force 
-      ? ['daily', 'weekly', 'monthly', 'yearly'] 
+    const requiredTiers = force
+      ? ['daily', 'weekly', 'monthly', 'yearly']
       : this.getRequiredTiers(settings);
-      
+
     if (requiredTiers.length === 0) return;
 
     console.log('[BackupManager] Starting backup cycle for tiers:', requiredTiers);
 
     try {
       const folderId = await this.ensureBackupFolder();
-      
+
       for (const tier of requiredTiers) {
         console.log(`[BackupManager] Creating ${tier} backup...`);
         await this.performBackup(tier, spreadsheetId, folderId);
         await this.cleanupOldBackups(tier, folderId);
       }
-      
+
       console.log('[BackupManager] Backup cycle completed successfully.');
     } catch (error) {
       console.error('[BackupManager] Backup cycle failed:', error);
@@ -105,20 +105,24 @@ export class BackupManager {
   }
 
   /** Performs the file copy and updates local settings. */
-  private async performBackup(tier: string, spreadsheetId: string, folderId: string): Promise<void> {
+  private async performBackup(
+    tier: string,
+    spreadsheetId: string,
+    folderId: string
+  ): Promise<void> {
     const now = new Date();
     const dateStr = now.toISOString().split('T')[0];
     const newName = `moniq-backup-${tier}-${dateStr}`;
-    
+
     await googleService.copyFile(spreadsheetId, folderId, newName);
-    
+
     // Update settings in store (which triggers a sync to the remote Settings sheet)
     const patch: Partial<UserSettings> = {};
     if (tier === 'daily') patch.lastDailyBackup = dateStr;
     if (tier === 'weekly') patch.lastWeeklyBackup = this.getWeekString(now);
     if (tier === 'monthly') patch.lastMonthlyBackup = dateStr.substring(0, 7);
     if (tier === 'yearly') patch.lastYearlyBackup = String(now.getFullYear());
-    
+
     useDataStore.getState().updateSettings(patch);
   }
 
@@ -144,7 +148,7 @@ export class BackupManager {
     const dayNum = d.getUTCDay() || 7;
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
     return `${d.getUTCFullYear()}-W${weekNo}`;
   }
 }

@@ -35,7 +35,7 @@ export default function RecentTransactionsTable({ transactions }: RecentTransact
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
-          {transactions.map((t) => (
+          {transactions.map(t => (
             <tr key={t.id} className="group hover:bg-accent/20 transition-colors">
               <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                 {format(new Date(t.date), 'dd MMM')}
@@ -48,19 +48,26 @@ export default function RecentTransactionsTable({ transactions }: RecentTransact
                   {getCategoryName(t)}
                 </span>
               </td>
-              <td className={cn(
-                "px-4 py-3 font-bold text-right mono",
-                t.uiType === 'income' ? 'text-income' : 'text-expense'
-              )}>
-                {t.uiType === 'income' ? '+' : ''}{formatCurrency(t.amount, settings)}
+              <td
+                className={cn(
+                  'px-4 py-3 font-bold text-right mono',
+                  t.uiType === 'income' ? 'text-income' : 'text-expense'
+                )}
+              >
+                {t.uiType === 'income' ? '+' : ''}
+                {formatCurrency(t.amount, settings)}
               </td>
               <td className="px-4 py-3 text-center">
-                <span className={cn(
-                  "inline-block w-8 py-0.5 rounded text-[10px] font-bold uppercase",
-                  t.uiType === 'income' ? 'bg-income/10 text-income' : 
-                  t.uiType === 'expense' ? 'bg-expense/10 text-expense' : 
-                  'bg-blue-500/10 text-blue-500'
-                )}>
+                <span
+                  className={cn(
+                    'inline-block w-8 py-0.5 rounded text-[10px] font-bold uppercase',
+                    t.uiType === 'income'
+                      ? 'bg-income/10 text-income'
+                      : t.uiType === 'expense'
+                        ? 'bg-expense/10 text-expense'
+                        : 'bg-blue-500/10 text-blue-500'
+                  )}
+                >
                   {t.uiType.substring(0, 3)}
                 </span>
               </td>

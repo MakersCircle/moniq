@@ -7,12 +7,12 @@ export type AccountType = 'Asset' | 'Liability';
 export interface Account {
   id: string;
   name: string;
-  type: AccountType;       // Strictly Asset or Liability
-  description?: string;    // Optional description (e.g. Bank name, 'Receivable', etc.)
-  isSavings: boolean;      // ✅ Flag to designate saving accounts
+  type: AccountType; // Strictly Asset or Liability
+  description?: string; // Optional description (e.g. Bank name, 'Receivable', etc.)
+  isSavings: boolean; // ✅ Flag to designate saving accounts
   initialBalance: number;
   isActive: boolean;
-  isDeleted: boolean;      // ✅ Soft delete flag for sync
+  isDeleted: boolean; // ✅ Soft delete flag for sync
   excludeFromNet?: boolean;
   createdAt: string;
   updatedAt: string;
@@ -23,7 +23,7 @@ export interface PaymentMethod {
   name: string;
   linkedAccountId?: string; // Links to Account
   isActive: boolean;
-  isDeleted: boolean;      // ✅ Soft delete flag for sync
+  isDeleted: boolean; // ✅ Soft delete flag for sync
   createdAt: string;
   updatedAt: string;
 }
@@ -38,7 +38,7 @@ export interface Category {
   initialBalance?: number; // ✅ For Invest, Lend, Borrow opening balances
   color?: string;
   isActive: boolean;
-  isDeleted: boolean;      // ✅ Soft delete flag for sync
+  isDeleted: boolean; // ✅ Soft delete flag for sync
   createdAt: string;
   updatedAt: string;
 }
@@ -46,7 +46,7 @@ export interface Category {
 export type EntryType = 'DEBIT' | 'CREDIT';
 
 export interface LedgerEntry {
-  accountId: string;     // References an Account.id OR Category.id
+  accountId: string; // References an Account.id OR Category.id
   type: EntryType;
   amount: number;
 }
@@ -55,11 +55,11 @@ export type TransactionType = 'income' | 'expense' | 'transfer';
 
 export interface Transaction {
   id: string;
-  groupId: string;        // For grouping related entries if needed (split txns)
-  date: string;           // ISO date string
-  amount: number;         // Total transaction amount
+  groupId: string; // For grouping related entries if needed (split txns)
+  date: string; // ISO date string
+  amount: number; // Total transaction amount
   entries: LedgerEntry[]; // ✅ Standard Double-Entry system
-  
+
   // UI-Helper Fields (to maintain logic simplicity in the UI)
   uiType: TransactionType;
   methodId?: string;
@@ -83,7 +83,7 @@ export interface Budget {
 export interface UserSettings {
   currency: string;
   currencySymbol: string;
-  numberLocale: string;         // e.g. 'en-IN' or 'en-US'
+  numberLocale: string; // e.g. 'en-IN' or 'en-US'
   fiscalYearStartMonth: number; // 1 = Jan
   dateFormat: string;
   hasCompletedOnboarding?: boolean;
@@ -101,7 +101,13 @@ export interface UserSettings {
 
 export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline' | 'pulling';
 
-export type SyncEntityType = 'transaction' | 'account' | 'method' | 'category' | 'budget' | 'settings';
+export type SyncEntityType =
+  | 'transaction'
+  | 'account'
+  | 'method'
+  | 'category'
+  | 'budget'
+  | 'settings';
 
 export interface SyncOperation {
   id: string;

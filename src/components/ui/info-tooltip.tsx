@@ -9,7 +9,7 @@ export function InfoTooltip({ text, position = 'top' }: InfoTooltipProps) {
   return (
     <div className="group relative inline-flex items-center justify-center">
       <Info className="h-3.5 w-3.5 text-muted-foreground ml-1.5 flex-shrink-0 cursor-help transition-colors hover:text-foreground" />
-      <div 
+      <div
         className={`pointer-events-none absolute left-1/2 z-50 w-64 -translate-x-1/2 opacity-0 transition-opacity group-hover:opacity-100 ${
           position === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
         }`}

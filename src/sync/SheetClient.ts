@@ -1,8 +1,6 @@
 import { googleService } from '../lib/google';
 import { SHEET_HEADERS } from './types';
 
-
-
 /**
  * Low-level Google Sheets API wrapper.
  * Handles reading/writing specific rows and ranges — replaces the old full-overwrite approach.
@@ -20,7 +18,7 @@ export class SheetClient {
   async readSheet(sheetName: string): Promise<string[][]> {
     const url = `/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(sheetName)}`;
     const res = await googleService.sheetsRequest(url);
-    
+
     if (!res.ok) {
       if (res.status === 400) {
         // Sheet might not exist yet — return empty
@@ -29,7 +27,7 @@ export class SheetClient {
       const errorText = await res.text();
       throw new Error(`Failed to read sheet "${sheetName}": ${res.status} ${errorText}`);
     }
-    
+
     const data = await res.json();
     return data.values || [];
   }
@@ -39,9 +37,9 @@ export class SheetClient {
     const range = `${sheetName}!A${rowIndex}:Z${rowIndex}`;
     const url = `/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(range)}`;
     const res = await googleService.sheetsRequest(url);
-    
+
     if (!res.ok) return null;
-    
+
     const data = await res.json();
     return data.values?.[0] || null;
   }
@@ -70,7 +68,7 @@ export class SheetClient {
 
     const range = `${sheetName}!A1`;
     const url = `/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
-    
+
     const res = await googleService.sheetsRequest(url, {
       method: 'POST',
       body: JSON.stringify({ values: rows }),
@@ -90,7 +88,10 @@ export class SheetClient {
   }
 
   /** Batch update multiple specific rows. More efficient than individual updateRow calls. */
-  async batchUpdateRows(sheetName: string, updates: { rowIndex: number; data: string[] }[]): Promise<void> {
+  async batchUpdateRows(
+    sheetName: string,
+    updates: { rowIndex: number; data: string[] }[]
+  ): Promise<void> {
     if (updates.length === 0) return;
 
     const data = updates.map(u => ({
@@ -111,10 +112,14 @@ export class SheetClient {
   }
 
   /** Write data to a specific range. */
-  private async writeRange(sheetName: string, startCell: string, values: string[][]): Promise<void> {
+  private async writeRange(
+    sheetName: string,
+    startCell: string,
+    values: string[][]
+  ): Promise<void> {
     const range = `${sheetName}!${startCell}`;
     const url = `/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
-    
+
     const res = await googleService.sheetsRequest(url, {
       method: 'PUT',
       body: JSON.stringify({ values }),
@@ -149,9 +154,9 @@ export class SheetClient {
   async ensureSheetTabs(requiredSheets: string[]): Promise<void> {
     const metaUrl = `/spreadsheets/${this.spreadsheetId}`;
     const metaRes = await googleService.sheetsRequest(metaUrl);
-    
+
     if (!metaRes.ok) throw new Error('Failed to fetch spreadsheet metadata');
-    
+
     const metaData = await metaRes.json();
     const existing = new Set(metaData.sheets.map((s: any) => s.properties.title));
 
@@ -179,7 +184,7 @@ export class SheetClient {
     const res = await googleService.sheetsRequest(url, {
       method: 'POST',
       body: JSON.stringify({
-        ranges: sheetNames.map(name => `${name}!A2:Z1000`)
+        ranges: sheetNames.map(name => `${name}!A2:Z1000`),
       }),
     });
 

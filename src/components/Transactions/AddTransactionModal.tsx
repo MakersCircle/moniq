@@ -5,14 +5,14 @@ import type { Transaction, TransactionType } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/utils/format';
 import { DatePicker } from './DatePicker';
@@ -31,30 +31,44 @@ interface AddTransactionModalProps {
   isDuplicate?: boolean;
 }
 
-export default function AddTransactionModal({ onClose, initialData, isDuplicate }: AddTransactionModalProps) {
-  const {
-    accounts, methods, categories, settings,
-    addTransaction, updateTransaction
-  } = useDataStore();
+export default function AddTransactionModal({
+  onClose,
+  initialData,
+  isDuplicate,
+}: AddTransactionModalProps) {
+  const { accounts, methods, categories, settings, addTransaction, updateTransaction } =
+    useDataStore();
 
   // Helper to find initial account/category from ledger entries
   const initialAccountId = useMemo(() => {
     if (!initialData) return accounts.find(a => a.isActive)?.id || '';
     const isIncome = initialData.uiType === 'income';
-    const entry = initialData.entries.find(e => accounts.some(a => a.id === e.accountId) && (isIncome ? e.type === 'DEBIT' : e.type === 'CREDIT'));
+    const entry = initialData.entries.find(
+      e =>
+        accounts.some(a => a.id === e.accountId) &&
+        (isIncome ? e.type === 'DEBIT' : e.type === 'CREDIT')
+    );
     return entry?.accountId || accounts.find(a => a.isActive)?.id || '';
   }, [initialData, accounts]);
 
   const initialTargetId = useMemo(() => {
     if (!initialData) return '';
     const isIncome = initialData.uiType === 'income';
-    const entry = initialData.entries.find(e => e.accountId !== initialAccountId && (isIncome ? e.type === 'CREDIT' : e.type === 'DEBIT'));
+    const entry = initialData.entries.find(
+      e => e.accountId !== initialAccountId && (isIncome ? e.type === 'CREDIT' : e.type === 'DEBIT')
+    );
     return entry?.accountId || '';
   }, [initialData, initialAccountId]);
 
-  const activeAccounts = useMemo(() => accounts.filter((s) => s.isActive && !s.isDeleted), [accounts]);
-  const activeMethods = useMemo(() => methods.filter((m) => m.isActive && !m.isDeleted), [methods]);
-  const activeCategories = useMemo(() => categories.filter((c) => c.isActive && !c.isDeleted), [categories]);
+  const activeAccounts = useMemo(
+    () => accounts.filter(s => s.isActive && !s.isDeleted),
+    [accounts]
+  );
+  const activeMethods = useMemo(() => methods.filter(m => m.isActive && !m.isDeleted), [methods]);
+  const activeCategories = useMemo(
+    () => categories.filter(c => c.isActive && !c.isDeleted),
+    [categories]
+  );
 
   // Get unique category heads
   const categoryHeads = useMemo(() => {
@@ -66,8 +80,10 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
   }, [activeCategories]);
 
   const [type, setType] = useState<TransactionType>(initialData?.uiType || 'expense');
-  const [amount, setAmount] = useState(initialData?.entries[0]?.amount ? String(initialData.entries[0].amount) : '');
-  const [date, setDate] = useState(isDuplicate ? today : (initialData?.date || today));
+  const [amount, setAmount] = useState(
+    initialData?.entries[0]?.amount ? String(initialData.entries[0].amount) : ''
+  );
+  const [date, setDate] = useState(isDuplicate ? today : initialData?.date || today);
   const accountId = initialAccountId;
   const [targetId, setTargetId] = useState(initialTargetId);
   const [methodId, setMethodId] = useState(initialData?.methodId || activeMethods[0]?.id || '');
@@ -91,7 +107,9 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
   // Transfer: From/To using payment methods
   const initialFromMethodId = useMemo(() => {
     if (!initialData || initialData.uiType !== 'transfer') return '';
-    const sourceEntry = initialData.entries.find(e => e.type === 'CREDIT' && accounts.some(a => a.id === e.accountId));
+    const sourceEntry = initialData.entries.find(
+      e => e.type === 'CREDIT' && accounts.some(a => a.id === e.accountId)
+    );
     if (sourceEntry) {
       const m = activeMethods.find(pm => pm.linkedAccountId === sourceEntry.accountId);
       return m?.id || '';
@@ -101,7 +119,9 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
 
   const initialToMethodId = useMemo(() => {
     if (!initialData || initialData.uiType !== 'transfer') return '';
-    const destEntry = initialData.entries.find(e => e.type === 'DEBIT' && accounts.some(a => a.id === e.accountId));
+    const destEntry = initialData.entries.find(
+      e => e.type === 'DEBIT' && accounts.some(a => a.id === e.accountId)
+    );
     if (destEntry) {
       const m = activeMethods.find(pm => pm.linkedAccountId === destEntry.accountId);
       return m?.id || '';
@@ -178,52 +198,68 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
 
       if (isEditing) {
         const { LedgerEngine } = require('@/lib/ledger');
-        const entries = LedgerEngine.createEntries({ type, amount: parsedAmount, accountId: derivedAccountId, targetId: derivedTargetId });
+        const entries = LedgerEngine.createEntries({
+          type,
+          amount: parsedAmount,
+          accountId: derivedAccountId,
+          targetId: derivedTargetId,
+        });
         updateTransaction(initialData!.id, { ...payload, entries });
       } else {
         addTransaction(payload);
       }
     } else {
-      splits.filter((s) => s.categoryId && parseFloat(s.amount)).forEach((s) => {
-        addTransaction({
-          date,
-          uiType: 'expense',
-          amount: parseFloat(s.amount),
-          accountId: derivedAccountId,
-          targetId: s.categoryId,
-          methodId: methodId || undefined,
-          note: s.note || note,
-          tags: [],
+      splits
+        .filter(s => s.categoryId && parseFloat(s.amount))
+        .forEach(s => {
+          addTransaction({
+            date,
+            uiType: 'expense',
+            amount: parseFloat(s.amount),
+            accountId: derivedAccountId,
+            targetId: s.categoryId,
+            methodId: methodId || undefined,
+            note: s.note || note,
+            tags: [],
+          });
         });
-      });
     }
     onClose();
   };
 
-  const inputClasses = "h-9 bg-muted/40 border-transparent focus:border-primary/30 transition-all";
+  const inputClasses = 'h-9 bg-muted/40 border-transparent focus:border-primary/30 transition-all';
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col max-h-full overflow-hidden bg-background">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col max-h-full overflow-hidden bg-background"
+    >
       {/* Header Area */}
       <div className="px-6 py-4 border-b border-border bg-accent/5">
         <div className="flex items-center justify-between mb-4 pr-10">
           <h2 className="text-lg font-bold tracking-tight">
             {initialData && !isDuplicate ? 'Edit' : 'New'} Transaction
           </h2>
-          <Tabs value={type} onValueChange={(v) => {
-            setType(v as TransactionType);
-            setIsSplit(false);
-          }} className="w-auto">
+          <Tabs
+            value={type}
+            onValueChange={v => {
+              setType(v as TransactionType);
+              setIsSplit(false);
+            }}
+            className="w-auto"
+          >
             <TabsList className="bg-transparent border-b rounded-none h-auto p-0 gap-4">
-              {['expense', 'income', 'transfer'].map((t) => (
+              {['expense', 'income', 'transfer'].map(t => (
                 <TabsTrigger
                   key={t}
                   value={t}
                   className={cn(
-                    "rounded-none border-b-2 border-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 pb-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground transition-all",
-                    t === 'expense' ? "data-[state=active]:border-expense data-[state=active]:text-expense" :
-                      t === 'income' ? "data-[state=active]:border-income data-[state=active]:text-income" :
-                        "data-[state=active]:border-primary data-[state=active]:text-foreground"
+                    'rounded-none border-b-2 border-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 pb-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground transition-all',
+                    t === 'expense'
+                      ? 'data-[state=active]:border-expense data-[state=active]:text-expense'
+                      : t === 'income'
+                        ? 'data-[state=active]:border-income data-[state=active]:text-income'
+                        : 'data-[state=active]:border-primary data-[state=active]:text-foreground'
                   )}
                 >
                   {t}
@@ -243,23 +279,31 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
               type="number"
               autoFocus
               className={cn(
-                "bg-transparent text-5xl font-black outline-none text-center w-full max-w-[240px] mono tracking-tighter transition-colors",
-                type === 'income' ? 'text-income' : type === 'expense' ? 'text-expense' : 'text-foreground'
+                'bg-transparent text-5xl font-black outline-none text-center w-full max-w-[240px] mono tracking-tighter transition-colors',
+                type === 'income'
+                  ? 'text-income'
+                  : type === 'expense'
+                    ? 'text-expense'
+                    : 'text-foreground'
               )}
               placeholder="0.00"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={e => setAmount(e.target.value)}
               inputMode="decimal"
               step="any"
             />
           </div>
           {isSplit && (
-            <div className={cn(
-              "mt-2 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider transition-colors",
-              isFullyAllocated ? "bg-income/10 text-income border border-income/20" : "bg-expense/10 text-expense border border-expense/20"
-            )}>
+            <div
+              className={cn(
+                'mt-2 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider transition-colors',
+                isFullyAllocated
+                  ? 'bg-income/10 text-income border border-income/20'
+                  : 'bg-expense/10 text-expense border border-expense/20'
+              )}
+            >
               {isFullyAllocated
-                ? "✓ All Split"
+                ? '✓ All Split'
                 : `Allocated ${formatCurrency(totalSplitAmount, settings)} of ${formatCurrency(parsedAmount, settings)}`}
             </div>
           )}
@@ -268,13 +312,14 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
 
       {/* Form Content Area */}
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 custom-scrollbar min-h-[400px]">
-
         {type === 'transfer' ? (
           <>
             {/* Transfer: Date */}
             <div className="grid grid-cols-1 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Date</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
+                  Date
+                </Label>
                 <DatePicker date={date} onChange={setDate} />
               </div>
             </div>
@@ -282,8 +327,16 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
             {/* Transfer: From / To using payment methods */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">From</Label>
-                <Select value={fromMethodId || undefined} onValueChange={(val) => { setFromMethodId(val); if (val === toMethodId) setToMethodId(''); }}>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
+                  From
+                </Label>
+                <Select
+                  value={fromMethodId || undefined}
+                  onValueChange={val => {
+                    setFromMethodId(val);
+                    if (val === toMethodId) setToMethodId('');
+                  }}
+                >
                   <SelectTrigger className={inputClasses}>
                     <SelectValue placeholder="Select method" />
                   </SelectTrigger>
@@ -292,7 +345,8 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
                       const acct = activeAccounts.find(a => a.id === m.linkedAccountId);
                       return (
                         <SelectItem key={m.id} value={m.id}>
-                          {m.name}{acct ? ` · ${acct.name}` : ''}
+                          {m.name}
+                          {acct ? ` · ${acct.name}` : ''}
                         </SelectItem>
                       );
                     })}
@@ -305,7 +359,9 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">To</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
+                  To
+                </Label>
                 <Select value={toMethodId || undefined} onValueChange={setToMethodId}>
                   <SelectTrigger className={inputClasses}>
                     <SelectValue placeholder="Select method" />
@@ -315,7 +371,8 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
                       const acct = activeAccounts.find(a => a.id === m.linkedAccountId);
                       return (
                         <SelectItem key={m.id} value={m.id}>
-                          {m.name}{acct ? ` · ${acct.name}` : ''}
+                          {m.name}
+                          {acct ? ` · ${acct.name}` : ''}
                         </SelectItem>
                       );
                     })}
@@ -334,17 +391,25 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
             {/* Income/Expense: Date + Payment Method */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Date</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
+                  Date
+                </Label>
                 <DatePicker date={date} onChange={setDate} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Payment Method</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
+                  Payment Method
+                </Label>
                 <Select value={methodId} onValueChange={setMethodId}>
                   <SelectTrigger className={inputClasses}>
                     <SelectValue placeholder="Select Method" />
                   </SelectTrigger>
                   <SelectContent>
-                    {activeMethods.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+                    {activeMethods.map(m => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {derivedAccountId && (
@@ -359,26 +424,50 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
             {!isSplit && (
               <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-right-2 duration-300">
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Category</Label>
-                  <Select value={selectedHead || undefined} onValueChange={(val) => { setSelectedHead(val); const subs = activeCategories.filter(c => c.head === val); setTargetId(subs.length === 1 ? subs[0].id : ''); }}>
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
+                    Category
+                  </Label>
+                  <Select
+                    value={selectedHead || undefined}
+                    onValueChange={val => {
+                      setSelectedHead(val);
+                      const subs = activeCategories.filter(c => c.head === val);
+                      setTargetId(subs.length === 1 ? subs[0].id : '');
+                    }}
+                  >
                     <SelectTrigger className={inputClasses}>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
                       {categoryHeads.map(h => (
-                        <SelectItem key={h} value={h}>{h}</SelectItem>
+                        <SelectItem key={h} value={h}>
+                          {h}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Sub-category</Label>
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
+                    Sub-category
+                  </Label>
                   {subCategories.length <= 1 ? (
-                    <div className={cn(inputClasses, "flex items-center px-3 rounded-md text-sm", !selectedHead && "opacity-50")}>
-                      {subCategories.length === 1
-                        ? <span className="truncate">{subCategories[0].subHead || subCategories[0].head}</span>
-                        : <span className="text-muted-foreground">{selectedHead ? '—' : 'Pick category first'}</span>
-                      }
+                    <div
+                      className={cn(
+                        inputClasses,
+                        'flex items-center px-3 rounded-md text-sm',
+                        !selectedHead && 'opacity-50'
+                      )}
+                    >
+                      {subCategories.length === 1 ? (
+                        <span className="truncate">
+                          {subCategories[0].subHead || subCategories[0].head}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          {selectedHead ? '—' : 'Pick category first'}
+                        </span>
+                      )}
                     </div>
                   ) : (
                     <Select value={targetId || undefined} onValueChange={setTargetId}>
@@ -406,12 +495,12 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
               type="button"
               onClick={() => setIsSplit(!isSplit)}
               className={cn(
-                "flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-colors py-1",
-                isSplit ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                'flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-colors py-1',
+                isSplit ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <Repeat className="h-3 w-3" />
-              {isSplit ? "Disable Split" : "Split this transaction"}
+              {isSplit ? 'Disable Split' : 'Split this transaction'}
             </button>
           </div>
         )}
@@ -419,11 +508,14 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
         {isSplit && (
           <div className="space-y-2.5 animate-in fade-in duration-300 pb-2">
             {splits.map((s, idx) => (
-              <div key={idx} className="flex gap-2 items-center bg-accent/5 p-1.5 rounded-lg border border-border/10">
+              <div
+                key={idx}
+                className="flex gap-2 items-center bg-accent/5 p-1.5 rounded-lg border border-border/10"
+              >
                 <div className="flex-1">
                   <Select
                     value={s.categoryId}
-                    onValueChange={(val) => {
+                    onValueChange={val => {
                       const next = [...splits];
                       next[idx].categoryId = val;
                       setSplits(next);
@@ -434,7 +526,10 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
                     </SelectTrigger>
                     <SelectContent>
                       {activeCategories.map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.head}{c.subHead ? ` · ${c.subHead}` : ''}</SelectItem>
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.head}
+                          {c.subHead ? ` · ${c.subHead}` : ''}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -445,7 +540,7 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
                     placeholder="Amt"
                     className="h-8 text-xs mono bg-background border-transparent"
                     value={s.amount}
-                    onChange={(e) => {
+                    onChange={e => {
                       const next = [...splits];
                       next[idx].amount = e.target.value;
                       setSplits(next);
@@ -477,12 +572,14 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
         )}
 
         <div className="space-y-1.5 pb-4">
-          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Note</Label>
+          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
+            Note
+          </Label>
           <textarea
             placeholder="What was this for?"
             className="w-full min-h-[60px] p-3 rounded-md bg-muted/40 border-transparent focus:ring-1 focus:ring-primary/20 text-xs outline-none resize-none transition-all placeholder:text-muted-foreground/50"
             value={note}
-            onChange={(e) => setNote(e.target.value)}
+            onChange={e => setNote(e.target.value)}
           />
         </div>
       </div>
@@ -491,10 +588,12 @@ export default function AddTransactionModal({ onClose, initialData, isDuplicate 
         <Button
           type="submit"
           className={cn(
-            "w-full h-11 text-xs font-bold uppercase tracking-[0.2em] transition-all",
-            type === 'income' ? 'bg-income hover:bg-income/90 text-white shadow-income/20' :
-              type === 'expense' ? 'bg-expense hover:bg-expense/90 text-white shadow-expense/20' :
-                'bg-primary hover:bg-primary/90 text-white shadow-primary/20'
+            'w-full h-11 text-xs font-bold uppercase tracking-[0.2em] transition-all',
+            type === 'income'
+              ? 'bg-income hover:bg-income/90 text-white shadow-income/20'
+              : type === 'expense'
+                ? 'bg-expense hover:bg-expense/90 text-white shadow-expense/20'
+                : 'bg-primary hover:bg-primary/90 text-white shadow-primary/20'
           )}
           disabled={!parsedAmount || parsedAmount <= 0 || (isSplit && !isFullyAllocated)}
         >

@@ -5,24 +5,24 @@ import Grainient from '@/components/ui/Grainient';
 import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
-  const accessToken = useDataStore((s) => s.accessToken);
-  const setAccessToken = useDataStore((s) => s.setAccessToken);
+  const accessToken = useDataStore(s => s.accessToken);
+  const setAccessToken = useDataStore(s => s.setAccessToken);
   const navigate = useNavigate();
 
   const login = useGoogleLogin({
-    onSuccess: (tokenResponse) => {
+    onSuccess: tokenResponse => {
       console.log('Login Success:', tokenResponse);
       const expiresAt = Date.now() + (Number(tokenResponse.expires_in) || 3600) * 1000;
       setAccessToken(tokenResponse.access_token, expiresAt);
       navigate('/dashboard');
     },
-    onError: (error) => console.error('Login Failed:', error),
-    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+    onError: error => console.error('Login Failed:', error),
+    scope:
+      'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
   });
 
   return (
     <div className="relative flex min-h-screen w-full bg-[#111111] overflow-hidden selection:bg-primary/30">
-
       {/* Background Grainient */}
       <div className="absolute inset-0 z-0">
         <Grainient
@@ -53,7 +53,6 @@ export default function Home() {
 
       {/* Main Content */}
       <div className="absolute z-10 bottom-6 left-6 md:bottom-12 md:left-12 xl:bottom-16 xl:left-16 flex flex-col">
-
         {/* Row 1: m, o, Content */}
         <div className="flex items-start font-brand text-[32vw] md:text-[24vw] lg:text-[300px] leading-[0.7] tracking-[-0.05em] text-foreground font-black select-none gap-x-4 md:gap-x-8">
           <div className="flex items-start gap-x-3 md:gap-x-6">
@@ -64,11 +63,16 @@ export default function Home() {
           {/* Content Box */}
           <div
             className="relative flex flex-col items-start justify-start pt-2 md:pt-4 gap-3 md:gap-4"
-            style={{ fontSize: '1rem', lineHeight: 'normal', letterSpacing: 'normal', textTransform: 'none' }}
+            style={{
+              fontSize: '1rem',
+              lineHeight: 'normal',
+              letterSpacing: 'normal',
+              textTransform: 'none',
+            }}
           >
             {/* Arrow Button */}
             <div
-              onClick={() => accessToken ? navigate('/dashboard') : login()}
+              onClick={() => (accessToken ? navigate('/dashboard') : login())}
               className="group flex w-max cursor-pointer items-center rounded-full border border-border/30 bg-card hover:bg-foreground hover:text-background p-2 md:p-3 text-foreground transition-all duration-700 ease-out z-10"
             >
               <ArrowRight className="h-4 w-4 md:h-6 md:w-6 shrink-0 transition-transform duration-500 group-hover:-rotate-45" />
@@ -88,7 +92,9 @@ export default function Home() {
 
             {/* Paragraph */}
             <p className="font-mono text-[7px] md:text-[9px] text-muted-foreground/60 uppercase tracking-wider leading-relaxed max-w-[140px] md:max-w-[280px]">
-              Your data is yours. We don't even have a backend to store it. Your logs sync directly, securely, and privately to a hidden spreadsheet inside your own Drive. We couldn't look at your ledgers even if we tried.
+              Your data is yours. We don't even have a backend to store it. Your logs sync directly,
+              securely, and privately to a hidden spreadsheet inside your own Drive. We couldn't
+              look at your ledgers even if we tried.
             </p>
           </div>
         </div>
@@ -108,10 +114,7 @@ export default function Home() {
             />
           </div>
         </div>
-
       </div>
-
     </div>
   );
 }
-

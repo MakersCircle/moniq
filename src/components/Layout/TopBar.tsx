@@ -11,7 +11,11 @@ export default function TopBar({ onNewTransaction }: TopBarProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+      if (
+        e.key === '/' &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
         e.preventDefault();
         searchRef.current?.focus();
       }
@@ -31,7 +35,9 @@ export default function TopBar({ onNewTransaction }: TopBarProps) {
             type="text"
             placeholder="Search transactions, sources... (/)"
             className="w-full h-full bg-accent/30 hover:bg-accent/50 focus:bg-accent/50 border border-transparent focus:border-primary/30 rounded-lg pl-9 pr-3 text-xs outline-none transition-all"
-            onClick={() => {/* TODO: Global search palette */}}
+            onClick={() => {
+              /* TODO: Global search palette */
+            }}
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-border bg-background text-[10px] text-muted-foreground font-mono pointer-events-none">
             /
@@ -41,8 +47,8 @@ export default function TopBar({ onNewTransaction }: TopBarProps) {
 
       {/* Right actions */}
       <div className="flex items-center gap-3">
-        <Button 
-          size="sm" 
+        <Button
+          size="sm"
           className="h-8 gap-1.5 text-xs px-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all active:scale-95"
           onClick={onNewTransaction}
         >

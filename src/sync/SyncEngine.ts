@@ -1,31 +1,50 @@
-import type { Account, PaymentMethod, Category, Transaction, Budget, SyncOperation, SyncEntityType } from '../types';
+import type {
+  Account,
+  PaymentMethod,
+  Category,
+  Transaction,
+  Budget,
+  SyncOperation,
+  SyncEntityType,
+} from '../types';
 import { SheetClient } from './SheetClient';
 import { reconcile, computeChecksum } from './ConflictResolver';
-import { SHEET_NAMES, SHEET_HEADERS, DEFAULT_SYNC_CONFIG, type SyncConfig, type RowIndex, type RowIndexMap, type SyncStatus } from './types';
 import {
-  putMany, addToSyncQueue,
-  getAllSyncQueue, clearSyncQueue,
-  setMeta, putSetting,
+  SHEET_NAMES,
+  SHEET_HEADERS,
+  DEFAULT_SYNC_CONFIG,
+  type SyncConfig,
+  type RowIndex,
+  type RowIndexMap,
+  type SyncStatus,
+} from './types';
+import {
+  putMany,
+  addToSyncQueue,
+  getAllSyncQueue,
+  clearSyncQueue,
+  setMeta,
+  putSetting,
 } from '../lib/db';
 
 // ── Utility helpers ──────────────────────────────────────────────
 
 /**
- * Converts a Google Sheets serial date (number of days since 1899-12-30) 
+ * Converts a Google Sheets serial date (number of days since 1899-12-30)
  * back into an ISO YYYY-MM-DD date string.
  */
 function unserialDate(val: any): string {
   if (!val || typeof val !== 'string' || !/^\d+(\.\d+)?$/.test(val.trim())) {
     return val || '';
   }
-  
+
   const serial = parseFloat(val.trim());
   if (serial < 30000 || serial > 60000) return val; // Likely not a serial date within our range
 
   // Excel/Sheets serial dates start from Dec 30, 1899
   const baseDate = new Date(1899, 11, 30);
   const targetDate = new Date(baseDate.getTime() + serial * 86400000);
-  
+
   return targetDate.toISOString().split('T')[0];
 }
 
@@ -39,45 +58,77 @@ function getValue(row: string[], header: string[], field: string): string {
 
 function serializeTransaction(t: Transaction): string[] {
   return [
-    t.id, t.groupId || '', t.uiType, JSON.stringify(t.entries),
-    String(t.amount), t.date, t.methodId || '', t.note || '',
+    t.id,
+    t.groupId || '',
+    t.uiType,
+    JSON.stringify(t.entries),
+    String(t.amount),
+    t.date,
+    t.methodId || '',
+    t.note || '',
     (t.tags || []).join(','),
-    t.isDeleted ? 'TRUE' : 'FALSE', t.createdAt, t.updatedAt, '',
+    t.isDeleted ? 'TRUE' : 'FALSE',
+    t.createdAt,
+    t.updatedAt,
+    '',
   ];
 }
 
 function serializeAccount(a: Account): string[] {
   return [
-    a.id, a.name, a.type, a.description || '',
-    a.isSavings ? 'TRUE' : 'FALSE', String(a.initialBalance),
-    a.excludeFromNet ? 'TRUE' : 'FALSE', a.isActive ? 'TRUE' : 'FALSE',
+    a.id,
+    a.name,
+    a.type,
+    a.description || '',
+    a.isSavings ? 'TRUE' : 'FALSE',
+    String(a.initialBalance),
+    a.excludeFromNet ? 'TRUE' : 'FALSE',
+    a.isActive ? 'TRUE' : 'FALSE',
     a.isDeleted ? 'TRUE' : 'FALSE',
-    a.createdAt, a.updatedAt, '',
+    a.createdAt,
+    a.updatedAt,
+    '',
   ];
 }
 
 function serializeMethod(m: PaymentMethod): string[] {
   return [
-    m.id, m.name, m.linkedAccountId || '',
-    m.isActive ? 'TRUE' : 'FALSE', m.isDeleted ? 'TRUE' : 'FALSE', 
-    m.createdAt, m.updatedAt, '',
+    m.id,
+    m.name,
+    m.linkedAccountId || '',
+    m.isActive ? 'TRUE' : 'FALSE',
+    m.isDeleted ? 'TRUE' : 'FALSE',
+    m.createdAt,
+    m.updatedAt,
+    '',
   ];
 }
 
 function serializeCategory(c: Category): string[] {
   return [
-    c.id, c.group, c.head, c.subHead || '',
-    String(c.initialBalance || 0), c.isActive ? 'TRUE' : 'FALSE',
+    c.id,
+    c.group,
+    c.head,
+    c.subHead || '',
+    String(c.initialBalance || 0),
+    c.isActive ? 'TRUE' : 'FALSE',
     c.isDeleted ? 'TRUE' : 'FALSE',
-    c.createdAt, c.updatedAt, '',
+    c.createdAt,
+    c.updatedAt,
+    '',
   ];
 }
 
 function serializeBudget(b: Budget): string[] {
   return [
-    b.id, b.categoryId, b.period, String(b.amount),
+    b.id,
+    b.categoryId,
+    b.period,
+    String(b.amount),
     b.isDeleted ? 'TRUE' : 'FALSE',
-    b.createdAt, b.updatedAt, '',
+    b.createdAt,
+    b.updatedAt,
+    '',
   ];
 }
 
@@ -218,9 +269,15 @@ export class SyncEngine {
 
   // ── Status Management ──────────────────────────────────────────
 
-  get status(): SyncStatus { return this._status; }
-  get pendingCount(): number { return this._pendingCount; }
-  get lastError(): string | undefined { return this._lastError; }
+  get status(): SyncStatus {
+    return this._status;
+  }
+  get pendingCount(): number {
+    return this._pendingCount;
+  }
+  get lastError(): string | undefined {
+    return this._lastError;
+  }
 
   subscribe(listener: SyncListener): () => void {
     this.listeners.add(listener);
@@ -265,9 +322,7 @@ export class SyncEngine {
 
   // ── Initialization (Pull + Reconcile) ──────────────────────────
 
-  async initialize(
-    spreadsheetId: string,
-  ): Promise<{
+  async initialize(spreadsheetId: string): Promise<{
     accounts: Account[];
     methods: PaymentMethod[];
     categories: Category[];
@@ -305,11 +360,26 @@ export class SyncEngine {
       const catHeader = catRows[0] || [];
       const budHeader = budRows[0] || [];
 
-      const remoteTxns = txRows.slice(1).filter(r => r[0]).map(r => deserializeTransaction(r, txHeader));
-      const remoteAccs = accRows.slice(1).filter(r => r[0]).map(r => deserializeAccount(r, accHeader));
-      const remoteMets = metRows.slice(1).filter(r => r[0]).map(r => deserializeMethod(r, metHeader));
-      const remoteCats = catRows.slice(1).filter(r => r[0]).map(r => deserializeCategory(r, catHeader));
-      const remoteBuds = budRows.slice(1).filter(r => r[0]).map(r => deserializeBudget(r, budHeader));
+      const remoteTxns = txRows
+        .slice(1)
+        .filter(r => r[0])
+        .map(r => deserializeTransaction(r, txHeader));
+      const remoteAccs = accRows
+        .slice(1)
+        .filter(r => r[0])
+        .map(r => deserializeAccount(r, accHeader));
+      const remoteMets = metRows
+        .slice(1)
+        .filter(r => r[0])
+        .map(r => deserializeMethod(r, metHeader));
+      const remoteCats = catRows
+        .slice(1)
+        .filter(r => r[0])
+        .map(r => deserializeCategory(r, catHeader));
+      const remoteBuds = budRows
+        .slice(1)
+        .filter(r => r[0])
+        .map(r => deserializeBudget(r, budHeader));
 
       // Parse remote settings
       const remoteSettings: Record<string, string> = {};
@@ -339,12 +409,13 @@ export class SyncEngine {
       const repairs: Promise<void>[] = [];
       const checkAndRepair = (name: string, rows: string[][], target: string[]) => {
         const current = rows[0] || [];
-        const mismatch = current.length !== target.length || current.some((h, i) => h !== target[i]);
+        const mismatch =
+          current.length !== target.length || current.some((h, i) => h !== target[i]);
         if (mismatch && rows.length > 0) {
           repairs.push(this.client!.overwriteSheet(name, rows.slice(1)));
         }
       };
-      
+
       checkAndRepair('Transactions', txRows, SHEET_HEADERS.Transactions);
       checkAndRepair('Accounts', accRows, SHEET_HEADERS.Accounts);
       checkAndRepair('Methods', metRows, SHEET_HEADERS.Methods);
@@ -358,7 +429,7 @@ export class SyncEngine {
       // Read local data from Zustand store
       const { useDataStore } = await import('../store/dataStore');
       const state = useDataStore.getState();
-      
+
       // De-duplicate remote data before reconciliation
       const remoteTxnsDeduped = this.deduplicate(remoteTxns);
       const remoteAccsDeduped = this.deduplicate(remoteAccs);
@@ -373,11 +444,36 @@ export class SyncEngine {
       const localBuds = state.budgets;
 
       // Reconcile each entity type
-      const txResult = reconcile(localTxns, remoteTxnsDeduped, txChecksums, makeEntityChecksumFn(serializeTransaction));
-      const accResult = reconcile(localAccs, remoteAccsDeduped, accChecksums, makeEntityChecksumFn(serializeAccount));
-      const metResult = reconcile(localMets, remoteMetsDeduped, metChecksums, makeEntityChecksumFn(serializeMethod));
-      const catResult = reconcile(localCats, remoteCatsDeduped, catChecksums, makeEntityChecksumFn(serializeCategory));
-      const budResult = reconcile(localBuds, remoteBudsDeduped, budChecksums, makeEntityChecksumFn(serializeBudget));
+      const txResult = reconcile(
+        localTxns,
+        remoteTxnsDeduped,
+        txChecksums,
+        makeEntityChecksumFn(serializeTransaction)
+      );
+      const accResult = reconcile(
+        localAccs,
+        remoteAccsDeduped,
+        accChecksums,
+        makeEntityChecksumFn(serializeAccount)
+      );
+      const metResult = reconcile(
+        localMets,
+        remoteMetsDeduped,
+        metChecksums,
+        makeEntityChecksumFn(serializeMethod)
+      );
+      const catResult = reconcile(
+        localCats,
+        remoteCatsDeduped,
+        catChecksums,
+        makeEntityChecksumFn(serializeCategory)
+      );
+      const budResult = reconcile(
+        localBuds,
+        remoteBudsDeduped,
+        budChecksums,
+        makeEntityChecksumFn(serializeBudget)
+      );
 
       // Build row indexes from current sheet data
       this.buildRowIndexes(txRows, accRows, metRows, catRows, budRows);
@@ -396,7 +492,7 @@ export class SyncEngine {
       await putMany('categories', catResult.merged);
       await putMany('transactions', txResult.merged);
       await putMany('budgets', budResult.merged);
-      
+
       // Save settings to structured DB
       for (const [key, value] of Object.entries(remoteSettings)) {
         await putSetting(key, value);
@@ -426,8 +522,11 @@ export class SyncEngine {
   // ── Row Index Management ───────────────────────────────────────
 
   private buildRowIndexes(
-    txRows: string[][], accRows: string[][], metRows: string[][],
-    catRows: string[][], budRows: string[][],
+    txRows: string[][],
+    accRows: string[][],
+    metRows: string[][],
+    catRows: string[][],
+    budRows: string[][]
   ) {
     this.rowIndexes.transactions = this.buildIndex(txRows);
     this.rowIndexes.accounts = this.buildIndex(accRows);
@@ -464,7 +563,11 @@ export class SyncEngine {
    * Called by the data store after each mutation.
    * Adds an operation to the sync queue and schedules a debounced flush.
    */
-  async markDirty(entity: SyncEntityType, entityId: string, action: 'create' | 'update' | 'delete'): Promise<void> {
+  async markDirty(
+    entity: SyncEntityType,
+    entityId: string,
+    action: 'create' | 'update' | 'delete'
+  ): Promise<void> {
     const op: SyncOperation = {
       id: crypto.randomUUID(),
       entity,
@@ -529,15 +632,17 @@ export class SyncEngine {
       await setMeta('lastSyncedAt', syncTime);
       await this.updatePendingCount();
       this.setStatus('idle');
-      
+
       const { useDataStore } = await import('../store/dataStore');
       useDataStore.getState().setLastSyncedAt(syncTime);
 
       // Trigger Backup Cycle (non-blocking)
       const { BackupManager } = await import('./BackupManager');
-      BackupManager.getInstance().runBackupCycle().catch(err => {
-        console.warn('[SyncEngine] Triggering backup failed:', err);
-      });
+      BackupManager.getInstance()
+        .runBackupCycle()
+        .catch(err => {
+          console.warn('[SyncEngine] Triggering backup failed:', err);
+        });
     } catch (err: any) {
       console.error('[SyncEngine] Flush failed:', err);
       this.setStatus('error', err.message || 'Sync failed');
@@ -559,7 +664,7 @@ export class SyncEngine {
     const rowIndex = this.rowIndexes[storeName as keyof RowIndexMap] as RowIndex;
     const serializeFn = this.getSerializeFn(entityType);
 
-    const newRows: string[] [] = [];
+    const newRows: string[][] = [];
     const updateBatch: { rowIndex: number; data: string[] }[] = [];
 
     const { useDataStore } = await import('../store/dataStore');
@@ -625,25 +730,23 @@ export class SyncEngine {
     await this.client.overwriteSheet('Settings', rows);
   }
 
-
-
   /** Orchestrates a complete wipe of remote and local data. */
   async performHardReset(): Promise<void> {
     if (!(await this.ensureClient())) {
       throw new Error('Cannot perform reset: No access token or spreadsheet ID found.');
     }
-    
+
     const { useDataStore } = await import('../store/dataStore');
     const state = useDataStore.getState();
-    
+
     this.setStatus('syncing');
     try {
       // 1. Wipe remote sheets
       await this.client!.clearAllData(Object.values(SHEET_NAMES));
-      
+
       // 2. Wipe local store
       state.resetData();
-      
+
       this.setStatus('idle');
     } catch (err: any) {
       console.error('Hard Reset failed:', err);
@@ -656,7 +759,7 @@ export class SyncEngine {
   private async pushReconciled<T extends { id: string }>(
     sheetName: string,
     toUpload: T[],
-    serializeFn: (entity: T) => string[],
+    serializeFn: (entity: T) => string[]
   ): Promise<void> {
     if (!this.client || toUpload.length === 0) return;
 
@@ -718,12 +821,18 @@ export class SyncEngine {
 
   private getSerializeFn(entityType: SyncEntityType): (entity: any) => string[] {
     switch (entityType) {
-      case 'transaction': return serializeTransaction;
-      case 'account': return serializeAccount;
-      case 'method': return serializeMethod;
-      case 'category': return serializeCategory;
-      case 'budget': return serializeBudget;
-      default: return () => [];
+      case 'transaction':
+        return serializeTransaction;
+      case 'account':
+        return serializeAccount;
+      case 'method':
+        return serializeMethod;
+      case 'category':
+        return serializeCategory;
+      case 'budget':
+        return serializeBudget;
+      default:
+        return () => [];
     }
   }
 
@@ -733,10 +842,7 @@ export class SyncEngine {
     if (this.retryTimer) clearTimeout(this.retryTimer);
 
     // Simple exponential backoff based on pending queue
-    const delay = Math.min(
-      this.config.baseRetryDelayMs * 2,
-      this.config.maxRetryDelayMs,
-    );
+    const delay = Math.min(this.config.baseRetryDelayMs * 2, this.config.maxRetryDelayMs);
 
     this.retryTimer = setTimeout(() => {
       this.flush();

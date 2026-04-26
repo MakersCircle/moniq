@@ -20,19 +20,19 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import AddTransactionModal from './components/Transactions/AddTransactionModal';
 
 export default function App() {
-  const accessToken = useDataStore((s) => s.accessToken);
-  const tokenExpiresAt = useDataStore((s) => s.tokenExpiresAt);
-  const setUserProfile = useDataStore((s) => s.setUserProfile);
-  const setSpreadsheetId = useDataStore((s) => s.setSpreadsheetId);
-  const setSyncStatus = useDataStore((s) => s.setSyncStatus);
-  const hydrateFromSync = useDataStore((s) => s.hydrateFromSync);
-  const settings = useDataStore((s) => s.settings);
-  const isHydrated = useDataStore((s) => s.isHydrated);
-  const isCloudInitialized = useDataStore((s) => s.isCloudInitialized);
-  const setCloudInitialized = useDataStore((s) => s.setCloudInitialized);
-  const syncStatus = useDataStore((s) => s.syncStatus);
-  const initializeFromDB = useDataStore((s) => s.initializeFromDB);
-  
+  const accessToken = useDataStore(s => s.accessToken);
+  const tokenExpiresAt = useDataStore(s => s.tokenExpiresAt);
+  const setUserProfile = useDataStore(s => s.setUserProfile);
+  const setSpreadsheetId = useDataStore(s => s.setSpreadsheetId);
+  const setSyncStatus = useDataStore(s => s.setSyncStatus);
+  const hydrateFromSync = useDataStore(s => s.hydrateFromSync);
+  const settings = useDataStore(s => s.settings);
+  const isHydrated = useDataStore(s => s.isHydrated);
+  const isCloudInitialized = useDataStore(s => s.isCloudInitialized);
+  const setCloudInitialized = useDataStore(s => s.setCloudInitialized);
+  const syncStatus = useDataStore(s => s.syncStatus);
+  const initializeFromDB = useDataStore(s => s.initializeFromDB);
+
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
     initialData?: any;
@@ -41,7 +41,8 @@ export default function App() {
 
   const openNew = () => setModalState({ isOpen: true });
   const openEdit = (data: any) => setModalState({ isOpen: true, initialData: data });
-  const openDuplicate = (data: any) => setModalState({ isOpen: true, initialData: data, isDuplicate: true });
+  const openDuplicate = (data: any) =>
+    setModalState({ isOpen: true, initialData: data, isDuplicate: true });
 
   // 1. Initial hydration from IndexedDB (structured)
   useEffect(() => {
@@ -54,8 +55,8 @@ export default function App() {
 
     const check = () => {
       const fiveMinutes = 5 * 60 * 1000;
-      const isAboutToExpire = tokenExpiresAt && (Date.now() > (tokenExpiresAt - fiveMinutes));
-      
+      const isAboutToExpire = tokenExpiresAt && Date.now() > tokenExpiresAt - fiveMinutes;
+
       if (isAboutToExpire) {
         console.log('[App] Token about to expire, triggering proactive refresh...');
         googleService.silentRefresh();
@@ -86,10 +87,10 @@ export default function App() {
 
         const sheetId = await initializeDatabase(accessToken!);
         setSpreadsheetId(sheetId);
-        
+
         // Initialize SyncEngine — pulls from sheets, reconciles, and hydrates store
         const engine = SyncEngine.getInstance();
-        
+
         // Subscribe to sync status changes
         const unsubscribe = engine.subscribe((status, pendingCount, error) => {
           setSyncStatus(status, pendingCount, error);
@@ -112,7 +113,15 @@ export default function App() {
     }
 
     initCloud();
-  }, [accessToken, tokenExpiresAt, isHydrated, setUserProfile, setSpreadsheetId, setSyncStatus, hydrateFromSync]);
+  }, [
+    accessToken,
+    tokenExpiresAt,
+    isHydrated,
+    setUserProfile,
+    setSpreadsheetId,
+    setSyncStatus,
+    hydrateFromSync,
+  ]);
 
   const hasCompletedOnboarding = settings.hasCompletedOnboarding;
 
@@ -121,11 +130,11 @@ export default function App() {
   }
 
   if (!isHydrated || (accessToken && !isCloudInitialized)) {
-    const message = !isHydrated 
-      ? "Loading your space..." 
-      : syncStatus === 'pulling' 
-        ? "Pulling your data from Google Drive..." 
-        : "Syncing your data...";
+    const message = !isHydrated
+      ? 'Loading your space...'
+      : syncStatus === 'pulling'
+        ? 'Pulling your data from Google Drive...'
+        : 'Syncing your data...';
 
     return (
       <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center">
@@ -141,13 +150,11 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* Landing/Home page - No Sidebar/TopBar */}
-        <Route 
-          path="/" 
+        <Route
+          path="/"
           element={
-            accessToken && hasCompletedOnboarding 
-              ? <Navigate to="/dashboard" replace /> 
-              : <Home />
-          } 
+            accessToken && hasCompletedOnboarding ? <Navigate to="/dashboard" replace /> : <Home />
+          }
         />
 
         {/* Application routes - Wrapped in LayoutShell */}
@@ -166,7 +173,10 @@ export default function App() {
                   <Route path="settings/methods" element={<Methods />} />
                   <Route path="settings/categories" element={<Categories />} />
                   <Route path="settings/trash" element={<SettingsTrash />} />
-                  <Route path="*" element={<Navigate to={hasCompletedOnboarding ? "/dashboard" : "/"} replace />} />
+                  <Route
+                    path="*"
+                    element={<Navigate to={hasCompletedOnboarding ? '/dashboard' : '/'} replace />}
+                  />
                 </Routes>
               </LayoutShell>
             ) : (
@@ -177,15 +187,15 @@ export default function App() {
       </Routes>
 
       {accessToken && (
-        <Dialog 
-          open={modalState.isOpen} 
-          onOpenChange={(open) => setModalState(prev => ({ ...prev, isOpen: open }))}
+        <Dialog
+          open={modalState.isOpen}
+          onOpenChange={open => setModalState(prev => ({ ...prev, isOpen: open }))}
         >
           <DialogContent className="max-w-130 max-h-[90vh] h-auto flex flex-col p-0 overflow-hidden border-none shadow-2xl">
-            <AddTransactionModal 
+            <AddTransactionModal
               initialData={modalState.initialData}
               isDuplicate={modalState.isDuplicate}
-              onClose={() => setModalState({ isOpen: false })} 
+              onClose={() => setModalState({ isOpen: false })}
             />
           </DialogContent>
         </Dialog>

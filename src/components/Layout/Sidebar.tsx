@@ -1,12 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { version } from '../../../package.json';
-import { 
-  LayoutDashboard, 
-  ReceiptText, 
-  BarChart3, 
-  Target, 
-  Settings
-} from 'lucide-react';
+import { LayoutDashboard, ReceiptText, BarChart3, Target, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
@@ -22,9 +16,9 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="h-[48px] px-6 flex items-center">
         <NavLink to="/" className="flex items-center gap-2 group">
-          <img 
-            src="/favicon.svg" 
-            alt="moniq logo" 
+          <img
+            src="/favicon.svg"
+            alt="moniq logo"
             className="h-6 w-6 object-contain group-hover:scale-110 transition-transform"
           />
           <span className="font-bold tracking-tight text-lg">moniq</span>
@@ -32,16 +26,18 @@ export default function Sidebar() {
       </div>
 
       <div className="flex-1 px-3 py-4 space-y-1">
-        {NAV_ITEMS.map((item) => (
+        {NAV_ITEMS.map(item => (
           <NavLink
             key={item.to}
             to={item.to}
-            className={({ isActive }) => cn(
-              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-              isActive 
-                ? "bg-primary/10 text-primary" 
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            )}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                isActive
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              )
+            }
           >
             <item.icon className="h-4 w-4" />
             {item.label}
@@ -52,18 +48,22 @@ export default function Sidebar() {
       <div className="p-3 border-t border-border/50">
         <NavLink
           to="/settings"
-          className={({ isActive }) => cn(
-            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-            isActive 
-              ? "bg-primary/10 text-primary" 
-              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-          )}
+          className={({ isActive }) =>
+            cn(
+              'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+              isActive
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            )
+          }
         >
           <Settings className="h-4 w-4" />
           Settings
         </NavLink>
         <div className="pt-2 px-3 pb-1">
-          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">moniq v{version}</p>
+          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">
+            moniq v{version}
+          </p>
         </div>
       </div>
     </aside>

@@ -1,12 +1,27 @@
 import { create } from 'zustand';
-import type { Account, PaymentMethod, Category, Transaction, Budget, UserSettings, SyncStatus } from '../types';
+import type {
+  Account,
+  PaymentMethod,
+  Category,
+  Transaction,
+  Budget,
+  UserSettings,
+  SyncStatus,
+} from '../types';
 import { LedgerEngine } from '../lib/ledger';
 import { detectLocalSettings, getCurrencySymbol } from '../constants/currencies';
 import { SyncEngine } from '../sync/SyncEngine';
-import { 
-  getAll, put, del, putMany,
-  putSetting, getAllSettings,
-  getMeta, setMeta, delMeta, clearStore
+import {
+  getAll,
+  put,
+  del,
+  putMany,
+  putSetting,
+  getAllSettings,
+  getMeta,
+  setMeta,
+  delMeta,
+  clearStore,
 } from '../lib/db';
 
 // ── Default settings & helpers ─────────────────────────────────
@@ -39,7 +54,7 @@ interface DataState {
   settings: UserSettings;
   accessToken: string | null;
   tokenExpiresAt: number | null;
-  
+
   // Cloud Sync properties
   userProfile: UserProfile | null;
   spreadsheetId: string | null;
@@ -85,7 +100,7 @@ interface DataState {
     note: string;
     tags?: string[];
   }) => void;
-  
+
   updateTransaction: (id: string, patch: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
 
@@ -95,7 +110,10 @@ interface DataState {
   // Settings
   updateSettings: (patch: Partial<UserSettings>) => void;
   setAccessToken: (token: string | null, expiresAt?: number | null) => void;
-  completeOnboarding: (accounts?: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>[], categories?: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>[]) => void;
+  completeOnboarding: (
+    accounts?: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>[],
+    categories?: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>[]
+  ) => void;
 
   // Sync Engine
   hydrateFromSync: (data: {
@@ -116,7 +134,11 @@ export const uuid = () => crypto.randomUUID();
 export const now = () => new Date().toISOString();
 
 /** Helper to notify the SyncEngine about a dirty entity */
-const markDirty = (entity: 'transaction' | 'account' | 'method' | 'category' | 'budget' | 'settings', entityId: string, action: 'create' | 'update' | 'delete') => {
+const markDirty = (
+  entity: 'transaction' | 'account' | 'method' | 'category' | 'budget' | 'settings',
+  entityId: string,
+  action: 'create' | 'update' | 'delete'
+) => {
   try {
     SyncEngine.getInstance().markDirty(entity, entityId, action);
   } catch {
@@ -124,469 +146,594 @@ const markDirty = (entity: 'transaction' | 'account' | 'method' | 'category' | '
   }
 };
 
-export const useDataStore = create<DataState>()(
-  (set) => ({
-    accounts: [] as Account[],
-    methods: [] as PaymentMethod[],
-    categories: [] as Category[],
-    transactions: [] as Transaction[],
-    budgets: [] as Budget[],
-    settings: defaultSettings,
-    accessToken: null,
-    tokenExpiresAt: null,
-    userProfile: null,
-    spreadsheetId: null,
-    lastSyncedAt: null,
-    syncStatus: 'idle' as SyncStatus,
-    pendingCount: 0,
-    lastSyncError: undefined,
-    isHydrated: false,
-    isCloudInitialized: false,
+export const useDataStore = create<DataState>()(set => ({
+  accounts: [] as Account[],
+  methods: [] as PaymentMethod[],
+  categories: [] as Category[],
+  transactions: [] as Transaction[],
+  budgets: [] as Budget[],
+  settings: defaultSettings,
+  accessToken: null,
+  tokenExpiresAt: null,
+  userProfile: null,
+  spreadsheetId: null,
+  lastSyncedAt: null,
+  syncStatus: 'idle' as SyncStatus,
+  pendingCount: 0,
+  lastSyncError: undefined,
+  isHydrated: false,
+  isCloudInitialized: false,
 
-    // Cloud actions
-    setSpreadsheetId: (id) => set({ spreadsheetId: id }),
-    setSyncStatus: (syncStatus, pendingCount, lastSyncError) => set({ syncStatus, pendingCount, lastSyncError }),
-    setLastSyncedAt: (timestamp) => set({ lastSyncedAt: timestamp }),
-    setCloudInitialized: (isCloudInitialized) => set({ isCloudInitialized }),
-    initializeFromDB: async () => {
+  // Cloud actions
+  setSpreadsheetId: id => set({ spreadsheetId: id }),
+  setSyncStatus: (syncStatus, pendingCount, lastSyncError) =>
+    set({ syncStatus, pendingCount, lastSyncError }),
+  setLastSyncedAt: timestamp => set({ lastSyncedAt: timestamp }),
+  setCloudInitialized: isCloudInitialized => set({ isCloudInitialized }),
+  initializeFromDB: async () => {
+    try {
+      const [
+        accounts,
+        methods,
+        categories,
+        ,
+        budgets,
+        settings,
+        lastSyncedAt,
+        accessToken,
+        tokenExpiresAt,
+        userProfileStr,
+      ] = await Promise.all([
+        getAll<Account>('accounts'),
+        getAll<PaymentMethod>('methods'),
+        getAll<Category>('categories'),
+        getAll<Transaction>('transactions'),
+        getAll<Budget>('budgets'),
+        getAllSettings(),
+        getMeta('lastSyncedAt'),
+        getMeta('accessToken'),
+        getMeta('tokenExpiresAt'),
+        getMeta('userProfile'),
+      ]);
+
+      let userProfile = null;
       try {
-        const [accounts, methods, categories, , budgets, settings, lastSyncedAt, accessToken, tokenExpiresAt, userProfileStr] = await Promise.all([
-          getAll<Account>('accounts'),
-          getAll<PaymentMethod>('methods'),
-          getAll<Category>('categories'),
-          getAll<Transaction>('transactions'),
-          getAll<Budget>('budgets'),
-          getAllSettings(),
-          getMeta('lastSyncedAt'),
-          getMeta('accessToken'),
-          getMeta('tokenExpiresAt'),
-          getMeta('userProfile'),
-        ]);
+        if (userProfileStr) userProfile = JSON.parse(userProfileStr);
+      } catch {}
 
-        let userProfile = null;
-        try {
-          if (userProfileStr) userProfile = JSON.parse(userProfileStr);
-        } catch {}
+      const userSettings = { ...defaultSettings };
+      if (Object.keys(settings).length > 0) {
+        if (settings.currency) userSettings.currency = settings.currency;
+        if (settings.numberLocale) userSettings.numberLocale = settings.numberLocale;
 
-        const userSettings = { ...defaultSettings };
-        if (Object.keys(settings).length > 0) {
-          if (settings.currency) userSettings.currency = settings.currency;
-          if (settings.numberLocale) userSettings.numberLocale = settings.numberLocale;
-          
-          // Ensure currency symbol is correctly set from DB or recalculated if missing
-          if (settings.currencySymbol) {
-            userSettings.currencySymbol = settings.currencySymbol;
-          } else if (settings.currency) {
-            userSettings.currencySymbol = getCurrencySymbol(userSettings.currency, userSettings.numberLocale);
-          }
-
-          if (settings.fiscalYearStartMonth) userSettings.fiscalYearStartMonth = Number(settings.fiscalYearStartMonth);
-          if (settings.dateFormat) userSettings.dateFormat = settings.dateFormat;
-          if (settings.hasCompletedOnboarding) {
-            userSettings.hasCompletedOnboarding = String(settings.hasCompletedOnboarding).toLowerCase() === 'true';
-          }
-          if (settings.lastDailyBackup) userSettings.lastDailyBackup = settings.lastDailyBackup;
-          if (settings.lastWeeklyBackup) userSettings.lastWeeklyBackup = settings.lastWeeklyBackup;
-          if (settings.lastMonthlyBackup) userSettings.lastMonthlyBackup = settings.lastMonthlyBackup;
-          if (settings.lastYearlyBackup) userSettings.lastYearlyBackup = settings.lastYearlyBackup;
+        // Ensure currency symbol is correctly set from DB or recalculated if missing
+        if (settings.currencySymbol) {
+          userSettings.currencySymbol = settings.currencySymbol;
+        } else if (settings.currency) {
+          userSettings.currencySymbol = getCurrencySymbol(
+            userSettings.currency,
+            userSettings.numberLocale
+          );
         }
 
-        set({
-          accounts,
-          methods,
-          categories,
-          budgets: budgets as Budget[],
-          settings: userSettings,
-          lastSyncedAt: lastSyncedAt || null,
-          accessToken: accessToken || null,
-          tokenExpiresAt: tokenExpiresAt ? Number(tokenExpiresAt) : null,
-          userProfile,
-          isHydrated: true,
-          isCloudInitialized: !!lastSyncedAt, // If we have a lastSyncedAt, we are a returning cloud user
-        });
-      } catch (err) {
-        console.error('Failed to initialize from DB:', err);
-        set({ isHydrated: true, isCloudInitialized: true });
-      }
-    },
-
-    completeOnboarding: (accs, cats) => {
-      set((state) => {
-        const t = now();
-        const newAccounts = (accs || []).map(a => ({ ...a, id: uuid(), isActive: true, isDeleted: false, createdAt: t, updatedAt: t } as Account));
-        const newCategories = (cats || []).map(c => ({ ...c, id: uuid(), isActive: true, isDeleted: false, createdAt: t, updatedAt: t } as Category));
-        const newMethods = newAccounts.map(a => ({ id: uuid(), name: `${a.name}`, linkedAccountId: a.id, isActive: true, isDeleted: false, createdAt: t, updatedAt: t } as PaymentMethod));
-        
-        // Mark all new entities dirty
-        for (const a of newAccounts) markDirty('account', a.id, 'create');
-        for (const c of newCategories) markDirty('category', c.id, 'create');
-        for (const m of newMethods) markDirty('method', m.id, 'create');
-
-        return {
-          accounts: [...state.accounts, ...newAccounts],
-          categories: [...state.categories, ...newCategories],
-          methods: [...state.methods, ...newMethods],
-          settings: { ...state.settings, hasCompletedOnboarding: true }
-        };
-      });
-
-      // Persist to DB
-      const state = useDataStore.getState();
-      putMany('accounts', state.accounts);
-      putMany('categories', state.categories);
-      putMany('methods', state.methods);
-      putSetting('hasCompletedOnboarding', 'true');
-
-      markDirty('settings', 'hasCompletedOnboarding', 'update');
-    },
-
-    addAccount: (a) => {
-      const id = uuid();
-      const t = now();
-      const methodId = uuid();
-      const newAccount = { ...a, id, isDeleted: false, createdAt: t, updatedAt: t } as Account;
-      const newMethod = { id: methodId, name: a.name, linkedAccountId: id, isActive: true, isDeleted: false, createdAt: t, updatedAt: t } as PaymentMethod;
-      
-      set((state) => ({ 
-        accounts: [...state.accounts, newAccount],
-        methods: [...state.methods, newMethod]
-      }));
-
-      put('accounts', newAccount);
-      put('methods', newMethod);
-      markDirty('account', id, 'create');
-      markDirty('method', methodId, 'create');
-    },
-    updateAccount: (id, patch) => {
-      set((state) => {
-        const next = state.accounts.map((s) => (s.id === id ? { ...s, ...patch, updatedAt: now() } : s));
-        const updated = next.find(a => a.id === id);
-        if (updated) put('accounts', updated);
-        return { accounts: next };
-      });
-      markDirty('account', id, 'update');
-    },
-    archiveAccount: (id) => {
-      set((state) => {
-        const next = state.accounts.map((s) => (s.id === id ? { ...s, isActive: false, updatedAt: now() } : s));
-        const updated = next.find(a => a.id === id);
-        if (updated) put('accounts', updated);
-        return { accounts: next };
-      });
-      markDirty('account', id, 'update');
-    },
-    restoreAccount: (id) => {
-      const t = now();
-      set((state) => {
-        // Restore the account
-        const nextAccounts = state.accounts.map((a) => (a.id === id ? { ...a, isDeleted: false, updatedAt: t } : a));
-        
-        // Find methods linked to this account that are currently deleted
-        // We restore them too to keep the state consistent
-        const nextMethods = state.methods.map((m) => 
-          (m.linkedAccountId === id && m.isDeleted) ? { ...m, isDeleted: false, updatedAt: t } : m
-        );
-
-        const updatedAcc = nextAccounts.find(a => a.id === id);
-        if (updatedAcc) put('accounts', updatedAcc);
-        
-        // Put all restored methods back to DB
-        nextMethods.forEach(m => {
-          if (m.linkedAccountId === id && nextMethods.find(x => x.id === m.id && !x.isDeleted)) {
-            put('methods', m);
-            markDirty('method', m.id, 'update');
-          }
-        });
-
-        return { accounts: nextAccounts, methods: nextMethods };
-      });
-      markDirty('account', id, 'update');
-    },
-    deleteAccount: (id): { success: boolean; reason?: string } => {
-      const state = useDataStore.getState();
-      const hasTransactions = state.transactions.some(t => !t.isDeleted && t.entries.some(e => e.accountId === id));
-      if (hasTransactions) return { success: false, reason: 'This account is referenced by existing transactions. Archive it instead.' };
-      const linkedMethods = state.methods.filter(m => !m.isDeleted && m.linkedAccountId === id);
-      const methodsInUse = linkedMethods.filter(m => state.transactions.some(t => !t.isDeleted && t.methodId === m.id));
-      if (methodsInUse.length > 0) {
-        const names = methodsInUse.map(m => m.name).join(', ');
-        return { success: false, reason: `Linked payment method(s) "${names}" are used in transactions. Archive the account instead.` };
-      }
-      const hasBudgets = state.budgets.some(b => !b.isDeleted && b.categoryId === id);
-      if (hasBudgets) return { success: false, reason: 'This account is referenced by a budget. Remove the budget first.' };
-      
-      const t = now();
-      const deletedMethodIds = linkedMethods.map(m => m.id);
-      set((s) => ({
-        accounts: s.accounts.map(a => a.id === id ? { ...a, isDeleted: true, updatedAt: t } : a),
-        methods: s.methods.map(m => m.linkedAccountId === id ? { ...m, isDeleted: true, updatedAt: t } : m),
-      }));
-
-      const account = useDataStore.getState().accounts.find(a => a.id === id);
-      if (account) put('accounts', account);
-      for (const mId of deletedMethodIds) {
-        const method = useDataStore.getState().methods.find(m => m.id === mId);
-        if (method) put('methods', method);
+        if (settings.fiscalYearStartMonth)
+          userSettings.fiscalYearStartMonth = Number(settings.fiscalYearStartMonth);
+        if (settings.dateFormat) userSettings.dateFormat = settings.dateFormat;
+        if (settings.hasCompletedOnboarding) {
+          userSettings.hasCompletedOnboarding =
+            String(settings.hasCompletedOnboarding).toLowerCase() === 'true';
+        }
+        if (settings.lastDailyBackup) userSettings.lastDailyBackup = settings.lastDailyBackup;
+        if (settings.lastWeeklyBackup) userSettings.lastWeeklyBackup = settings.lastWeeklyBackup;
+        if (settings.lastMonthlyBackup) userSettings.lastMonthlyBackup = settings.lastMonthlyBackup;
+        if (settings.lastYearlyBackup) userSettings.lastYearlyBackup = settings.lastYearlyBackup;
       }
 
-      markDirty('account', id, 'update');
-      for (const mId of deletedMethodIds) markDirty('method', mId, 'update');
-      return { success: true };
-    },
+      set({
+        accounts,
+        methods,
+        categories,
+        budgets: budgets as Budget[],
+        settings: userSettings,
+        lastSyncedAt: lastSyncedAt || null,
+        accessToken: accessToken || null,
+        tokenExpiresAt: tokenExpiresAt ? Number(tokenExpiresAt) : null,
+        userProfile,
+        isHydrated: true,
+        isCloudInitialized: !!lastSyncedAt, // If we have a lastSyncedAt, we are a returning cloud user
+      });
+    } catch (err) {
+      console.error('Failed to initialize from DB:', err);
+      set({ isHydrated: true, isCloudInitialized: true });
+    }
+  },
 
-    // Methods
-    addMethod: (m) => {
-      const id = uuid();
+  completeOnboarding: (accs, cats) => {
+    set(state => {
       const t = now();
-      const newMethod = { ...m, id, isDeleted: false, createdAt: t, updatedAt: t } as PaymentMethod;
-      set((state) => ({ methods: [...state.methods, newMethod] }));
-      put('methods', newMethod);
-      markDirty('method', id, 'create');
-    },
-    updateMethod: (id, patch) => {
-      set((state) => {
-        const next = state.methods.map((m) => (m.id === id ? { ...m, ...patch, updatedAt: now() } : m));
-        const updated = next.find(x => x.id === id);
-        if (updated) put('methods', updated);
-        return { methods: next };
-      });
-      markDirty('method', id, 'update');
-    },
-    archiveMethod: (id) => {
-      set((state) => {
-        const next = state.methods.map((m) => (m.id === id ? { ...m, isActive: false, updatedAt: now() } : m));
-        const updated = next.find(x => x.id === id);
-        if (updated) put('methods', updated);
-        return { methods: next };
-      });
-      markDirty('method', id, 'update');
-    },
-    deleteMethod: (id): { success: boolean; reason?: string } => {
-      const state = useDataStore.getState();
-      const method = state.methods.find(m => m.id === id);
-      if (!method || method.isDeleted) return { success: false, reason: 'Method not found.' };
-      const hasTransactions = state.transactions.some(t => !t.isDeleted && t.methodId === id);
-      if (hasTransactions) return { success: false, reason: 'This method is used in existing transactions. Archive it instead.' };
-      if (method.linkedAccountId) {
-        const otherMethods = state.methods.filter(m => m.id !== id && m.linkedAccountId === method.linkedAccountId && m.isActive && !m.isDeleted);
-        if (otherMethods.length === 0) return { success: false, reason: 'This is the only active payment method for its linked account. Create another method first, or unlink and then delete.' };
-      }
-      
-      const t = now();
-      set((s) => ({ methods: s.methods.map(m => m.id === id ? { ...m, isDeleted: true, updatedAt: t } : m) }));
-      const updated = useDataStore.getState().methods.find(m => m.id === id);
-      if (updated) put('methods', updated);
-      markDirty('method', id, 'update');
-      return { success: true };
-    },
+      const newAccounts = (accs || []).map(
+        a =>
+          ({
+            ...a,
+            id: uuid(),
+            isActive: true,
+            isDeleted: false,
+            createdAt: t,
+            updatedAt: t,
+          }) as Account
+      );
+      const newCategories = (cats || []).map(
+        c =>
+          ({
+            ...c,
+            id: uuid(),
+            isActive: true,
+            isDeleted: false,
+            createdAt: t,
+            updatedAt: t,
+          }) as Category
+      );
+      const newMethods = newAccounts.map(
+        a =>
+          ({
+            id: uuid(),
+            name: `${a.name}`,
+            linkedAccountId: a.id,
+            isActive: true,
+            isDeleted: false,
+            createdAt: t,
+            updatedAt: t,
+          }) as PaymentMethod
+      );
 
-    // Categories
-    addCategory: (c) => {
-      const id = uuid();
-      const t = now();
-      const next = { ...c, id, isDeleted: false, createdAt: t, updatedAt: t } as Category;
-      set((state) => ({ categories: [...state.categories, next] }));
-      put('categories', next);
-      markDirty('category', id, 'create');
-    },
-    updateCategory: (id, patch) => {
-      set((state) => {
-        const next = state.categories.map((c) => (c.id === id ? { ...c, ...patch, updatedAt: now() } : c));
-        const updated = next.find(x => x.id === id);
-        if (updated) put('categories', updated);
-        return { categories: next };
-      });
-      markDirty('category', id, 'update');
-    },
-    archiveCategory: (id) => {
-      set((state) => {
-        const next = state.categories.map((c) => (c.id === id ? { ...c, isActive: false, updatedAt: now() } : c));
-        const updated = next.find(x => x.id === id);
-        if (updated) put('categories', updated);
-        return { categories: next };
-      });
-      markDirty('category', id, 'update');
-    },
-    deleteCategory: (id): { success: boolean; reason?: string } => {
-      const state = useDataStore.getState();
-      const hasTransactions = state.transactions.some(t => !t.isDeleted && t.entries.some(e => e.accountId === id));
-      if (hasTransactions) return { success: false, reason: 'This category is referenced by existing transactions.' };
-      const hasBudgets = state.budgets.some(b => !b.isDeleted && b.categoryId === id);
-      if (hasBudgets) return { success: false, reason: 'This category has a budget assigned. Remove the budget first.' };
-      
-      const t = now();
-      set((s) => ({ categories: s.categories.map(c => c.id === id ? { ...c, isDeleted: true, updatedAt: t } : c) }));
-      const updated = useDataStore.getState().categories.find(c => c.id === id);
-      if (updated) put('categories', updated);
-      markDirty('category', id, 'update');
-      return { success: true };
-    },
+      // Mark all new entities dirty
+      for (const a of newAccounts) markDirty('account', a.id, 'create');
+      for (const c of newCategories) markDirty('category', c.id, 'create');
+      for (const m of newMethods) markDirty('method', m.id, 'create');
 
-    // Transactions
-    addTransaction: (params) => {
-      const { date, uiType, amount, accountId, targetId, methodId, note, tags } = params;
-      const entries = LedgerEngine.createEntries({ type: uiType, amount, accountId, targetId });
-      const id = uuid();
-      const t = now();
-      const txn = { 
-        id, 
-        groupId: uuid(), 
-        date, 
-        amount,
-        entries, 
-        uiType, 
-        methodId, 
-        note, 
-        tags, 
-        isDeleted: false, 
-        createdAt: t, 
-        updatedAt: t,
+      return {
+        accounts: [...state.accounts, ...newAccounts],
+        categories: [...state.categories, ...newCategories],
+        methods: [...state.methods, ...newMethods],
+        settings: { ...state.settings, hasCompletedOnboarding: true },
+      };
+    });
+
+    // Persist to DB
+    const state = useDataStore.getState();
+    putMany('accounts', state.accounts);
+    putMany('categories', state.categories);
+    putMany('methods', state.methods);
+    putSetting('hasCompletedOnboarding', 'true');
+
+    markDirty('settings', 'hasCompletedOnboarding', 'update');
+  },
+
+  addAccount: a => {
+    const id = uuid();
+    const t = now();
+    const methodId = uuid();
+    const newAccount = { ...a, id, isDeleted: false, createdAt: t, updatedAt: t } as Account;
+    const newMethod = {
+      id: methodId,
+      name: a.name,
+      linkedAccountId: id,
+      isActive: true,
+      isDeleted: false,
+      createdAt: t,
+      updatedAt: t,
+    } as PaymentMethod;
+
+    set(state => ({
+      accounts: [...state.accounts, newAccount],
+      methods: [...state.methods, newMethod],
+    }));
+
+    put('accounts', newAccount);
+    put('methods', newMethod);
+    markDirty('account', id, 'create');
+    markDirty('method', methodId, 'create');
+  },
+  updateAccount: (id, patch) => {
+    set(state => {
+      const next = state.accounts.map(s =>
+        s.id === id ? { ...s, ...patch, updatedAt: now() } : s
+      );
+      const updated = next.find(a => a.id === id);
+      if (updated) put('accounts', updated);
+      return { accounts: next };
+    });
+    markDirty('account', id, 'update');
+  },
+  archiveAccount: id => {
+    set(state => {
+      const next = state.accounts.map(s =>
+        s.id === id ? { ...s, isActive: false, updatedAt: now() } : s
+      );
+      const updated = next.find(a => a.id === id);
+      if (updated) put('accounts', updated);
+      return { accounts: next };
+    });
+    markDirty('account', id, 'update');
+  },
+  restoreAccount: id => {
+    const t = now();
+    set(state => {
+      // Restore the account
+      const nextAccounts = state.accounts.map(a =>
+        a.id === id ? { ...a, isDeleted: false, updatedAt: t } : a
+      );
+
+      // Find methods linked to this account that are currently deleted
+      // We restore them too to keep the state consistent
+      const nextMethods = state.methods.map(m =>
+        m.linkedAccountId === id && m.isDeleted ? { ...m, isDeleted: false, updatedAt: t } : m
+      );
+
+      const updatedAcc = nextAccounts.find(a => a.id === id);
+      if (updatedAcc) put('accounts', updatedAcc);
+
+      // Put all restored methods back to DB
+      nextMethods.forEach(m => {
+        if (m.linkedAccountId === id && nextMethods.find(x => x.id === m.id && !x.isDeleted)) {
+          put('methods', m);
+          markDirty('method', m.id, 'update');
+        }
+      });
+
+      return { accounts: nextAccounts, methods: nextMethods };
+    });
+    markDirty('account', id, 'update');
+  },
+  deleteAccount: (id): { success: boolean; reason?: string } => {
+    const state = useDataStore.getState();
+    const hasTransactions = state.transactions.some(
+      t => !t.isDeleted && t.entries.some(e => e.accountId === id)
+    );
+    if (hasTransactions)
+      return {
+        success: false,
+        reason: 'This account is referenced by existing transactions. Archive it instead.',
+      };
+    const linkedMethods = state.methods.filter(m => !m.isDeleted && m.linkedAccountId === id);
+    const methodsInUse = linkedMethods.filter(m =>
+      state.transactions.some(t => !t.isDeleted && t.methodId === m.id)
+    );
+    if (methodsInUse.length > 0) {
+      const names = methodsInUse.map(m => m.name).join(', ');
+      return {
+        success: false,
+        reason: `Linked payment method(s) "${names}" are used in transactions. Archive the account instead.`,
+      };
+    }
+    const hasBudgets = state.budgets.some(b => !b.isDeleted && b.categoryId === id);
+    if (hasBudgets)
+      return {
+        success: false,
+        reason: 'This account is referenced by a budget. Remove the budget first.',
       };
 
-      set((state) => ({
-        transactions: [txn, ...state.transactions],
-      }));
-      put('transactions', txn);
-      markDirty('transaction', id, 'create');
-    },
+    const t = now();
+    const deletedMethodIds = linkedMethods.map(m => m.id);
+    set(s => ({
+      accounts: s.accounts.map(a => (a.id === id ? { ...a, isDeleted: true, updatedAt: t } : a)),
+      methods: s.methods.map(m =>
+        m.linkedAccountId === id ? { ...m, isDeleted: true, updatedAt: t } : m
+      ),
+    }));
 
-    updateTransaction: (id, patch) => {
-      set((state) => {
-        const next = state.transactions.map((t) =>
-          t.id === id ? { ...t, ...patch, updatedAt: now() } : t
-        );
-        const updated = next.find(x => x.id === id);
-        if (updated) put('transactions', updated);
-        return { transactions: next };
-      });
-      markDirty('transaction', id, 'update');
-    },
-    deleteTransaction: (id) => {
-      set((state) => {
-        const next = state.transactions.map((t) =>
-          t.id === id ? { ...t, isDeleted: true, updatedAt: now() } : t
-        );
-        const updated = next.find(x => x.id === id);
-        if (updated) put('transactions', updated);
-        return { transactions: next };
-      });
-      markDirty('transaction', id, 'update');
-    },
+    const account = useDataStore.getState().accounts.find(a => a.id === id);
+    if (account) put('accounts', account);
+    for (const mId of deletedMethodIds) {
+      const method = useDataStore.getState().methods.find(m => m.id === mId);
+      if (method) put('methods', method);
+    }
 
-    // Budgets
-    updateBudget: (categoryId, period, amount) => {
-      set((state) => {
-        const existingIdx = state.budgets.findIndex(b => b.categoryId === categoryId && b.period === period && !b.isDeleted);
-        const t = now();
-        if (existingIdx >= 0) {
-          const next = [...state.budgets];
-          next[existingIdx] = { ...next[existingIdx], amount, updatedAt: t };
-          put('budgets', next[existingIdx]);
-          markDirty('budget', next[existingIdx].id, 'update');
-          return { budgets: next };
-        }
-        const id = uuid();
-        const next = { id, categoryId, period, amount, isDeleted: false, createdAt: t, updatedAt: t };
-        put('budgets', next);
-        markDirty('budget', id, 'create');
-        return { budgets: [...state.budgets, next] };
-      });
-    },
+    markDirty('account', id, 'update');
+    for (const mId of deletedMethodIds) markDirty('method', mId, 'update');
+    return { success: true };
+  },
 
-    // Settings
-    updateSettings: (patch) => {
-      set((state) => {
-        const nextSettings = { ...state.settings, ...patch };
-        
-        // If currency or locale changes, recalculate and persist the symbol
-        const currencyChanged = patch.currency && patch.currency !== state.settings.currency;
-        const localeChanged = patch.numberLocale && patch.numberLocale !== state.settings.numberLocale;
-        
-        if (currencyChanged || localeChanged) {
-          nextSettings.currencySymbol = getCurrencySymbol(nextSettings.currency, nextSettings.numberLocale);
-          putSetting('currencySymbol', nextSettings.currencySymbol);
-        }
+  // Methods
+  addMethod: m => {
+    const id = uuid();
+    const t = now();
+    const newMethod = { ...m, id, isDeleted: false, createdAt: t, updatedAt: t } as PaymentMethod;
+    set(state => ({ methods: [...state.methods, newMethod] }));
+    put('methods', newMethod);
+    markDirty('method', id, 'create');
+  },
+  updateMethod: (id, patch) => {
+    set(state => {
+      const next = state.methods.map(m => (m.id === id ? { ...m, ...patch, updatedAt: now() } : m));
+      const updated = next.find(x => x.id === id);
+      if (updated) put('methods', updated);
+      return { methods: next };
+    });
+    markDirty('method', id, 'update');
+  },
+  archiveMethod: id => {
+    set(state => {
+      const next = state.methods.map(m =>
+        m.id === id ? { ...m, isActive: false, updatedAt: now() } : m
+      );
+      const updated = next.find(x => x.id === id);
+      if (updated) put('methods', updated);
+      return { methods: next };
+    });
+    markDirty('method', id, 'update');
+  },
+  deleteMethod: (id): { success: boolean; reason?: string } => {
+    const state = useDataStore.getState();
+    const method = state.methods.find(m => m.id === id);
+    if (!method || method.isDeleted) return { success: false, reason: 'Method not found.' };
+    const hasTransactions = state.transactions.some(t => !t.isDeleted && t.methodId === id);
+    if (hasTransactions)
+      return {
+        success: false,
+        reason: 'This method is used in existing transactions. Archive it instead.',
+      };
+    if (method.linkedAccountId) {
+      const otherMethods = state.methods.filter(
+        m =>
+          m.id !== id && m.linkedAccountId === method.linkedAccountId && m.isActive && !m.isDeleted
+      );
+      if (otherMethods.length === 0)
+        return {
+          success: false,
+          reason:
+            'This is the only active payment method for its linked account. Create another method first, or unlink and then delete.',
+        };
+    }
 
-        for (const [k, v] of Object.entries(patch)) {
-          putSetting(k, String(v));
-        }
-        return { settings: nextSettings };
-      });
-      markDirty('settings', 'settings', 'update');
-    },
-     setAccessToken: (token, expiresAt) => {
-      set(() => ({ 
-        accessToken: token, 
-        tokenExpiresAt: expiresAt || null 
-      }));
-      if (token) {
-        setMeta('accessToken', token);
-        if (expiresAt) setMeta('tokenExpiresAt', String(expiresAt));
-      } else {
-        delMeta('accessToken');
-        delMeta('tokenExpiresAt');
+    const t = now();
+    set(s => ({
+      methods: s.methods.map(m => (m.id === id ? { ...m, isDeleted: true, updatedAt: t } : m)),
+    }));
+    const updated = useDataStore.getState().methods.find(m => m.id === id);
+    if (updated) put('methods', updated);
+    markDirty('method', id, 'update');
+    return { success: true };
+  },
+
+  // Categories
+  addCategory: c => {
+    const id = uuid();
+    const t = now();
+    const next = { ...c, id, isDeleted: false, createdAt: t, updatedAt: t } as Category;
+    set(state => ({ categories: [...state.categories, next] }));
+    put('categories', next);
+    markDirty('category', id, 'create');
+  },
+  updateCategory: (id, patch) => {
+    set(state => {
+      const next = state.categories.map(c =>
+        c.id === id ? { ...c, ...patch, updatedAt: now() } : c
+      );
+      const updated = next.find(x => x.id === id);
+      if (updated) put('categories', updated);
+      return { categories: next };
+    });
+    markDirty('category', id, 'update');
+  },
+  archiveCategory: id => {
+    set(state => {
+      const next = state.categories.map(c =>
+        c.id === id ? { ...c, isActive: false, updatedAt: now() } : c
+      );
+      const updated = next.find(x => x.id === id);
+      if (updated) put('categories', updated);
+      return { categories: next };
+    });
+    markDirty('category', id, 'update');
+  },
+  deleteCategory: (id): { success: boolean; reason?: string } => {
+    const state = useDataStore.getState();
+    const hasTransactions = state.transactions.some(
+      t => !t.isDeleted && t.entries.some(e => e.accountId === id)
+    );
+    if (hasTransactions)
+      return { success: false, reason: 'This category is referenced by existing transactions.' };
+    const hasBudgets = state.budgets.some(b => !b.isDeleted && b.categoryId === id);
+    if (hasBudgets)
+      return {
+        success: false,
+        reason: 'This category has a budget assigned. Remove the budget first.',
+      };
+
+    const t = now();
+    set(s => ({
+      categories: s.categories.map(c =>
+        c.id === id ? { ...c, isDeleted: true, updatedAt: t } : c
+      ),
+    }));
+    const updated = useDataStore.getState().categories.find(c => c.id === id);
+    if (updated) put('categories', updated);
+    markDirty('category', id, 'update');
+    return { success: true };
+  },
+
+  // Transactions
+  addTransaction: params => {
+    const { date, uiType, amount, accountId, targetId, methodId, note, tags } = params;
+    const entries = LedgerEngine.createEntries({ type: uiType, amount, accountId, targetId });
+    const id = uuid();
+    const t = now();
+    const txn = {
+      id,
+      groupId: uuid(),
+      date,
+      amount,
+      entries,
+      uiType,
+      methodId,
+      note,
+      tags,
+      isDeleted: false,
+      createdAt: t,
+      updatedAt: t,
+    };
+
+    set(state => ({
+      transactions: [txn, ...state.transactions],
+    }));
+    put('transactions', txn);
+    markDirty('transaction', id, 'create');
+  },
+
+  updateTransaction: (id, patch) => {
+    set(state => {
+      const next = state.transactions.map(t =>
+        t.id === id ? { ...t, ...patch, updatedAt: now() } : t
+      );
+      const updated = next.find(x => x.id === id);
+      if (updated) put('transactions', updated);
+      return { transactions: next };
+    });
+    markDirty('transaction', id, 'update');
+  },
+  deleteTransaction: id => {
+    set(state => {
+      const next = state.transactions.map(t =>
+        t.id === id ? { ...t, isDeleted: true, updatedAt: now() } : t
+      );
+      const updated = next.find(x => x.id === id);
+      if (updated) put('transactions', updated);
+      return { transactions: next };
+    });
+    markDirty('transaction', id, 'update');
+  },
+
+  // Budgets
+  updateBudget: (categoryId, period, amount) => {
+    set(state => {
+      const existingIdx = state.budgets.findIndex(
+        b => b.categoryId === categoryId && b.period === period && !b.isDeleted
+      );
+      const t = now();
+      if (existingIdx >= 0) {
+        const next = [...state.budgets];
+        next[existingIdx] = { ...next[existingIdx], amount, updatedAt: t };
+        put('budgets', next[existingIdx]);
+        markDirty('budget', next[existingIdx].id, 'update');
+        return { budgets: next };
       }
-      if (!token) {
-        set({ isCloudInitialized: false });
+      const id = uuid();
+      const next = { id, categoryId, period, amount, isDeleted: false, createdAt: t, updatedAt: t };
+      put('budgets', next);
+      markDirty('budget', id, 'create');
+      return { budgets: [...state.budgets, next] };
+    });
+  },
+
+  // Settings
+  updateSettings: patch => {
+    set(state => {
+      const nextSettings = { ...state.settings, ...patch };
+
+      // If currency or locale changes, recalculate and persist the symbol
+      const currencyChanged = patch.currency && patch.currency !== state.settings.currency;
+      const localeChanged =
+        patch.numberLocale && patch.numberLocale !== state.settings.numberLocale;
+
+      if (currencyChanged || localeChanged) {
+        nextSettings.currencySymbol = getCurrencySymbol(
+          nextSettings.currency,
+          nextSettings.numberLocale
+        );
+        putSetting('currencySymbol', nextSettings.currencySymbol);
       }
-    },
-    setUserProfile: (profile) => {
-      set({ userProfile: profile });
-      if (profile) setMeta('userProfile', JSON.stringify(profile));
-      else delMeta('userProfile');
-    },
 
-    // Hydrate from SyncEngine reconciliation
-    hydrateFromSync: (data) => {
-      set((state) => {
-        const nextState: Partial<DataState> = {};
-        if (data.accounts.length > 0) nextState.accounts = data.accounts;
-        if (data.methods.length > 0) nextState.methods = data.methods;
-        if (data.categories.length > 0) nextState.categories = data.categories;
-        if (data.transactions.length > 0) nextState.transactions = data.transactions;
-        if (data.budgets.length > 0) nextState.budgets = data.budgets;
+      for (const [k, v] of Object.entries(patch)) {
+        putSetting(k, String(v));
+      }
+      return { settings: nextSettings };
+    });
+    markDirty('settings', 'settings', 'update');
+  },
+  setAccessToken: (token, expiresAt) => {
+    set(() => ({
+      accessToken: token,
+      tokenExpiresAt: expiresAt || null,
+    }));
+    if (token) {
+      setMeta('accessToken', token);
+      if (expiresAt) setMeta('tokenExpiresAt', String(expiresAt));
+    } else {
+      delMeta('accessToken');
+      delMeta('tokenExpiresAt');
+    }
+    if (!token) {
+      set({ isCloudInitialized: false });
+    }
+  },
+  setUserProfile: profile => {
+    set({ userProfile: profile });
+    if (profile) setMeta('userProfile', JSON.stringify(profile));
+    else delMeta('userProfile');
+  },
 
-        if (Object.keys(data.settings).length > 0) {
-          const current = { ...state.settings };
-          for (const [key, value] of Object.entries(data.settings)) {
-            if (key === 'currency') current.currency = value;
-            else if (key === 'currencySymbol') current.currencySymbol = value;
-            else if (key === 'numberLocale') current.numberLocale = value;
-            else if (key === 'fiscalYearStartMonth') current.fiscalYearStartMonth = Number(value);
-            else if (key === 'dateFormat') current.dateFormat = value;
-            else if (key === 'hasCompletedOnboarding') current.hasCompletedOnboarding = String(value).toLowerCase() === 'true';
-            else if (key === 'lastDailyBackup') current.lastDailyBackup = value;
-            else if (key === 'lastWeeklyBackup') current.lastWeeklyBackup = value;
-            else if (key === 'lastMonthlyBackup') current.lastMonthlyBackup = value;
-            else if (key === 'lastYearlyBackup') current.lastYearlyBackup = value;
-          }
-          nextState.settings = current;
+  // Hydrate from SyncEngine reconciliation
+  hydrateFromSync: data => {
+    set(state => {
+      const nextState: Partial<DataState> = {};
+      if (data.accounts.length > 0) nextState.accounts = data.accounts;
+      if (data.methods.length > 0) nextState.methods = data.methods;
+      if (data.categories.length > 0) nextState.categories = data.categories;
+      if (data.transactions.length > 0) nextState.transactions = data.transactions;
+      if (data.budgets.length > 0) nextState.budgets = data.budgets;
+
+      if (Object.keys(data.settings).length > 0) {
+        const current = { ...state.settings };
+        for (const [key, value] of Object.entries(data.settings)) {
+          if (key === 'currency') current.currency = value;
+          else if (key === 'currencySymbol') current.currencySymbol = value;
+          else if (key === 'numberLocale') current.numberLocale = value;
+          else if (key === 'fiscalYearStartMonth') current.fiscalYearStartMonth = Number(value);
+          else if (key === 'dateFormat') current.dateFormat = value;
+          else if (key === 'hasCompletedOnboarding')
+            current.hasCompletedOnboarding = String(value).toLowerCase() === 'true';
+          else if (key === 'lastDailyBackup') current.lastDailyBackup = value;
+          else if (key === 'lastWeeklyBackup') current.lastWeeklyBackup = value;
+          else if (key === 'lastMonthlyBackup') current.lastMonthlyBackup = value;
+          else if (key === 'lastYearlyBackup') current.lastYearlyBackup = value;
         }
+        nextState.settings = current;
+      }
 
-        nextState.lastSyncedAt = new Date().toISOString();
-        nextState.isCloudInitialized = true;
-        return nextState;
-      });
-    },
-    resetData: () => {
-      ['accounts', 'methods', 'categories', 'transactions', 'budgets', 'settings', 'meta', 'sync_queue', 'remote_snapshot'].forEach(s => clearStore(s as any));
-      
-      set(() => ({
-        accounts: [],
-        methods: [],
-        categories: [],
-        transactions: [],
-        budgets: [],
-        settings: defaultSettings,
-        spreadsheetId: null,
-        lastSyncedAt: null,
-        syncStatus: 'idle',
-        pendingCount: 0,
-        lastSyncError: undefined,
-      }));
-    },
-  })
-);
+      nextState.lastSyncedAt = new Date().toISOString();
+      nextState.isCloudInitialized = true;
+      return nextState;
+    });
+  },
+  resetData: () => {
+    [
+      'accounts',
+      'methods',
+      'categories',
+      'transactions',
+      'budgets',
+      'settings',
+      'meta',
+      'sync_queue',
+      'remote_snapshot',
+    ].forEach(s => clearStore(s as any));
+
+    set(() => ({
+      accounts: [],
+      methods: [],
+      categories: [],
+      transactions: [],
+      budgets: [],
+      settings: defaultSettings,
+      spreadsheetId: null,
+      lastSyncedAt: null,
+      syncStatus: 'idle',
+      pendingCount: 0,
+      lastSyncError: undefined,
+    }));
+  },
+}));
 // Expose store for debugging
 if (import.meta.env.DEV) {
   (window as any).useDataStore = useDataStore;

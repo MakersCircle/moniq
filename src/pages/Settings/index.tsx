@@ -1,4 +1,19 @@
-import { LogOut, RefreshCw, Smartphone, Palette, Globe, Target, Zap, AlertCircle, Cloud, CloudOff, Trash2, AlertTriangle, ShieldCheck, History } from 'lucide-react';
+import {
+  LogOut,
+  RefreshCw,
+  Smartphone,
+  Palette,
+  Globe,
+  Target,
+  Zap,
+  AlertCircle,
+  Cloud,
+  CloudOff,
+  Trash2,
+  AlertTriangle,
+  ShieldCheck,
+  History,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { googleLogout } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
@@ -9,27 +24,34 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-} from '@/components/ui/dialog';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 import { getAllCurrencies, COMMON_LOCALES, detectLocalSettings } from '@/constants/currencies';
 import { formatCurrency } from '@/utils/format';
 
 export default function SettingsIndex() {
-  const { 
-    settings, updateSettings, 
-    userProfile, lastSyncedAt, syncStatus, pendingCount, lastSyncError,
-    setAccessToken, setUserProfile, setSpreadsheetId, resetData,
-    accessToken, spreadsheetId, hydrateFromSync
+  const {
+    settings,
+    updateSettings,
+    userProfile,
+    lastSyncedAt,
+    syncStatus,
+    pendingCount,
+    lastSyncError,
+    setAccessToken,
+    setUserProfile,
+    setSpreadsheetId,
+    resetData,
+    accessToken,
+    spreadsheetId,
+    hydrateFromSync,
   } = useDataStore();
 
   const navigate = useNavigate();
@@ -62,7 +84,7 @@ export default function SettingsIndex() {
 
   const handleHardReset = async () => {
     if (resetConfirmText !== 'RESET') return;
-    
+
     setIsResetting(true);
     try {
       const engine = SyncEngine.getInstance();
@@ -77,10 +99,18 @@ export default function SettingsIndex() {
     }
   };
 
-  const currencies = useMemo(() => getAllCurrencies(settings.numberLocale), [settings.numberLocale]);
+  const currencies = useMemo(
+    () => getAllCurrencies(settings.numberLocale),
+    [settings.numberLocale]
+  );
 
-  const currentCurrency = useMemo(() => 
-    currencies.find(c => c.code === settings.currency) || { code: settings.currency, name: settings.currency, symbol: settings.currencySymbol },
+  const currentCurrency = useMemo(
+    () =>
+      currencies.find(c => c.code === settings.currency) || {
+        code: settings.currency,
+        name: settings.currency,
+        symbol: settings.currencySymbol,
+      },
     [currencies, settings.currency, settings.currencySymbol]
   );
 
@@ -89,179 +119,219 @@ export default function SettingsIndex() {
       <div className="space-y-10">
         <div className="sticky top-0 bg-background/95 backdrop-blur-md z-40 pb-4 pt-2 -mx-1 px-1">
           <h2 className="text-xl font-bold tracking-tight">General</h2>
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Preferences & Sync</p>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+            Preferences & Sync
+          </p>
         </div>
         {/* Profile */}
         <section className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">Profile</h3>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
+            Profile
+          </h3>
           <Card className="border-border shadow-sm overflow-hidden">
-             <CardContent className="p-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <img 
-                    src={userProfile?.picture} 
-                    alt="Profile" 
-                    className="h-14 w-14 rounded-xl ring-2 ring-primary/10 object-cover border border-border"
-                  />
-                  <div>
-                    <p className="text-base font-bold tracking-tight">{userProfile?.name}</p>
-                    <p className="text-xs text-muted-foreground">{userProfile?.email}</p>
-                  </div>
+            <CardContent className="p-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <img
+                  src={userProfile?.picture}
+                  alt="Profile"
+                  className="h-14 w-14 rounded-xl ring-2 ring-primary/10 object-cover border border-border"
+                />
+                <div>
+                  <p className="text-base font-bold tracking-tight">{userProfile?.name}</p>
+                  <p className="text-xs text-muted-foreground">{userProfile?.email}</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleLogout} className="text-destructive hover:bg-destructive/10 border-destructive/20 h-9 gap-2">
-                  <LogOut className="h-4 w-4" />
-                  Sign out
-                </Button>
-             </CardContent>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                className="text-destructive hover:bg-destructive/10 border-destructive/20 h-9 gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </Button>
+            </CardContent>
           </Card>
         </section>
 
         {/* Cloud Persistence */}
         <section className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">Cloud Sync</h3>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
+            Cloud Sync
+          </h3>
           <Card className="border-border shadow-sm">
-             <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className={cn(
-                      "h-10 w-10 rounded-full flex items-center justify-center",
-                      syncStatus === 'idle' && "bg-emerald-500/10 text-emerald-500",
-                      syncStatus === 'syncing' && "bg-blue-500/10 text-blue-500",
-                      syncStatus === 'pulling' && "bg-blue-500/10 text-blue-500",
-                      syncStatus === 'error' && "bg-red-500/10 text-red-500",
-                      syncStatus === 'offline' && "bg-zinc-500/10 text-zinc-500",
-                    )}>
-                      {syncStatus === 'error' ? (
-                        <AlertCircle className="h-5 w-5" />
-                      ) : syncStatus === 'offline' ? (
-                        <CloudOff className="h-5 w-5" />
-                      ) : (
-                        <RefreshCw className={cn("h-5 w-5", (syncStatus === 'syncing' || syncStatus === 'pulling') && "animate-spin")} />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold tracking-tight">Google Sheets Database</p>
-                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                         {syncStatus === 'syncing' ? 'Syncing changes…' 
-                           : syncStatus === 'pulling' ? 'Pulling from sheets…'
-                           : syncStatus === 'error' ? 'Sync error'
-                           : syncStatus === 'offline' ? 'Offline'
-                           : lastSyncedAt ? `Last synced ${new Date(lastSyncedAt).toLocaleString()}` : 'No sync recorded'}
-                      </p>
-                      {pendingCount > 0 && syncStatus === 'idle' && (
-                        <p className="text-[10px] text-amber-500 font-medium mt-0.5">{pendingCount} change{pendingCount > 1 ? 's' : ''} pending</p>
-                      )}
-                    </div>
-                  </div>
-                  <Button 
-                    onClick={handleManualSync}
-                    disabled={syncStatus === 'syncing' || syncStatus === 'pulling'}
-                    size="sm"
-                    className="h-9 px-6 font-bold uppercase text-[10px] tracking-widest"
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={cn(
+                      'h-10 w-10 rounded-full flex items-center justify-center',
+                      syncStatus === 'idle' && 'bg-emerald-500/10 text-emerald-500',
+                      syncStatus === 'syncing' && 'bg-blue-500/10 text-blue-500',
+                      syncStatus === 'pulling' && 'bg-blue-500/10 text-blue-500',
+                      syncStatus === 'error' && 'bg-red-500/10 text-red-500',
+                      syncStatus === 'offline' && 'bg-zinc-500/10 text-zinc-500'
+                    )}
                   >
-                    Sync Now
-                  </Button>
-                </div>
-                {lastSyncError && syncStatus === 'error' && (
-                  <div className="p-3 bg-red-500/5 rounded-lg border border-red-500/20 mb-4">
-                    <p className="text-[10px] text-red-400 leading-relaxed font-medium">{lastSyncError}</p>
+                    {syncStatus === 'error' ? (
+                      <AlertCircle className="h-5 w-5" />
+                    ) : syncStatus === 'offline' ? (
+                      <CloudOff className="h-5 w-5" />
+                    ) : (
+                      <RefreshCw
+                        className={cn(
+                          'h-5 w-5',
+                          (syncStatus === 'syncing' || syncStatus === 'pulling') && 'animate-spin'
+                        )}
+                      />
+                    )}
                   </div>
-                )}
-                <div className="p-3 bg-accent/30 rounded-lg border border-border/50">
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">
-                    Your financial data is 100% private. Moniq does not have a central database; instead, all your transactions and settings are securely backed up to a dedicated spreadsheet inside your personal Google Drive.
+                  <div>
+                    <p className="text-sm font-bold tracking-tight">Google Sheets Database</p>
+                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                      {syncStatus === 'syncing'
+                        ? 'Syncing changes…'
+                        : syncStatus === 'pulling'
+                          ? 'Pulling from sheets…'
+                          : syncStatus === 'error'
+                            ? 'Sync error'
+                            : syncStatus === 'offline'
+                              ? 'Offline'
+                              : lastSyncedAt
+                                ? `Last synced ${new Date(lastSyncedAt).toLocaleString()}`
+                                : 'No sync recorded'}
+                    </p>
+                    {pendingCount > 0 && syncStatus === 'idle' && (
+                      <p className="text-[10px] text-amber-500 font-medium mt-0.5">
+                        {pendingCount} change{pendingCount > 1 ? 's' : ''} pending
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  onClick={handleManualSync}
+                  disabled={syncStatus === 'syncing' || syncStatus === 'pulling'}
+                  size="sm"
+                  className="h-9 px-6 font-bold uppercase text-[10px] tracking-widest"
+                >
+                  Sync Now
+                </Button>
+              </div>
+              {lastSyncError && syncStatus === 'error' && (
+                <div className="p-3 bg-red-500/5 rounded-lg border border-red-500/20 mb-4">
+                  <p className="text-[10px] text-red-400 leading-relaxed font-medium">
+                    {lastSyncError}
                   </p>
                 </div>
-             </CardContent>
+              )}
+              <div className="p-3 bg-accent/30 rounded-lg border border-border/50">
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  Your financial data is 100% private. Moniq does not have a central database;
+                  instead, all your transactions and settings are securely backed up to a dedicated
+                  spreadsheet inside your personal Google Drive.
+                </p>
+              </div>
+            </CardContent>
           </Card>
         </section>
 
         {/* Backups */}
         <section className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">Automated Backups</h3>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
+            Automated Backups
+          </h3>
           <Card className="border-border shadow-sm">
-             <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                      <ShieldCheck className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold tracking-tight">Tiered Retention System</p>
-                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                        Snapshots stored in "Moniq Backups" folder
-                      </p>
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold tracking-tight">Tiered Retention System</p>
+                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                      Snapshots stored in "Moniq Backups" folder
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={async () => {
+                    setIsBackingUp(true);
+                    try {
+                      const { BackupManager } = await import('@/sync/BackupManager');
+                      await BackupManager.getInstance().runBackupCycle();
+                    } finally {
+                      setIsBackingUp(false);
+                    }
+                  }}
+                  disabled={isBackingUp}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-4 font-bold uppercase text-[9px] tracking-widest min-w-[100px]"
+                >
+                  {isBackingUp ? <RefreshCw className="h-3 w-3 animate-spin mr-2" /> : null}
+                  {isBackingUp ? 'Backing up...' : 'Backup Now'}
+                </Button>
+              </div>
+
+              <div className="p-3 bg-accent/30 rounded-lg border border-border/50 mb-6">
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  Moniq automatically creates snapshots of your data at specific intervals. Clicking{' '}
+                  <strong>Backup Now</strong> manually triggers this cycle—if a scheduled backup is
+                  due today, it will be created immediately. This ensures your financial history is
+                  preserved across multiple time-horizons even if the automated sync hasn't run yet.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {[
+                  { label: 'Daily', date: settings.lastDailyBackup, limit: '7 Days' },
+                  { label: 'Weekly', date: settings.lastWeeklyBackup, limit: '5 Weeks' },
+                  { label: 'Monthly', date: settings.lastMonthlyBackup, limit: '12 Months' },
+                  { label: 'Yearly', date: settings.lastYearlyBackup, limit: 'Infinite' },
+                ].map(tier => (
+                  <div
+                    key={tier.label}
+                    className="p-3 bg-accent/30 rounded-xl border border-border/50 flex flex-col gap-1"
+                  >
+                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">
+                      {tier.label}
+                    </p>
+                    <p className="text-xs font-bold truncate">{tier.date || 'Never'}</p>
+                    <div className="flex items-center gap-1 mt-1 text-[8px] text-muted-foreground/70 font-medium uppercase tracking-tighter">
+                      <History className="h-2 w-2" />
+                      <span>Retain: {tier.limit}</span>
                     </div>
                   </div>
-                  <Button 
-                    onClick={async () => {
-                      setIsBackingUp(true);
-                      try {
-                        const { BackupManager } = await import('@/sync/BackupManager');
-                        await BackupManager.getInstance().runBackupCycle();
-                      } finally {
-                        setIsBackingUp(false);
-                      }
-                    }}
-                    disabled={isBackingUp}
-                    variant="outline"
-                    size="sm"
-                    className="h-8 px-4 font-bold uppercase text-[9px] tracking-widest min-w-[100px]"
-                  >
-                    {isBackingUp ? (
-                      <RefreshCw className="h-3 w-3 animate-spin mr-2" />
-                    ) : null}
-                    {isBackingUp ? 'Backing up...' : 'Backup Now'}
-                  </Button>
-                </div>
-
-                <div className="p-3 bg-accent/30 rounded-lg border border-border/50 mb-6">
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">
-                    Moniq automatically creates snapshots of your data at specific intervals. Clicking <strong>Backup Now</strong> manually triggers this cycle—if a scheduled backup is due today, it will be created immediately. This ensures your financial history is preserved across multiple time-horizons even if the automated sync hasn't run yet.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {[
-                    { label: 'Daily', date: settings.lastDailyBackup, limit: '7 Days' },
-                    { label: 'Weekly', date: settings.lastWeeklyBackup, limit: '5 Weeks' },
-                    { label: 'Monthly', date: settings.lastMonthlyBackup, limit: '12 Months' },
-                    { label: 'Yearly', date: settings.lastYearlyBackup, limit: 'Infinite' },
-                  ].map((tier) => (
-                    <div key={tier.label} className="p-3 bg-accent/30 rounded-xl border border-border/50 flex flex-col gap-1">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{tier.label}</p>
-                      <p className="text-xs font-bold truncate">
-                        {tier.date || 'Never'}
-                      </p>
-                      <div className="flex items-center gap-1 mt-1 text-[8px] text-muted-foreground/70 font-medium uppercase tracking-tighter">
-                        <History className="h-2 w-2" />
-                        <span>Retain: {tier.limit}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-             </CardContent>
+                ))}
+              </div>
+            </CardContent>
           </Card>
         </section>
 
         {/* Regional Preferences */}
         <section className="space-y-4">
           <div className="px-1">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Regional Preferences</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              Regional Preferences
+            </h3>
           </div>
           <Card className="border-border shadow-sm">
             <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">Currency</Label>
-                  <Select 
-                    value={settings.currency} 
-                    onValueChange={(val) => updateSettings({ currency: val })}
+                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">
+                    Currency
+                  </Label>
+                  <Select
+                    value={settings.currency}
+                    onValueChange={val => updateSettings({ currency: val })}
                   >
                     <SelectTrigger className="h-10 border-border/50 focus:ring-primary/20">
                       <SelectValue placeholder="Select currency" />
                     </SelectTrigger>
                     <SelectContent>
-                      {currencies.map((c) => (
+                      {currencies.map(c => (
                         <SelectItem key={c.code} value={c.code}>
                           <span className="font-medium">{c.code}</span>
                           <span className="mx-2 text-muted-foreground/50">—</span>
@@ -278,16 +348,18 @@ export default function SettingsIndex() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">Number Format (Separators)</Label>
-                  <Select 
-                    value={settings.numberLocale} 
-                    onValueChange={(val) => updateSettings({ numberLocale: val })}
+                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">
+                    Number Format (Separators)
+                  </Label>
+                  <Select
+                    value={settings.numberLocale}
+                    onValueChange={val => updateSettings({ numberLocale: val })}
                   >
                     <SelectTrigger className="h-10 border-border/50 focus:ring-primary/20">
                       <SelectValue placeholder="Select format" />
                     </SelectTrigger>
                     <SelectContent>
-                      {COMMON_LOCALES.map((l) => (
+                      {COMMON_LOCALES.map(l => (
                         <SelectItem key={l.code} value={l.code}>
                           {l.name}
                         </SelectItem>
@@ -301,11 +373,15 @@ export default function SettingsIndex() {
               </div>
 
               <div className="pt-4 border-t border-border flex items-center justify-between opacity-80">
-                 <div className="flex items-center gap-2 text-muted-foreground">
-                    <Globe className="h-4 w-4" />
-                    <span className="text-xs font-medium uppercase tracking-wider text-[10px]">Locale Info</span>
-                 </div>
-                 <span className="text-xs font-bold text-primary bg-primary/5 px-2 py-0.5 rounded text-[10px]">{settings.numberLocale}</span>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Globe className="h-4 w-4" />
+                  <span className="text-xs font-medium uppercase tracking-wider text-[10px]">
+                    Locale Info
+                  </span>
+                </div>
+                <span className="text-xs font-bold text-primary bg-primary/5 px-2 py-0.5 rounded text-[10px]">
+                  {settings.numberLocale}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -313,30 +389,33 @@ export default function SettingsIndex() {
 
         {/* Danger Zone */}
         <section className="space-y-4 pt-4">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-destructive/70 px-1">Danger Zone</h3>
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-destructive/70 px-1">
+            Danger Zone
+          </h3>
           <Card className="border-destructive/20 bg-destructive/5 shadow-sm">
-             <CardContent className="p-6">
-                <div className="flex items-center justify-between gap-6">
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-destructive">Reset All Data</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed max-w-md">
-                      Permanently wipe all transactions, accounts, and categories from this device and your Google Sheet. This action cannot be undone.
-                    </p>
-                  </div>
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    onClick={() => {
-                      setResetConfirmText('');
-                      setResetModalOpen(true);
-                    }}
-                    className="h-9 px-4 shrink-0 shadow-sm"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Reset Data
-                  </Button>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between gap-6">
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-destructive">Reset All Data</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed max-w-md">
+                    Permanently wipe all transactions, accounts, and categories from this device and
+                    your Google Sheet. This action cannot be undone.
+                  </p>
                 </div>
-             </CardContent>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    setResetConfirmText('');
+                    setResetModalOpen(true);
+                  }}
+                  className="h-9 px-4 shrink-0 shadow-sm"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Reset Data
+                </Button>
+              </div>
+            </CardContent>
           </Card>
         </section>
       </div>
@@ -357,42 +436,52 @@ export default function SettingsIndex() {
 
             <div className="space-y-4 rounded-xl bg-muted/50 p-4 border border-border">
               <ul className="text-xs space-y-2 text-muted-foreground list-disc list-inside">
-                <li>All <span className="text-foreground font-medium">local data</span> will be wiped.</li>
-                <li>All data in your <span className="text-foreground font-medium">Google Sheet</span> will be cleared.</li>
-                <li>The app will return to the <span className="text-foreground font-medium">onboarding</span> state.</li>
+                <li>
+                  All <span className="text-foreground font-medium">local data</span> will be wiped.
+                </li>
+                <li>
+                  All data in your <span className="text-foreground font-medium">Google Sheet</span>{' '}
+                  will be cleared.
+                </li>
+                <li>
+                  The app will return to the{' '}
+                  <span className="text-foreground font-medium">onboarding</span> state.
+                </li>
               </ul>
             </div>
 
             <div className="space-y-3">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Type <span className="text-destructive underline decoration-2 underline-offset-4">RESET</span> to confirm</Label>
-              <Input 
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Type{' '}
+                <span className="text-destructive underline decoration-2 underline-offset-4">
+                  RESET
+                </span>{' '}
+                to confirm
+              </Label>
+              <Input
                 value={resetConfirmText}
-                onChange={(e) => setResetConfirmText(e.target.value.toUpperCase())}
+                onChange={e => setResetConfirmText(e.target.value.toUpperCase())}
                 placeholder="Type RESET here..."
                 className="h-11 border-border focus-visible:ring-destructive"
               />
             </div>
 
             <div className="flex gap-3">
-              <Button 
-                variant="outline" 
-                className="flex-1 h-11 font-medium" 
+              <Button
+                variant="outline"
+                className="flex-1 h-11 font-medium"
                 onClick={() => setResetModalOpen(false)}
                 disabled={isResetting}
               >
                 Cancel
               </Button>
-              <Button 
-                variant="destructive" 
-                className="flex-1 h-11 font-bold shadow-lg shadow-destructive/20" 
+              <Button
+                variant="destructive"
+                className="flex-1 h-11 font-bold shadow-lg shadow-destructive/20"
                 disabled={resetConfirmText !== 'RESET' || isResetting}
                 onClick={handleHardReset}
               >
-                {isResetting ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Delete Everything"
-                )}
+                {isResetting ? <RefreshCw className="h-4 w-4 animate-spin" /> : 'Delete Everything'}
               </Button>
             </div>
           </div>

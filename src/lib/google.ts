@@ -29,9 +29,9 @@ export class GoogleService {
     if (this.isRefreshing && this.refreshPromise) return this.refreshPromise;
 
     this.isRefreshing = true;
-    this.refreshPromise = new Promise((resolve) => {
+    this.refreshPromise = new Promise(resolve => {
       const { VITE_GOOGLE_CLIENT_ID } = import.meta.env;
-      
+
       if (!window.google?.accounts?.oauth2) {
         console.error('[GoogleService] GSI library not loaded');
         this.isRefreshing = false;
@@ -40,7 +40,8 @@ export class GoogleService {
 
       const client = window.google.accounts.oauth2.initTokenClient({
         client_id: VITE_GOOGLE_CLIENT_ID,
-        scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+        scope:
+          'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
         prompt: 'none',
         callback: (response: any) => {
           this.isRefreshing = false;
@@ -73,10 +74,10 @@ export class GoogleService {
    */
   async fetch(url: string, options: RequestInit = {}): Promise<Response> {
     const { accessToken: token, tokenExpiresAt: expiresAt } = useDataStore.getState();
-    
+
     // Refresh if token is missing OR expiring in less than 5 minutes
     const fiveMinutes = 5 * 60 * 1000;
-    const isAboutToExpire = expiresAt && (Date.now() > (expiresAt - fiveMinutes));
+    const isAboutToExpire = expiresAt && Date.now() > expiresAt - fiveMinutes;
 
     let currentToken = token;
 
@@ -86,30 +87,30 @@ export class GoogleService {
       if (!currentToken) throw new Error('Unauthenticated: No access token found');
     }
 
-    let response = await fetch(url, { 
-      ...options, 
+    let response = await fetch(url, {
+      ...options,
       headers: {
         ...options.headers,
         Authorization: `Bearer ${currentToken}`,
         'Content-Type': 'application/json',
-      }
+      },
     });
 
     // Handle 401 Unauthorized (fallback reactive refresh)
     if (response.status === 401) {
       console.warn('[GoogleService] 401 detected, attempting silent refresh...');
       const newToken = await this.silentRefresh();
-      
+
       if (newToken) {
         // Retry the request once with the new token
         console.log('[GoogleService] Retrying request with new token');
-        response = await fetch(url, { 
-          ...options, 
+        response = await fetch(url, {
+          ...options,
           headers: {
             ...options.headers,
             Authorization: `Bearer ${newToken}`,
             'Content-Type': 'application/json',
-          }
+          },
         });
       } else {
         // Refresh failed, user needs to log in manually
@@ -141,7 +142,9 @@ export class GoogleService {
 
   /** Find a folder by name. Returns folder ID or null. */
   async findFolder(name: string): Promise<string | null> {
-    const q = encodeURIComponent(`name = '${name}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`);
+    const q = encodeURIComponent(
+      `name = '${name}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`
+    );
     const res = await this.driveRequest(`/files?q=${q}&fields=files(id)`);
     if (!res.ok) return null;
     const data = await res.json();
@@ -183,7 +186,9 @@ export class GoogleService {
       q += ` and name contains '${prefix}'`;
     }
     const encodedQ = encodeURIComponent(q);
-    const res = await this.driveRequest(`/files?q=${encodedQ}&fields=files(id, name, createdTime)&orderBy=createdTime desc`);
+    const res = await this.driveRequest(
+      `/files?q=${encodedQ}&fields=files(id, name, createdTime)&orderBy=createdTime desc`
+    );
     if (!res.ok) throw new Error(`Failed to list files: ${res.statusText}`);
     const data = await res.json();
     return data.files || [];
