@@ -9,5 +9,21 @@ interface ImportMeta {
 }
 
 interface Window {
-  google: any;
+  google?: {
+    accounts?: {
+      oauth2: {
+        initTokenClient: (config: {
+          client_id: string;
+          scope: string;
+          prompt: string;
+          callback: (response: import('./lib/google').GoogleOAuthResponse) => void;
+        }) => { requestAccessToken: () => void };
+      };
+    };
+  };
+  openTransactionModal: {
+    openNew: () => void;
+    openEdit: (data: import('./types').Transaction) => void;
+    openDuplicate: (data: import('./types').Transaction) => void;
+  };
 }

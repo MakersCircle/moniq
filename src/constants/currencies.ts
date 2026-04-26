@@ -4,12 +4,17 @@ export interface CurrencyInfo {
   symbol: string;
 }
 
+/** Extended Intl type for supportedValuesOf — not yet in all TS lib definitions */
+interface IntlWithSupportedValuesOf {
+  supportedValuesOf(key: string): string[];
+}
+
 /**
  * Returns a list of all currencies supported by the browser with their names and symbols.
  */
 export function getAllCurrencies(locale: string = 'en-US'): CurrencyInfo[] {
   try {
-    const codes = (Intl as any).supportedValuesOf('currency') as string[];
+    const codes = (Intl as unknown as IntlWithSupportedValuesOf).supportedValuesOf('currency');
     const displayNames = new Intl.DisplayNames([locale], { type: 'currency' });
 
     return codes.map((code: string) => ({
@@ -17,7 +22,7 @@ export function getAllCurrencies(locale: string = 'en-US'): CurrencyInfo[] {
       name: displayNames.of(code) || code,
       symbol: getCurrencySymbol(code, locale),
     }));
-  } catch (e) {
+  } catch {
     // Fallback for browsers that don't support supportedValuesOf
     return [
       { code: 'USD', name: 'US Dollar', symbol: '$' },
@@ -44,7 +49,7 @@ export function getCurrencySymbol(code: string, locale: string = 'en-US'): strin
         .formatToParts(0)
         .find(p => p.type === 'currency')?.value || code
     );
-  } catch (e) {
+  } catch {
     return code;
   }
 }

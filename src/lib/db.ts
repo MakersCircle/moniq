@@ -28,7 +28,7 @@ interface MoniqDB extends DBSchema {
   sync_queue: { key: string; value: SyncOperation; indexes: { 'by-timestamp': string } };
   remote_snapshot: {
     key: string;
-    value: { id: string; store: string; data: any; checksum: string };
+    value: { id: string; store: string; data: unknown; checksum: string };
   };
   meta: { key: string; value: { key: string; value: string } };
 }
@@ -102,7 +102,7 @@ export async function put<T extends { id: string }>(
   item: T
 ): Promise<void> {
   const db = await getDB();
-  await db.put(storeName, item as any);
+  await db.put(storeName, item as never);
 }
 
 export async function putMany<T extends { id: string }>(
@@ -112,7 +112,7 @@ export async function putMany<T extends { id: string }>(
   const db = await getDB();
   const tx = db.transaction(storeName, 'readwrite');
   for (const item of items) {
-    await tx.store.put(item as any);
+    await tx.store.put(item as never);
   }
   await tx.done;
 }
@@ -156,7 +156,7 @@ export async function clearSyncQueue(): Promise<void> {
 export async function saveRemoteSnapshot(
   id: string,
   store: string,
-  data: any,
+  data: unknown,
   checksum: string
 ): Promise<void> {
   const db = await getDB();
@@ -165,7 +165,7 @@ export async function saveRemoteSnapshot(
 
 export async function getRemoteSnapshot(
   id: string
-): Promise<{ id: string; store: string; data: any; checksum: string } | undefined> {
+): Promise<{ id: string; store: string; data: unknown; checksum: string } | undefined> {
   const db = await getDB();
   return db.get('remote_snapshot', id);
 }

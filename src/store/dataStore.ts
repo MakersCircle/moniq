@@ -14,7 +14,6 @@ import { SyncEngine } from '../sync/SyncEngine';
 import {
   getAll,
   put,
-  del,
   putMany,
   putSetting,
   getAllSettings,
@@ -199,7 +198,9 @@ export const useDataStore = create<DataState>()(set => ({
       let userProfile = null;
       try {
         if (userProfileStr) userProfile = JSON.parse(userProfileStr);
-      } catch {}
+      } catch {
+        // Ignore JSON parse errors for user profile
+      }
 
       const userSettings = { ...defaultSettings };
       if (Object.keys(settings).length > 0) {
@@ -717,7 +718,7 @@ export const useDataStore = create<DataState>()(set => ({
       'meta',
       'sync_queue',
       'remote_snapshot',
-    ].forEach(s => clearStore(s as any));
+    ].forEach(s => clearStore(s as Parameters<typeof clearStore>[0]));
 
     set(() => ({
       accounts: [],
@@ -736,5 +737,5 @@ export const useDataStore = create<DataState>()(set => ({
 }));
 // Expose store for debugging
 if (import.meta.env.DEV) {
-  (window as any).useDataStore = useDataStore;
+  (window as unknown as { useDataStore: typeof useDataStore }).useDataStore = useDataStore;
 }

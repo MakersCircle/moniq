@@ -1,6 +1,14 @@
 import { googleService } from '../lib/google';
 import { SHEET_HEADERS } from './types';
 
+/** Shape of a single sheet entry in Google Sheets spreadsheet metadata */
+interface SpreadsheetSheetMeta {
+  properties: {
+    title: string;
+    sheetId: number;
+  };
+}
+
 /**
  * Low-level Google Sheets API wrapper.
  * Handles reading/writing specific rows and ranges — replaces the old full-overwrite approach.
@@ -157,8 +165,8 @@ export class SheetClient {
 
     if (!metaRes.ok) throw new Error('Failed to fetch spreadsheet metadata');
 
-    const metaData = await metaRes.json();
-    const existing = new Set(metaData.sheets.map((s: any) => s.properties.title));
+    const metaData: { sheets: SpreadsheetSheetMeta[] } = await metaRes.json();
+    const existing = new Set(metaData.sheets.map(s => s.properties.title));
 
     const missing = requiredSheets.filter(name => !existing.has(name));
     if (missing.length === 0) return;

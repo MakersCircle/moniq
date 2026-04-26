@@ -18,6 +18,7 @@ import { googleService } from './lib/google';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 import AddTransactionModal from './components/Transactions/AddTransactionModal';
+import type { Transaction } from './types';
 
 export default function App() {
   const accessToken = useDataStore(s => s.accessToken);
@@ -35,13 +36,13 @@ export default function App() {
 
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
-    initialData?: any;
+    initialData?: Transaction;
     isDuplicate?: boolean;
   }>({ isOpen: false });
 
   const openNew = () => setModalState({ isOpen: true });
-  const openEdit = (data: any) => setModalState({ isOpen: true, initialData: data });
-  const openDuplicate = (data: any) =>
+  const openEdit = (data: Transaction) => setModalState({ isOpen: true, initialData: data });
+  const openDuplicate = (data: Transaction) =>
     setModalState({ isOpen: true, initialData: data, isDuplicate: true });
 
   // 1. Initial hydration from IndexedDB (structured)
@@ -105,7 +106,7 @@ export default function App() {
 
         // Cleanup subscription on unmount
         return () => unsubscribe();
-      } catch (err: any) {
+      } catch (err) {
         console.error('Failed to initialize cloud database:', err);
         setCloudInitialized(true);
         // Unauthorized/Expired handled by googleService clearing the token
@@ -125,9 +126,11 @@ export default function App() {
 
   const hasCompletedOnboarding = settings.hasCompletedOnboarding;
 
-  if (accessToken) {
-    (window as any).openTransactionModal = { openNew, openEdit, openDuplicate };
-  }
+  useEffect(() => {
+    if (accessToken) {
+      window.openTransactionModal = { openNew, openEdit, openDuplicate };
+    }
+  }, [accessToken, openNew, openEdit, openDuplicate]);
 
   if (!isHydrated || (accessToken && !isCloudInitialized)) {
     const message = !isHydrated

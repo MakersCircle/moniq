@@ -4,6 +4,27 @@ const SHEETS_API_URL = 'https://sheets.googleapis.com/v4';
 const DRIVE_API_URL = 'https://www.googleapis.com/drive/v3';
 const USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo';
 
+/** Shape of the Google OAuth token response callback */
+interface GoogleOAuthResponse {
+  access_token?: string;
+  expires_in?: number | string;
+  error?: string;
+}
+
+/** Shape of a file returned by the Google Drive Files API */
+export interface GoogleDriveFile {
+  id: string;
+  name: string;
+  createdTime?: string;
+}
+
+/** Shape of the Google UserInfo endpoint response */
+export interface GoogleUserProfile {
+  name: string;
+  email: string;
+  picture: string;
+}
+
 /**
  * Unified Google API Client & Auth Service
  */
@@ -43,16 +64,19 @@ export class GoogleService {
         scope:
           'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
         prompt: 'none',
-        callback: (response: any) => {
+        callback: (response: GoogleOAuthResponse) => {
           this.isRefreshing = false;
           if (response.access_token) {
             const expiresAt = Date.now() + (Number(response.expires_in) || 3600) * 1000;
-            useDataStore.getState().setAccessToken(response.access_token, expiresAt);
+            useDataStore.getState().setAccessToken(response.access_token!, expiresAt);
             resolve(response.access_token);
           } else {
             console.warn('[GoogleService] Silent refresh failed:', response.error);
             // If it's a "user_logged_out" or similar, we should clear the session
-            if (['user_logged_out', 'immediate_failed'].includes(response.error)) {
+            if (
+              response.error &&
+              ['user_logged_out', 'immediate_failed'].includes(response.error)
+            ) {
               useDataStore.getState().setAccessToken(null);
             }
             resolve(null);
@@ -124,7 +148,7 @@ export class GoogleService {
 
   // ── Specific API Helpers (Consolidated) ────────────────────────
 
-  async fetchUserProfile(): Promise<any> {
+  async fetchUserProfile(): Promise<GoogleUserProfile> {
     const res = await this.fetch(USERINFO_URL);
     if (!res.ok) throw new Error('Failed to fetch user profile');
     return res.json();
@@ -180,7 +204,7 @@ export class GoogleService {
   }
 
   /** List files in a folder matching a prefix. */
-  async listFiles(folderId: string, prefix?: string): Promise<any[]> {
+  async listFiles(folderId: string, prefix?: string): Promise<GoogleDriveFile[]> {
     let q = `'${folderId}' in parents and trashed = false`;
     if (prefix) {
       q += ` and name contains '${prefix}'`;

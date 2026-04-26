@@ -7,6 +7,9 @@ import type {
   SyncOperation,
   SyncEntityType,
 } from '../types';
+
+/** Union of all entity types stored in the sync engine */
+type AnyEntity = Account | PaymentMethod | Category | Transaction | Budget;
 import { SheetClient } from './SheetClient';
 import { reconcile, computeChecksum } from './ConflictResolver';
 import {
@@ -33,9 +36,9 @@ import {
  * Converts a Google Sheets serial date (number of days since 1899-12-30)
  * back into an ISO YYYY-MM-DD date string.
  */
-function unserialDate(val: any): string {
+function unserialDate(val: string | unknown): string {
   if (!val || typeof val !== 'string' || !/^\d+(\.\d+)?$/.test(val.trim())) {
-    return val || '';
+    return typeof val === 'string' ? val : '';
   }
 
   const serial = parseFloat(val.trim());
@@ -512,9 +515,10 @@ export class SyncEngine {
         budgets: budResult.merged,
         settings: remoteSettings,
       };
-    } catch (err: any) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Initialization failed';
       console.error('[SyncEngine] Initialization failed:', err);
-      this.setStatus('error', err.message || 'Initialization failed');
+      this.setStatus('error', message);
       return null;
     }
   }
@@ -643,9 +647,10 @@ export class SyncEngine {
         .catch(err => {
           console.warn('[SyncEngine] Triggering backup failed:', err);
         });
-    } catch (err: any) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Sync failed';
       console.error('[SyncEngine] Flush failed:', err);
-      this.setStatus('error', err.message || 'Sync failed');
+      this.setStatus('error', message);
       this.scheduleRetry();
     }
   }
@@ -668,25 +673,27 @@ export class SyncEngine {
     const updateBatch: { rowIndex: number; data: string[] }[] = [];
 
     const { useDataStore } = await import('../store/dataStore');
-    const state = useDataStore.getState() as any;
-    const entityArray = state[storeName] || [];
+    const state = useDataStore.getState();
+    // Access entity array by store name via a typed lookup
+    type EntityArrayKey = 'transactions' | 'accounts' | 'methods' | 'categories' | 'budgets';
+    const entityArray = (state[storeName as EntityArrayKey] as AnyEntity[]) || [];
 
     for (const op of ops) {
       if (op.action === 'create') {
         // Read entity from Zustand state
-        const entity = entityArray.find((e: any) => e.id === op.entityId);
+        const entity = entityArray.find((e: AnyEntity) => e.id === op.entityId);
         if (!entity) continue;
 
-        const row = serializeFn(entity as any);
+        const row = serializeFn(entity);
         // Set checksum
         row[row.length - 1] = checksumFromRow(row);
         newRows.push(row);
       } else if (op.action === 'update' || op.action === 'delete') {
         const existingRowIdx = rowIndex.get(op.entityId);
-        const entity = entityArray.find((e: any) => e.id === op.entityId);
+        const entity = entityArray.find((e: AnyEntity) => e.id === op.entityId);
         if (!entity) continue;
 
-        const row = serializeFn(entity as any);
+        const row = serializeFn(entity);
         row[row.length - 1] = checksumFromRow(row);
 
         if (existingRowIdx) {
@@ -748,9 +755,10 @@ export class SyncEngine {
       state.resetData();
 
       this.setStatus('idle');
-    } catch (err: any) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Hard reset failed';
       console.error('Hard Reset failed:', err);
-      this.setStatus('error', err.message);
+      this.setStatus('error', message);
       throw err;
     }
   }
@@ -819,18 +827,18 @@ export class SyncEngine {
     return Array.from(latest.values());
   }
 
-  private getSerializeFn(entityType: SyncEntityType): (entity: any) => string[] {
+  private getSerializeFn(entityType: SyncEntityType): (entity: AnyEntity) => string[] {
     switch (entityType) {
       case 'transaction':
-        return serializeTransaction;
+        return serializeTransaction as (entity: AnyEntity) => string[];
       case 'account':
-        return serializeAccount;
+        return serializeAccount as (entity: AnyEntity) => string[];
       case 'method':
-        return serializeMethod;
+        return serializeMethod as (entity: AnyEntity) => string[];
       case 'category':
-        return serializeCategory;
+        return serializeCategory as (entity: AnyEntity) => string[];
       case 'budget':
-        return serializeBudget;
+        return serializeBudget as (entity: AnyEntity) => string[];
       default:
         return () => [];
     }
