@@ -13,6 +13,7 @@ describe('LedgerEngine', () => {
       isSavings: true,
       excludeFromNet: false,
       isActive: true,
+      isDeleted: false,
       createdAt: '',
       updatedAt: '',
     },
@@ -25,6 +26,7 @@ describe('LedgerEngine', () => {
       isSavings: false,
       excludeFromNet: false,
       isActive: true,
+      isDeleted: false,
       createdAt: '',
       updatedAt: '',
     },
@@ -37,10 +39,19 @@ describe('LedgerEngine', () => {
       head: 'Food',
       subHead: 'Groceries',
       isActive: true,
+      isDeleted: false,
       createdAt: '',
       updatedAt: '',
     },
-    { id: 'cat-2', group: 'Income', head: 'Salary', isActive: true, createdAt: '', updatedAt: '' },
+    {
+      id: 'cat-2',
+      group: 'Income',
+      head: 'Salary',
+      isActive: true,
+      isDeleted: false,
+      createdAt: '',
+      updatedAt: '',
+    },
   ];
 
   describe('validate()', () => {
