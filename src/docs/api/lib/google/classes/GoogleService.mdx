@@ -1,0 +1,241 @@
+[**moniq-app**](../../../index.mdx)
+
+***
+
+[moniq-app](../../../modules.mdx) / [lib/google](../index.mdx) / GoogleService
+
+# Class: GoogleService
+
+Defined in: [lib/google.ts:31](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/lib/google.ts#L31)
+
+Unified Google API Client & Auth Service
+
+## Constructors
+
+### Constructor
+
+> **new GoogleService**(): `GoogleService`
+
+#### Returns
+
+`GoogleService`
+
+## Methods
+
+### copyFile()
+
+> **copyFile**(`fileId`, `folderId`, `newName`): `Promise`\<`string`\>
+
+Defined in: [lib/google.ts:193](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/lib/google.ts#L193)
+
+Copy a file to a specific folder with a new name.
+
+#### Parameters
+
+##### fileId
+
+`string`
+
+##### folderId
+
+`string`
+
+##### newName
+
+`string`
+
+#### Returns
+
+`Promise`\<`string`\>
+
+***
+
+### createFolder()
+
+> **createFolder**(`name`): `Promise`\<`string`\>
+
+Defined in: [lib/google.ts:179](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/lib/google.ts#L179)
+
+Create a new folder. Returns the folder ID.
+
+#### Parameters
+
+##### name
+
+`string`
+
+#### Returns
+
+`Promise`\<`string`\>
+
+***
+
+### deleteFile()
+
+> **deleteFile**(`fileId`): `Promise`\<`void`\>
+
+Defined in: [lib/google.ts:222](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/lib/google.ts#L222)
+
+Delete a file by ID.
+
+#### Parameters
+
+##### fileId
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### driveRequest()
+
+> **driveRequest**(`path`, `options?`): `Promise`\<`Response`\>
+
+Defined in: [lib/google.ts:157](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/lib/google.ts#L157)
+
+#### Parameters
+
+##### path
+
+`string`
+
+##### options?
+
+`RequestInit` = `{}`
+
+#### Returns
+
+`Promise`\<`Response`\>
+
+***
+
+### fetch()
+
+> **fetch**(`url`, `options?`): `Promise`\<`Response`\>
+
+Defined in: [lib/google.ts:99](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/lib/google.ts#L99)
+
+Centralized fetch for Google APIs.
+Handles Authorization header, 401 detection, and automatic silent refresh retry.
+
+#### Parameters
+
+##### url
+
+`string`
+
+##### options?
+
+`RequestInit` = `{}`
+
+#### Returns
+
+`Promise`\<`Response`\>
+
+***
+
+### fetchUserProfile()
+
+> **fetchUserProfile**(): `Promise`\<[`GoogleUserProfile`](../interfaces/GoogleUserProfile.mdx)\>
+
+Defined in: [lib/google.ts:151](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/lib/google.ts#L151)
+
+#### Returns
+
+`Promise`\<[`GoogleUserProfile`](../interfaces/GoogleUserProfile.mdx)\>
+
+***
+
+### findFolder()
+
+> **findFolder**(`name`): `Promise`\<`string` \| `null`\>
+
+Defined in: [lib/google.ts:168](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/lib/google.ts#L168)
+
+Find a folder by name. Returns folder ID or null.
+
+#### Parameters
+
+##### name
+
+`string`
+
+#### Returns
+
+`Promise`\<`string` \| `null`\>
+
+***
+
+### listFiles()
+
+> **listFiles**(`folderId`, `prefix?`): `Promise`\<[`GoogleDriveFile`](../interfaces/GoogleDriveFile.mdx)[]\>
+
+Defined in: [lib/google.ts:207](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/lib/google.ts#L207)
+
+List files in a folder matching a prefix.
+
+#### Parameters
+
+##### folderId
+
+`string`
+
+##### prefix?
+
+`string`
+
+#### Returns
+
+`Promise`\<[`GoogleDriveFile`](../interfaces/GoogleDriveFile.mdx)[]\>
+
+***
+
+### sheetsRequest()
+
+> **sheetsRequest**(`path`, `options?`): `Promise`\<`Response`\>
+
+Defined in: [lib/google.ts:161](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/lib/google.ts#L161)
+
+#### Parameters
+
+##### path
+
+`string`
+
+##### options?
+
+`RequestInit` = `{}`
+
+#### Returns
+
+`Promise`\<`Response`\>
+
+***
+
+### silentRefresh()
+
+> **silentRefresh**(): `Promise`\<`string` \| `null`\>
+
+Defined in: [lib/google.ts:49](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/lib/google.ts#L49)
+
+Attempts a silent token refresh using prompt: 'none'.
+Requires that the user is already logged in to Google in the browser.
+
+#### Returns
+
+`Promise`\<`string` \| `null`\>
+
+***
+
+### getInstance()
+
+> `static` **getInstance**(): `GoogleService`
+
+Defined in: [lib/google.ts:36](https://github.com/MakersCircle/moniq/blob/f8c49348801f4cc131a5d8fbcdc26f83a28cf416/src/lib/google.ts#L36)
+
+#### Returns
+
+`GoogleService`

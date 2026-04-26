@@ -177,7 +177,7 @@ export default function App() {
                   <Route path="settings/methods" element={<Methods />} />
                   <Route path="settings/categories" element={<Categories />} />
                   <Route path="settings/trash" element={<SettingsTrash />} />
-                  <Route path="docs/:category/:slug" element={<DocsPage />} />
+                  <Route path="docs/:category/*" element={<DocsPage />} />
                   <Route path="docs" element={<DocsPage />} />
                   <Route
                     path="*"

@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { useParams, Navigate, NavLink } from 'react-router-dom';
-import { ChevronRight, Book, Code2 } from 'lucide-react';
+import { ChevronRight, Book, Code2, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const docs = import.meta.glob('/src/docs/**/*.mdx');
@@ -28,10 +28,22 @@ const DOC_STRUCTURE = [
     icon: Code2,
     items: [{ title: 'Architecture', slug: 'architecture', category: 'tech' }],
   },
+  {
+    title: 'API Reference',
+    icon: Layers,
+    items: [
+      { title: 'Overview', slug: 'index', category: 'api' },
+      { title: 'Core Types', slug: 'types/index', category: 'api' },
+      { title: 'Google Library', slug: 'lib/index', category: 'api' },
+      { title: 'Sync Engine', slug: 'sync/index', category: 'api' },
+    ],
+  },
 ];
 
 export default function DocsPage() {
-  const { category, slug } = useParams();
+  const params = useParams();
+  const category = params.category;
+  const slug = params['*'];
 
   // If no category/slug, redirect to first doc
   if (!category || !slug) {

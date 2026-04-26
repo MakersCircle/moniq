@@ -1,0 +1,7 @@
+{
+  "entryPoints": ["src/types.ts", "src/lib/google.ts", "src/sync/SyncEngine.ts"],
+  "out": "src/docs/api",
+  "plugin": ["typedoc-plugin-markdown"],
+  "entryFileName": "index.mdx",
+  "fileExtension": ".mdx"
+}
