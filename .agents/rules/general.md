@@ -10,4 +10,6 @@ After completing feature implementations, check `docs/roadmap.md` and update it 
 
 If a particular change is important enough, update all docs/* accordingly.
 
-Keep a version for our code. bump up the version after change accordingly.
+Document all changes in the `[Unreleased]` section of `docs/CHANGELOG.md` immediately after implementation. Bump the project version in `package.json` and finalize the changelog version only when a significant set of changes or a key milestone has been reached.
+
+Use the **Conventional Commits** format for all commit messages (e.g., `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`, `perf:`, `style:`) to ensure clarity and support automated tools.
