@@ -8,7 +8,9 @@ import type {
   SyncEntityType,
 } from '../types';
 
-/** Union of all entity types stored in the sync engine */
+/**
+ * Union of all entity types stored in the sync engine.
+ */
 type AnyEntity = Account | PaymentMethod | Category | Transaction | Budget;
 import { SheetClient } from './SheetClient';
 import { reconcile, computeChecksum } from './ConflictResolver';
@@ -35,6 +37,8 @@ import {
 /**
  * Converts a Google Sheets serial date (number of days since 1899-12-30)
  * back into an ISO YYYY-MM-DD date string.
+ *
+ * @param val - The value from the Google Sheet cell.
  */
 function unserialDate(val: string | unknown): string {
   if (!val || typeof val !== 'string' || !/^\d+(\.\d+)?$/.test(val.trim())) {
@@ -59,6 +63,7 @@ function getValue(row: string[], header: string[], field: string): string {
 
 // ── Serialization helpers ────────────────────────────────────────
 
+/** Serializes a Transaction object into a row array for Google Sheets. */
 function serializeTransaction(t: Transaction): string[] {
   return [
     t.id,
@@ -77,6 +82,7 @@ function serializeTransaction(t: Transaction): string[] {
   ];
 }
 
+/** Serializes an Account object into a row array. */
 function serializeAccount(a: Account): string[] {
   return [
     a.id,
@@ -229,6 +235,16 @@ function makeEntityChecksumFn<T>(serializeFn: (entity: T) => string[]): (entity:
 
 type SyncListener = (status: SyncStatus, pendingCount: number, error?: string) => void;
 
+/**
+ * The SyncEngine is a singleton responsible for bidirectional data synchronization
+ * between the local IndexedDB/Zustand state and Google Sheets.
+ *
+ * It manages:
+ * - Full initialization (Pull + Reconcile)
+ * - Delta synchronization (Optimistic UI + Background Flush)
+ * - Conflict resolution (Timestamp-based)
+ * - Row indexing and batch updates
+ */
 export class SyncEngine {
   private static instance: SyncEngine | null = null;
 
@@ -282,6 +298,10 @@ export class SyncEngine {
     return this._lastError;
   }
 
+  /**
+   * Subscribes to sync status changes.
+   * @returns An unsubscribe function.
+   */
   subscribe(listener: SyncListener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
@@ -325,6 +345,10 @@ export class SyncEngine {
 
   // ── Initialization (Pull + Reconcile) ──────────────────────────
 
+  /**
+   * Performs the initial full pull and reconciliation of data from Google Sheets.
+   * Ensures all required sheets and headers exist before downloading data.
+   */
   async initialize(spreadsheetId: string): Promise<{
     accounts: Account[];
     methods: PaymentMethod[];

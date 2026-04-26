@@ -1,0 +1,81 @@
+[**moniq-app**](../../index.mdx)
+
+***
+
+[moniq-app](../../index.mdx) / [Types](../index.mdx) / SyncOperation
+
+# Interface: SyncOperation
+
+Defined in: [types.ts:211](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L211)
+
+Represents a single modification that needs to be synced to Google Sheets.
+
+## Properties
+
+### action
+
+> **action**: `"create"` \| `"update"` \| `"delete"`
+
+Defined in: [types.ts:217](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L217)
+
+Action performed on the entity
+
+***
+
+### entity
+
+> **entity**: [`SyncEntityType`](../type-aliases/SyncEntityType.mdx)
+
+Defined in: [types.ts:215](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L215)
+
+Type of entity being modified
+
+***
+
+### entityId
+
+> **entityId**: `string`
+
+Defined in: [types.ts:219](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L219)
+
+ID of the actual entity being changed
+
+***
+
+### id
+
+> **id**: `string`
+
+Defined in: [types.ts:213](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L213)
+
+Unique UUID for the sync task
+
+***
+
+### lastError?
+
+> `optional` **lastError?**: `string`
+
+Defined in: [types.ts:225](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L225)
+
+The last error message encountered if sync failed
+
+***
+
+### retryCount
+
+> **retryCount**: `number`
+
+Defined in: [types.ts:223](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L223)
+
+Number of failed sync attempts
+
+***
+
+### timestamp
+
+> **timestamp**: `string`
+
+Defined in: [types.ts:221](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L221)
+
+When the operation was queued

@@ -1,0 +1,81 @@
+[**moniq-app**](../../index.mdx)
+
+***
+
+[moniq-app](../../index.mdx) / [Types](../index.mdx) / PaymentMethod
+
+# Interface: PaymentMethod
+
+Defined in: [types.ts:44](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L44)
+
+Represents a payment channel bound to an Account (e.g., UPI, Debit Card, Cash).
+
+## Properties
+
+### createdAt
+
+> **createdAt**: `string`
+
+Defined in: [types.ts:56](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L56)
+
+ISO timestamp of creation
+
+***
+
+### id
+
+> **id**: `string`
+
+Defined in: [types.ts:46](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L46)
+
+Unique UUID for the payment method
+
+***
+
+### isActive
+
+> **isActive**: `boolean`
+
+Defined in: [types.ts:52](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L52)
+
+Whether the method is active
+
+***
+
+### isDeleted
+
+> **isDeleted**: `boolean`
+
+Defined in: [types.ts:54](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L54)
+
+Soft delete flag
+
+***
+
+### linkedAccountId?
+
+> `optional` **linkedAccountId?**: `string`
+
+Defined in: [types.ts:50](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L50)
+
+ID of the Account this method draws from
+
+***
+
+### name
+
+> **name**: `string`
+
+Defined in: [types.ts:48](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L48)
+
+Display name (e.g., "HDFC Debit Card")
+
+***
+
+### updatedAt
+
+> **updatedAt**: `string`
+
+Defined in: [types.ts:58](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L58)
+
+ISO timestamp of last modification

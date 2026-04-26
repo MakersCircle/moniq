@@ -1,0 +1,111 @@
+[**moniq-app**](../../index.mdx)
+
+***
+
+[moniq-app](../../index.mdx) / [Types](../index.mdx) / Category
+
+# Interface: Category
+
+Defined in: [types.ts:69](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L69)
+
+A category used to label transactions for budgeting and reporting.
+
+## Properties
+
+### color?
+
+> `optional` **color?**: `string`
+
+Defined in: [types.ts:81](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L81)
+
+Hex color code for UI visualization
+
+***
+
+### createdAt
+
+> **createdAt**: `string`
+
+Defined in: [types.ts:87](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L87)
+
+ISO timestamp of creation
+
+***
+
+### group
+
+> **group**: [`CategoryGroup`](../type-aliases/CategoryGroup.mdx)
+
+Defined in: [types.ts:73](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L73)
+
+The top-level group this category belongs to
+
+***
+
+### head
+
+> **head**: `string`
+
+Defined in: [types.ts:75](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L75)
+
+The main category header (e.g., "Food")
+
+***
+
+### id
+
+> **id**: `string`
+
+Defined in: [types.ts:71](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L71)
+
+Unique UUID
+
+***
+
+### initialBalance?
+
+> `optional` **initialBalance?**: `number`
+
+Defined in: [types.ts:79](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L79)
+
+Opening balance for tracking external items like Investments or Loans
+
+***
+
+### isActive
+
+> **isActive**: `boolean`
+
+Defined in: [types.ts:83](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L83)
+
+Whether the category is active
+
+***
+
+### isDeleted
+
+> **isDeleted**: `boolean`
+
+Defined in: [types.ts:85](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L85)
+
+Soft delete flag
+
+***
+
+### subHead?
+
+> `optional` **subHead?**: `string`
+
+Defined in: [types.ts:77](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L77)
+
+The optional sub-category (e.g., "Groceries")
+
+***
+
+### updatedAt
+
+> **updatedAt**: `string`
+
+Defined in: [types.ts:89](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L89)
+
+ISO timestamp of last modification

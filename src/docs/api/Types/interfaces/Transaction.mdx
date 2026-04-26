@@ -1,0 +1,131 @@
+[**moniq-app**](../../index.mdx)
+
+***
+
+[moniq-app](../../index.mdx) / [Types](../index.mdx) / Transaction
+
+# Interface: Transaction
+
+Defined in: [types.ts:117](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L117)
+
+The core transaction object representing a financial event.
+
+## Properties
+
+### amount
+
+> **amount**: `number`
+
+Defined in: [types.ts:125](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L125)
+
+Total transaction amount
+
+***
+
+### createdAt
+
+> **createdAt**: `string`
+
+Defined in: [types.ts:140](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L140)
+
+ISO timestamp of creation
+
+***
+
+### date
+
+> **date**: `string`
+
+Defined in: [types.ts:123](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L123)
+
+Transaction date in YYYY-MM-DD format
+
+***
+
+### entries
+
+> **entries**: [`LedgerEntry`](LedgerEntry.mdx)[]
+
+Defined in: [types.ts:127](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L127)
+
+List of balanced ledger entries comprising this transaction
+
+***
+
+### groupId
+
+> **groupId**: `string`
+
+Defined in: [types.ts:121](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L121)
+
+ID used to group related entries (essential for split transactions)
+
+***
+
+### id
+
+> **id**: `string`
+
+Defined in: [types.ts:119](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L119)
+
+Unique UUID
+
+***
+
+### isDeleted
+
+> **isDeleted**: `boolean`
+
+Defined in: [types.ts:138](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L138)
+
+Soft delete flag
+
+***
+
+### methodId?
+
+> `optional` **methodId?**: `string`
+
+Defined in: [types.ts:132](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L132)
+
+The primary payment method ID used (if applicable)
+
+***
+
+### note
+
+> **note**: `string`
+
+Defined in: [types.ts:134](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L134)
+
+User-provided memo or note
+
+***
+
+### tags?
+
+> `optional` **tags?**: `string`[]
+
+Defined in: [types.ts:136](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L136)
+
+Optional categorization tags
+
+***
+
+### uiType
+
+> **uiType**: [`TransactionType`](../type-aliases/TransactionType.mdx)
+
+Defined in: [types.ts:130](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L130)
+
+UI classification: income, expense, or transfer
+
+***
+
+### updatedAt
+
+> **updatedAt**: `string`
+
+Defined in: [types.ts:142](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L142)
+
+ISO timestamp of last modification

@@ -1,0 +1,41 @@
+[**moniq-app**](../../index.mdx)
+
+***
+
+[moniq-app](../../index.mdx) / [Types](../index.mdx) / LedgerEntry
+
+# Interface: LedgerEntry
+
+Defined in: [types.ts:100](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L100)
+
+A single balanced entry in the double-entry ledger.
+
+## Properties
+
+### accountId
+
+> **accountId**: `string`
+
+Defined in: [types.ts:102](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L102)
+
+References an Account.id or Category.id
+
+***
+
+### amount
+
+> **amount**: `number`
+
+Defined in: [types.ts:106](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L106)
+
+The absolute amount for this entry
+
+***
+
+### type
+
+> **type**: [`EntryType`](../type-aliases/EntryType.mdx)
+
+Defined in: [types.ts:104](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L104)
+
+Whether this is a DEBIT or CREDIT
