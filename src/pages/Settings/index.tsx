@@ -1,13 +1,8 @@
 import {
   LogOut,
   RefreshCw,
-  Smartphone,
-  Palette,
   Globe,
-  Target,
-  Zap,
   AlertCircle,
-  Cloud,
   CloudOff,
   Trash2,
   AlertTriangle,
@@ -33,7 +28,7 @@ import {
 } from '@/components/ui/select';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
-import { getAllCurrencies, COMMON_LOCALES, detectLocalSettings } from '@/constants/currencies';
+import { getAllCurrencies, COMMON_LOCALES } from '@/constants/currencies';
 import { formatCurrency } from '@/utils/format';
 
 export default function SettingsIndex() {
@@ -48,7 +43,6 @@ export default function SettingsIndex() {
     setAccessToken,
     setUserProfile,
     setSpreadsheetId,
-    resetData,
     accessToken,
     spreadsheetId,
     hydrateFromSync,
@@ -259,7 +253,7 @@ export default function SettingsIndex() {
                     setIsBackingUp(true);
                     try {
                       const { BackupManager } = await import('@/sync/BackupManager');
-                      await BackupManager.getInstance().runBackupCycle();
+                      await BackupManager.getInstance().runBackupCycle(true);
                     } finally {
                       setIsBackingUp(false);
                     }
@@ -277,9 +271,10 @@ export default function SettingsIndex() {
               <div className="p-3 bg-accent/30 rounded-lg border border-border/50 mb-6">
                 <p className="text-[10px] text-muted-foreground leading-relaxed">
                   Moniq automatically creates snapshots of your data at specific intervals. Clicking{' '}
-                  <strong>Backup Now</strong> manually triggers this cycle—if a scheduled backup is
-                  due today, it will be created immediately. This ensures your financial history is
-                  preserved across multiple time-horizons even if the automated sync hasn't run yet.
+                  <strong>Backup Now</strong> immediately forces a full backup across all tiers
+                  (daily, weekly, monthly, yearly) regardless of schedule. Each backup is saved as a
+                  new copy in the &quot;Moniq Backups&quot; folder in your Google Drive — existing
+                  backups are never overwritten.
                 </p>
               </div>
 

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Backups**: Clicking "Backup Now" in Settings was silently doing nothing if a backup had already run automatically earlier that day. It now always creates a fresh backup immediately, regardless of schedule — so what you click is what you get. Each manual backup creates a new copy in your "Moniq Backups" Drive folder rather than replacing the existing one, so your previous backups are never overwritten.
+
 ---
 
 ## [0.3.2] - 2026-04-26
