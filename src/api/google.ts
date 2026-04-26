@@ -1,13 +1,13 @@
 import { googleService } from '../lib/google';
-import type { UserProfile } from '../store/dataStore';
+import type { UserProfile } from '../store/types';
 
 /** Fetches the Google User Profile (Name, Email, Picture) */
-export async function fetchUserProfile(_accessToken: string): Promise<UserProfile> {
+export async function fetchUserProfile(): Promise<UserProfile> {
   const data = await googleService.fetchUserProfile();
   return {
     name: data.name,
     email: data.email,
-    picture: data.picture || data.avatar,
+    picture: data.picture,
   };
 }
 
@@ -40,7 +40,7 @@ async function getOrCreateFolder(): Promise<string> {
 }
 
 /** Finds existing Moniq Database or creates a new one inside the moniq folder. Returns Spreadsheet ID. */
-export async function initializeDatabase(_accessToken: string): Promise<string> {
+export async function initializeDatabase(): Promise<string> {
   // 1. Ensure the parent folder exists
   const folderId = await getOrCreateFolder();
 

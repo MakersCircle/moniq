@@ -10,6 +10,7 @@ import Methods from './pages/Settings/Methods';
 import Categories from './pages/Settings/Categories';
 import SettingsTrash from './pages/Settings/Trash';
 import Home from './pages/Home';
+import DocsPage from './pages/Docs';
 import LayoutShell from './components/Layout/LayoutShell';
 import { useDataStore } from './store/dataStore';
 import { fetchUserProfile, initializeDatabase } from './api/google';
@@ -83,10 +84,10 @@ export default function App() {
           if (!newToken) return; // Will redirect to home via token=null change
         }
 
-        const profile = await fetchUserProfile(accessToken!);
+        const profile = await fetchUserProfile();
         setUserProfile(profile);
 
-        const sheetId = await initializeDatabase(accessToken!);
+        const sheetId = await initializeDatabase();
         setSpreadsheetId(sheetId);
 
         // Initialize SyncEngine — pulls from sheets, reconciles, and hydrates store
@@ -176,6 +177,8 @@ export default function App() {
                   <Route path="settings/methods" element={<Methods />} />
                   <Route path="settings/categories" element={<Categories />} />
                   <Route path="settings/trash" element={<SettingsTrash />} />
+                  <Route path="docs/:category/:slug" element={<DocsPage />} />
+                  <Route path="docs" element={<DocsPage />} />
                   <Route
                     path="*"
                     element={<Navigate to={hasCompletedOnboarding ? '/dashboard' : '/'} replace />}

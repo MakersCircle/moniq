@@ -1,0 +1,68 @@
+# System Architecture
+
+`moniq` is designed to be a lightweight, serverless (or "bring your own storage") application. 
+To prioritize privacy and simplicity, it leverages the user's personal Google Drive via **Google Sheets** as the primary datastore, protected by **Google OAuth.**
+
+## High-Level Architecture
+
+### Characteristics
+
+- **Frontend:** Single Page Application (React / Vite). Mobile-first, Progressive Web App (PWA) ready.
+- **Backend:** Serverless, driven by direct Google Sheets API calls over HTTP.
+- **Authentication:** Google Sign-In (OAuth 2.0).
+- **Database:** Google Sheets API. Each user will have their own `moniq` spreadsheet created in their Drive on first login.
+
+---
+
+## 🗄 Database Schema (Google Sheets Outline)
+
+Instead of a traditional SQL/NoSQL database, `moniq` uses Tabs in a Google Sheet.
+
+### 1. `Accounts` Sheet
+Stores all custom accounts, wallets, etc. These are the source of truth for money.
+- `id` (UUID)
+- `name` (String: e.g., "SBI Savings")
+- `type` (String: "Asset", "Liability")
+- `initialBalance` (Number)
+- `isSavings` (Boolean)
+- `isActive` (Boolean)
+- `isDeleted` (Boolean)
+
+### 2. `Methods` Sheet
+Stores payment channels (abstractions over accounts).
+- `id` (UUID)
+- `name` (String: e.g., "UPI", "Net Banking")
+- `linkedAccountId` (UUID of Account)
+- `isActive` (Boolean)
+
+### 3. `Categories` Sheet
+Holds headers and subheaders for tracking.
+- `id` (UUID)
+- `group` (String: "Income", "Needs", "Wants", "Invest", "Lend", "Borrow")
+- `head` (String: e.g., "Food")
+- `subHead` (String: e.g., "Groceries")
+
+### 4. `Transactions` Sheet
+The core event log based on a **Double-Entry Ledger System**. 
+- `id` (UUID)
+- `groupId` (UUID, used to bind related entries)
+- `date` (ISO Date string)
+- `amount` (Number)
+- `entries` (JSON String: Balanced LedgerEntry objects `[{ accountId, type, amount }]`)
+- `uiType` (String: "income", "expense", "transfer")
+
+---
+
+## 🔌 API & Integration Layers
+
+### 1. Google OAuth Authentication
+- Scopes: `email`, `profile`, `drive.file`
+- The app only accesses files it created itself.
+
+### 2. State Management & Sync (Client-Side)
+- **Local Storage:** `zustand/persist` with a custom IndexedDB adapter (`idb` library).
+- **Optimistic UI:** Mutations update the Zustand store immediately. The SyncEngine debounces writes (3s window) before flushing.
+- **SyncEngine:**
+  - **Pull:** Reconciles local vs remote using `updatedAt` timestamps.
+  - **Push:** Groups dirty operations by entity type. Uses `append` for new rows and `batchUpdate` for existing rows.
+  - **Conflict resolution:** Sheet is source of truth. Newer `updatedAt` wins.
