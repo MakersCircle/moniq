@@ -16,6 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/utils/format';
 import { DatePicker } from './DatePicker';
+import { LedgerEngine } from '@/lib/ledger';
 
 interface SplitLine {
   categoryId: string;
@@ -197,7 +198,6 @@ export default function AddTransactionModal({
       };
 
       if (isEditing) {
-        const { LedgerEngine } = require('@/lib/ledger');
         const entries = LedgerEngine.createEntries({
           type,
           amount: parsedAmount,
