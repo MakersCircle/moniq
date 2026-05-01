@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Info, Plus, Pencil, Archive, Trash2, CreditCard, ArrowRight } from 'lucide-react';
+import { Plus, Pencil, Archive, Trash2, CreditCard, ArrowRight } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
 import type { PaymentMethod } from '@/types';
 

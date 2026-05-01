@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Archive, Trash2, Tag, Landmark, CreditCard } from 'lucide-react';
+import { Plus, Pencil, Archive, Trash2, Tag } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
 import { useMemo } from 'react';
 import type { Category, CategoryGroup } from '@/types';
