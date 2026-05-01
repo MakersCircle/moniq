@@ -53,13 +53,24 @@ export default function SettingsIndex() {
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [isResetting, setIsResetting] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      if (pendingCount > 0) {
+        const engine = SyncEngine.getInstance();
+        await engine.forceSync();
+      }
+    } catch (err) {
+      console.error('Failed to sync before logout', err);
+    }
     googleLogout();
     SyncEngine.reset();
     setAccessToken(null);
     setUserProfile(null);
     setSpreadsheetId(null);
+    setIsLoggingOut(false);
   };
 
   const handleManualSync = async () => {
@@ -139,10 +150,15 @@ export default function SettingsIndex() {
                 variant="outline"
                 size="sm"
                 onClick={handleLogout}
+                disabled={isLoggingOut}
                 className="text-destructive hover:bg-destructive/10 border-destructive/20 h-9 gap-2"
               >
-                <LogOut className="h-4 w-4" />
-                Sign out
+                {isLoggingOut ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <LogOut className="h-4 w-4" />
+                )}
+                {isLoggingOut ? 'Signing out...' : 'Sign out'}
               </Button>
             </CardContent>
           </Card>
