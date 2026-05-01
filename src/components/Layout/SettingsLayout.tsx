@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Settings, Landmark, CreditCard, Tag, Database, ChevronRight, Trash2 } from 'lucide-react';
+import { Settings, Landmark, CreditCard, Tag, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDataStore } from '@/store/dataStore';
 
