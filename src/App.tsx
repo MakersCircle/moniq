@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Insights from './pages/Insights';
@@ -41,10 +41,15 @@ export default function App() {
     isDuplicate?: boolean;
   }>({ isOpen: false });
 
-  const openNew = () => setModalState({ isOpen: true });
-  const openEdit = (data: Transaction) => setModalState({ isOpen: true, initialData: data });
-  const openDuplicate = (data: Transaction) =>
-    setModalState({ isOpen: true, initialData: data, isDuplicate: true });
+  const openNew = useCallback(() => setModalState({ isOpen: true }), []);
+  const openEdit = useCallback(
+    (data: Transaction) => setModalState({ isOpen: true, initialData: data }),
+    []
+  );
+  const openDuplicate = useCallback(
+    (data: Transaction) => setModalState({ isOpen: true, initialData: data, isDuplicate: true }),
+    []
+  );
 
   // 1. Initial hydration from IndexedDB (structured)
   useEffect(() => {
@@ -123,6 +128,7 @@ export default function App() {
     setSpreadsheetId,
     setSyncStatus,
     hydrateFromSync,
+    setCloudInitialized,
   ]);
 
   const hasCompletedOnboarding = settings.hasCompletedOnboarding;
