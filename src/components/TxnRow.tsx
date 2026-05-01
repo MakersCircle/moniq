@@ -14,7 +14,6 @@ export default function TxnRow({ txn, onClick }: TxnRowProps) {
   const { accounts, categories, settings } = useDataStore();
 
   const details = useMemo(() => {
-    const isIncome = txn.uiType === 'income';
     const isTransfer = txn.uiType === 'transfer';
 
     // Find account entry
