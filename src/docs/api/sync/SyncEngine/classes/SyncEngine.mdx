@@ -6,7 +6,7 @@
 
 # Class: SyncEngine
 
-Defined in: [sync/SyncEngine.ts:248](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/sync/SyncEngine.ts#L248)
+Defined in: [sync/SyncEngine.ts:248](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/sync/SyncEngine.ts#L248)
 
 The SyncEngine is a singleton responsible for bidirectional data synchronization
 between the local IndexedDB/Zustand state and Google Sheets.
@@ -25,7 +25,7 @@ It manages:
 
 > **get** **lastError**(): `string` \| `undefined`
 
-Defined in: [sync/SyncEngine.ts:297](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/sync/SyncEngine.ts#L297)
+Defined in: [sync/SyncEngine.ts:297](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/sync/SyncEngine.ts#L297)
 
 ##### Returns
 
@@ -39,7 +39,7 @@ Defined in: [sync/SyncEngine.ts:297](https://github.com/MakersCircle/moniq/blob/
 
 > **get** **pendingCount**(): `number`
 
-Defined in: [sync/SyncEngine.ts:294](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/sync/SyncEngine.ts#L294)
+Defined in: [sync/SyncEngine.ts:294](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/sync/SyncEngine.ts#L294)
 
 ##### Returns
 
@@ -53,7 +53,7 @@ Defined in: [sync/SyncEngine.ts:294](https://github.com/MakersCircle/moniq/blob/
 
 > **get** **status**(): [`SyncStatus`](../../../Types/type-aliases/SyncStatus.mdx)
 
-Defined in: [sync/SyncEngine.ts:291](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/sync/SyncEngine.ts#L291)
+Defined in: [sync/SyncEngine.ts:291](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/sync/SyncEngine.ts#L291)
 
 ##### Returns
 
@@ -65,7 +65,7 @@ Defined in: [sync/SyncEngine.ts:291](https://github.com/MakersCircle/moniq/blob/
 
 > **destroy**(): `void`
 
-Defined in: [sync/SyncEngine.ts:886](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/sync/SyncEngine.ts#L886)
+Defined in: [sync/SyncEngine.ts:886](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/sync/SyncEngine.ts#L886)
 
 #### Returns
 
@@ -77,7 +77,7 @@ Defined in: [sync/SyncEngine.ts:886](https://github.com/MakersCircle/moniq/blob/
 
 > **forceSync**(): `Promise`\<`void`\>
 
-Defined in: [sync/SyncEngine.ts:623](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/sync/SyncEngine.ts#L623)
+Defined in: [sync/SyncEngine.ts:623](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/sync/SyncEngine.ts#L623)
 
 Force an immediate flush of all pending operations.
 
@@ -91,7 +91,7 @@ Force an immediate flush of all pending operations.
 
 > **initialize**(`spreadsheetId`): `Promise`\<\{ `accounts`: [`Account`](../../../Types/interfaces/Account.mdx)[]; `budgets`: [`Budget`](../../../Types/interfaces/Budget.mdx)[]; `categories`: [`Category`](../../../Types/interfaces/Category.mdx)[]; `methods`: [`PaymentMethod`](../../../Types/interfaces/PaymentMethod.mdx)[]; `settings`: `Record`\<`string`, `string`\>; `transactions`: [`Transaction`](../../../Types/interfaces/Transaction.mdx)[]; \} \| `null`\>
 
-Defined in: [sync/SyncEngine.ts:352](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/sync/SyncEngine.ts#L352)
+Defined in: [sync/SyncEngine.ts:352](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/sync/SyncEngine.ts#L352)
 
 Performs the initial full pull and reconciliation of data from Google Sheets.
 Ensures all required sheets and headers exist before downloading data.
@@ -112,7 +112,7 @@ Ensures all required sheets and headers exist before downloading data.
 
 > **markDirty**(`entity`, `entityId`, `action`): `Promise`\<`void`\>
 
-Defined in: [sync/SyncEngine.ts:594](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/sync/SyncEngine.ts#L594)
+Defined in: [sync/SyncEngine.ts:594](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/sync/SyncEngine.ts#L594)
 
 Called by the data store after each mutation.
 Adds an operation to the sync queue and schedules a debounced flush.
@@ -141,7 +141,7 @@ Adds an operation to the sync queue and schedules a debounced flush.
 
 > **performHardReset**(): `Promise`\<`void`\>
 
-Defined in: [sync/SyncEngine.ts:765](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/sync/SyncEngine.ts#L765)
+Defined in: [sync/SyncEngine.ts:765](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/sync/SyncEngine.ts#L765)
 
 Orchestrates a complete wipe of remote and local data.
 
@@ -155,7 +155,7 @@ Orchestrates a complete wipe of remote and local data.
 
 > **subscribe**(`listener`): () => `void`
 
-Defined in: [sync/SyncEngine.ts:305](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/sync/SyncEngine.ts#L305)
+Defined in: [sync/SyncEngine.ts:305](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/sync/SyncEngine.ts#L305)
 
 Subscribes to sync status changes.
 
@@ -177,7 +177,7 @@ An unsubscribe function.
 
 > `static` **getInstance**(`config?`): `SyncEngine`
 
-Defined in: [sync/SyncEngine.ts:274](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/sync/SyncEngine.ts#L274)
+Defined in: [sync/SyncEngine.ts:274](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/sync/SyncEngine.ts#L274)
 
 #### Parameters
 
@@ -195,7 +195,7 @@ Defined in: [sync/SyncEngine.ts:274](https://github.com/MakersCircle/moniq/blob/
 
 > `static` **reset**(): `void`
 
-Defined in: [sync/SyncEngine.ts:282](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/sync/SyncEngine.ts#L282)
+Defined in: [sync/SyncEngine.ts:282](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/sync/SyncEngine.ts#L282)
 
 Reset the singleton (for testing or logout)
 
