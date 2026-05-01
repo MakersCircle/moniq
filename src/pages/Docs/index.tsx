@@ -1,17 +1,66 @@
-import { lazy, Suspense } from 'react';
-import { useParams, Navigate, NavLink } from 'react-router-dom';
-import { ChevronRight, Book, Code2, Layers } from 'lucide-react';
+import { lazy, Suspense, useState } from 'react';
+import { useParams, Navigate, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { ChevronRight, Book, Code2, Layers, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { MDXProvider } from '@mdx-js/react';
 
 const docs = import.meta.glob('/src/docs/**/*.mdx');
 
 // Create a map of lazy components once, outside the component to avoid re-creation on render
 const lazyDocs = Object.fromEntries(
-  Object.entries(docs).map(([path, loader]) => [
-    path,
-    lazy(loader as () => Promise<{ default: React.ComponentType }>),
-  ])
+  Object.entries(docs).map(([path, loader]) => {
+    // Transform "/src/docs/api/Types/index.mdx" -> "api/Types/index"
+    const key = path.replace(/^\/src\/docs\//, '').replace(/\.mdx$/, '');
+    return [
+      key,
+      lazy(loader as () => Promise<{ default: React.ComponentType<Record<string, unknown>> }>),
+    ];
+  })
 );
+
+/**
+ * Custom link component for MDX to handle SPA navigation.
+ * Translates Markdown-style links (.mdx) into app routes.
+ */
+function MdxLink({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleClick = (e: React.MouseEvent) => {
+    // Skip external links, fragments, and empty hrefs
+    const isInternal =
+      href && !href.startsWith('http') && !href.startsWith('//') && !href.startsWith('#');
+    if (isInternal) {
+      e.preventDefault();
+
+      // Resolve relative path against current location's directory
+      const pathParts = location.pathname.split('/');
+      // If the last part is empty (trailing slash), remove it to find the true parent
+      if (pathParts[pathParts.length - 1] === '') pathParts.pop();
+      // Remove the current page to get the directory
+      pathParts.pop();
+      const baseDir = pathParts.join('/') + '/';
+
+      const resolvedUrl = new URL(href, window.location.origin + baseDir);
+
+      // Clean up the path for our routing system
+      let target = resolvedUrl.pathname;
+      target = target.replace(/\.mdx$/, '').replace(/\/index$/, '');
+
+      navigate(target);
+    }
+  };
+
+  return (
+    <a href={href} onClick={handleClick} {...props}>
+      {children}
+    </a>
+  );
+}
+
+const mdxComponents = {
+  a: MdxLink,
+};
 
 const DOC_STRUCTURE = [
   {
@@ -33,66 +82,86 @@ const DOC_STRUCTURE = [
     icon: Layers,
     items: [
       { title: 'Overview', slug: 'index', category: 'api' },
-      { title: 'Core Types', slug: 'types/index', category: 'api' },
-      { title: 'Google Library', slug: 'lib/index', category: 'api' },
-      { title: 'Sync Engine', slug: 'sync/index', category: 'api' },
+      { title: 'Core Interfaces', slug: 'Types/index', category: 'api' },
+      { title: 'Sync Architecture', slug: 'sync/SyncEngine/index', category: 'api' },
+      { title: 'Google Integration', slug: 'lib/google/index', category: 'api' },
     ],
   },
 ];
 
 export default function DocsPage() {
   const params = useParams();
-  const category = params.category;
-  const slug = params['*'];
+  const category = params.category || '';
+  const slug = params['*'] || '';
+
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    'User Guide': true,
+    'Technical Docs': true,
+    'API Reference': true,
+  });
+
+  const toggleSection = (title: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [title]: !prev[title],
+    }));
+  };
 
   // If no category/slug, redirect to first doc
   if (!category || !slug) {
     return <Navigate to="/docs/user/getting-started" replace />;
   }
 
-  const path = `/src/docs/${category}/${slug}.mdx`;
-  const DocComponent = lazyDocs[path] || null;
+  // Use the refactored keys for lookup
+  const docKey = `${category}/${slug}`;
+  const DocComponent = lazyDocs[docKey] || lazyDocs[`${docKey}/index`] || null;
 
   return (
     <div className="flex gap-8 items-start">
       {/* Internal Docs Sidebar */}
-      <aside className="w-64 sticky top-8 space-y-8 hidden md:block">
-        {DOC_STRUCTURE.map(section => (
-          <div key={section.title} className="space-y-3">
-            <div className="flex items-center gap-2 px-3 py-1">
-              <section.icon className="h-4 w-4 text-primary" />
-              <h3 className="text-sm font-semibold tracking-tight uppercase text-muted-foreground/70">
-                {section.title}
-              </h3>
+      <aside className="w-64 sticky top-8 space-y-4 hidden md:block">
+        {DOC_STRUCTURE.map(section => {
+          const isExpanded = expandedSections[section.title];
+          return (
+            <div key={section.title} className="space-y-1">
+              <button
+                onClick={() => toggleSection(section.title)}
+                className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold tracking-tight uppercase text-muted-foreground/70 hover:text-foreground transition-colors group"
+              >
+                <div className="flex items-center gap-2">
+                  <section.icon className="h-4 w-4 text-primary" />
+                  {section.title}
+                </div>
+                {isExpanded ? (
+                  <ChevronDown className="h-3 w-3" />
+                ) : (
+                  <ChevronRight className="h-3 w-3" />
+                )}
+              </button>
+
+              {isExpanded && (
+                <div className="space-y-1 ml-4 border-l border-border/50">
+                  {section.items.map(item => (
+                    <NavLink
+                      key={item.slug}
+                      to={`/docs/${item.category}/${item.slug}`}
+                      className={({ isActive }) =>
+                        cn(
+                          'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all group',
+                          isActive
+                            ? 'bg-primary/10 text-primary border-l-2 border-primary -ml-[2px]'
+                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                        )
+                      }
+                    >
+                      {item.title}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="space-y-1">
-              {section.items.map(item => (
-                <NavLink
-                  key={item.slug}
-                  to={`/docs/${item.category}/${item.slug}`}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all group',
-                      isActive
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                    )
-                  }
-                >
-                  <ChevronRight
-                    className={cn(
-                      'h-3 w-3 transition-transform',
-                      category === item.category && slug === item.slug
-                        ? 'rotate-90'
-                        : 'group-hover:translate-x-1'
-                    )}
-                  />
-                  {item.title}
-                </NavLink>
-              ))}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </aside>
 
       {/* Main Content */}
@@ -122,20 +191,24 @@ export default function DocsPage() {
               </div>
             }
           >
-            {DocComponent ? (
-              <DocComponent />
-            ) : (
-              <div className="text-center py-20">
-                <h1 className="text-2xl font-bold mb-4">Doc not found</h1>
-                <p className="text-muted-foreground">The page you're looking for doesn't exist.</p>
-                <NavLink
-                  to="/docs/user/getting-started"
-                  className="text-primary hover:underline mt-4 inline-block"
-                >
-                  Go to Getting Started
-                </NavLink>
-              </div>
-            )}
+            <MDXProvider components={mdxComponents}>
+              {DocComponent ? (
+                <DocComponent components={mdxComponents} />
+              ) : (
+                <div className="text-center py-20">
+                  <h1 className="text-2xl font-bold mb-4">Doc not found</h1>
+                  <p className="text-muted-foreground">
+                    The page you're looking for doesn't exist.
+                  </p>
+                  <NavLink
+                    to="/docs/user/getting-started"
+                    className="text-primary hover:underline mt-4 inline-block"
+                  >
+                    Go to Getting Started
+                  </NavLink>
+                </div>
+              )}
+            </MDXProvider>
           </Suspense>
         </div>
       </main>

@@ -6,7 +6,7 @@
 
 # Interface: Transaction
 
-Defined in: [types.ts:117](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L117)
+Defined in: [types.ts:117](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/types.ts#L117)
 
 The core transaction object representing a financial event.
 
@@ -16,7 +16,7 @@ The core transaction object representing a financial event.
 
 > **amount**: `number`
 
-Defined in: [types.ts:125](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L125)
+Defined in: [types.ts:125](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/types.ts#L125)
 
 Total transaction amount
 
@@ -26,7 +26,7 @@ Total transaction amount
 
 > **createdAt**: `string`
 
-Defined in: [types.ts:140](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L140)
+Defined in: [types.ts:140](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/types.ts#L140)
 
 ISO timestamp of creation
 
@@ -36,7 +36,7 @@ ISO timestamp of creation
 
 > **date**: `string`
 
-Defined in: [types.ts:123](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L123)
+Defined in: [types.ts:123](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/types.ts#L123)
 
 Transaction date in YYYY-MM-DD format
 
@@ -46,7 +46,7 @@ Transaction date in YYYY-MM-DD format
 
 > **entries**: [`LedgerEntry`](LedgerEntry.mdx)[]
 
-Defined in: [types.ts:127](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L127)
+Defined in: [types.ts:127](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/types.ts#L127)
 
 List of balanced ledger entries comprising this transaction
 
@@ -56,7 +56,7 @@ List of balanced ledger entries comprising this transaction
 
 > **groupId**: `string`
 
-Defined in: [types.ts:121](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L121)
+Defined in: [types.ts:121](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/types.ts#L121)
 
 ID used to group related entries (essential for split transactions)
 
@@ -66,7 +66,7 @@ ID used to group related entries (essential for split transactions)
 
 > **id**: `string`
 
-Defined in: [types.ts:119](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L119)
+Defined in: [types.ts:119](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/types.ts#L119)
 
 Unique UUID
 
@@ -76,7 +76,7 @@ Unique UUID
 
 > **isDeleted**: `boolean`
 
-Defined in: [types.ts:138](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L138)
+Defined in: [types.ts:138](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/types.ts#L138)
 
 Soft delete flag
 
@@ -86,7 +86,7 @@ Soft delete flag
 
 > `optional` **methodId?**: `string`
 
-Defined in: [types.ts:132](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L132)
+Defined in: [types.ts:132](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/types.ts#L132)
 
 The primary payment method ID used (if applicable)
 
@@ -96,7 +96,7 @@ The primary payment method ID used (if applicable)
 
 > **note**: `string`
 
-Defined in: [types.ts:134](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L134)
+Defined in: [types.ts:134](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/types.ts#L134)
 
 User-provided memo or note
 
@@ -106,7 +106,7 @@ User-provided memo or note
 
 > `optional` **tags?**: `string`[]
 
-Defined in: [types.ts:136](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L136)
+Defined in: [types.ts:136](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/types.ts#L136)
 
 Optional categorization tags
 
@@ -116,7 +116,7 @@ Optional categorization tags
 
 > **uiType**: [`TransactionType`](../type-aliases/TransactionType.mdx)
 
-Defined in: [types.ts:130](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L130)
+Defined in: [types.ts:130](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/types.ts#L130)
 
 UI classification: income, expense, or transfer
 
@@ -126,6 +126,6 @@ UI classification: income, expense, or transfer
 
 > **updatedAt**: `string`
 
-Defined in: [types.ts:142](https://github.com/MakersCircle/moniq/blob/dd600213355a2b26af888e439d606518e59ef31d/src/types.ts#L142)
+Defined in: [types.ts:142](https://github.com/MakersCircle/moniq/blob/406d49afc56445ed613f3d820cf7ac3043c2d2fb/src/types.ts#L142)
 
 ISO timestamp of last modification
