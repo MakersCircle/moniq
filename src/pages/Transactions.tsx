@@ -29,9 +29,7 @@ export default function Transactions() {
   const { accounts, categories, methods, settings, transactions, deleteTransaction } =
     useDataStore();
 
-  const [filter, setFilter] = useState<TxnFilter>({
-    month: toMonthKey(new Date()),
-  });
+  const [filter, setFilter] = useState<TxnFilter>({});
   const [selectedTxnId, setSelectedTxnId] = useState<string | null>(null);
 
   const txns = useFilteredTransactions(filter);
@@ -51,11 +49,11 @@ export default function Transactions() {
   }, 0);
 
   const handleEdit = (t: Transaction) => {
-    (window as any).openTransactionModal.openEdit(t);
+    window.openTransactionModal.openEdit(t);
   };
 
   const handleDuplicate = (t: Transaction) => {
-    (window as any).openTransactionModal.openDuplicate(t);
+    window.openTransactionModal.openDuplicate(t);
   };
 
   const getAccountName = (txn: Transaction) => {
@@ -149,7 +147,7 @@ export default function Transactions() {
             <Select
               value={filter.uiType || 'all'}
               onValueChange={val =>
-                updateFilter({ uiType: val === 'all' ? undefined : (val as any) })
+                updateFilter({ uiType: val === 'all' ? undefined : (val as Transaction['uiType']) })
               }
             >
               <SelectTrigger className="h-9 w-[120px] text-xs">
