@@ -23,14 +23,16 @@ export function DatePicker({ date, onChange }: DatePickerProps) {
   const [inputValue, setInputValue] = React.useState('');
   const [month, setMonth] = React.useState<Date | undefined>();
 
-  // sync display value
-  React.useEffect(() => {
+  const [prevDate, setPrevDate] = React.useState(date);
+
+  if (date !== prevDate) {
+    setPrevDate(date);
     const d = parseISO(date);
     if (isValid(d)) {
       setInputValue(format(d, 'dd/MM/yyyy'));
       setMonth(d);
     }
-  }, [date]);
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
