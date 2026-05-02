@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, Pencil, Archive, Trash2, CreditCard, ArrowRight } from 'lucide-react';
+import { Reorder } from 'framer-motion';
+import { Plus, Pencil, Archive, Trash2, CreditCard, ArrowRight, GripVertical } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
 import type { PaymentMethod } from '@/types';
 
@@ -22,12 +23,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
-
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 
 export default function Methods() {
-  const { methods, accounts, addMethod, updateMethod, archiveMethod, deleteMethod } =
-    useDataStore();
+  const {
+    methods,
+    accounts,
+    addMethod,
+    updateMethod,
+    archiveMethod,
+    deleteMethod,
+    reorderMethods,
+  } = useDataStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<PaymentMethod | null>(null);
   const [form, setForm] = useState({ name: '', linkedAccountId: '' });
@@ -63,8 +70,14 @@ export default function Methods() {
     setModalOpen(false);
   };
 
-  const active = methods.filter(m => m.isActive && !m.isDeleted);
+  const active = methods
+    .filter(m => m.isActive && !m.isDeleted)
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   const archived = methods.filter(m => !m.isActive && !m.isDeleted);
+
+  const handleReorder = (newOrder: PaymentMethod[]) => {
+    reorderMethods(newOrder.map(m => m.id));
+  };
 
   return (
     <SettingsLayout>
@@ -76,7 +89,7 @@ export default function Methods() {
                 <h2 className="text-xl font-bold tracking-tight">Payment Methods</h2>
                 <InfoTooltip
                   position="bottom"
-                  text="Payment Methods represent how you pay — like UPI, Credit Card, or Cash. When you add a transaction, selecting a method auto-fills the linked account. A default method is created automatically for every new account."
+                  text="Payment Methods represent how you pay — like UPI, Credit Card, or Cash. When you add a transaction, selecting a method auto-fills the linked account. A default method is created automatically for every new account. Drag to reorder."
                 />
               </div>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
@@ -89,53 +102,71 @@ export default function Methods() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Reorder.Group
+          axis="y"
+          values={active}
+          onReorder={handleReorder}
+          className="grid grid-cols-1 gap-3"
+        >
           {active.map(m => (
-            <Card
+            <Reorder.Item
               key={m.id}
-              className="group border-border hover:border-primary/30 transition-all shadow-sm"
+              value={m}
+              whileDrag={{
+                boxShadow: '0 20px 50px -12px rgba(0,0,0,0.5)',
+                zIndex: 1000,
+                backgroundColor: '#18181b',
+              }}
+              className="group relative border border-border/40 hover:border-primary/30 transition-colors shadow-sm rounded-xl bg-card cursor-default select-none"
             >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-8 w-8 shrink-0 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                      <CreditCard className="h-4 w-4" />
+              <Card className="border-none shadow-none bg-transparent">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-8 w-8 shrink-0 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                        <CreditCard className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm tracking-tight truncate">{m.name}</p>
+                        {m.linkedAccountId && (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <ArrowRight className="h-2 w-2 text-muted-foreground" />
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground truncate">
+                              {accounts.find(s => s.id === m.linkedAccountId)?.name || 'Unknown'}
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-bold text-sm tracking-tight truncate">{m.name}</p>
-                      {m.linkedAccountId && (
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <ArrowRight className="h-2 w-2 text-muted-foreground" />
-                          <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground truncate">
-                            {accounts.find(s => s.id === m.linkedAccountId)?.name || 'Unknown'}
-                          </p>
-                        </div>
-                      )}
+                    <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mr-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => openEdit(m)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => archiveMethod(m.id)}
+                        >
+                          <Archive className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      <div className="p-2 -mr-2 cursor-grab active:cursor-grabbing text-muted-foreground/20 group-hover:text-primary/40 transition-colors rounded-lg hover:bg-primary/5">
+                        <GripVertical className="h-5 w-5" />
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => openEdit(m)}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => archiveMethod(m.id)}
-                    >
-                      <Archive className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Reorder.Item>
           ))}
-        </div>
+        </Reorder.Group>
 
         {archived.length > 0 && (
           <div className="pt-8 space-y-4">

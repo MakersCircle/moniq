@@ -1,9 +1,8 @@
-import { useState } from 'react';
-import { Plus, Pencil, Archive, Trash2, Tag, ChevronDown, Check } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Reorder } from 'framer-motion';
+import { Plus, Pencil, Archive, Trash2, Tag, ChevronDown, Check, GripVertical } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
-import { useMemo } from 'react';
 import type { Category, CategoryGroup } from '@/types';
-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,8 +38,14 @@ const GROUP_STYLES: Record<string, string> = {
 };
 
 export default function Categories() {
-  const { categories, addCategory, updateCategory, archiveCategory, deleteCategory } =
-    useDataStore();
+  const {
+    categories,
+    addCategory,
+    updateCategory,
+    archiveCategory,
+    deleteCategory,
+    reorderCategories,
+  } = useDataStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [form, setForm] = useState({ group: 'Needs' as CategoryGroup, head: '', subHead: '' });
@@ -76,7 +81,9 @@ export default function Categories() {
     setModalOpen(false);
   };
 
-  const active = categories.filter(c => c.isActive && !c.isDeleted);
+  const active = categories
+    .filter(c => c.isActive && !c.isDeleted)
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   const archived = categories.filter(c => !c.isActive && !c.isDeleted);
 
   // Group by category group
@@ -85,6 +92,17 @@ export default function Categories() {
     if (cats.length) acc[g] = cats;
     return acc;
   }, {});
+
+  const handleReorder = (group: string, newOrder: Category[]) => {
+    // We need to maintain the global order relative to other groups if we want to be strict,
+    // but usually reordering within a group is enough.
+    // The store's reorderCategories takes a list of IDs and assigns 0..N.
+    // To maintain relative order across groups, we'd need to reconstruct the full list.
+
+    const otherCats = active.filter(c => c.group !== group);
+    const fullNewOrder = [...otherCats, ...newOrder];
+    reorderCategories(fullNewOrder.map(c => c.id));
+  };
 
   return (
     <SettingsLayout>
@@ -95,7 +113,7 @@ export default function Categories() {
               <h2 className="text-xl font-bold tracking-tight">Categories</h2>
               <InfoTooltip
                 position="bottom"
-                text="Categories organize your income and expenses into a hierarchy. Every transaction is assigned to a category to help you see where your money goes."
+                text="Categories organize your income and expenses into a hierarchy. Drag to reorder within groups."
               />
             </div>
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
@@ -119,53 +137,71 @@ export default function Categories() {
                 </h3>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Reorder.Group
+                axis="y"
+                values={cats}
+                onReorder={val => handleReorder(group, val)}
+                className="grid grid-cols-1 gap-2"
+              >
                 {cats.map(c => (
-                  <Card
+                  <Reorder.Item
                     key={c.id}
-                    className="group border-border hover:border-primary/30 transition-all shadow-sm"
+                    value={c}
+                    whileDrag={{
+                      boxShadow: '0 20px 50px -12px rgba(0,0,0,0.5)',
+                      zIndex: 1000,
+                      backgroundColor: '#18181b',
+                    }}
+                    className="group relative border border-border/40 hover:border-primary/30 transition-colors shadow-sm rounded-xl bg-card cursor-default select-none"
                   >
-                    <CardContent className="p-4 flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className={cn(
-                            'h-8 w-8 shrink-0 rounded-lg flex items-center justify-center',
-                            GROUP_STYLES[group]
-                          )}
-                        >
-                          <Tag className="h-4 w-4" />
+                    <Card className="border-none shadow-none bg-transparent">
+                      <CardContent className="p-4 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className={cn(
+                              'h-8 w-8 shrink-0 rounded-lg flex items-center justify-center',
+                              GROUP_STYLES[group]
+                            )}
+                          >
+                            <Tag className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-bold text-sm tracking-tight truncate">{c.head}</p>
+                            {c.subHead && (
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground truncate">
+                                {c.subHead}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-sm tracking-tight truncate">{c.head}</p>
-                          {c.subHead && (
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground truncate">
-                              {c.subHead}
-                            </p>
-                          )}
+                        <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mr-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => openEdit(c)}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => archiveCategory(c.id)}
+                            >
+                              <Archive className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                          <div className="p-2 -mr-2 cursor-grab active:cursor-grabbing text-muted-foreground/20 group-hover:text-primary/40 transition-colors rounded-lg hover:bg-primary/5">
+                            <GripVertical className="h-5 w-5" />
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => openEdit(c)}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => archiveCategory(c.id)}
-                        >
-                          <Archive className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </Reorder.Item>
                 ))}
-              </div>
+              </Reorder.Group>
             </section>
           ))}
         </div>
