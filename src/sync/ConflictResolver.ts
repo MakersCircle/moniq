@@ -57,7 +57,6 @@ export function reconcile<T extends { id: string; updatedAt: string }>(
 
     // Both exist — check for manual sheet edits via checksum
     const storedChecksum = remoteChecksums.get(id);
-    const localChecksum = computeLocalChecksum(localEntity);
 
     // If the remote data's computed checksum differs from the stored one,
     // someone manually edited the sheet → remote wins regardless of updatedAt

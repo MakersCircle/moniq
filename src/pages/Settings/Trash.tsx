@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Info, RotateCcw, Trash2, Landmark, CreditCard, ReceiptText, Tag } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
-import { formatCurrency, formatDate } from '@/utils/format';
+import { formatCurrency } from '@/utils/format';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -10,10 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
-import type { Transaction, Account, PaymentMethod, Category } from '@/types';
+import type { Transaction, Account, PaymentMethod, Category, UserSettings } from '@/types';
 
 function InfoTooltip({ text, position = 'top' }: { text: string; position?: 'top' | 'bottom' }) {
   return (
@@ -40,7 +40,6 @@ export default function Trash() {
     methods,
     settings,
     updateTransaction,
-    updateAccount,
     updateMethod,
     updateCategory,
     restoreAccount,
@@ -278,9 +277,8 @@ export default function Trash() {
 interface TransactionsTableProps {
   transactions: Transaction[];
   sortBy: SortOption;
-  settings: any;
+  settings: UserSettings;
   accounts: Account[];
-  categories: Category[];
   restoring: Record<string, boolean>;
   onRestore: (id: string) => void;
 }
@@ -290,7 +288,6 @@ function TransactionsTable({
   sortBy,
   settings,
   accounts,
-  categories,
   restoring,
   onRestore,
 }: TransactionsTableProps) {
@@ -328,7 +325,7 @@ function TransactionsTable({
                 </p>
               </td>
               <td className="px-5 py-3 text-xs text-muted-foreground">
-                {accounts.find((a: any) => a.id === t.entries[0]?.accountId)?.name || 'Unknown'}
+                {accounts.find((a: Account) => a.id === t.entries[0]?.accountId)?.name || 'Unknown'}
               </td>
               <td
                 className={cn(
@@ -360,12 +357,12 @@ function TransactionsTable({
 interface AccountsTableProps {
   accounts: Account[];
   sortBy: SortOption;
-  settings: any;
+  settings: UserSettings;
   restoring: Record<string, boolean>;
   onRestore: (id: string) => void;
 }
 
-function AccountsTable({ accounts, sortBy, settings, restoring, onRestore }: AccountsTableProps) {
+function AccountsTable({ accounts, settings, restoring, onRestore }: AccountsTableProps) {
   const sorted = [...accounts].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
   return (
@@ -455,7 +452,7 @@ function MethodsTable({ methods, accounts, restoring, onRestore }: MethodsTableP
                 </p>
               </td>
               <td className="px-5 py-3 text-xs text-muted-foreground font-bold">
-                {accounts.find((a: any) => a.id === m.linkedAccountId)?.name || 'Unknown'}
+                {accounts.find((a: Account) => a.id === m.linkedAccountId)?.name || 'Unknown'}
               </td>
               <td className="px-2 py-3">
                 <Button

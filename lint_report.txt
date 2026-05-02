@@ -1,0 +1,101 @@
+
+/home/don/Projects/20260202 moniq/moniq/src/App.tsx
+   44:9  warning  The 'openNew' function makes the dependencies of useEffect Hook (at line 134) change on every render. To fix this, wrap the definition of 'openNew' in its own useCallback() Hook                                                       react-hooks/exhaustive-deps
+   45:9  warning  The 'openEdit' function makes the dependencies of useEffect Hook (at line 134) change on every render. Move it inside the useEffect callback. Alternatively, wrap the definition of 'openEdit' in its own useCallback() Hook            react-hooks/exhaustive-deps
+   46:9  warning  The 'openDuplicate' function makes the dependencies of useEffect Hook (at line 134) change on every render. Move it inside the useEffect callback. Alternatively, wrap the definition of 'openDuplicate' in its own useCallback() Hook  react-hooks/exhaustive-deps
+  118:6  warning  React Hook useEffect has a missing dependency: 'setCloudInitialized'. Either include it or remove the dependency array                                                                                                                  react-hooks/exhaustive-deps
+
+/home/don/Projects/20260202 moniq/moniq/src/components/Dashboard/RecentTransactionsTable.tsx
+  1:10  error  'useMemo' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/don/Projects/20260202 moniq/moniq/src/components/Layout/SettingsLayout.tsx
+  2:47  error  'Database' is defined but never used      @typescript-eslint/no-unused-vars
+  2:57  error  'ChevronRight' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/don/Projects/20260202 moniq/moniq/src/components/Onboarding/OnboardingModal.tsx
+  15:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  27:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  27:69  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/don/Projects/20260202 moniq/moniq/src/components/Transactions/DatePicker.tsx
+  30:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/don/Projects/20260202 moniq/moniq/src/components/Transactions/DatePicker.tsx:30:7
+  28 |     const d = parseISO(date);
+  29 |     if (isValid(d)) {
+> 30 |       setInputValue(format(d, 'dd/MM/yyyy'));
+     |       ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  31 |       setMonth(d);
+  32 |     }
+  33 |   }, [date]);  react-hooks/set-state-in-effect
+
+/home/don/Projects/20260202 moniq/moniq/src/components/Transactions/TransactionDetailPanel.tsx
+  163:9  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/don/Projects/20260202 moniq/moniq/src/components/TxnRow.tsx
+  17:11  error  'isIncome' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/don/Projects/20260202 moniq/moniq/src/components/ui/button.tsx
+  50:18  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/home/don/Projects/20260202 moniq/moniq/src/components/ui/calendar.tsx
+  13:3  error  'buttonVariant' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  69:3  error  'day' is defined but never used                     @typescript-eslint/no-unused-vars
+
+/home/don/Projects/20260202 moniq/moniq/src/components/ui/dot-pattern.tsx
+  13:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/don/Projects/20260202 moniq/moniq/src/components/ui/input.tsx
+  5:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+/home/don/Projects/20260202 moniq/moniq/src/hooks/useComputed.ts
+  125:6   warning  React Hook useMemo has an unnecessary dependency: 'accounts'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+  179:34  error    Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+  214:6   warning  React Hook useMemo has an unnecessary dependency: 'accounts'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/don/Projects/20260202 moniq/moniq/src/lib/ledger.ts
+  1:60  error  'EntryType' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/don/Projects/20260202 moniq/moniq/src/main.tsx
+  8:1  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+
+/home/don/Projects/20260202 moniq/moniq/src/pages/Budget.tsx
+    2:37  error  'Check' is defined but never used         @typescript-eslint/no-unused-vars
+    2:44  error  'X' is defined but never used             @typescript-eslint/no-unused-vars
+  179:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/don/Projects/20260202 moniq/moniq/src/pages/Dashboard.tsx
+  266:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/don/Projects/20260202 moniq/moniq/src/pages/Settings/Accounts.tsx
+  2:10  error  'Info' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/don/Projects/20260202 moniq/moniq/src/pages/Settings/Categories.tsx
+  2:46  error  'Landmark' is defined but never used    @typescript-eslint/no-unused-vars
+  2:56  error  'CreditCard' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/don/Projects/20260202 moniq/moniq/src/pages/Settings/Methods.tsx
+  2:10  error  'Info' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/don/Projects/20260202 moniq/moniq/src/pages/Settings/Trash.tsx
+    4:26  error  'formatDate' is defined but never used              @typescript-eslint/no-unused-vars
+   13:16  error  'TabsContent' is defined but never used             @typescript-eslint/no-unused-vars
+   43:5   error  'updateAccount' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  281:13  error  Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  293:3   error  'categories' is defined but never used              @typescript-eslint/no-unused-vars
+  331:36  error  Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  363:13  error  Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  368:36  error  'sortBy' is defined but never used                  @typescript-eslint/no-unused-vars
+  458:36  error  Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+
+/home/don/Projects/20260202 moniq/moniq/src/sync/ConflictResolver.ts
+  60:11  error  'localChecksum' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+✖ 41 problems (35 errors, 6 warnings)
+

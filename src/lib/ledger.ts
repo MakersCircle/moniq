@@ -1,4 +1,4 @@
-import type { Account, Category, Transaction, LedgerEntry, EntryType } from '../types';
+import type { Account, Category, Transaction, LedgerEntry } from '../types';
 
 /**
  * LedgerEngine handles the core professional accounting logic.
