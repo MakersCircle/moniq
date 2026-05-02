@@ -76,7 +76,19 @@ export default function App() {
     return () => clearInterval(interval);
   }, [accessToken, tokenExpiresAt]);
 
-  // 3. Cloud initialization (Google Sheets)
+  // 3. SyncEngine Subscription
+  useEffect(() => {
+    if (!accessToken) return;
+
+    const engine = SyncEngine.getInstance();
+    const unsubscribe = engine.subscribe((status, pendingCount, error) => {
+      setSyncStatus(status, pendingCount, error);
+    });
+
+    return () => unsubscribe();
+  }, [accessToken, setSyncStatus]);
+
+  // 4. Cloud initialization (Google Sheets)
   useEffect(() => {
     if (!accessToken || !isHydrated) return;
 
@@ -86,7 +98,7 @@ export default function App() {
         if (tokenExpiresAt && Date.now() > tokenExpiresAt - 300000) {
           console.log('[App] Token expired or near expiry, refreshing...');
           const newToken = await googleService.silentRefresh();
-          if (!newToken) return; // Will redirect to home via token=null change
+          if (!newToken) return;
         }
 
         const profile = await fetchUserProfile();
@@ -95,27 +107,16 @@ export default function App() {
         const sheetId = await initializeDatabase();
         setSpreadsheetId(sheetId);
 
-        // Initialize SyncEngine — pulls from sheets, reconciles, and hydrates store
         const engine = SyncEngine.getInstance();
-
-        // Subscribe to sync status changes
-        const unsubscribe = engine.subscribe((status, pendingCount, error) => {
-          setSyncStatus(status, pendingCount, error);
-        });
-
         const reconciledData = await engine.initialize(sheetId);
         if (reconciledData) {
           hydrateFromSync(reconciledData);
         } else {
           setCloudInitialized(true);
         }
-
-        // Cleanup subscription on unmount
-        return () => unsubscribe();
       } catch (err) {
         console.error('Failed to initialize cloud database:', err);
         setCloudInitialized(true);
-        // Unauthorized/Expired handled by googleService clearing the token
       }
     }
 
@@ -126,7 +127,6 @@ export default function App() {
     isHydrated,
     setUserProfile,
     setSpreadsheetId,
-    setSyncStatus,
     hydrateFromSync,
     setCloudInitialized,
   ]);

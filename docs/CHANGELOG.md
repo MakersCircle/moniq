@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Speed Entry Overhaul**: Implemented a streamlined transaction entry workflow designed for bulk data entry.
+  - **Save & Add Another**: Support for `Cmd/Ctrl + Enter` to save a transaction and immediately start a new one without closing the modal.
+  - **Continuous Context**: Automatically persists `Date` and `Payment Method` between entries during a single session.
+  - **Smart Defaults**: The modal now defaults to the most recently used payment method upon first opening.
+  - **Focus Flow Optimization**: Refined tab order (`Amount` → `Date` → `Method` → `Category` → `Sub-category` → `Note`) and automatic field focusing for zero-mouse operation.
+  - **Keyboard Shortcuts**: Native `Enter` key support for saving, with smart exclusion for the note textarea.
+- **Enhanced Validation**: The "Save" button now remains disabled until all required fields (Amount, Date, Method, Category) are valid.
+- **Negative Amount Prevention**: Restricted the amount input to positive numbers only.
+
+### Fixed
+- **Sync Reliability**: Resolved a lifecycle issue where background synchronization could stop responding due to stale subscriptions or race conditions.
+- **Immediate Sync Visibility**: Fixed a bug where pending change counts were not immediately reflected in the UI upon transaction entry.
+- **DatePicker Initialization**: Fixed an issue where the date picker would appear empty or fail to initialize when opening the modal.
+
 ---
 
 ## [0.4.0] - 2026-05-02
