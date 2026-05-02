@@ -38,6 +38,13 @@ const DB_VERSION = 1;
 
 let dbInstance: IDBPDatabase<MoniqDB> | null = null;
 
+export async function closeDB(): Promise<void> {
+  if (dbInstance) {
+    dbInstance.close();
+    dbInstance = null;
+  }
+}
+
 export async function getDB(): Promise<IDBPDatabase<MoniqDB>> {
   if (dbInstance) return dbInstance;
 
@@ -214,4 +221,10 @@ export async function getAllSettings(): Promise<Record<string, string>> {
     result[key] = value;
   }
   return result;
+}
+
+export async function deleteMoniqDB(): Promise<void> {
+  await closeDB();
+  const { deleteDB } = await import('idb');
+  await deleteDB(DB_NAME);
 }

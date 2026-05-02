@@ -255,6 +255,7 @@ export class SyncEngine {
   private client: SheetClient | null = null;
   private config: SyncConfig;
   private rowIndexes: RowIndexMap;
+
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private _status: SyncStatus = 'idle';
@@ -771,20 +772,41 @@ export class SyncEngine {
 
   /** Orchestrates a complete wipe of remote and local data. */
   async performHardReset(): Promise<void> {
-    if (!(await this.ensureClient())) {
-      throw new Error('Cannot perform reset: No access token or spreadsheet ID found.');
-    }
-
-    const { useDataStore } = await import('../store/dataStore');
-    const state = useDataStore.getState();
-
     this.setStatus('syncing');
     try {
-      // 1. Wipe remote sheets
-      await this.client!.clearAllData(Object.values(SHEET_NAMES));
+      // 1. Wipe remote sheets (Attempt but don't block if client missing)
+      if (this.client || (await this.ensureClient())) {
+        try {
+          const { SHEET_NAMES } = await import('./types');
+          await this.client!.clearAllData(Object.values(SHEET_NAMES));
+        } catch (remoteErr) {
+          console.warn('Failed to clear remote data, proceeding with local wipe:', remoteErr);
+        }
+      }
 
-      // 2. Wipe local store
-      state.resetData();
+      // 2. Wipe local store state
+      const { useDataStore } = await import('../store/dataStore');
+      useDataStore.getState().resetData();
+
+      // 3. Delete IndexedDB and Clear Web Storage
+      const { deleteMoniqDB } = await import('../lib/db');
+      await deleteMoniqDB();
+
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // 4. Reset internal engine state
+      this.rowIndexes = {
+        transactions: new Map(),
+        accounts: new Map(),
+        methods: new Map(),
+        categories: new Map(),
+        budgets: new Map(),
+        settings: new Map(),
+      };
+      this.spreadsheetId = null;
+      this.accessToken = null;
+      this.isInitialized = false;
 
       this.setStatus('idle');
     } catch (err) {
