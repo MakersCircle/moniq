@@ -13,7 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Custom Ordering**: Implemented drag-and-drop reordering for Payment Methods and Categories in Settings.
   - Manual sort order is now persisted to Google Sheets ('Sort Order' column).
   - Custom order is automatically reflected in transaction modal dropdowns and budget views.
-  - Robust Sync Logic: Added intelligent data migration to handle new sheet columns without shifting existing data.
   - Refined UX: Enhanced drag-and-drop feedback with opaque backgrounds, dynamic shadows, and high-z-index layering to prevent sidebar overlap.
 - **Category UX**: Replaced the native `datalist` for Category Head with a custom, searchable `Popover` dropdown in the Add Category modal.
   - Supports filtering existing heads as you type.
