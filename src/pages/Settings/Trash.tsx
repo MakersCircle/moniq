@@ -223,7 +223,6 @@ export default function Trash() {
                 sortBy={sortBy}
                 settings={settings}
                 accounts={accounts}
-                categories={categories}
                 restoring={restoring}
                 onRestore={id => handleRestore('transaction', id)}
               />
