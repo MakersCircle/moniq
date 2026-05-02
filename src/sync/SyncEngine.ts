@@ -446,21 +446,7 @@ export class SyncEngine {
           current.length !== target.length || current.some((h, i) => h !== target[i]);
 
         if (mismatch && rows.length > 0) {
-          // Map existing row data to new header positions
-          const migratedDataRows = rows.slice(1).map(row => {
-            const newRow = new Array(target.length).fill('');
-            target.forEach((headerName, targetIdx) => {
-              const oldIdx = current.indexOf(headerName);
-              if (oldIdx !== -1) {
-                newRow[targetIdx] = row[oldIdx] || '';
-              } else if (headerName === 'Sort Order') {
-                newRow[targetIdx] = '0';
-              }
-            });
-            return newRow;
-          });
-
-          repairs.push(this.client!.overwriteSheet(name, migratedDataRows));
+          repairs.push(this.client!.overwriteSheet(name, rows.slice(1)));
         }
       };
 
