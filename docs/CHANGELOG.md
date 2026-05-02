@@ -9,8 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.4.0] - 2026-05-02
+
 ### Added
 - **MDX Documentation**: Implemented an in-app help system using MDX at the `/docs` route. Includes user guides (Getting Started, FAQ, Scenarios) and technical architecture docs.
+- **API Reference**: Integrated TypeDoc for automated technical documentation generation and enriched the codebase with comprehensive JSDoc comments for better developer onboarding.
 - **Dynamic Help Routing**: Documentation pages are dynamically loaded and styled using Tailwind Typography with custom high-contrast theme overrides.
 
 ### Changed
@@ -18,7 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **API Types**: Resolved TypeScript errors in Google API routines related to `UserProfile` definitions.
-- **Linting**: Cleaned up unused imports and parameters across the documentation and sync modules.
+- **Logout Flow**: Improved logout process with pre-sync verification and a visible loading state to prevent data loss.
+- **Transaction Filters**: Fixed initialization issues with transaction filters and resolved ledger engine import paths.
+- **Hook Stability**: Resolved `exhaustive-deps` and `set-state-in-effect` warnings in core components like `DatePicker` and `App.tsx`.
+- **Code Quality**: Conducted a comprehensive pass to resolve all remaining TypeScript warnings and ESLint errors across the codebase.
 - **Backups**: Clicking "Backup Now" in Settings was silently doing nothing if a backup had already run automatically earlier that day. It now always creates a fresh backup immediately, regardless of schedule. Each manual backup creates a new copy in your "Moniq Backups" Drive folder.
 
 ---
