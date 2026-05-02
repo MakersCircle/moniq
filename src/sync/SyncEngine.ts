@@ -804,8 +804,7 @@ export class SyncEngine {
         budgets: new Map(),
         settings: new Map(),
       };
-      this.spreadsheetId = null;
-      this.accessToken = null;
+      this.client = null;
       this.isInitialized = false;
 
       this.setStatus('idle');
