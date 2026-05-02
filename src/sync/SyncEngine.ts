@@ -304,6 +304,8 @@ export class SyncEngine {
    */
   subscribe(listener: SyncListener): () => void {
     this.listeners.add(listener);
+    // Notify immediately on subscription so the UI reflects current state
+    listener(this._status, this._pendingCount, this._lastError);
     return () => this.listeners.delete(listener);
   }
 
@@ -526,6 +528,7 @@ export class SyncEngine {
       }
 
       await clearSyncQueue();
+      await this.updatePendingCount();
 
       await setMeta('lastSyncedAt', new Date().toISOString());
       this.isInitialized = true;
@@ -626,7 +629,7 @@ export class SyncEngine {
   }
 
   private async flush(): Promise<void> {
-    if (this._status === 'syncing') return;
+    if (this._status === 'syncing' || this._status === 'pulling') return;
     if (!(await this.ensureClient())) return;
 
     const queue = await getAllSyncQueue();
