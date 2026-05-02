@@ -27,10 +27,16 @@ export default function Dashboard() {
   const categorySpend = useCategorySpend(year, month);
 
   // Stats Calculations
-  const netWorth = useMemo(() => {
-    return accounts
-      .filter(s => s.isActive && !s.isDeleted && !s.excludeFromNet)
+  const { netWorth, liquidity, totalSavings } = useMemo(() => {
+    const activeAccounts = accounts.filter(s => s.isActive && !s.isDeleted && !s.excludeFromNet);
+    const nw = activeAccounts.reduce((sum, s) => sum + (balances[s.id] || 0), 0);
+    const liq = activeAccounts
+      .filter(s => !s.isSavings && s.type === 'Asset')
       .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
+    const sav = activeAccounts
+      .filter(s => s.isSavings && s.type === 'Asset')
+      .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
+    return { netWorth: nw, liquidity: liq, totalSavings: sav };
   }, [accounts, balances]);
 
   const savingsRate = income > 0 ? ((income - expenses) / income) * 100 : 0;
@@ -64,12 +70,12 @@ export default function Dashboard() {
 
       {/* Top Stats Row — 4 Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard // TODO: Implement actual net worth tracking and info button showing "excluding investments"
+        <StatCard
           label="Net Worth"
           value={netWorth}
           settings={settings}
-          detail="+5.2% vs last month" // Placeholder for now
-          detailColor="text-income"
+          detail={`Liq: ${formatCurrencyShort(liquidity, settings.currencySymbol)} · Sav: ${formatCurrencyShort(totalSavings, settings.currencySymbol)}`}
+          detailColor="text-muted-foreground"
         />
         <StatCard label="Income" value={income} settings={settings} detail="This Month" />
         <StatCard

@@ -43,6 +43,7 @@
     - [x] Silence sync diagnostic logs for production cleanliness
     - [x] Isolate legacy migration helpers in Sync Engine
     - [x] Refactor navigation logic in App.tsx to use explicit onboarding flag
+    - [x] Silence diagnostic logs in BackupManager for production cleanliness.
 - [ ] **Phase 4: Transaction Detail & Editing**
     - [ ] Create detailed transaction view (modal/drawer)
     - [ ] Implement editing logic for existing transactions (ensuring double-entry integrity)
@@ -75,12 +76,12 @@
     - [x] Check logic for account creation.
     - [x] Automatically create a corresponding pay method with the same name as the new account by default.
 
-- [ ] **Account Flags Verification.**
-    - [ ] Verify toggle "Savings" actually does its thing.
-    - [ ] Verify "Add to Net Worth" (excludeFromNet) works.
+- [x] **Account Flags Verification.**
+    - [x] Verify toggle "Savings" actually does its thing. (Added Liquidity vs Savings breakdown on Dashboard).
+    - [x] Verify "Add to Net Worth" (excludeFromNet) works. (Verified in Dashboard.tsx logic).
     - **Context:**
         - `excludeFromNet` is correctly implemented in `src/pages/Dashboard.tsx` (line 31) for calculating Net Worth.
-        - `isSavings` is currently only used for a UI label in `Accounts.tsx` (line 133). No specific logic found in `useComputed.ts` or `Dashboard.tsx` for "Savings" specific calculations (though `savingsRate` uses total income/expenses).
+        - `isSavings` is used in `Dashboard.tsx` to distinguish between Liquidity and Savings accounts in the Net Worth breakdown.
 - [ ] **Transaction Detail View.**
     - [ ] View transaction details in a modal or similar overlay when clicking a transaction in the listing.
 

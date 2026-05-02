@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Dashboard Breakdown**: Added a "Liquidity vs Savings" breakdown in the Net Worth stat card to better utilize the `isSavings` account flag.
+
+### Fixed
+- **Cleanup & Reliability**: 
+  - Silenced all diagnostic `console.log` calls in `BackupManager` for a cleaner production console.
+  - Verified and confirmed that `excludeFromNet` and `isSavings` flags are correctly integrated into the application logic.
+  - Conducted a code audit to ensure all recent React Hook and `setState` lint warnings have been resolved.
+
 ## [0.5.0] - 2026-05-03
 
 ### Added

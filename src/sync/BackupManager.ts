@@ -38,18 +38,18 @@ export class BackupManager {
 
     if (requiredTiers.length === 0) return;
 
-    console.log('[BackupManager] Starting backup cycle for tiers:', requiredTiers);
+    // console.log('[BackupManager] Starting backup cycle for tiers:', requiredTiers);
 
     try {
       const folderId = await this.ensureBackupFolder();
 
       for (const tier of requiredTiers) {
-        console.log(`[BackupManager] Creating ${tier} backup...`);
+        // console.log(`[BackupManager] Creating ${tier} backup...`);
         await this.performBackup(tier, spreadsheetId, folderId);
         await this.cleanupOldBackups(tier, folderId);
       }
 
-      console.log('[BackupManager] Backup cycle completed successfully.');
+      // console.log('[BackupManager] Backup cycle completed successfully.');
     } catch (error) {
       console.error('[BackupManager] Backup cycle failed:', error);
     }
@@ -136,7 +136,7 @@ export class BackupManager {
     if (files.length > limit) {
       const toDelete = files.slice(limit);
       for (const file of toDelete) {
-        console.log(`[BackupManager] Deleting old ${tier} backup: ${file.name}`);
+        // console.log(`[BackupManager] Deleting old ${tier} backup: ${file.name}`);
         await googleService.deleteFile(file.id);
       }
     }

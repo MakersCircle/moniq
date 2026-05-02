@@ -28,4 +28,4 @@ dist-ssr
 .env.*
 !.env.example
 google-sheet/
-todo.md
+scratch/
