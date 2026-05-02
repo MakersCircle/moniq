@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Plus, Trash2, Check, Repeat } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
 import type { Transaction, TransactionType } from '@/types';
@@ -30,15 +30,26 @@ interface AddTransactionModalProps {
   onClose: () => void;
   initialData?: Transaction;
   isDuplicate?: boolean;
+  defaultType?: TransactionType;
 }
 
 export default function AddTransactionModal({
   onClose,
   initialData,
   isDuplicate,
+  defaultType,
 }: AddTransactionModalProps) {
-  const { accounts, methods, categories, settings, addTransaction, updateTransaction } =
-    useDataStore();
+  const {
+    accounts,
+    methods,
+    categories,
+    settings,
+    addTransaction,
+    updateTransaction,
+    transactions,
+  } = useDataStore();
+
+  const lastTransaction = useMemo(() => transactions[0], [transactions]);
 
   // Helper to find initial account/category from ledger entries
   const initialAccountId = useMemo(() => {
@@ -80,15 +91,35 @@ export default function AddTransactionModal({
     return Array.from(heads.keys());
   }, [activeCategories]);
 
-  const [type, setType] = useState<TransactionType>(initialData?.uiType || 'expense');
+  const [type, setType] = useState<TransactionType>(
+    initialData?.uiType || defaultType || 'expense'
+  );
+  const [isSplit, setIsSplit] = useState(false);
+  const [splits, setSplits] = useState<SplitLine[]>([
+    { categoryId: '', amount: '', note: '' },
+    { categoryId: '', amount: '', note: '' },
+  ]);
+
+  const [prevDefaultType, setPrevDefaultType] = useState(defaultType);
+  if (defaultType !== prevDefaultType && !initialData) {
+    setPrevDefaultType(defaultType);
+    if (defaultType) {
+      setType(defaultType);
+      setIsSplit(false);
+    }
+  }
   const [amount, setAmount] = useState(
     initialData?.entries[0]?.amount ? String(initialData.entries[0].amount) : ''
   );
   const [date, setDate] = useState(isDuplicate ? today : initialData?.date || today);
   const accountId = initialAccountId;
   const [targetId, setTargetId] = useState(initialTargetId);
-  const [methodId, setMethodId] = useState(initialData?.methodId || activeMethods[0]?.id || '');
+  const [methodId, setMethodId] = useState(
+    initialData?.methodId || lastTransaction?.methodId || activeMethods[0]?.id || ''
+  );
   const [note, setNote] = useState(initialData?.note || '');
+
+  const amountRef = useRef<HTMLInputElement>(null);
 
   // Category head/sub split state
   const initialCategoryHead = useMemo(() => {
@@ -152,12 +183,6 @@ export default function AddTransactionModal({
     return activeMethods.filter(m => m.linkedAccountId !== fromMethod.linkedAccountId);
   }, [fromMethodId, methods, activeMethods]);
 
-  const [isSplit, setIsSplit] = useState(false);
-  const [splits, setSplits] = useState<SplitLine[]>([
-    { categoryId: '', amount: '', note: '' },
-    { categoryId: '', amount: '', note: '' },
-  ]);
-
   // Derived accountId for Income/Expense based on chosen payment method
   const derivedAccountId = useMemo(() => {
     if (type === 'transfer') return fromAccountId;
@@ -176,12 +201,37 @@ export default function AddTransactionModal({
   const remainingForSplits = parsedAmount - totalSplitAmount;
   const isFullyAllocated = Math.abs(remainingForSplits) < 0.01;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!parsedAmount || parsedAmount <= 0) return;
-    if (!derivedAccountId) return;
-    if (type !== 'transfer' && !isSplit && !derivedTargetId) return;
-    if (type === 'transfer' && !derivedTargetId) return;
+  const isValidTransaction = useMemo(() => {
+    if (!parsedAmount || parsedAmount <= 0) return false;
+    if (!date || isNaN(Date.parse(date))) return false;
+
+    if (type === 'transfer') {
+      return !!fromMethodId && !!toMethodId;
+    } else {
+      if (!methodId) return false;
+      if (isSplit) {
+        return isFullyAllocated && splits.every(s => s.categoryId && parseFloat(s.amount) > 0);
+      }
+      return !!targetId;
+    }
+  }, [
+    parsedAmount,
+    date,
+    type,
+    fromMethodId,
+    toMethodId,
+    methodId,
+    isSplit,
+    isFullyAllocated,
+    splits,
+    targetId,
+  ]);
+
+  const [isSaved, setIsSaved] = useState(false);
+
+  const handleSubmit = async (e?: React.FormEvent, keepOpen = false) => {
+    if (e) e.preventDefault();
+    if (!isValidTransaction) return;
 
     const isEditing = !!initialData && !isDuplicate;
 
@@ -224,14 +274,75 @@ export default function AddTransactionModal({
           });
         });
     }
-    onClose();
+
+    if (keepOpen) {
+      setAmount('');
+      setNote('');
+      setTargetId('');
+      setSelectedHead('');
+      setFromMethodId('');
+      setToMethodId('');
+      setSplits([{ categoryId: '', amount: '', note: '' }]);
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+      // Keep date, methodId, type as requested for continuous entry
+      setTimeout(() => amountRef.current?.focus(), 10);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+    const isAlt = e.altKey;
+
+    // Tab switching shortcuts
+    if ((isAlt || isCmdOrCtrl) && (e.key === '1' || e.key === '2' || e.key === '3')) {
+      e.preventDefault();
+      const newType = e.key === '1' ? 'expense' : e.key === '2' ? 'income' : 'transfer';
+      setType(newType);
+      setIsSplit(false);
+      return;
+    }
+
+    // Shift + I, E, T (switching tabs, only if not typing)
+    if (e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey) {
+      const target = e.target as HTMLElement;
+      const isTyping =
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      if (!isTyping) {
+        if (['I', 'E', 'T'].includes(e.key)) {
+          e.preventDefault();
+          const newType = e.key === 'E' ? 'expense' : e.key === 'I' ? 'income' : 'transfer';
+          setType(newType);
+          setIsSplit(false);
+          return;
+        }
+      }
+    }
+
+    if (e.key === 'Enter') {
+      if (isCmdOrCtrl) {
+        // Cmd/Ctrl + Enter = Save & Stay
+        e.preventDefault();
+        handleSubmit(undefined, true);
+      } else if (e.shiftKey && (e.target as HTMLElement).tagName === 'TEXTAREA') {
+        // Shift + Enter in textarea = New line (let default happen)
+        return;
+      } else {
+        // Enter = Save & Close (even in textarea)
+        e.preventDefault();
+        handleSubmit();
+      }
+    }
   };
 
   const inputClasses = 'h-9 bg-muted/40 border-transparent focus:border-primary/30 transition-all';
 
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={e => handleSubmit(e)}
+      onKeyDown={handleKeyDown}
       className="flex flex-col max-h-full overflow-hidden bg-background"
     >
       {/* Header Area */}
@@ -276,8 +387,11 @@ export default function AddTransactionModal({
               {settings.currencySymbol}
             </span>
             <input
+              ref={amountRef}
               type="number"
+              min="0"
               autoFocus
+              tabIndex={1}
               className={cn(
                 'bg-transparent text-5xl font-black outline-none text-center w-full max-w-[240px] mono tracking-tighter transition-colors',
                 type === 'income'
@@ -288,7 +402,18 @@ export default function AddTransactionModal({
               )}
               placeholder="0.00"
               value={amount}
-              onChange={e => setAmount(e.target.value)}
+              onChange={e => {
+                const val = e.target.value;
+                // Strip everything except numbers and decimal point
+                const sanitized = val.replace(/[^0-9.]/g, '');
+                setAmount(sanitized);
+              }}
+              onKeyDown={e => {
+                // Prevent 'e', '+', '-' from being entered
+                if (['e', 'E', '+', '-'].includes(e.key)) {
+                  e.preventDefault();
+                }
+              }}
               inputMode="decimal"
               step="any"
             />
@@ -320,7 +445,7 @@ export default function AddTransactionModal({
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
                   Date
                 </Label>
-                <DatePicker date={date} onChange={setDate} />
+                <DatePicker date={date} onChange={setDate} tabIndex={2} />
               </div>
             </div>
 
@@ -337,14 +462,14 @@ export default function AddTransactionModal({
                     if (val === toMethodId) setToMethodId('');
                   }}
                 >
-                  <SelectTrigger className={inputClasses}>
+                  <SelectTrigger className={inputClasses} tabIndex={3}>
                     <SelectValue placeholder="Select method" />
                   </SelectTrigger>
                   <SelectContent>
                     {activeMethods.map(m => {
                       const acct = activeAccounts.find(a => a.id === m.linkedAccountId);
                       return (
-                        <SelectItem key={m.id} value={m.id}>
+                        <SelectItem key={m.id} value={m.id} textValue={m.name}>
                           {m.name}
                           {acct ? ` · ${acct.name}` : ''}
                         </SelectItem>
@@ -363,14 +488,14 @@ export default function AddTransactionModal({
                   To
                 </Label>
                 <Select value={toMethodId || undefined} onValueChange={setToMethodId}>
-                  <SelectTrigger className={inputClasses}>
+                  <SelectTrigger className={inputClasses} tabIndex={4}>
                     <SelectValue placeholder="Select method" />
                   </SelectTrigger>
                   <SelectContent>
                     {toMethodOptions.map(m => {
                       const acct = activeAccounts.find(a => a.id === m.linkedAccountId);
                       return (
-                        <SelectItem key={m.id} value={m.id}>
+                        <SelectItem key={m.id} value={m.id} textValue={m.name}>
                           {m.name}
                           {acct ? ` · ${acct.name}` : ''}
                         </SelectItem>
@@ -394,19 +519,19 @@ export default function AddTransactionModal({
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
                   Date
                 </Label>
-                <DatePicker date={date} onChange={setDate} />
+                <DatePicker date={date} onChange={setDate} tabIndex={2} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
                   Payment Method
                 </Label>
                 <Select value={methodId} onValueChange={setMethodId}>
-                  <SelectTrigger className={inputClasses}>
+                  <SelectTrigger className={inputClasses} tabIndex={3}>
                     <SelectValue placeholder="Select Method" />
                   </SelectTrigger>
                   <SelectContent>
                     {activeMethods.map(m => (
-                      <SelectItem key={m.id} value={m.id}>
+                      <SelectItem key={m.id} value={m.id} textValue={m.name}>
                         {m.name}
                       </SelectItem>
                     ))}
@@ -435,12 +560,12 @@ export default function AddTransactionModal({
                       setTargetId(subs.length === 1 ? subs[0].id : '');
                     }}
                   >
-                    <SelectTrigger className={inputClasses}>
+                    <SelectTrigger className={inputClasses} tabIndex={4}>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
                       {categoryHeads.map(h => (
-                        <SelectItem key={h} value={h}>
+                        <SelectItem key={h} value={h} textValue={h}>
                           {h}
                         </SelectItem>
                       ))}
@@ -471,12 +596,12 @@ export default function AddTransactionModal({
                     </div>
                   ) : (
                     <Select value={targetId || undefined} onValueChange={setTargetId}>
-                      <SelectTrigger className={inputClasses}>
+                      <SelectTrigger className={inputClasses} tabIndex={5}>
                         <SelectValue placeholder="Select sub-category" />
                       </SelectTrigger>
                       <SelectContent>
                         {subCategories.map(c => (
-                          <SelectItem key={c.id} value={c.id}>
+                          <SelectItem key={c.id} value={c.id} textValue={c.subHead || c.head}>
                             {c.subHead || c.head}
                           </SelectItem>
                         ))}
@@ -525,10 +650,15 @@ export default function AddTransactionModal({
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {activeCategories.map(c => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.head}
-                          {c.subHead ? ` · ${c.subHead}` : ''}
+                      {activeCategories.map(cat => (
+                        <SelectItem
+                          key={cat.id}
+                          value={cat.id}
+                          className="text-xs"
+                          textValue={cat.head}
+                        >
+                          {cat.head}
+                          {cat.subHead ? ` · ${cat.subHead}` : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -580,22 +710,34 @@ export default function AddTransactionModal({
             className="w-full min-h-[60px] p-3 rounded-md bg-muted/40 border-transparent focus:ring-1 focus:ring-primary/20 text-xs outline-none resize-none transition-all placeholder:text-muted-foreground/50"
             value={note}
             onChange={e => setNote(e.target.value)}
+            tabIndex={6}
           />
+          <div className="flex justify-end px-0.5">
+            <span className="text-[9px] text-muted-foreground/50 italic font-medium">
+              Shift + Enter for new line • Enter to save
+            </span>
+          </div>
         </div>
       </div>
 
-      <div className="px-6 py-5 border-t border-border bg-accent/5">
+      <div className="px-6 py-5 border-t border-border bg-accent/5 flex items-center justify-between gap-4">
+        {isSaved && (
+          <div className="flex items-center gap-2 text-income animate-in fade-in slide-in-from-left-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-income animate-pulse" />
+            <span className="text-[10px] font-bold uppercase tracking-widest">Saved</span>
+          </div>
+        )}
         <Button
           type="submit"
           className={cn(
-            'w-full h-11 text-xs font-bold uppercase tracking-[0.2em] transition-all',
+            'flex-1 h-11 text-xs font-bold uppercase tracking-[0.2em] transition-all',
             type === 'income'
               ? 'bg-income hover:bg-income/90 text-white shadow-income/20'
               : type === 'expense'
                 ? 'bg-expense hover:bg-expense/90 text-white shadow-expense/20'
                 : 'bg-primary hover:bg-primary/90 text-white shadow-primary/20'
           )}
-          disabled={!parsedAmount || parsedAmount <= 0 || (isSplit && !isFullyAllocated)}
+          disabled={!isValidTransaction}
         >
           <Check className="h-4 w-4 mr-2" />
           Save {type}

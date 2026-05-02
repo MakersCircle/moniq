@@ -9,20 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-05-03
+
 ### Added
 - **Speed Entry Overhaul**: Implemented a streamlined transaction entry workflow designed for bulk data entry.
   - **Save & Add Another**: Support for `Cmd/Ctrl + Enter` to save a transaction and immediately start a new one without closing the modal.
   - **Continuous Context**: Automatically persists `Date` and `Payment Method` between entries during a single session.
   - **Smart Defaults**: The modal now defaults to the most recently used payment method upon first opening.
   - **Focus Flow Optimization**: Refined tab order (`Amount` → `Date` → `Method` → `Category` → `Sub-category` → `Note`) and automatic field focusing for zero-mouse operation.
-  - **Keyboard Shortcuts**: Native `Enter` key support for saving, with smart exclusion for the note textarea.
+  - **Keyboard Shortcuts**: Native `Enter` key support for saving, and `Alt/Cmd + 1/2/3` for rapid switching between Expense, Income, and Transfer tabs.
 - **Enhanced Validation**: The "Save" button now remains disabled until all required fields (Amount, Date, Method, Category) are valid.
-- **Negative Amount Prevention**: Restricted the amount input to positive numbers only.
+- **Negative Amount Prevention**: Restricted the amount input to positive numbers and blocked non-numeric symbols (`e`, `+`, `-`).
+- **Dropdown Keyboard Navigation**: Added "type-to-select" support to all payment method and category dropdowns for high-speed, keyboard-driven selection.
+- **Notes Shortcut**: Updated `Enter` in the Notes field to trigger a save, while `Shift + Enter` is now used for new lines. Added a visual hint to the UI.
+- **Save & Stay UX**: Enhanced the `Cmd/Ctrl + Enter` workflow with a 'Saved' visual indicator and automatic focus resetting. Now clears all fields (Amount, Note, Category, Transfers) except for Date and Payment Method to support rapid, varied entry.
+- **Global Shortcuts**: Added `Alt + N` to open the modal, and `Shift + E/I/T` to instantly open and switch to a specific transaction type from any page.
+- **Shortcut Documentation**: Created a dedicated Keyboard Shortcuts page in the Help Center.
 
 ### Fixed
 - **Sync Reliability**: Resolved a lifecycle issue where background synchronization could stop responding due to stale subscriptions or race conditions.
 - **Immediate Sync Visibility**: Fixed a bug where pending change counts were not immediately reflected in the UI upon transaction entry.
 - **DatePicker Initialization**: Fixed an issue where the date picker would appear empty or fail to initialize when opening the modal.
+- **Smart Date Entry**: Added support for shorthand date entry (`ddmm` for current year) and flexible formatting (`ddmmyyyy`, `dd-mm-yyyy`, etc.).
 
 ---
 

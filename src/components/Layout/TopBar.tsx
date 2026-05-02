@@ -50,7 +50,7 @@ export default function TopBar({ onNewTransaction }: TopBarProps) {
         <Button
           size="sm"
           className="h-8 gap-1.5 text-xs px-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all active:scale-95"
-          onClick={onNewTransaction}
+          onClick={() => onNewTransaction()}
         >
           <Plus className="h-3.5 w-3.5" />
           <span>New Transaction</span>
