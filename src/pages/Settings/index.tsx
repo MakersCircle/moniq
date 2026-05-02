@@ -87,8 +87,10 @@ export default function SettingsIndex() {
     }
   };
 
+  const RESET_PHRASE = 'I UNDERSTAND THIS WILL PERMANENTLY WIPE ALL MY DATA';
+
   const handleHardReset = async () => {
-    if (resetConfirmText !== 'RESET') return;
+    if (resetConfirmText !== RESET_PHRASE) return;
 
     setIsResetting(true);
     try {
@@ -462,18 +464,17 @@ export default function SettingsIndex() {
             </div>
 
             <div className="space-y-3">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Type{' '}
-                <span className="text-destructive underline decoration-2 underline-offset-4">
-                  RESET
-                </span>{' '}
-                to confirm
+              <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Type the following exactly to confirm:
+                <div className="mt-1 text-destructive font-mono select-none bg-destructive/5 p-2 rounded border border-destructive/10 text-[11px] normal-case">
+                  {RESET_PHRASE}
+                </div>
               </Label>
               <Input
                 value={resetConfirmText}
-                onChange={e => setResetConfirmText(e.target.value.toUpperCase())}
-                placeholder="Type RESET here..."
-                className="h-11 border-border focus-visible:ring-destructive"
+                onChange={e => setResetConfirmText(e.target.value)}
+                placeholder="Type the exact phrase here..."
+                className="h-11 border-border focus-visible:ring-destructive text-sm"
               />
             </div>
 
@@ -489,7 +490,7 @@ export default function SettingsIndex() {
               <Button
                 variant="destructive"
                 className="flex-1 h-11 font-bold shadow-lg shadow-destructive/20"
-                disabled={resetConfirmText !== 'RESET' || isResetting}
+                disabled={resetConfirmText !== RESET_PHRASE || isResetting}
                 onClick={handleHardReset}
               >
                 {isResetting ? <RefreshCw className="h-4 w-4 animate-spin" /> : 'Delete Everything'}

@@ -115,6 +115,9 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
       syncStatus: 'idle',
       pendingCount: 0,
       lastSyncError: undefined,
+      accessToken: null,
+      userProfile: null,
+      tokenExpiresAt: null,
     }));
   },
 
