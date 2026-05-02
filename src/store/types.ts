@@ -51,12 +51,14 @@ export interface DataState {
   updateMethod: (id: string, patch: Partial<PaymentMethod>) => void;
   archiveMethod: (id: string) => void;
   deleteMethod: (id: string) => { success: boolean; reason?: string };
+  reorderMethods: (ids: string[]) => void;
 
   // Categories
   addCategory: (c: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => void;
   updateCategory: (id: string, patch: Partial<Category>) => void;
   archiveCategory: (id: string) => void;
   deleteCategory: (id: string) => { success: boolean; reason?: string };
+  reorderCategories: (ids: string[]) => void;
 
   // Transactions
   addTransaction: (params: {

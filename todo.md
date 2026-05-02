@@ -44,9 +44,9 @@
     - [x] Isolate legacy migration helpers in Sync Engine
     - [x] Refactor navigation logic in App.tsx to use explicit onboarding flag
     - [x] Silence diagnostic logs in BackupManager for production cleanliness.
-- [ ] **Phase 4: Transaction Detail & Editing**
-    - [ ] Create detailed transaction view (modal/drawer)
-    - [ ] Implement editing logic for existing transactions (ensuring double-entry integrity)
+- [x] **Phase 4: Transaction Detail & Editing**
+    - [x] Create detailed transaction view (modal/drawer)
+    - [x] Implement editing logic for existing transactions (ensuring double-entry integrity)
 
 - [x] **Data Model Fields Updates.** *(Implemented in SyncEngine v0.2.0)*
     - [x] Added `updatedAt` field to Account, PaymentMethod, Category, and Budget types.
@@ -59,9 +59,9 @@
     - [x] **New Device Handshake**: Enhanced the onboarding logic to wait for cloud synchronization. This prevents users from seeing the onboarding modal on new devices when they already have remote data.
     - [x] **Visual Feedback**: Added descriptive sync status messages on the loading screen to inform users during the data pulling phase.
 
-- [ ] **Create Category**
-    - creatign a new category - main head can be selected from existing or can be created newly
-    - info for create new category under settings
+- [x] **Create Category**
+    - [x] creating a new category - main head can be selected from existing or can be created newly
+    - [x] info for create new category under settings
 
 - [ ] **Custom Ordering for Payment Methods & Categories.**
     - [ ] Add ability to reorder Payment Methods in Settings.
@@ -82,8 +82,8 @@
     - **Context:**
         - `excludeFromNet` is correctly implemented in `src/pages/Dashboard.tsx` (line 31) for calculating Net Worth.
         - `isSavings` is used in `Dashboard.tsx` to distinguish between Liquidity and Savings accounts in the Net Worth breakdown.
-- [ ] **Transaction Detail View.**
-    - [ ] View transaction details in a modal or similar overlay when clicking a transaction in the listing.
+- [x] **Transaction Detail View.**
+    - [x] View transaction details in a modal or similar overlay when clicking a transaction in the listing.
 
 ### Low Priority (P2) - Polish & Future
 

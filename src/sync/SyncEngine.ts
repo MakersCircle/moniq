@@ -107,6 +107,7 @@ function serializeMethod(m: PaymentMethod): string[] {
     m.linkedAccountId || '',
     m.isActive ? 'TRUE' : 'FALSE',
     m.isDeleted ? 'TRUE' : 'FALSE',
+    String(m.sortOrder || 0),
     m.createdAt,
     m.updatedAt,
     '',
@@ -122,6 +123,7 @@ function serializeCategory(c: Category): string[] {
     String(c.initialBalance || 0),
     c.isActive ? 'TRUE' : 'FALSE',
     c.isDeleted ? 'TRUE' : 'FALSE',
+    String(c.sortOrder || 0),
     c.createdAt,
     c.updatedAt,
     '',
@@ -184,6 +186,7 @@ function deserializeMethod(row: string[], header: string[]): PaymentMethod {
     linkedAccountId: getValue(row, header, 'Linked Account ID') || undefined,
     isActive: getValue(row, header, 'Is Active') === 'TRUE',
     isDeleted: getValue(row, header, 'Is Deleted') === 'TRUE',
+    sortOrder: Number(getValue(row, header, 'Sort Order')) || 0,
     createdAt: getValue(row, header, 'Created At'),
     updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
   };
@@ -198,6 +201,7 @@ function deserializeCategory(row: string[], header: string[]): Category {
     initialBalance: Number(getValue(row, header, 'Initial Balance')) || undefined,
     isActive: getValue(row, header, 'Is Active') === 'TRUE',
     isDeleted: getValue(row, header, 'Is Deleted') === 'TRUE',
+    sortOrder: Number(getValue(row, header, 'Sort Order')) || 0,
     createdAt: getValue(row, header, 'Created At'),
     updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
   };
@@ -440,8 +444,23 @@ export class SyncEngine {
         const current = rows[0] || [];
         const mismatch =
           current.length !== target.length || current.some((h, i) => h !== target[i]);
+
         if (mismatch && rows.length > 0) {
-          repairs.push(this.client!.overwriteSheet(name, rows.slice(1)));
+          // Map existing row data to new header positions
+          const migratedDataRows = rows.slice(1).map(row => {
+            const newRow = new Array(target.length).fill('');
+            target.forEach((headerName, targetIdx) => {
+              const oldIdx = current.indexOf(headerName);
+              if (oldIdx !== -1) {
+                newRow[targetIdx] = row[oldIdx] || '';
+              } else if (headerName === 'Sort Order') {
+                newRow[targetIdx] = '0';
+              }
+            });
+            return newRow;
+          });
+
+          repairs.push(this.client!.overwriteSheet(name, migratedDataRows));
         }
       };
 

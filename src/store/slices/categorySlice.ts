@@ -16,6 +16,8 @@ export interface CategorySlice {
   updateMethod: (id: string, patch: Partial<PaymentMethod>) => void;
   archiveMethod: (id: string) => void;
   deleteMethod: (id: string) => { success: boolean; reason?: string };
+  reorderMethods: (ids: string[]) => void;
+  reorderCategories: (ids: string[]) => void;
 }
 
 export const createCategorySlice: StateCreator<DataState, [], [], CategorySlice> = (set, get) => ({
@@ -148,5 +150,39 @@ export const createCategorySlice: StateCreator<DataState, [], [], CategorySlice>
     if (updated) put('methods', updated);
     markDirty('method', id, 'update');
     return { success: true };
+  },
+
+  reorderMethods: ids => {
+    const t = now();
+    set(state => {
+      const next = state.methods.map(m => {
+        const idx = ids.indexOf(m.id);
+        if (idx !== -1) {
+          const updated = { ...m, sortOrder: idx, updatedAt: t };
+          put('methods', updated);
+          markDirty('method', m.id, 'update');
+          return updated;
+        }
+        return m;
+      });
+      return { methods: next };
+    });
+  },
+
+  reorderCategories: ids => {
+    const t = now();
+    set(state => {
+      const next = state.categories.map(c => {
+        const idx = ids.indexOf(c.id);
+        if (idx !== -1) {
+          const updated = { ...c, sortOrder: idx, updatedAt: t };
+          put('categories', updated);
+          markDirty('category', c.id, 'update');
+          return updated;
+        }
+        return c;
+      });
+      return { categories: next };
+    });
   },
 });
