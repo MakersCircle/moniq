@@ -76,7 +76,7 @@ This document tracks the end-to-end implementation roadmap for **moniq**. Items 
 - [x] **Soft-Delete Architecture & Trash Management**: Centralized tabbed workspace for restoring transactions, accounts, and methods with dependency safety.
 - [x] **Category Head Combobox**: Reducing friction in category creation with suggestions.
 - [x] **Proactive OAuth Refresh & Session UX**: Automatic token healing 5 mins before expiry and "Reconnect" banner fallback.
-- [ ] **Custom Ordering System**: Allow reordering of Payment Methods and Categories logically in Settings to reflect in dropdowns.
+- [x] **Custom Ordering System**: Allow reordering of Payment Methods and Categories logically in Settings to reflect in dropdowns.
 - [ ] **Background Synchronization**: Use Service Workers to sync while the tab is closed.
 - [ ] **Intelligent Auto-Categorization**: Suggesting categories for manual entries based on past similar notes.
 - [ ] **Data Export and Reports**: Full PDF or Excel generation of monthly summaries.

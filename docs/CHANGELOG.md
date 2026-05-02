@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Custom Ordering**: Implemented drag-and-drop reordering for Payment Methods and Categories in Settings.
+  - Manual sort order is now persisted to Google Sheets ('Sort Order' column).
+  - Custom order is automatically reflected in transaction modal dropdowns and budget views.
+  - Robust Sync Logic: Added intelligent data migration to handle new sheet columns without shifting existing data.
+  - Refined UX: Enhanced drag-and-drop feedback with opaque backgrounds, dynamic shadows, and high-z-index layering to prevent sidebar overlap.
 - **Category UX**: Replaced the native `datalist` for Category Head with a custom, searchable `Popover` dropdown in the Add Category modal.
   - Supports filtering existing heads as you type.
   - Allows typing a completely new head if it doesn't exist.
@@ -55,46 +60,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Verified and confirmed that `excludeFromNet` and `isSavings` flags are correctly integrated into the application logic.
   - Conducted a code audit to ensure all recent React Hook and `setState` lint warnings have been resolved.
 
-## [0.5.0] - 2026-05-03
-
-### Added
-- **Speed Entry Overhaul**: Implemented a streamlined transaction entry workflow designed for bulk data entry.
-  - **Save & Add Another**: Support for `Cmd/Ctrl + Enter` to save a transaction and immediately start a new one without closing the modal.
-  - **Continuous Context**: Automatically persists `Date` and `Payment Method` between entries during a single session.
-  - **Smart Defaults**: The modal now defaults to the most recently used payment method upon first opening.
-  - **Focus Flow Optimization**: Refined tab order (`Amount` → `Date` → `Method` → `Category` → `Sub-category` → `Note`) and automatic field focusing for zero-mouse operation.
-  - **Keyboard Shortcuts**: Native `Enter` key support for saving, and `Alt/Cmd + 1/2/3` for rapid switching between Expense, Income, and Transfer tabs.
-- **Enhanced Validation**: The "Save" button now remains disabled until all required fields (Amount, Date, Method, Category) are valid.
-- **Negative Amount Prevention**: Restricted the amount input to positive numbers and blocked non-numeric symbols (`e`, `+`, `-`).
-- **Dropdown Keyboard Navigation**: Added "type-to-select" support to all payment method and category dropdowns for high-speed, keyboard-driven selection.
-- **Notes Shortcut**: Updated `Enter` in the Notes field to trigger a save, while `Shift + Enter` is now used for new lines. Added a visual hint to the UI.
-- **Save & Stay UX**: Enhanced the `Cmd/Ctrl + Enter` workflow with a 'Saved' visual indicator and automatic focus resetting. Now clears all fields (Amount, Note, Category, Transfers) except for Date and Payment Method to support rapid, varied entry.
-- **Global Shortcuts**: Added `Alt + N` to open the modal, and `Shift + E/I/T` to instantly open and switch to a specific transaction type from any page.
-- **Shortcut Documentation**: Created a dedicated Keyboard Shortcuts page in the Help Center.
-
-### Fixed
-- **Sync Reliability**: Resolved a lifecycle issue where background synchronization could stop responding due to stale subscriptions or race conditions.
-- **Immediate Sync Visibility**: Fixed a bug where pending change counts were not immediately reflected in the UI upon transaction entry.
-- **DatePicker Initialization**: Fixed an issue where the date picker would appear empty or fail to initialize when opening the modal.
-- **Smart Date Entry**: Added support for shorthand date entry (`ddmm` for current year) and flexible formatting (`ddmmyyyy`, `dd-mm-yyyy`, etc.).
-
----
-
-## [0.4.0] - 2026-05-02
-
-### Added
-- **MDX Documentation**: Implemented an in-app help system using MDX at the `/docs` route. Includes user guides (Getting Started, FAQ, Scenarios) and technical architecture docs.
-- **API Reference**: Integrated TypeDoc for automated technical documentation generation and enriched the codebase with comprehensive JSDoc comments for better developer onboarding.
-- **Dynamic Help Routing**: Documentation pages are dynamically loaded and styled using Tailwind Typography with custom high-contrast theme overrides.
-
-### Changed
-- **Documentation Consolidation**: Migrated and removed redundant root-level documentation files (`user_guide.md`, `faq.md`, `architecture.md`, etc.) into the new integrated help system.
-
-### Fixed
-- **API Types**: Resolved TypeScript errors in Google API routines related to `UserProfile` definitions.
-- **Logout Flow**: Improved logout process with pre-sync verification and a visible loading state to prevent data loss.
-- **Transaction Filters**: Fixed initialization issues with transaction filters and resolved ledger engine import paths.
-- **Hook Stability**: Resolved `exhaustive-deps` and `set-state-in-effect` warnings in core components like `DatePicker` and `App.tsx`.
 - **Code Quality**: Conducted a comprehensive pass to resolve all remaining TypeScript warnings and ESLint errors across the codebase.
 - **Backups**: Clicking "Backup Now" in Settings was silently doing nothing if a backup had already run automatically earlier that day. It now always creates a fresh backup immediately, regardless of schedule. Each manual backup creates a new copy in your "Moniq Backups" Drive folder.
 
