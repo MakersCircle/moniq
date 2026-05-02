@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Category UX**: Replaced the native `datalist` for Category Head with a custom, searchable `Popover` dropdown in the Add Category modal.
+  - Supports filtering existing heads as you type.
+  - Allows typing a completely new head if it doesn't exist.
+  - Removes the separate info tooltip in favor of a cleaner, integrated dropdown experience.
+  - Fixed interaction issues where typing was blocked by PopoverTrigger event interception.
+
+### Fixed
+- **Linting**: Resolved unused `PopoverTrigger` in `Categories.tsx` that was causing pre-commit hook failures.
+
 ## [0.5.0] - 2026-05-03
 
 ### Added

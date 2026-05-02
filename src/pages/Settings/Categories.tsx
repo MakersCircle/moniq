@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Archive, Trash2, Tag } from 'lucide-react';
+import { Plus, Pencil, Archive, Trash2, Tag, ChevronDown, Check } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
 import { useMemo } from 'react';
 import type { Category, CategoryGroup } from '@/types';
@@ -25,6 +25,7 @@ import {
 import { cn } from '@/lib/utils';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
+import { Popover, PopoverContent, PopoverAnchor } from '@/components/ui/popover';
 
 const GROUPS: CategoryGroup[] = ['Income', 'Needs', 'Wants', 'Invest', 'Lend', 'Borrow'];
 
@@ -44,6 +45,7 @@ export default function Categories() {
   const [editing, setEditing] = useState<Category | null>(null);
   const [form, setForm] = useState({ group: 'Needs' as CategoryGroup, head: '', subHead: '' });
   const [deleteError, setDeleteError] = useState<Record<string, string>>({});
+  const [headDropdownOpen, setHeadDropdownOpen] = useState(false);
 
   const existingHeads = useMemo(
     () => Array.from(new Set(categories.filter(c => c.isActive).map(c => c.head))).sort(),
@@ -264,22 +266,81 @@ export default function Categories() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Main Head
-                  <InfoTooltip text="The primary name for this category (e.g., Food, Transport, Rent)." />
                 </Label>
-                <Input
-                  placeholder="e.g., Food"
-                  value={form.head}
-                  onChange={e => setForm({ ...form, head: e.target.value })}
-                  className="h-10 border-border/50 focus:border-primary/30 font-bold"
-                  list="category-heads"
-                />
-                <datalist id="category-heads">
-                  {existingHeads.map(h => (
-                    <option key={h} value={h} />
-                  ))}
-                </datalist>
+                <Popover open={headDropdownOpen} onOpenChange={setHeadDropdownOpen}>
+                  <PopoverAnchor asChild>
+                    <div className="relative group cursor-text head-popover-anchor">
+                      <Input
+                        placeholder="e.g., Food"
+                        value={form.head}
+                        onChange={e => {
+                          setForm({ ...form, head: e.target.value });
+                          if (!headDropdownOpen) setHeadDropdownOpen(true);
+                        }}
+                        onFocus={() => setHeadDropdownOpen(true)}
+                        className="h-10 border-border/50 focus:border-primary/30 font-bold pr-10"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors"
+                        onClick={() => setHeadDropdownOpen(!headDropdownOpen)}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </PopoverAnchor>
+                  <PopoverContent
+                    className="p-1 w-[var(--radix-popover-trigger-width)]"
+                    align="start"
+                    sideOffset={5}
+                    onOpenAutoFocus={e => e.preventDefault()}
+                    onInteractOutside={e => {
+                      if (e.target instanceof Element && e.target.closest('.head-popover-anchor')) {
+                        e.preventDefault();
+                      }
+                    }}
+                  >
+                    <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                      {existingHeads.length === 0 ? (
+                        <div className="px-2 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 text-center">
+                          No existing heads
+                        </div>
+                      ) : (
+                        <div className="space-y-0.5">
+                          {existingHeads
+                            .filter(h => h.toLowerCase().includes(form.head.toLowerCase()))
+                            .map(h => (
+                              <button
+                                key={h}
+                                className={cn(
+                                  'flex w-full items-center justify-between rounded-sm px-3 py-2 text-xs font-bold transition-colors text-left',
+                                  form.head === h
+                                    ? 'bg-primary/10 text-primary'
+                                    : 'hover:bg-accent text-muted-foreground hover:text-foreground'
+                                )}
+                                onClick={() => {
+                                  setForm({ ...form, head: h });
+                                  setHeadDropdownOpen(false);
+                                }}
+                              >
+                                <span className="truncate">{h}</span>
+                                {form.head === h && <Check className="h-3.5 w-3.5" />}
+                              </button>
+                            ))}
+                          {existingHeads.filter(h =>
+                            h.toLowerCase().includes(form.head.toLowerCase())
+                          ).length === 0 && (
+                            <div className="px-2 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 text-center">
+                              No matches found
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
