@@ -56,6 +56,8 @@ export interface PaymentMethod {
   createdAt: string;
   /** ISO timestamp of last modification */
   updatedAt: string;
+  /** Custom display order */
+  sortOrder?: number;
 }
 
 /**
@@ -86,6 +88,8 @@ export interface Category {
   /** ISO timestamp of creation */
   createdAt: string;
   /** ISO timestamp of last modification */
+  /** Custom display order */
+  sortOrder?: number;
   updatedAt: string;
 }
 
