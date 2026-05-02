@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useDataStore } from '../store/dataStore';
 import { LedgerEngine } from '../lib/ledger';
+import type { Category } from '../types';
 
 /**
  * Returns the normal balance for a specific account.
@@ -162,6 +163,13 @@ export function useHistoricalData(months = 6) {
   }, [transactions, months]);
 }
 
+export interface BudgetedCategory extends Category {
+  budgeted: number;
+  spent: number;
+  remaining: number;
+  percent: number;
+}
+
 /**
  * Budget vs Actual summary for a month.
  */
@@ -175,13 +183,6 @@ export function useBudgetSummary(year: number, month: number) {
     const income = monthTxns
       .filter(t => t.uiType === 'income')
       .reduce((s, t) => s + (t.entries[0]?.amount || 0), 0);
-
-    interface BudgetedCategory extends Category {
-      budgeted: number;
-      spent: number;
-      remaining: number;
-      percent: number;
-    }
 
     const groups: Record<string, BudgetedCategory[]> = {};
     let totalAllocated = 0;
