@@ -100,7 +100,7 @@ export function useFilteredTransactions(filter: TxnFilter) {
  * Summarizes spending per category for a month.
  */
 export function useCategorySpend(year: number, month: number) {
-  const { transactions, categories, accounts } = useDataStore();
+  const { transactions, categories } = useDataStore();
 
   return useMemo(() => {
     const monthStr = `${year}-${String(month).padStart(2, '0')}`;
@@ -122,7 +122,7 @@ export function useCategorySpend(year: number, month: number) {
       map[key].amount += categoryEntry.amount;
     }
     return Object.values(map).sort((a, b) => b.amount - a.amount);
-  }, [transactions, categories, accounts, year, month]);
+  }, [transactions, categories, year, month]);
 }
 
 /**
@@ -166,7 +166,7 @@ export function useHistoricalData(months = 6) {
  * Budget vs Actual summary for a month.
  */
 export function useBudgetSummary(year: number, month: number) {
-  const { transactions, categories, budgets, accounts } = useDataStore();
+  const { transactions, categories, budgets } = useDataStore();
 
   return useMemo(() => {
     const period = `${year}-${String(month).padStart(2, '0')}`;
@@ -176,7 +176,14 @@ export function useBudgetSummary(year: number, month: number) {
       .filter(t => t.uiType === 'income')
       .reduce((s, t) => s + (t.entries[0]?.amount || 0), 0);
 
-    const groups: Record<string, any[]> = {};
+    interface BudgetedCategory extends Category {
+      budgeted: number;
+      spent: number;
+      remaining: number;
+      percent: number;
+    }
+
+    const groups: Record<string, BudgetedCategory[]> = {};
     let totalAllocated = 0;
 
     for (const cat of categories.filter(c => c.isActive && !c.isDeleted && c.group !== 'Income')) {
@@ -211,5 +218,5 @@ export function useBudgetSummary(year: number, month: number) {
       remainingToAllocate: income - totalAllocated,
       categoryGroups: Object.entries(groups).map(([name, categories]) => ({ name, categories })),
     };
-  }, [transactions, categories, budgets, accounts, year, month]);
+  }, [transactions, categories, budgets, year, month]);
 }

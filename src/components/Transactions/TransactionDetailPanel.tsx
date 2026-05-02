@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { useMemo } from 'react';
 import { X, Trash2, Edit2, Calendar, Wallet, Tag, Info } from 'lucide-react';
 import { format } from 'date-fns';
@@ -160,7 +161,7 @@ function DetailRow({
   value,
   isNote,
 }: {
-  icon: any;
+  icon: React.ElementType;
   label: string;
   value: string;
   isNote?: boolean;

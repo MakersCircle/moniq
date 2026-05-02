@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDataStore } from '../store/dataStore';
 import { useBudgetSummary } from '../hooks/useComputed';
 import { formatCurrency, formatCurrencyShort, toMonthKey } from '../utils/format';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import type { UserSettings } from '@/types';
 
 export default function Budget() {
   const { settings, updateBudget } = useDataStore();
@@ -176,7 +177,15 @@ export default function Budget() {
   );
 }
 
-function StatCard({ label, value, settings, valueColor, detail }: any) {
+interface StatCardProps {
+  label: string;
+  value: number;
+  settings: UserSettings;
+  valueColor?: string;
+  detail?: string;
+}
+
+function StatCard({ label, value, settings, valueColor, detail }: StatCardProps) {
   return (
     <Card className="border-border">
       <CardContent className="p-6">

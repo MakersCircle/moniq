@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import RecentTransactionsTable from '@/components/Dashboard/RecentTransactionsTable';
+import type { UserSettings } from '@/types';
 
 export default function Dashboard() {
   const { accounts, transactions, settings } = useDataStore();
@@ -263,7 +264,7 @@ export default function Dashboard() {
 interface StatCardProps {
   label: string;
   value: number;
-  settings: any;
+  settings: UserSettings;
   isPercent?: boolean;
   detail?: string;
   detailColor?: string;

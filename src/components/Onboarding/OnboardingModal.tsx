@@ -5,14 +5,14 @@ import { Input } from '@/components/ui/input';
 import { useDataStore } from '@/store/dataStore';
 import defaults from '@/data/defaults.json';
 import { Wallet, Settings, ArrowRight, Play } from 'lucide-react';
-import type { Account } from '@/types';
+import type { Account, Category } from '@/types';
 
 export default function OnboardingModal() {
   const completeOnboarding = useDataStore(s => s.completeOnboarding);
 
   // We omit IDs and createdAt, just handle names
   const [editableAccounts, setEditableAccounts] = useState<Partial<Account>[]>(
-    defaults.accounts as any
+    defaults.accounts as Partial<Account>[]
   );
 
   const handleUpdateAccount = (index: number, newName: string) => {
@@ -24,7 +24,10 @@ export default function OnboardingModal() {
   const handleStartWithDefaults = () => {
     // Only pass the accounts that actually have a name
     const finalAccounts = editableAccounts.filter(a => a.name?.trim());
-    completeOnboarding(finalAccounts as any, defaults.categories as any);
+    completeOnboarding(
+      finalAccounts as Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>[],
+      defaults.categories as Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>[]
+    );
   };
 
   const handleStartFromScratch = () => {
