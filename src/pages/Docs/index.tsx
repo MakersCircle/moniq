@@ -68,6 +68,7 @@ const DOC_STRUCTURE = [
     icon: Book,
     items: [
       { title: 'Getting Started', slug: 'getting-started', category: 'user' },
+      { title: 'Keyboard Shortcuts', slug: 'keyboard-shortcuts', category: 'user' },
       { title: 'FAQ', slug: 'faq', category: 'user' },
       { title: 'Handling Scenarios', slug: 'scenarios', category: 'user' },
     ],

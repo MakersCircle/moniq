@@ -68,6 +68,7 @@ This document tracks the end-to-end implementation roadmap for **moniq**. Items 
 
 ## 🚀 Phase 6: Polish & PWA Support
 - [x] Make the UI adhere fully to `design_system.md`.
+- [x] **Transaction Entry Speed Overhaul**: Optimized workflow for bulk entry with shortcuts, persistence, and focus flow.
 - [x] **Context Menus in Ledger**: 3-dot menu for Duplicate, Edit, and Delete in the spreadsheet view.
 - [x] **Cloud Sync Refinements**: Automated sync on every state change and support for Budget data.
 - [x] **Lending Statistics**: Dashboard indicators for total receivable/payable amounts.

@@ -19,7 +19,7 @@ import { googleService } from './lib/google';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 import AddTransactionModal from './components/Transactions/AddTransactionModal';
-import type { Transaction } from './types';
+import type { Transaction, TransactionType } from './types';
 
 export default function App() {
   const accessToken = useDataStore(s => s.accessToken);
@@ -39,9 +39,15 @@ export default function App() {
     isOpen: boolean;
     initialData?: Transaction;
     isDuplicate?: boolean;
+    defaultType?: TransactionType;
   }>({ isOpen: false });
 
-  const openNew = useCallback(() => setModalState({ isOpen: true }), []);
+  const openNew = useCallback((type?: TransactionType | React.MouseEvent | React.KeyboardEvent) => {
+    // If called as an event handler (e.g. onClick), the first arg is an event object.
+    // We only want to set defaultType if it's a valid string.
+    const actualType = typeof type === 'string' ? type : undefined;
+    setModalState({ isOpen: true, defaultType: actualType });
+  }, []);
   const openEdit = useCallback(
     (data: Transaction) => setModalState({ isOpen: true, initialData: data }),
     []
@@ -207,6 +213,7 @@ export default function App() {
             <AddTransactionModal
               initialData={modalState.initialData}
               isDuplicate={modalState.isDuplicate}
+              defaultType={modalState.defaultType}
               onClose={() => setModalState({ isOpen: false })}
             />
           </DialogContent>
