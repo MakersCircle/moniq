@@ -217,7 +217,10 @@ export function useBudgetSummary(year: number, month: number) {
       income,
       totalAllocated,
       remainingToAllocate: income - totalAllocated,
-      categoryGroups: Object.entries(groups).map(([name, categories]) => ({ name, categories })),
+      categoryGroups: Object.entries(groups).map(([name, categories]) => ({
+        name,
+        categories: categories.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)),
+      })),
     };
   }, [transactions, categories, budgets, year, month]);
 }

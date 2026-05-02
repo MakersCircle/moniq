@@ -76,9 +76,18 @@ export default function AddTransactionModal({
     () => accounts.filter(s => s.isActive && !s.isDeleted),
     [accounts]
   );
-  const activeMethods = useMemo(() => methods.filter(m => m.isActive && !m.isDeleted), [methods]);
+  const activeMethods = useMemo(
+    () =>
+      methods
+        .filter(m => m.isActive && !m.isDeleted)
+        .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)),
+    [methods]
+  );
   const activeCategories = useMemo(
-    () => categories.filter(c => c.isActive && !c.isDeleted),
+    () =>
+      categories
+        .filter(c => c.isActive && !c.isDeleted)
+        .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)),
     [categories]
   );
 
