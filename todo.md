@@ -1,6 +1,47 @@
 # Moniq Task List
 
-## Active Tasks (from USER)
+## To-Do
+
+### High Priority (P0) - Mobile & UX
+
+- [ ] **Mobile Experience & PWA.**
+    - [ ] Ensure entire webapp is mobile-friendly with responsive layouts.
+    - [ ] Create a dedicated layout optimized for mobile devices.
+    - [ ] Implement "Add to Home Screen" (PWA) installation prompts for mobile users.
+
+- [ ] **Advanced Analytics & Custom Dashboards.**
+    - [ ] Improve usability of Dashboard and Insights pages.
+    - [ ] Implement Custom Dashboard feature allowing users to create charts.
+    - [ ] Provide variables/filters (month, date range, etc.) for dynamic chart generation.
+
+### Medium Priority (P1) - Core Features
+
+- [ ] **Budgeting System.**
+    - [ ] Implement budget setting for categories (monthly/annual).
+    - [ ] Create Budget vs. Actual tracking logic.
+    - [ ] Add budgeting insights to the Dashboard (progress bars, alerts).
+    - [ ] Create a dedicated Budgets page for detailed management.
+
+### Low Priority (P2) - Polish & Future
+
+- [ ] **Monetization & Roadmap.**
+    - [ ] Find ways to monetize (analytics with AI?).
+    - [ ] Keep usable/reliable free version without data collection.
+    - **Context:**
+        - Product vision emphasizes privacy and direct Google Sheets storage (`docs/product_vision.md`).
+        - Roadmap Phase 6/7 mentions "Intelligent Auto-Categorization" which could be an AI-powered entry point.
+
+- [ ] **Testing Cases.**
+    - [ ] i paid money for team lunch, got split from friends. food category shoud show final amt of only my share
+    - [ ] took a loan, paid some amount
+    - [ ] find use cases for each category types
+
+- [ ] **SEO Optimization.**
+    - [ ] Do everything possible for SEO (meta tags, descriptions, titles, semantic HTML, structured data, performance optimization).
+
+---
+
+## Completed
 
 ### High Priority (P0) - Data Integrity & Core Logic
 
@@ -34,16 +75,19 @@
     - [x] Refine Trash UI with a Tabbed interface (Transactions, Accounts, Methods, Categories).
     - [x] Implement Restore logic with dependency safety (Account restoration cascades to Methods).
     - [x] Add restoration validation (preventing orphaned entries).
+
 - [x] **Phase 2: Sync Engine Reliability & Migration**
     - [x] Implement Master Repair (Header correction)
     - [x] Implement Dynamic Mapping (Index-independent parsing)
     - [x] Handle Google Sheets serial dates (46130 style)
     - [x] Migrate legacy "Sources" to "Methods"
+
 - [x] **Phase 3: Greenfield Audit & Cleanup**
     - [x] Silence sync diagnostic logs for production cleanliness
     - [x] Isolate legacy migration helpers in Sync Engine
     - [x] Refactor navigation logic in App.tsx to use explicit onboarding flag
     - [x] Silence diagnostic logs in BackupManager for production cleanliness.
+
 - [x] **Phase 4: Transaction Detail & Editing**
     - [x] Create detailed transaction view (modal/drawer)
     - [x] Implement editing logic for existing transactions (ensuring double-entry integrity)
@@ -63,10 +107,10 @@
     - [x] creating a new category - main head can be selected from existing or can be created newly
     - [x] info for create new category under settings
 
-- [ ] **Custom Ordering for Payment Methods & Categories.**
-    - [ ] Add ability to reorder Payment Methods in Settings.
-    - [ ] Add ability to reorder Categories in Settings.
-    - [ ] Ensure the custom order is reflected in the transaction entry dropdowns.
+- [x] **Custom Ordering for Payment Methods & Categories.**
+    - [x] Add ability to reorder Payment Methods in Settings.
+    - [x] Add ability to reorder Categories in Settings.
+    - [x] Ensure the custom order is reflected in the transaction entry dropdowns.
     - **Context:**
         - Currently, these lists are likely sorted alphabetically or by creation date.
         - Need to add a `sortOrder` field to `PaymentMethod` and `Category` types in `src/types.ts`.
@@ -82,33 +126,19 @@
     - **Context:**
         - `excludeFromNet` is correctly implemented in `src/pages/Dashboard.tsx` (line 31) for calculating Net Worth.
         - `isSavings` is used in `Dashboard.tsx` to distinguish between Liquidity and Savings accounts in the Net Worth breakdown.
+
 - [x] **Transaction Detail View.**
     - [x] View transaction details in a modal or similar overlay when clicking a transaction in the listing.
 
 ### Low Priority (P2) - Polish & Future
 
-- [ ] **Documentation Update.**
-    - [ ] Update README with correct instructions and project status.
+- [x] **Documentation Update.**
+    - [x] Update README with correct instructions and project status.
     - **Context:**
         - README now accurately reflects IndexedDB usage (implemented in SyncEngine v0.2.0).
-        - May still need content updates for features, setup instructions, etc.
+        - Updated for v0.5.0 features including Speed Entry, Custom Ordering, and Backups.
 
-- [ ] **Monetization & Roadmap.**
-    - [ ] Find ways to monetize (analytics with AI?).
-    - [ ] Keep usable/reliable free version without data collection.
-    - **Context:**
-        - Product vision emphasizes privacy and direct Google Sheets storage (`docs/product_vision.md`).
-        - Roadmap Phase 6/7 mentions "Intelligent Auto-Categorization" which could be an AI-powered entry point.
-
-- [ ] **Testing Cases.**
-    - [ ] i paid money for team lunch, got split from friends. food category shoud show final amt of only my share
-    - [ ] took a loan, paid some amount
-    - [ ] find use cases for each category types
-
-- [ ] **SEO Optimization.**
-    - [ ] Do everything possible for SEO (meta tags, descriptions, titles, semantic HTML, structured data, performance optimization).
-
-### Completed
+### General Improvements
 
 - [x] **Refine add account modal.**
     - [x] Remove sub types, instead use description.
