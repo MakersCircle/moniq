@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **UI Polish**: Added premium "Beta" tags near the application name in both the top and bottom sections of the sidebar for better status visibility.
-- **Legal**: Implemented standalone `/privacy-policy` and `/terms-of-service` pages with a premium glassmorphic design and Grainient backgrounds. Added subtle footer links to the landing page.
+- **Legal**: Implemented standalone `/privacy-policy` and `/terms-of-service` pages with a premium glassmorphic design and Grainient backgrounds.
+- **Documentation**: Made the documentation (`/docs`) accessible without authentication and added a direct link to the landing page footer.
 
 ## [0.6.0] - 2026-05-03
 
