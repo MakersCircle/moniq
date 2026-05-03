@@ -11,6 +11,8 @@ import Categories from './pages/Settings/Categories';
 import SettingsTrash from './pages/Settings/Trash';
 import Home from './pages/Home';
 import DocsPage from './pages/Docs';
+import PrivacyPolicy from './pages/Legal/PrivacyPolicy';
+import TermsOfService from './pages/Legal/TermsOfService';
 import LayoutShell from './components/Layout/LayoutShell';
 import { useDataStore } from './store/dataStore';
 import { fetchUserProfile, initializeDatabase } from './api/google';
@@ -172,6 +174,8 @@ export default function App() {
             accessToken && hasCompletedOnboarding ? <Navigate to="/dashboard" replace /> : <Home />
           }
         />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
 
         {/* Application routes - Wrapped in LayoutShell */}
         <Route

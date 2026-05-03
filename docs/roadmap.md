@@ -83,6 +83,7 @@ This document tracks the end-to-end implementation roadmap for **moniq**. Items 
 - [x] **Automated Tiered Backup System**: [Plan](file:///home/don/.gemini/antigravity/brain/a8eda8c6-0b26-4832-9c05-536f03537399/backups_implementation_plan.md) - Tiered retention (Daily/Weekly/Monthly/Yearly) in a dedicated Drive folder.
 - [x] **Code Audit & Documentation**: [Audit Report](file:///home/don/.gemini/antigravity/brain/3b8e4b59-b56b-482a-ba31-27d2dec63d1a/audit_report.md) - Comprehensive dependency mapping and user/technical documentation.
 - [x] **Incremental Changelog System**: Automated git-to-changelog generation based on version bumps and conventional commits.
+- [x] **Legal Compliance**: Standalone Privacy Policy and Terms of Service pages with premium aesthetics.
 - [ ] **Sheets Auto-Archiving Tool**.
 
 ## 🔮 Phase 7: Future Optimizations (Scale & UX)
