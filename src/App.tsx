@@ -176,6 +176,23 @@ export default function App() {
         />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/docs" element={<Navigate to="/docs/user/getting-started" replace />} />
+        <Route
+          path="/docs/:category/*"
+          element={
+            accessToken || isCloudInitialized ? (
+              <LayoutShell onNewTransaction={openNew}>
+                <DocsPage />
+              </LayoutShell>
+            ) : (
+              <div className="min-h-screen bg-[#09090b] text-slate-200 selection:bg-primary/30">
+                <div className="max-w-[1248px] mx-auto p-6 md:p-12 pt-20">
+                  <DocsPage />
+                </div>
+              </div>
+            )
+          }
+        />
 
         {/* Application routes - Wrapped in LayoutShell */}
         <Route
@@ -193,8 +210,6 @@ export default function App() {
                   <Route path="settings/methods" element={<Methods />} />
                   <Route path="settings/categories" element={<Categories />} />
                   <Route path="settings/trash" element={<SettingsTrash />} />
-                  <Route path="docs/:category/*" element={<DocsPage />} />
-                  <Route path="docs" element={<DocsPage />} />
                   <Route
                     path="*"
                     element={<Navigate to={hasCompletedOnboarding ? '/dashboard' : '/'} replace />}

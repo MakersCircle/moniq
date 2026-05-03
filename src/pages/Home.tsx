@@ -118,6 +118,12 @@ export default function Home() {
       {/* Footer Links */}
       <div className="absolute z-10 bottom-6 right-6 md:bottom-12 md:right-12 xl:bottom-16 xl:right-16 flex items-center gap-6">
         <button
+          onClick={() => navigate('/docs')}
+          className="font-mono text-[10px] text-muted-foreground/40 hover:text-foreground transition-colors uppercase tracking-[0.2em]"
+        >
+          Docs
+        </button>
+        <button
           onClick={() => navigate('/privacy-policy')}
           className="font-mono text-[10px] text-muted-foreground/40 hover:text-foreground transition-colors uppercase tracking-[0.2em]"
         >
