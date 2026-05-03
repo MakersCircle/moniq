@@ -127,13 +127,13 @@ export default function Home() {
           to="/privacy-policy"
           className="font-mono text-[10px] text-muted-foreground/40 hover:text-foreground transition-colors uppercase tracking-[0.2em]"
         >
-          Privacy
+          Privacy Policy
         </Link>
         <Link
           to="/terms-of-service"
           className="font-mono text-[10px] text-muted-foreground/40 hover:text-foreground transition-colors uppercase tracking-[0.2em]"
         >
-          Terms
+          Terms of Service
         </Link>
       </div>
     </div>
