@@ -3,9 +3,9 @@
 First off, thank you for considering contributing to `moniq`! We want this project to be welcoming and accessible.
 
 ## Project Architecture
-`moniq` is a privacy-first, backend-less application built with React, TypeScript, and Vite. We do not use a centralized database. Instead, user data is synced securely to their own Google Drive (via Google Sheets API).
+`moniq` is a privacy-first, backend-less application built with React, TypeScript, and Vite. We do not use a centralized database. Instead, user data is persisted locally in **IndexedDB** and synced securely to the user's own Google Drive (via Google Sheets API) using a client-side delta-sync engine.
 
-Please read our [Product Vision](docs/product_vision.md) and [Architecture](docs/architecture.md) documentation before proposing structural changes.
+Please read our [Product Vision](docs/product_vision.md) and [Code Quality](docs/code_quality.md) documentation before proposing structural changes.
 
 ## Development Setup
 1. Fork and clone the repository.

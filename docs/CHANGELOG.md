@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-05-03
+
 ### Added
 - **Custom Ordering**: Implemented drag-and-drop reordering for Payment Methods and Categories in Settings.
   - Manual sort order is now persisted to Google Sheets ('Sort Order' column).
@@ -19,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Allows typing a completely new head if it doesn't exist.
   - Removes the separate info tooltip in favor of a cleaner, integrated dropdown experience.
   - Fixed interaction issues where typing was blocked by PopoverTrigger event interception.
+- **Documentation**: Updated `README.md` to accurately reflect the v0.5.0 status, core features, and technical architecture (IndexedDB + Delta Sync).
+  - Cleaned up broken documentation links and added `Code Quality` guide to the main documentation list.
 
 ### Fixed
 - **Linting**: Resolved unused `PopoverTrigger` in `Categories.tsx` that was causing pre-commit hook failures.
