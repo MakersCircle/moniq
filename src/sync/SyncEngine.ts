@@ -784,16 +784,17 @@ export class SyncEngine {
         }
       }
 
-      // 2. Wipe local store state
-      const { useDataStore } = await import('../store/dataStore');
-      useDataStore.getState().resetData();
-
-      // 3. Delete IndexedDB and Clear Web Storage
-      const { deleteMoniqDB } = await import('../lib/db');
-      await deleteMoniqDB();
-
+      // 2. Clear persistence layer directly
+      // Note: We avoid calling state.resetData() here because it re-opens the DB
+      // via clearStore() calls, which can deadlock the subsequent deletion.
       localStorage.clear();
       sessionStorage.clear();
+
+      // 3. Delete IndexedDB (Non-blocking attempt)
+      const { deleteMoniqDB } = await import('../lib/db');
+      await deleteMoniqDB().catch(err => {
+        console.error('Non-blocking DB deletion warning:', err);
+      });
 
       // 4. Reset internal engine state
       this.rowIndexes = {

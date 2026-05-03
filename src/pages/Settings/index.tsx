@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { googleLogout } from '@react-oauth/google';
-import { useNavigate } from 'react-router-dom';
 import { useDataStore } from '@/store/dataStore';
 import { SyncEngine } from '@/sync/SyncEngine';
 import { cn } from '@/lib/utils';
@@ -48,7 +47,6 @@ export default function SettingsIndex() {
     hydrateFromSync,
   } = useDataStore();
 
-  const navigate = useNavigate();
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [isResetting, setIsResetting] = useState(false);
@@ -97,8 +95,8 @@ export default function SettingsIndex() {
       const engine = SyncEngine.getInstance();
       await engine.performHardReset();
       setResetModalOpen(false);
-      // Redirect to home/onboarding
-      navigate('/', { replace: true });
+      // Force a full page reload to ensure all memory state is cleared
+      window.location.href = '/';
     } catch (err) {
       console.error('Hard reset failed:', err);
     } finally {

@@ -192,7 +192,7 @@ export class SheetClient {
     const res = await googleService.sheetsRequest(url, {
       method: 'POST',
       body: JSON.stringify({
-        ranges: sheetNames.map(name => `${name}!A2:Z1000`),
+        ranges: sheetNames.map(name => `${name}!A2:Z`),
       }),
     });
 
