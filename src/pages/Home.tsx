@@ -2,7 +2,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { ArrowRight } from 'lucide-react';
 import { useDataStore } from '../store/dataStore';
 import Grainient from '@/components/ui/Grainient';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function Home() {
   const accessToken = useDataStore(s => s.accessToken);
@@ -117,24 +117,24 @@ export default function Home() {
       </div>
       {/* Footer Links */}
       <div className="absolute z-10 bottom-6 right-6 md:bottom-12 md:right-12 xl:bottom-16 xl:right-16 flex items-center gap-6">
-        <button
-          onClick={() => navigate('/docs')}
+        <Link
+          to="/docs"
           className="font-mono text-[10px] text-muted-foreground/40 hover:text-foreground transition-colors uppercase tracking-[0.2em]"
         >
           Docs
-        </button>
-        <button
-          onClick={() => navigate('/privacy-policy')}
+        </Link>
+        <Link
+          to="/privacy-policy"
           className="font-mono text-[10px] text-muted-foreground/40 hover:text-foreground transition-colors uppercase tracking-[0.2em]"
         >
           Privacy
-        </button>
-        <button
-          onClick={() => navigate('/terms-of-service')}
+        </Link>
+        <Link
+          to="/terms-of-service"
           className="font-mono text-[10px] text-muted-foreground/40 hover:text-foreground transition-colors uppercase tracking-[0.2em]"
         >
           Terms
-        </button>
+        </Link>
       </div>
     </div>
   );
