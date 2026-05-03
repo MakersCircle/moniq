@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { version } from '../../../package.json';
 import { LayoutDashboard, ReceiptText, BarChart3, Target, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { BetaTag } from '../ui/BetaTag';
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard', to: '/dashboard' },
@@ -22,6 +23,7 @@ export default function Sidebar() {
             className="h-6 w-6 object-contain group-hover:scale-110 transition-transform"
           />
           <span className="font-bold tracking-tight text-lg">moniq</span>
+          <BetaTag className="ml-1.5" />
         </NavLink>
       </div>
 
@@ -61,8 +63,9 @@ export default function Sidebar() {
           Settings
         </NavLink>
         <div className="pt-2 px-3 pb-1">
-          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">
-            moniq v{version}
+          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 flex items-center gap-1.5">
+            moniq v{version}{' '}
+            <BetaTag className="scale-[0.8] opacity-50 px-1 border-none shadow-none" />
           </p>
         </div>
       </div>

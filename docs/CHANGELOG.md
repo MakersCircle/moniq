@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **UI Polish**: Added premium "Beta" tags near the application name in both the top and bottom sections of the sidebar for better status visibility.
+
 ## [0.6.0] - 2026-05-03
 
 ### Added
