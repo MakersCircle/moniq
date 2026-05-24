@@ -68,7 +68,7 @@ async function getOrCreateFolder(): Promise<string> {
   if (!createRes.ok) throw new Error('Failed to create Moniq root folder');
 
   const newId: string = (await createRes.json()).id;
-  setFolderId(newId);
+  await setFolderId(newId);
   return newId;
 }
 
@@ -130,7 +130,7 @@ export async function initializeDatabase(): Promise<string> {
   if (!createRes.ok) throw new Error('Failed to create Moniq Database spreadsheet');
 
   const newId: string = (await createRes.json()).id;
-  setSpreadsheetId(newId);
+  await setSpreadsheetId(newId);
   console.log('[initializeDatabase] New spreadsheet created:', newId);
   return newId;
 }

@@ -107,7 +107,13 @@ export default function App() {
         if (tokenExpiresAt && Date.now() > tokenExpiresAt - 300000) {
           console.log('[App] Token expired or near expiry, refreshing...');
           const newToken = await googleService.silentRefresh();
-          if (!newToken) return;
+          if (!newToken) {
+            // Cannot refresh — unblock the spinner and surface the error so the
+            // user sees the Session Expired banner rather than a frozen screen.
+            console.warn('[App] Silent refresh failed — unblocking spinner.');
+            setCloudInitialized(true);
+            return;
+          }
         }
 
         const profile = await fetchUserProfile();
