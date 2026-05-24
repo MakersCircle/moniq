@@ -27,6 +27,10 @@ export interface DataState {
   // Cloud Sync properties
   userProfile: UserProfile | null;
   spreadsheetId: string | null;
+  /** ID of the root "moniq" folder in the user's Drive (persisted, avoids Drive search) */
+  folderId: string | null;
+  /** ID of the "Moniq Backups" subfolder (persisted, avoids Drive search) */
+  backupFolderId: string | null;
   lastSyncedAt: string | null;
   syncStatus: SyncStatus;
   pendingCount: number;
@@ -35,6 +39,8 @@ export interface DataState {
   // Cloud Actions
   setUserProfile: (profile: UserProfile | null) => void;
   setSpreadsheetId: (id: string | null) => void;
+  setFolderId: (id: string | null) => void;
+  setBackupFolderId: (id: string | null) => void;
   setSyncStatus: (status: SyncStatus, pendingCount: number, error?: string) => void;
   setLastSyncedAt: (timestamp: string) => void;
   setCloudInitialized: (initialized: boolean) => void;

@@ -14,6 +14,10 @@ import { getAll, getAllSettings, getMeta, setMeta, delMeta, clearStore } from '.
 
 export interface SyncSlice {
   spreadsheetId: string | null;
+  /** ID of the root "moniq" folder in the user's Drive */
+  folderId: string | null;
+  /** ID of the "Moniq Backups" subfolder */
+  backupFolderId: string | null;
   lastSyncedAt: string | null;
   syncStatus: SyncStatus;
   pendingCount: number;
@@ -22,6 +26,8 @@ export interface SyncSlice {
   isCloudInitialized: boolean;
 
   setSpreadsheetId: (id: string | null) => void;
+  setFolderId: (id: string | null) => void;
+  setBackupFolderId: (id: string | null) => void;
   setSyncStatus: (status: SyncStatus, pendingCount: number, error?: string) => void;
   setLastSyncedAt: (timestamp: string) => void;
   setCloudInitialized: (initialized: boolean) => void;
@@ -40,6 +46,8 @@ export interface SyncSlice {
 
 export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set => ({
   spreadsheetId: null,
+  folderId: null,
+  backupFolderId: null,
   lastSyncedAt: null,
   syncStatus: 'idle',
   pendingCount: 0,
@@ -51,6 +59,16 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
     set({ spreadsheetId: id });
     if (id) setMeta('spreadsheetId', id);
     else delMeta('spreadsheetId');
+  },
+  setFolderId: id => {
+    set({ folderId: id });
+    if (id) setMeta('folderId', id);
+    else delMeta('folderId');
+  },
+  setBackupFolderId: id => {
+    set({ backupFolderId: id });
+    if (id) setMeta('backupFolderId', id);
+    else delMeta('backupFolderId');
   },
   setSyncStatus: (syncStatus, pendingCount, lastSyncError) =>
     set({ syncStatus, pendingCount, lastSyncError }),
@@ -111,6 +129,8 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
       budgets: [],
       settings: defaultSettings,
       spreadsheetId: null,
+      folderId: null,
+      backupFolderId: null,
       lastSyncedAt: null,
       syncStatus: 'idle',
       pendingCount: 0,
@@ -135,6 +155,8 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         tokenExpiresAt,
         userProfileStr,
         spreadsheetId,
+        folderId,
+        backupFolderId,
       ] = await Promise.all([
         getAll<Account>('accounts'),
         getAll<PaymentMethod>('methods'),
@@ -147,6 +169,8 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         getMeta('tokenExpiresAt'),
         getMeta('userProfile'),
         getMeta('spreadsheetId'),
+        getMeta('folderId'),
+        getMeta('backupFolderId'),
       ]);
 
       let userProfile = null;
@@ -191,6 +215,8 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         budgets: budgets as Budget[],
         settings: userSettings,
         spreadsheetId: spreadsheetId || null,
+        folderId: folderId || null,
+        backupFolderId: backupFolderId || null,
         lastSyncedAt: lastSyncedAt || null,
         accessToken: accessToken || null,
         tokenExpiresAt: tokenExpiresAt ? Number(tokenExpiresAt) : null,

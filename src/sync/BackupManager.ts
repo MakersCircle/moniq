@@ -55,11 +55,46 @@ export class BackupManager {
     }
   }
 
-  /** Ensures the "Moniq Backups" folder exists in Drive. */
+  /**
+   * Ensures the "Moniq Backups" folder exists in Drive.
+   *
+   * Uses the persisted `backupFolderId` from the store to avoid a Drive-wide
+   * search (which is blocked under the `drive.file` scope). Falls back to
+   * creating a new folder if the ID is missing or the folder has been deleted.
+   */
   private async ensureBackupFolder(): Promise<string> {
-    const existingId = await googleService.findFolder(BACKUP_FOLDER_NAME);
-    if (existingId) return existingId;
-    return await googleService.createFolder(BACKUP_FOLDER_NAME);
+    const { backupFolderId: storedId, folderId, setBackupFolderId } = useDataStore.getState();
+
+    if (storedId) {
+      // Verify the folder is still alive.
+      const verifyRes = await googleService.driveRequest(`/files/${storedId}?fields=id,trashed`);
+      if (verifyRes.ok) {
+        const verifyData = await verifyRes.json();
+        if (!verifyData.trashed) return storedId;
+      }
+      // Stale – fall through to re-create.
+      console.warn('[BackupManager] Backup folder ID stale, re-creating...');
+      setBackupFolderId(null);
+    }
+
+    // Create the backup folder. Nest it inside the moniq root folder if we
+    // know it, otherwise create it at the Drive root (still accessible via
+    // drive.file since we are creating it).
+    const body: Record<string, unknown> = {
+      name: BACKUP_FOLDER_NAME,
+      mimeType: 'application/vnd.google-apps.folder',
+    };
+    if (folderId) body.parents = [folderId];
+
+    const createRes = await googleService.driveRequest('/files', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    if (!createRes.ok) throw new Error('Failed to create backup folder');
+
+    const newId: string = (await createRes.json()).id;
+    setBackupFolderId(newId);
+    return newId;
   }
 
   /** Determines which backup tiers are due based on current settings and date. */

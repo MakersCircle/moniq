@@ -84,7 +84,7 @@ export class GoogleService {
       const client = window.google.accounts.oauth2.initTokenClient({
         client_id: VITE_GOOGLE_CLIENT_ID,
         scope:
-          'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+          'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
         prompt: 'none',
         callback: (response: GoogleOAuthResponse) => {
           this.isRefreshing = false;

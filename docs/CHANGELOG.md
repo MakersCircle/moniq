@@ -9,6 +9,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.7.0] - 2026-05-24
+
+### Changed
+- **Security / OAuth Scopes**: Dropped the `spreadsheets` (sensitive) scope entirely. Moniq now
+  requests only `drive.file` + `userinfo.profile` + `userinfo.email` — all classified as
+  **non-sensitive** by Google. This eliminates the need for a security assessment or demo video
+  for OAuth verification.
+- **Drive Initialization Architecture** (`api/google.ts`): Replaced the single-strategy
+  approach with a **three-tier resolution** for both the root folder and the spreadsheet:
+  (1) Persisted IndexedDB ID — fast path, same device; (2) `drive.file`-scoped `files.list`
+  search — recovers the existing file on a new device or after cache loss; (3) Create new —
+  true first-run only. This fully resolves the cross-device data loss bug.
+- **Spreadsheet Creation**: Uses `driveRequest('/files')` with
+  `mimeType: application/vnd.google-apps.spreadsheet` (Drive API), which is compatible with
+  `drive.file` scope without needing the `spreadsheets` scope.
+- **BackupManager** (`sync/BackupManager.ts`): `ensureBackupFolder()` now uses the persisted
+  `backupFolderId` from the store. The backup folder is nested inside `moniq/` and its ID is
+  persisted to IndexedDB after creation.
+- **Logout Behavior** (`Settings/index.tsx`): Drive IDs (`spreadsheetId`, `folderId`,
+  `backupFolderId`) are no longer cleared on logout. They are connection settings that must
+  survive the logout/login cycle so the same user reconnects to their existing sheet immediately
+  without an unnecessary Drive API search.
+- **Account-Switch Detection** (`App.tsx`): On every login, the signed-in user's email is
+  compared to a persisted `userEmail` key in IndexedDB. If a different Google account is
+  detected on the same device, all Drive IDs are cleared before `initializeDatabase` runs,
+  ensuring each user connects only to their own data.
+- **Store** (`store/slices/syncSlice.ts`, `store/types.ts`): Added `folderId` and
+  `backupFolderId` fields to the sync slice with full persist/rehydrate support via
+  `setMeta` / `getMeta` in IndexedDB.
+- **Privacy Policy**: Updated Google API Permissions section to accurately reflect only the
+  three non-sensitive scopes with explanatory copy.
+
 ## [0.6.1] - 2026-05-04
 
 ### Added

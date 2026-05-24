@@ -18,6 +18,7 @@ import { useDataStore } from './store/dataStore';
 import { fetchUserProfile, initializeDatabase } from './api/google';
 import { SyncEngine } from './sync/SyncEngine';
 import { googleService } from './lib/google';
+import { getMeta, setMeta } from './lib/db';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 import AddTransactionModal from './components/Transactions/AddTransactionModal';
@@ -110,6 +111,22 @@ export default function App() {
         }
 
         const profile = await fetchUserProfile();
+
+        // ── Account-switch detection ──────────────────────────────────
+        // If a different Google account logs in on this device, clear the
+        // stored Drive IDs so we don't accidentally connect them to a
+        // previous user's spreadsheet.
+        const storedEmail = await getMeta('userEmail');
+        if (storedEmail && storedEmail !== profile.email) {
+          console.log('[App] Different Google account detected — clearing Drive IDs.');
+          const store = useDataStore.getState();
+          store.setSpreadsheetId(null);
+          store.setFolderId(null);
+          store.setBackupFolderId(null);
+        }
+        // Persist the current user's email for future account-switch checks.
+        await setMeta('userEmail', profile.email);
+
         setUserProfile(profile);
 
         const sheetId = await initializeDatabase();

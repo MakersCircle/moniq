@@ -41,7 +41,6 @@ export default function SettingsIndex() {
     lastSyncError,
     setAccessToken,
     setUserProfile,
-    setSpreadsheetId,
     accessToken,
     spreadsheetId,
     hydrateFromSync,
@@ -67,7 +66,11 @@ export default function SettingsIndex() {
     SyncEngine.reset();
     setAccessToken(null);
     setUserProfile(null);
-    setSpreadsheetId(null);
+    // NOTE: Drive IDs (spreadsheetId, folderId, backupFolderId) are intentionally
+    // NOT cleared here. They are "connection settings" that must survive logout so
+    // the same user can reconnect to their existing sheet on next login.
+    // A different Google account logging in on this device is handled in App.tsx
+    // via the stored-email comparison (account-switch detection).
     setIsLoggingOut(false);
   };
 
