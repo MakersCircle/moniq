@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Silent Cloud Failure** (`App.tsx`): Fixed a critical bug where cloud initialization errors were swallowed and the app was loaded in a broken sync state without user feedback. Added a dedicated full-screen connection error state with "Retry Connection" and "Sign Out" actions to properly surface Drive/Sheets errors to the user.
+
+---
+
+## [0.7.1] - 2026-05-25
+
+### Fixed
+- **Infinite Loading Screen** (`App.tsx`): Fixed a critical bug where a failed silent token refresh resulted in an infinite loading spinner. Now appropriately resolves the spinner to show the Session Expired banner.
+- **Duplicate Backup Folders** (`api/google.ts`, `BackupManager.ts`):
+  - Fixed a race condition causing multiple "Moniq Backups" folders. Google Drive IDs are now properly awaited before IndexedDB persistence, preventing null-ID bugs upon immediate page reload.
+  - Added a concurrency guard (`isRunning`) to `BackupManager` to prevent overlapping auto-backup cycles when `forceSync` is manually triggered.
+
 ---
 
 ## [0.7.0] - 2026-05-24
