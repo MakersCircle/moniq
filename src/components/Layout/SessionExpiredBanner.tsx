@@ -13,7 +13,7 @@ export default function SessionExpiredBanner() {
     },
     onError: error => console.error('Re-auth Failed:', error),
     scope:
-      'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
   });
 
   return (

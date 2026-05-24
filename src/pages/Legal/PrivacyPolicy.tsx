@@ -105,15 +105,15 @@ export default function PrivacyPolicy() {
               Google API Permissions
             </h2>
             <div className="text-slate-400 leading-relaxed space-y-4">
-              <p>Moniq uses the following Google Scopes:</p>
+              <p>
+                Moniq uses only the following Google Scopes, all classified as{' '}
+                <strong className="text-slate-200">non-sensitive</strong> by Google:
+              </p>
               <ul className="list-disc pl-5 space-y-2">
                 <li>
-                  <code className="text-primary/80">drive.file</code>: To create and edit the Moniq
-                  database spreadsheet in your Drive.
-                </li>
-                <li>
-                  <code className="text-primary/80">spreadsheets</code>: To read and write data to
-                  the specific Moniq ledger sheet.
+                  <code className="text-primary/80">drive.file</code>: Grants access only to the
+                  files and folders that Moniq itself creates in your Drive. We cannot see, read, or
+                  access any of your other Drive files.
                 </li>
                 <li>
                   <code className="text-primary/80">userinfo.profile</code> &{' '}
