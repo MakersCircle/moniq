@@ -17,6 +17,7 @@ const RETENTION_LIMITS = {
  */
 export class BackupManager {
   private static instance: BackupManager | null = null;
+  private isRunning = false;
 
   static getInstance() {
     if (!this.instance) this.instance = new BackupManager();
@@ -28,6 +29,11 @@ export class BackupManager {
    * Evaluates if any tier needs a backup and performs it.
    */
   async runBackupCycle(force: boolean = false): Promise<void> {
+    if (this.isRunning) {
+      console.log('[BackupManager] Cycle already in progress — skipping concurrent call.');
+      return;
+    }
+
     const state = useDataStore.getState();
     const { spreadsheetId, settings } = state;
     if (!spreadsheetId) return;
@@ -38,20 +44,18 @@ export class BackupManager {
 
     if (requiredTiers.length === 0) return;
 
-    // console.log('[BackupManager] Starting backup cycle for tiers:', requiredTiers);
-
+    this.isRunning = true;
     try {
       const folderId = await this.ensureBackupFolder();
 
       for (const tier of requiredTiers) {
-        // console.log(`[BackupManager] Creating ${tier} backup...`);
         await this.performBackup(tier, spreadsheetId, folderId);
         await this.cleanupOldBackups(tier, folderId);
       }
-
-      // console.log('[BackupManager] Backup cycle completed successfully.');
     } catch (error) {
       console.error('[BackupManager] Backup cycle failed:', error);
+    } finally {
+      this.isRunning = false;
     }
   }
 
@@ -93,7 +97,7 @@ export class BackupManager {
     if (!createRes.ok) throw new Error('Failed to create backup folder');
 
     const newId: string = (await createRes.json()).id;
-    setBackupFolderId(newId);
+    await setBackupFolderId(newId);
     return newId;
   }
 

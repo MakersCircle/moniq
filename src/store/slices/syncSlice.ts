@@ -57,18 +57,18 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
 
   setSpreadsheetId: id => {
     set({ spreadsheetId: id });
-    if (id) setMeta('spreadsheetId', id);
-    else delMeta('spreadsheetId');
+    if (id) return setMeta('spreadsheetId', id);
+    else return delMeta('spreadsheetId');
   },
   setFolderId: id => {
     set({ folderId: id });
-    if (id) setMeta('folderId', id);
-    else delMeta('folderId');
+    if (id) return setMeta('folderId', id);
+    else return delMeta('folderId');
   },
   setBackupFolderId: id => {
     set({ backupFolderId: id });
-    if (id) setMeta('backupFolderId', id);
-    else delMeta('backupFolderId');
+    if (id) return setMeta('backupFolderId', id);
+    else return delMeta('backupFolderId');
   },
   setSyncStatus: (syncStatus, pendingCount, lastSyncError) =>
     set({ syncStatus, pendingCount, lastSyncError }),
