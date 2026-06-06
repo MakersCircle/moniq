@@ -32,3 +32,8 @@ google-sheet/
 # Temporary and auto-generated files
 lint_report.txt
 scratch/
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
