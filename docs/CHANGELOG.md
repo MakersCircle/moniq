@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Sync Engine Retries**: Properly destroy the Sync Engine background polling loop upon user logout, fixing a memory and API request leak.
 - **Duplicate Backup Folders**: Prevented the creation of duplicate `Moniq Backups` folders across different devices by implementing a pre-creation folder search.
 - **Orphaned Sheets**: The Sync Engine now automatically deletes the default, empty `Sheet1` tab when provisioning a new Google Spreadsheet.
+- **Onboarding Navigation**: Fixed a routing loop that forced brand new accounts back to the landing page immediately after logging in, preventing them from seeing the onboarding wizard.
 
 ### Added
 - **Detailed Sync Tooltips**: The pending changes indicator in Settings now displays a detailed list of all locally modified items waiting to be synced to the cloud.
