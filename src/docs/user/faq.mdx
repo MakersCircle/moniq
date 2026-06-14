@@ -19,6 +19,16 @@ Yes! You can add, edit, or delete transactions while offline. Moniq will queue t
 ### How do I sync across multiple devices?
 Just sign in with the same Google Account on any device. Moniq will automatically find your `moniq-database` file and pull your data.
 
+### What if I edit the exact same transaction on two offline devices?
+Moniq uses a **"Last Write Wins"** strategy for individual transactions. If you edit a transaction on your phone offline, and then edit the exact same transaction on your laptop, whichever device successfully syncs to Google Sheets *last* will overwrite the other's changes. Because it's a personal finance app, concurrent edits to the exact same record are rare, and pushing your most recent local edit is the most performant approach.
+
+### Can I manually sort or edit the data in my Google Sheet?
+**No, please avoid manually sorting or deleting rows in the Google Sheet while the app is open.** 
+When Moniq connects to your sheet, it builds a memory map of exactly which row holds which transaction. If you manually sort the sheet, Moniq's memory map will be pointing to the wrong rows! If you must make manual changes to the sheet, make sure all your devices are completely logged out of Moniq first, and perform a full page reload when you return so Moniq can rebuild its row map from scratch.
+
+### Why does the "Sync Now" button take a few seconds?
+Usually, Moniq pushes your new transactions to the cloud instantly in the background (a Delta Push). However, when you explicitly click **Sync Now** in Settings, Moniq performs a "Full Pull." It downloads your entire database from Google Sheets to ensure your local device matches the cloud 100%, which guarantees no conflicts exist before you continue.
+
 ### What if I accidentally delete the Google Sheet?
 If the sheet is in your Trash, restore it. If it's permanently deleted, Moniq will try to re-upload your local data the next time you sync, but it's recommended to keep the sheet safe as it is your primary backup.
 
