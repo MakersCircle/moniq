@@ -108,7 +108,12 @@ export default function App() {
       setSyncStatus(status, pendingCount, error);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (!useDataStore.getState().accessToken) {
+        engine.destroy();
+      }
+    };
   }, [accessToken, setSyncStatus]);
 
   // 4. Cloud initialization (Google Sheets)
@@ -123,11 +128,14 @@ export default function App() {
           console.log('[App] Token expired or near expiry, refreshing...');
           const newToken = await googleService.silentRefresh();
           if (!newToken) {
-            // Cannot refresh — unblock the spinner and surface the error so the
-            // user sees the Session Expired banner rather than a frozen screen.
-            console.warn('[App] Silent refresh failed — unblocking spinner.');
-            setCloudInitialized(true);
-            return;
+            const isFullyExpired = Date.now() > tokenExpiresAt;
+            if (isFullyExpired) {
+              console.warn('[App] Silent refresh failed and token is fully expired. Unblocking spinner.');
+              useDataStore.getState().setAccessToken(null);
+              return;
+            } else {
+              console.warn('[App] Silent refresh failed, but token is still valid. Proceeding with init...');
+            }
           }
         }
 
@@ -139,11 +147,12 @@ export default function App() {
         // previous user's spreadsheet.
         const storedEmail = await getMeta('userEmail');
         if (storedEmail && storedEmail !== profile.email) {
-          console.log('[App] Different Google account detected — clearing Drive IDs.');
+          console.log('[App] Different Google account detected — wiping local data to prevent cross-contamination.');
+          const { clearLocalData } = await import('./lib/db');
+          await clearLocalData();
+          
           const store = useDataStore.getState();
-          store.setSpreadsheetId(null);
-          store.setFolderId(null);
-          store.setBackupFolderId(null);
+          store.clearZustandData();
         }
         // Persist the current user's email for future account-switch checks.
         await setMeta('userEmail', profile.email);
@@ -219,7 +228,7 @@ export default function App() {
       ? 'Loading your space...'
       : syncStatus === 'pulling'
         ? 'Pulling your data from Google Drive...'
-        : 'Syncing your data...';
+        : 'Connecting to Google Drive...';
 
     return (
       <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center">
