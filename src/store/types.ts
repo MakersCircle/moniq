@@ -102,6 +102,7 @@ export interface DataState {
     settings: Record<string, string>;
   }) => void;
   resetData: () => void;
+  clearZustandData: () => void;
   initializeFromDB: () => Promise<void>;
   isHydrated: boolean;
   isCloudInitialized: boolean;
