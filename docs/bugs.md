@@ -42,9 +42,9 @@
 
 ## 🟡 Medium
 
-- [ ] **#9 — Loading spinner shows wrong message at startup**
+- [x] **#9 — Loading spinner shows wrong message at startup**
   `App.tsx` — While `accessToken && !isCloudInitialized`, the spinner displays *"Syncing your data…"* even before `SyncEngine.initialize()` starts (when `syncStatus` is still `'idle'`). The accurate *"Pulling your data…"* message only appears once the pull begins.
-  **Fix:** Drive the message from a dedicated `initPhase` state rather than `syncStatus`.
+  **Fix:** Changed the fallback message logic in `App.tsx` to read "Connecting to Google Drive..." instead of "Syncing your data..." before the pull officially starts. *(Fixed)*
 
 - [ ] **#10 — Onboarding modal cannot be dismissed or skipped**
   `LayoutShell.tsx` — The condition `accounts.length === 0 && !hasCompletedOnboarding` re-triggers the modal on every render until onboarding is completed. There is no "skip for now" path. Users who accidentally open the app before they're ready feel locked out.
@@ -77,15 +77,15 @@
 
 ## 🟡 From Drive Testing (May 2026)
 
-- [ ] **#16 — Orphaned "Sheet1" tab in Moniq Database spreadsheet**
+- [x] **#16 — Orphaned "Sheet1" tab in Moniq Database spreadsheet**
   When a spreadsheet is created via `drive.files.create` with `mimeType=application/vnd.google-apps.spreadsheet`, Google automatically creates a default tab named "Sheet1". `SyncEngine.ensureSheetTabs()` adds the correct tabs (Transactions, Accounts, etc.) but never deletes "Sheet1". It persists visibly in the user's Drive as a confusing empty tab.
-  **Fix:** After `ensureSheetTabs`, call the Sheets API to delete any tab whose name is not in `SHEET_NAMES`.
+  **Fix:** After `ensureSheetTabs` provisions the required tabs, it now sends a `deleteSheet` batch request to prune the default "Sheet1". *(Fixed)*
 
-- [ ] **#17 — Duplicate "Moniq Backups" folders inside moniq/ (confirmed post-v0.7.0)**
+- [x] **#17 — Duplicate "Moniq Backups" folders inside moniq/ (confirmed post-v0.7.0)**
   Both duplicate folders are inside `moniq/` — not a migration artifact. Two root causes identified and partially fixed:
   1. **Fire-and-forget setMeta**: `setBackupFolderId`, `setFolderId`, `setSpreadsheetId` called `setMeta` without `await`. If the page reloaded in the ~100ms window after the Zustand store updated but before IndexedDB committed, the ID was lost. On next load the ID appeared null → new folder created. **Fixed:** all three setters now `return setMeta(...)` so callers can `await` them, and all creation sites in `api/google.ts` and `BackupManager.ts` now `await` the setter.
   2. **No concurrency guard**: `runBackupCycle` could be called concurrently (e.g., manual "Backup Now" triggers a settings flush which triggers an auto backup cycle). Two concurrent calls could both enter `ensureBackupFolder` with `backupFolderId = null`. **Fixed:** `BackupManager` now has an `isRunning` guard that skips any concurrent invocation.
-  **Remaining:** The duplicate folders already in the user's Drive need manual cleanup. Future runs will not create new duplicates.
+  **Fix:** `BackupManager` now explicitly runs a Drive search query restricted to the `folderId` to find any existing `Moniq Backups` folder before blindly creating a new one when `backupFolderId` is missing from the local store. *(Fixed)*
 
 ---
 
@@ -93,12 +93,12 @@
 
 | Status | Count |
 |---|---|
-| ✅ Fixed | 9 (items 1-8, 14) |
+| ✅ Fixed | 12 (items 1-9, 14, 16, 17) |
 | 🔴 Critical remaining | 0 |
 | 🟠 High remaining | 0 |
-| 🟡 Medium remaining | 7 (items 9, 10, 11, 12, 13, 16, 17) |
+| 🟡 Medium remaining | 4 (items 10, 11, 12, 13) |
 | ⚪ Low remaining | 1 (item 15) |
-| **Total open** | **10** |
+| **Total open** | **8** |
 
 
 My Findings
