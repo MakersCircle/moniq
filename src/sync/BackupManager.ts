@@ -77,8 +77,25 @@ export class BackupManager {
         if (!verifyData.trashed) return storedId;
       }
       // Stale – fall through to re-create.
-      console.warn('[BackupManager] Backup folder ID stale, re-creating...');
+      console.warn('[BackupManager] Backup folder ID stale, searching for existing...');
       setBackupFolderId(null);
+    }
+
+    if (folderId) {
+      // Search for the folder within the parent moniq folder
+      const q = encodeURIComponent(
+        `name='${BACKUP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and '${folderId}' in parents and trashed=false`
+      );
+      const searchRes = await googleService.driveRequest(`/files?q=${q}&fields=files(id)&pageSize=1`);
+      if (searchRes.ok) {
+        const searchData = await searchRes.json();
+        if (searchData.files?.length > 0) {
+          const foundId = searchData.files[0].id;
+          await setBackupFolderId(foundId);
+          console.log('[BackupManager] Found existing backup folder via search:', foundId);
+          return foundId;
+        }
+      }
     }
 
     // Create the backup folder. Nest it inside the moniq root folder if we
@@ -98,6 +115,7 @@ export class BackupManager {
 
     const newId: string = (await createRes.json()).id;
     await setBackupFolderId(newId);
+    console.log('[BackupManager] Created new backup folder:', newId);
     return newId;
   }
 

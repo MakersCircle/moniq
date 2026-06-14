@@ -169,11 +169,24 @@ export class SheetClient {
     const existing = new Set(metaData.sheets.map(s => s.properties.title));
 
     const missing = requiredSheets.filter(name => !existing.has(name));
-    if (missing.length === 0) return;
 
-    const requests = missing.map(title => ({
-      addSheet: { properties: { title } },
-    }));
+    // Check for orphaned "Sheet1"
+    const sheet1 = metaData.sheets.find(s => s.properties.title === 'Sheet1');
+    const willHaveOtherSheets = existing.size > (sheet1 ? 1 : 0) || missing.length > 0;
+
+    const requests: any[] = [];
+
+    // 1. Add missing sheets
+    missing.forEach(title => {
+      requests.push({ addSheet: { properties: { title } } });
+    });
+
+    // 2. Delete Sheet1 if it exists and we have other sheets
+    if (sheet1 && willHaveOtherSheets) {
+      requests.push({ deleteSheet: { sheetId: sheet1.properties.sheetId } });
+    }
+
+    if (requests.length === 0) return;
 
     const batchUrl = `/spreadsheets/${this.spreadsheetId}:batchUpdate`;
     const res = await googleService.sheetsRequest(batchUrl, {
@@ -182,7 +195,7 @@ export class SheetClient {
     });
 
     if (!res.ok) {
-      console.warn('Failed to create missing sheets:', await res.text());
+      console.warn('Failed to update sheets (create/delete):', await res.text());
     }
   }
 
