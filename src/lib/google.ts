@@ -81,12 +81,19 @@ export class GoogleService {
         return resolve(null);
       }
 
+      const timeoutId = setTimeout(() => {
+        console.warn('[GoogleService] silentRefresh timed out after 10s');
+        this.isRefreshing = false;
+        resolve(null);
+      }, 10000);
+
       const client = window.google.accounts.oauth2.initTokenClient({
         client_id: VITE_GOOGLE_CLIENT_ID,
         scope:
           'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
         prompt: 'none',
         callback: (response: GoogleOAuthResponse) => {
+          clearTimeout(timeoutId);
           this.isRefreshing = false;
           if (response.access_token) {
             const expiresAt = Date.now() + (Number(response.expires_in) || 3600) * 1000;
