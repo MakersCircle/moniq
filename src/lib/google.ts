@@ -140,8 +140,19 @@ export class GoogleService {
 
     if (!currentToken || isAboutToExpire) {
       if (isAboutToExpire) console.log('[GoogleService] Token about to expire, refreshing...');
-      currentToken = await this.silentRefresh();
-      if (!currentToken) throw new Error('Unauthenticated: No access token found');
+      const newToken = await this.silentRefresh();
+      
+      if (newToken) {
+        currentToken = newToken;
+      } else {
+        const isFullyExpired = expiresAt && Date.now() > expiresAt;
+        if (!currentToken || isFullyExpired) {
+          useDataStore.getState().setAccessToken(null);
+          throw new Error('Unauthenticated: Session expired');
+        } else {
+          console.warn('[GoogleService] Proactive refresh failed, but token is still valid. Proceeding...');
+        }
+      }
     }
 
     let response = await fetch(url, {

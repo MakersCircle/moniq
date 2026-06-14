@@ -925,5 +925,6 @@ export class SyncEngine {
     this.listeners.clear();
     this.client = null;
     this.isInitialized = false;
+    SyncEngine.instance = null;
   }
 }
