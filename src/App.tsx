@@ -20,6 +20,9 @@ import { SyncEngine } from './sync/SyncEngine';
 import { googleService } from './lib/google';
 import { getMeta, setMeta } from './lib/db';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { googleLogout } from '@react-oauth/google';
 
 import AddTransactionModal from './components/Transactions/AddTransactionModal';
 import type { Transaction, TransactionType } from './types';
@@ -37,6 +40,17 @@ export default function App() {
   const setCloudInitialized = useDataStore(s => s.setCloudInitialized);
   const syncStatus = useDataStore(s => s.syncStatus);
   const initializeFromDB = useDataStore(s => s.initializeFromDB);
+
+  const [initError, setInitError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [showSyncToast, setShowSyncToast] = useState(false);
+
+  const handleDisconnect = useCallback(() => {
+    googleLogout();
+    useDataStore.getState().setAccessToken(null);
+    useDataStore.getState().setUserProfile(null);
+    SyncEngine.reset();
+  }, []);
 
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -102,6 +116,7 @@ export default function App() {
     if (!accessToken || !isHydrated) return;
 
     async function initCloud() {
+      setInitError(null);
       try {
         // If token is expired or near expiry, try silent refresh first
         if (tokenExpiresAt && Date.now() > tokenExpiresAt - 300000) {
@@ -141,13 +156,19 @@ export default function App() {
         const engine = SyncEngine.getInstance();
         const reconciledData = await engine.initialize(sheetId);
         if (reconciledData) {
+          const wasAlreadyInitialized = useDataStore.getState().isCloudInitialized;
           hydrateFromSync(reconciledData);
+          if (wasAlreadyInitialized) {
+            setShowSyncToast(true);
+            setTimeout(() => setShowSyncToast(false), 3500);
+          }
         } else {
           setCloudInitialized(true);
         }
       } catch (err) {
         console.error('Failed to initialize cloud database:', err);
-        setCloudInitialized(true);
+        setInitError(err instanceof Error ? err.message : 'Unknown connection error');
+        // Do not call setCloudInitialized(true) here! The app should not proceed into a broken state.
       }
     }
 
@@ -160,6 +181,7 @@ export default function App() {
     setSpreadsheetId,
     hydrateFromSync,
     setCloudInitialized,
+    retryCount,
   ]);
 
   const hasCompletedOnboarding = settings.hasCompletedOnboarding;
@@ -171,6 +193,28 @@ export default function App() {
   }, [accessToken, openNew, openEdit, openDuplicate]);
 
   if (!isHydrated || (accessToken && !isCloudInitialized)) {
+    if (initError) {
+      return (
+        <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4 text-center max-w-md px-6">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-2">
+              <AlertCircle className="w-6 h-6 text-red-500" />
+            </div>
+            <h3 className="text-zinc-100 text-lg font-medium">Connection Error</h3>
+            <p className="text-zinc-400 text-sm mb-4">
+              We couldn't connect to your Google Drive. {initError}
+            </p>
+            <Button onClick={() => setRetryCount(c => c + 1)} variant="secondary" className="w-full sm:w-auto">
+              Retry Connection
+            </Button>
+            <Button onClick={handleDisconnect} variant="ghost" className="text-zinc-500 hover:text-zinc-300 w-full sm:w-auto">
+              Sign Out
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
     const message = !isHydrated
       ? 'Loading your space...'
       : syncStatus === 'pulling'
@@ -260,6 +304,13 @@ export default function App() {
             />
           </DialogContent>
         </Dialog>
+      )}
+
+      {showSyncToast && (
+        <div className="fixed bottom-6 right-6 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 z-[100] pointer-events-none">
+          <CheckCircle2 className="w-4 h-4" />
+          <span className="text-sm font-medium">Data synced from cloud</span>
+        </div>
       )}
     </BrowserRouter>
   );
