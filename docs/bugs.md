@@ -85,7 +85,27 @@
   Both duplicate folders are inside `moniq/` — not a migration artifact. Two root causes identified and partially fixed:
   1. **Fire-and-forget setMeta**: `setBackupFolderId`, `setFolderId`, `setSpreadsheetId` called `setMeta` without `await`. If the page reloaded in the ~100ms window after the Zustand store updated but before IndexedDB committed, the ID was lost. On next load the ID appeared null → new folder created. **Fixed:** all three setters now `return setMeta(...)` so callers can `await` them, and all creation sites in `api/google.ts` and `BackupManager.ts` now `await` the setter.
   2. **No concurrency guard**: `runBackupCycle` could be called concurrently (e.g., manual "Backup Now" triggers a settings flush which triggers an auto backup cycle). Two concurrent calls could both enter `ensureBackupFolder` with `backupFolderId = null`. **Fixed:** `BackupManager` now has an `isRunning` guard that skips any concurrent invocation.
-  **Fix:** `BackupManager` now explicitly runs a Drive search query restricted to the `folderId` to find any existing `Moniq Backups` folder before blindly creating a new one when `backupFolderId` is missing from the local store. *(Fixed)*
+  **Remaining:** The duplicate folders already in the user's Drive need manual cleanup. Future runs will not create new duplicates.
+
+- [ ] **#18 — Duplicate rows created on partial sync batch failure (Idempotent Appends)**
+  `SyncEngine.ts` `flush()` processes all entity sheets via `Promise.all`. If one sheet fails, the sync queue is NOT cleared. The next sync retries all ops in the queue. For `create` ops, `flushEntityOps` currently pushes them directly to `newRows` without checking if the entity's ID already exists in `this.rowIndexes`. This results in duplicate row appends on Google Sheets.
+  **Fix:** In `flushEntityOps`, check `rowIndex.get(op.entityId)` for `create` ops as well. If it exists, convert the append into an update and push to `updateBatch`.
+
+- [ ] **#19 — O(N) performance degradation on row appends**
+  `SyncEngine.ts` `flushEntityOps` calls `this.client.getRowCount(sheetName)` after appending rows to calculate the new row indexes. `getRowCount` uses `readSheet()`, which downloads the *entire* sheet contents over the network. For a user with 5,000 transactions, every single new transaction triggers a 5,000-row download.
+  **Fix:** Modify `SheetClient.appendRows` to parse and return the actual row positions from the Sheets API `updates.updatedRange` response (e.g., `"Transactions!A16:M16"`), eliminating the need to call `getRowCount`.
+
+- [ ] **#20 — Conflict Resolution clock drift gap**
+  `SyncEngine.ts` resolves sync conflicts by comparing the `updatedAt` timestamp of the local and remote entities. If both sides changed offline while disconnected, this logic assumes the device clocks are perfectly synchronized, which is rarely true across diverse devices.
+  **Fix:** Add a `syncedAt` metadata timestamp (last successful sync). True conflicts occur only if both local and remote `updatedAt` are strictly greater than `syncedAt`.
+
+- [ ] **#21 — Schema Version tracking**
+  Future schema changes require a way to detect outdated remote schemas to perform data migrations before syncing.
+  **Fix:** Add `schemaVersion: 1` to the Settings sheet tab so older versions can be properly detected during `initialize()`.
+
+- [ ] **#22 — API Rate limiting awareness**
+  Google Sheets API allows 60 reads / 60 writes per minute. If a user with a massive legacy dataset (years of transactions) triggers multiple sync ops, it could easily hit the quota limit.
+  **Fix:** Add a simple request counter inside `SheetClient` and proactively backoff (sleep) when approaching the 60 requests/min threshold.
 
 ---
 
@@ -95,13 +115,7 @@
 |---|---|
 | ✅ Fixed | 12 (items 1-9, 14, 16, 17) |
 | 🔴 Critical remaining | 0 |
-| 🟠 High remaining | 0 |
-| 🟡 Medium remaining | 4 (items 10, 11, 12, 13) |
-| ⚪ Low remaining | 1 (item 15) |
-| **Total open** | **8** |
-
-
-My Findings
-
-1. I found a sheet with name sheet1 in the google drive moniq database
-2. I see two Moniq Backups folders. One when i clicked backnow button and it contains all 4 backup tiers (updated time shows 23:32) and in another one, it contains only daily backup file(updated time shows 23:36). In ui, it shows only one backup. rest are shown NEVER. In drive, 
+| 🟠 High remaining | 2 (items 18, 19) |
+| 🟡 Medium remaining | 5 (items 10, 11, 12, 13, 20) |
+| ⚪ Low remaining | 3 (items 15, 21, 22) |
+| **Total open** | **13** |
