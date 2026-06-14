@@ -9,10 +9,12 @@ import {
   ShieldCheck,
   History,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { googleLogout } from '@react-oauth/google';
 import { useDataStore } from '@/store/dataStore';
 import { SyncEngine } from '@/sync/SyncEngine';
+import { getAllSyncQueue } from '@/lib/db';
+import type { SyncOperation } from '@/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +29,7 @@ import {
 } from '@/components/ui/select';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
+import { InfoTooltip } from '@/components/ui/info-tooltip';
 import { getAllCurrencies, COMMON_LOCALES } from '@/constants/currencies';
 import { formatCurrency } from '@/utils/format';
 
@@ -44,6 +47,11 @@ export default function SettingsIndex() {
     accessToken,
     spreadsheetId,
     hydrateFromSync,
+    transactions,
+    accounts,
+    methods,
+    categories,
+    budgets,
   } = useDataStore();
 
   const [resetModalOpen, setResetModalOpen] = useState(false);
@@ -53,6 +61,15 @@ export default function SettingsIndex() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [logoutPendingCount, setLogoutPendingCount] = useState(0);
+  const [pendingOps, setPendingOps] = useState<SyncOperation[]>([]);
+
+  useEffect(() => {
+    if (pendingCount > 0) {
+      getAllSyncQueue().then(setPendingOps).catch(console.error);
+    } else {
+      setPendingOps([]);
+    }
+  }, [pendingCount]);
 
   const confirmAndLogout = () => {
     googleLogout();
@@ -218,10 +235,68 @@ export default function SettingsIndex() {
                                 ? `Last synced ${new Date(lastSyncedAt).toLocaleString()}`
                                 : 'No sync recorded'}
                     </p>
-                    {pendingCount > 0 && syncStatus === 'idle' && (
-                      <p className="text-[10px] text-amber-500 font-medium mt-0.5">
-                        {pendingCount} change{pendingCount > 1 ? 's' : ''} pending
-                      </p>
+                    {pendingCount > 0 && (
+                      <div className="flex items-center mt-0.5">
+                        <p className="text-[10px] text-amber-500 font-medium">
+                          {pendingCount} change{pendingCount > 1 ? 's' : ''} pending
+                        </p>
+                        <InfoTooltip
+                          position="bottom"
+                          text={
+                            <ul className="space-y-1 text-left list-disc list-inside">
+                              {pendingOps.map(op => {
+                                let details = op.entityId;
+                                if (op.entity === 'settings') details = 'App Settings';
+                                else if (op.action === 'delete') details = 'Deleted item';
+                                else {
+                                  if (op.entity === 'transaction') {
+                                    const t = transactions.find(x => x.id === op.entityId);
+                                    if (t) {
+                                      let name = t.note;
+                                      if (!name) {
+                                        if (t.uiType === 'transfer') name = 'Transfer';
+                                        else {
+                                          const catEntry = t.entries.find(e => categories.some(c => c.id === e.accountId));
+                                          if (catEntry) {
+                                            const cat = categories.find(c => c.id === catEntry.accountId);
+                                            name = cat ? (cat.subHead ? `${cat.head} - ${cat.subHead}` : cat.head) : 'Transaction';
+                                          } else {
+                                            name = 'Transaction';
+                                          }
+                                        }
+                                      }
+                                      details = `${name} (${formatCurrency(t.amount, settings)})`;
+                                    }
+                                  } else if (op.entity === 'account') {
+                                    const a = accounts.find(x => x.id === op.entityId);
+                                    if (a) details = a.name;
+                                  } else if (op.entity === 'method') {
+                                    const m = methods.find(x => x.id === op.entityId);
+                                    if (m) details = m.name;
+                                  } else if (op.entity === 'category') {
+                                    const c = categories.find(x => x.id === op.entityId);
+                                    if (c) details = c.subHead ? `${c.head} - ${c.subHead}` : c.head;
+                                  } else if (op.entity === 'budget') {
+                                    const b = budgets.find(x => x.id === op.entityId);
+                                    if (b) {
+                                      const c = categories.find(x => x.id === b.categoryId);
+                                      details = c ? `${c.subHead ? `${c.head} - ${c.subHead}` : c.head} Budget` : 'Budget';
+                                    }
+                                  }
+                                }
+
+                                return (
+                                  <li key={op.id} className="whitespace-nowrap">
+                                    <span className="font-semibold text-[9px] text-muted-foreground">{op.action.toUpperCase()} {op.entity.toUpperCase()}</span>
+                                    <br />
+                                    <span className="font-medium text-popover-foreground">{details}</span>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          }
+                        />
+                      </div>
                     )}
                   </div>
                 </div>

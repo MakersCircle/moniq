@@ -1,7 +1,8 @@
 import { Info } from 'lucide-react';
+import React from 'react';
 
 interface InfoTooltipProps {
-  text: string;
+  text: React.ReactNode;
   position?: 'top' | 'bottom';
 }
 
