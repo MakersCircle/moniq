@@ -30,13 +30,13 @@
   `Settings/index.tsx` `handleLogout()` — If `forceSync()` throws (network down), logout proceeds anyway and pending changes are discarded silently.
   **Fix:** Added a custom warning modal that intercepts the logout process if `forceSync` throws and `pendingCount > 0`. Users must explicitly click "Sign Out Anyway" to discard changes, or "Cancel" to retain them locally until connection returns. *(Fixed)*
 
-- [ ] **#7 — Onboarding modal fires incorrectly on returning user after cloud init failure**
+- [x] **#7 — Onboarding modal fires incorrectly on returning user after cloud init failure**
   `LayoutShell.tsx` — If cloud init fails (catch → `setCloudInitialized(true)`), `accounts.length` is 0 and `hasCompletedOnboarding` is false (settings not pulled). The onboarding wizard appears for a returning user who already has data.
-  **Note:** Largely resolves itself once #4 is fixed properly — a visible error state prevents the app from looking like a fresh install.
+  **Note:** Fully resolved as a side effect of #4. Since `initCloud` now halts the app and shows a full-screen Connection Error instead of silencing the error, `LayoutShell.tsx` (and the onboarding modal) are completely unmounted during a failure. *(Fixed)*
 
-- [ ] **#8 — Re-auth via Session Expired banner triggers invisible full re-sync**
+- [x] **#8 — Re-auth via Session Expired banner triggers invisible full re-sync**
   `App.tsx` — Clicking "Reconnect" stores a new token, which re-triggers the `initCloud` effect. A full pull + reconcile runs with no loading state (since `isCloudInitialized` is already true). Data can change mid-interaction with no warning.
-  **Fix:** Show a sync indicator (e.g., spinning icon in TopBar) whenever `initCloud` is running, regardless of `isCloudInitialized` state.
+  **Fix:** Added a global "Syncing" indicator with a spinning icon directly into `TopBar.tsx` that appears whenever `syncStatus` is `'syncing'` or `'pulling'`, giving the user full visibility during background operations. *(Fixed)*
 
 ---
 
@@ -93,9 +93,9 @@
 
 | Status | Count |
 |---|---|
-| ✅ Fixed | 7 (items 1, 2, 3, 4, 5, 6, 14) |
+| ✅ Fixed | 9 (items 1-8, 14) |
 | 🔴 Critical remaining | 0 |
-| 🟠 High remaining | 2 (items 7, 8) |
+| 🟠 High remaining | 0 |
 | 🟡 Medium remaining | 7 (items 9, 10, 11, 12, 13, 16, 17) |
 | ⚪ Low remaining | 1 (item 15) |
 | **Total open** | **10** |
