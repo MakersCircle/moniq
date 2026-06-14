@@ -247,7 +247,7 @@ export default function App() {
         <Route
           path="/"
           element={
-            accessToken && hasCompletedOnboarding ? <Navigate to="/dashboard" replace /> : <Home />
+            accessToken ? <Navigate to="/dashboard" replace /> : <Home />
           }
         />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -288,7 +288,7 @@ export default function App() {
                   <Route path="settings/trash" element={<SettingsTrash />} />
                   <Route
                     path="*"
-                    element={<Navigate to={hasCompletedOnboarding ? '/dashboard' : '/'} replace />}
+                    element={<Navigate to="/dashboard" replace />}
                   />
                 </Routes>
               </LayoutShell>
