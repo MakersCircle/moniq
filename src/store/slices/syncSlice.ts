@@ -10,7 +10,7 @@ import type {
 } from '../../types';
 import { defaultSettings } from './settingsSlice';
 import { getCurrencySymbol } from '../../constants/currencies';
-import { getAll, getAllSettings, getMeta, setMeta, delMeta, clearStore } from '../../lib/db';
+import { getAll, getAllSettings, getMeta, setMeta, delMeta, clearStore, getAllSyncQueue } from '../../lib/db';
 
 export interface SyncSlice {
   spreadsheetId: string | null;
@@ -138,6 +138,23 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
       accessToken: null,
       userProfile: null,
       tokenExpiresAt: null,
+      isCloudInitialized: false,
+    }));
+  },
+
+  clearZustandData: () => {
+    set(() => ({
+      accounts: [],
+      methods: [],
+      categories: [],
+      transactions: [],
+      budgets: [],
+      pendingCount: 0,
+      syncStatus: 'idle',
+      lastSyncError: undefined,
+      spreadsheetId: null,
+      folderId: null,
+      backupFolderId: null,
     }));
   },
 
@@ -157,6 +174,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         spreadsheetId,
         folderId,
         backupFolderId,
+        syncQueue,
       ] = await Promise.all([
         getAll<Account>('accounts'),
         getAll<PaymentMethod>('methods'),
@@ -171,6 +189,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         getMeta('spreadsheetId'),
         getMeta('folderId'),
         getMeta('backupFolderId'),
+        getAllSyncQueue(),
       ]);
 
       let userProfile = null;
@@ -221,6 +240,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         accessToken: accessToken || null,
         tokenExpiresAt: tokenExpiresAt ? Number(tokenExpiresAt) : null,
         userProfile,
+        pendingCount: syncQueue ? syncQueue.length : 0,
         isHydrated: true,
         isCloudInitialized: !!lastSyncedAt,
       });
