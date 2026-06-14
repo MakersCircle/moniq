@@ -15,21 +15,20 @@
 - [x] **#3 — Infinite loading screen when silent refresh fails**
   `App.tsx` `initCloud()` — Changed the silent `return` to call `setCloudInitialized(true)` first, so the spinner always resolves. When the token can't be refreshed the Session Expired banner appears instead of a frozen screen. *(Fixed: v0.7.1)*
 
-- [ ] **#4 — Silent cloud failure shows fake idle status**
-  `App.tsx` `initCloud()` catch block — Any Drive or Sheets error is swallowed and `setCloudInitialized(true)` is called silently. `SyncEngine` is never initialized, so subsequent mutations queue and flush but never reach the sheet. The sync indicator shows **idle** — no error, no retry.
-  **Fix:** Surface the error to the user (toast/banner) with a retry action. Do not initialize the app into a broken sync state silently.
+- [x] **#4 — Silent cloud failure shows fake idle status**
+  `App.tsx` `initCloud()` catch block — Now catches error, sets an `initError` state, and displays a dedicated full-screen connection error state with "Retry Connection" and "Sign Out" actions. The app is no longer silently initialized into a broken state. *(Fixed)*
 
 ---
 
 ## 🟠 High
 
-- [ ] **#5 — Remote data changes silently mid-session on returning device**
+- [x] **#5 — Remote data changes silently mid-session on returning device**
   `App.tsx` — On a device where `isCloudInitialized` is already true, the dashboard renders immediately from cache. `initCloud` then runs in the background, reconciles, and calls `hydrateFromSync`. Balances and transactions update with no visual indicator.
-  **Fix:** Show a subtle "Synced" toast or indicator after `hydrateFromSync` is called with remote-wins data.
+  **Fix:** Added a `showSyncToast` state to `App.tsx`. A "Data synced from cloud" toast now appears for 3.5 seconds when `hydrateFromSync` runs on an already-initialized client. *(Fixed)*
 
-- [ ] **#6 — Unsaved changes lost on logout without warning**
+- [x] **#6 — Unsaved changes lost on logout without warning**
   `Settings/index.tsx` `handleLogout()` — If `forceSync()` throws (network down), logout proceeds anyway and pending changes are discarded silently.
-  **Fix:** If `forceSync` fails and `pendingCount > 0`, show a confirmation dialog: *"X changes couldn't be saved. Sign out anyway?"*
+  **Fix:** Added a custom warning modal that intercepts the logout process if `forceSync` throws and `pendingCount > 0`. Users must explicitly click "Sign Out Anyway" to discard changes, or "Cancel" to retain them locally until connection returns. *(Fixed)*
 
 - [ ] **#7 — Onboarding modal fires incorrectly on returning user after cloud init failure**
   `LayoutShell.tsx` — If cloud init fails (catch → `setCloudInitialized(true)`), `accounts.length` is 0 and `hasCompletedOnboarding` is false (settings not pulled). The onboarding wizard appears for a returning user who already has data.
@@ -94,12 +93,12 @@
 
 | Status | Count |
 |---|---|
-| ✅ Fixed | 4 (items 1, 2, 3, 14) |
-| 🔴 Critical remaining | 1 (item 4) |
-| 🟠 High remaining | 4 (items 5, 6, 7, 8) |
+| ✅ Fixed | 7 (items 1, 2, 3, 4, 5, 6, 14) |
+| 🔴 Critical remaining | 0 |
+| 🟠 High remaining | 2 (items 7, 8) |
 | 🟡 Medium remaining | 7 (items 9, 10, 11, 12, 13, 16, 17) |
 | ⚪ Low remaining | 1 (item 15) |
-| **Total open** | **13** |
+| **Total open** | **10** |
 
 
 My Findings

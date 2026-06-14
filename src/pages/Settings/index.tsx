@@ -51,6 +51,17 @@ export default function SettingsIndex() {
   const [isResetting, setIsResetting] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [logoutPendingCount, setLogoutPendingCount] = useState(0);
+
+  const confirmAndLogout = () => {
+    googleLogout();
+    SyncEngine.reset();
+    setAccessToken(null);
+    setUserProfile(null);
+    setIsLoggingOut(false);
+    setLogoutConfirmOpen(false);
+  };
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -59,19 +70,12 @@ export default function SettingsIndex() {
         const engine = SyncEngine.getInstance();
         await engine.forceSync();
       }
+      confirmAndLogout();
     } catch (err) {
       console.error('Failed to sync before logout', err);
+      setLogoutPendingCount(pendingCount);
+      setLogoutConfirmOpen(true);
     }
-    googleLogout();
-    SyncEngine.reset();
-    setAccessToken(null);
-    setUserProfile(null);
-    // NOTE: Drive IDs (spreadsheetId, folderId, backupFolderId) are intentionally
-    // NOT cleared here. They are "connection settings" that must survive logout so
-    // the same user can reconnect to their existing sheet on next login.
-    // A different Google account logging in on this device is handled in App.tsx
-    // via the stored-email comparison (account-switch detection).
-    setIsLoggingOut(false);
   };
 
   const handleManualSync = async () => {
@@ -495,6 +499,41 @@ export default function SettingsIndex() {
                 onClick={handleHardReset}
               >
                 {isResetting ? <RefreshCw className="h-4 w-4 animate-spin" /> : 'Delete Everything'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
+        <DialogContent className="max-w-md p-6 bg-[#09090b] border border-red-500/20 shadow-2xl">
+          <div className="flex flex-col items-center text-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 text-red-500" />
+            </div>
+            <div>
+              <h3 className="text-zinc-100 text-lg font-medium mb-2">Unsaved Changes</h3>
+              <p className="text-zinc-400 text-sm">
+                You have {logoutPendingCount} changes that couldn't be saved to Google Drive due to a network error. 
+                If you sign out now, these changes will be lost.
+              </p>
+            </div>
+            <div className="flex gap-3 w-full mt-4">
+              <Button
+                variant="outline"
+                className="flex-1 border-zinc-800 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+                onClick={() => {
+                  setLogoutConfirmOpen(false);
+                  setIsLoggingOut(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 bg-red-600 hover:bg-red-700"
+                onClick={confirmAndLogout}
+              >
+                Sign Out Anyway
               </Button>
             </div>
           </div>

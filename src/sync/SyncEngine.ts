@@ -553,6 +553,8 @@ export class SyncEngine {
       console.error('[SyncEngine] Initialization failed:', err);
       this.setStatus('error', message);
       return null;
+    } finally {
+      await this.updatePendingCount();
     }
   }
 
@@ -632,6 +634,9 @@ export class SyncEngine {
   async forceSync(): Promise<void> {
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     await this.flush();
+    if (this._pendingCount > 0 || this._status === 'error') {
+      throw new Error(this._lastError || 'Sync failed');
+    }
   }
 
   private async flush(): Promise<void> {
@@ -684,6 +689,7 @@ export class SyncEngine {
       const message = err instanceof Error ? err.message : 'Sync failed';
       console.error('[SyncEngine] Flush failed:', err);
       this.setStatus('error', message);
+      await this.updatePendingCount();
       this.scheduleRetry();
     }
   }
