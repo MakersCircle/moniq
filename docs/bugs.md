@@ -91,9 +91,9 @@
   `SyncEngine.ts` `flush()` processes all entity sheets via `Promise.all`. If one sheet fails, the sync queue is NOT cleared. The next sync retries all ops in the queue. For `create` ops, `flushEntityOps` currently pushes them directly to `newRows` without checking if the entity's ID already exists in `this.rowIndexes`. This results in duplicate row appends on Google Sheets.
   **Fix:** `flushEntityOps` was refactored to treat `create` ops identically to updates. It now checks `rowIndex.get(op.entityId)` before appending, converting redundant appends into safe updates. *(Fixed)*
 
-- [ ] **#19 — O(N) performance degradation on row appends**
+- [x] **#19 — O(N) performance degradation on row appends**
   `SyncEngine.ts` `flushEntityOps` calls `this.client.getRowCount(sheetName)` after appending rows to calculate the new row indexes. `getRowCount` uses `readSheet()`, which downloads the *entire* sheet contents over the network. For a user with 5,000 transactions, every single new transaction triggers a 5,000-row download.
-  **Fix:** Modify `SheetClient.appendRows` to parse and return the actual row positions from the Sheets API `updates.updatedRange` response (e.g., `"Transactions!A16:M16"`), eliminating the need to call `getRowCount`.
+  **Fix:** `SheetClient.appendRows` was modified to directly parse and return the `updates.updatedRange` provided by the Google Sheets API response, allowing O(1) performance and removing the need to download the sheet. *(Fixed)*
 
 - [ ] **#20 — Conflict Resolution clock drift gap**
   `SyncEngine.ts` resolves sync conflicts by comparing the `updatedAt` timestamp of the local and remote entities. If both sides changed offline while disconnected, this logic assumes the device clocks are perfectly synchronized, which is rarely true across diverse devices.
@@ -109,15 +109,20 @@
 - [ ] **#23 — Transaction modal openable without required prerequisites**
   Users can open the "Create Transaction" modal even if they have no Accounts, Payment Methods, or Categories set up yet, leading to confusion or errors when they try to save.
   **Fix:** Show a helper state, disabled button, or a tooltip advising the user to set up at least one Account, Method, and Category before adding transactions.
+
+- [ ] **#24 — "Initial Balance" field missing in Category UI**
+  The `Categories` sheet contains an `Initial Balance` column intended for tracking starting balances of Investments, Loans, and Debts. However, the UI does not expose an input field for this value, even when creating or editing a category under the "Invest", "Lend", or "Borrow" groups.
+  **Fix:** Add an `Initial Balance` number input to the Category creation/edit modal that conditionally appears when the selected Group is "Invest", "Lend", or "Borrow".
+
 ---
 
 ## Summary
 
 | Status | Count |
 |---|---|
-| ✅ Fixed | 13 (items 1-9, 14, 16, 17, 18) |
+| ✅ Fixed | 14 (items 1-9, 14, 16, 17, 18, 19) |
 | 🔴 Critical remaining | 0 |
-| 🟠 High remaining | 1 (item 19) |
+| 🟠 High remaining | 0 |
 | 🟡 Medium remaining | 5 (items 10, 11, 12, 13, 20) |
-| ⚪ Low remaining | 4 (items 15, 21, 22, 23) |
-| **Total open** | **14** |
+| ⚪ Low remaining | 5 (items 15, 21, 22, 23, 24) |
+| **Total open** | **15** |

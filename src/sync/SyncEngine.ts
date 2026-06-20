@@ -738,10 +738,8 @@ export class SyncEngine {
       await this.client.batchUpdateRows(sheetName, updateBatch);
     }
     if (newRows.length > 0) {
-      const appendedCount = await this.client.appendRows(sheetName, newRows);
+      const startRow = await this.client.appendRows(sheetName, newRows);
       // Update row index for newly appended rows
-      const currentRowCount = await this.client.getRowCount(sheetName);
-      const startRow = currentRowCount - appendedCount + 2; // +2: 1-based + header
       for (let i = 0; i < newRows.length; i++) {
         const entityId = newRows[i][0];
         rowIndex.set(entityId, startRow + i);

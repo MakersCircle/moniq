@@ -70,9 +70,9 @@ export class SheetClient {
     await this.writeRange(sheetName, 'A1', [headers]);
   }
 
-  /** Append rows to the bottom of a sheet. Returns the number of rows appended. */
+  /** Append rows to the bottom of a sheet. Returns the starting 1-based row index where data was inserted. */
   async appendRows(sheetName: string, rows: string[][]): Promise<number> {
-    if (rows.length === 0) return 0;
+    if (rows.length === 0) throw new Error('Cannot append 0 rows');
 
     const range = `${sheetName}!A1`;
     const url = `/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
@@ -87,7 +87,17 @@ export class SheetClient {
       throw new Error(`Failed to append rows to "${sheetName}": ${res.status} ${errorText}`);
     }
 
-    return rows.length;
+    const data = await res.json();
+    const updatedRange = data.updates?.updatedRange; // e.g. "Transactions!A16:M16" or "'My Sheet'!A16:M17"
+    
+    if (updatedRange) {
+      const match = updatedRange.match(/!A(\d+)/);
+      if (match && match[1]) {
+        return parseInt(match[1], 10);
+      }
+    }
+
+    throw new Error(`Failed to parse starting row from Sheets API response: ${JSON.stringify(data)}`);
   }
 
   /** Update a specific row (1-based index) with new data. */
@@ -213,11 +223,5 @@ export class SheetClient {
       const errorText = await res.text();
       console.error(`Failed to batch clear sheets: ${res.status} ${errorText}`);
     }
-  }
-
-  /** Get the total number of data rows in a sheet (excluding header). */
-  async getRowCount(sheetName: string): Promise<number> {
-    const rows = await this.readSheet(sheetName);
-    return Math.max(0, rows.length - 1); // subtract header row
   }
 }

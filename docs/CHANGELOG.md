@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Authentication Resilience**: Fixed an issue where background token refresh timeouts could silently abort the initialization process, permanently locking the sync queue.
 - **Cross-Account Data Leakage**: Added a safety measure to completely wipe local IndexedDB data if a different Google account logs in on the same browser, preventing cross-contamination of Drive spreadsheets.
 - **Duplicate Row Prevention**: The Sync Engine now employs strictly idempotent operations. If a background sync fails halfway through, the engine will safely resume and update existing rows instead of accidentally appending duplicate transactions.
+- **O(N) Append Performance**: Modified the Sync Engine to extract row indexes directly from the Google Sheets API response when appending data, eliminating a massive O(N) network bottleneck where the entire sheet was re-downloaded just to count the rows.
 - **Sync Engine Retries**: Properly destroy the Sync Engine background polling loop upon user logout, fixing a memory and API request leak.
 - **Duplicate Backup Folders**: Prevented the creation of duplicate `Moniq Backups` folders across different devices by implementing a pre-creation folder search.
 - **Orphaned Sheets**: The Sync Engine now automatically deletes the default, empty `Sheet1` tab when provisioning a new Google Spreadsheet.
