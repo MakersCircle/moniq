@@ -110,11 +110,18 @@ export default function SettingsIndex() {
   const handleManualSync = async () => {
     if (!accessToken || !spreadsheetId) return;
     try {
-      // Execute a full two-way pull + push and hydrate store with any remote updates
       const engine = SyncEngine.getInstance();
-      const reconciledData = await engine.initialize(spreadsheetId);
-      if (reconciledData) {
-        hydrateFromSync(reconciledData);
+      
+      // Fix #11: "Sync Now" button runs a full pull instead of a targeted push
+      // If there are pending operations, just do a fast push (forceSync).
+      // Only do a full pull (initialize) if everything is already synced.
+      if (pendingCount > 0) {
+        await engine.forceSync();
+      } else {
+        const reconciledData = await engine.initialize(spreadsheetId);
+        if (reconciledData) {
+          hydrateFromSync(reconciledData);
+        }
       }
     } catch (err) {
       console.error('Manual sync failed:', err);

@@ -8,9 +8,6 @@
 
 ### 🟡 Medium Priority
 
-- [ ] **#11 — "Sync Now" button runs a full pull instead of a targeted push**
-  `Settings/index.tsx` `handleManualSync()` — Calls `engine.initialize(spreadsheetId)` which reads all 6 sheets, reconciles every entity, and clears the sync queue. Users expect a fast push of pending changes; instead they wait 2–5 seconds for a full bidirectional sync.
-  **Fix:** Call `engine.forceSync()` (delta push) first; only fall back to `initialize()` if there are no pending ops and the user explicitly wants a full pull.
 
 - [ ] **#12 — Backup cycle triggered after every single flush**
   `SyncEngine.ts` `flush()` — `BackupManager.runBackupCycle()` is called non-blocking after every successful sync, even if no backup tier is due. On first call of the day this makes a Drive API call to verify the backup folder.
@@ -96,6 +93,10 @@
 
 ### 🟡 Medium & ⚪ Low
 
+- [x] **#11 — "Sync Now" button runs a full pull instead of a targeted push**
+  `Settings/index.tsx` `handleManualSync()` — Calls `engine.initialize(spreadsheetId)` which reads all 6 sheets, reconciles every entity, and clears the sync queue. Users expect a fast push of pending changes; instead they wait 2–5 seconds for a full bidirectional sync.
+  **Fix:** Modified `handleManualSync` to call `engine.forceSync()` (fast push) if `pendingCount > 0`. It only falls back to the slow `initialize()` pull if there are no pending ops. *(Fixed)*
+
 - [x] **#10 — Onboarding modal cannot be dismissed or skipped**
   `LayoutShell.tsx` — The condition `accounts.length === 0 && !hasCompletedOnboarding` re-triggers the modal on every render until onboarding is completed. There is no "skip for now" path. Users who accidentally open the app before they're ready feel locked out.
   **Fix:** Added a "Skip for now" option to `OnboardingModal` that sets a `sessionStorage` flag (`skipOnboarding`) to suppress the modal until the next login, without marking onboarding as permanently complete. *(Fixed)*
@@ -123,9 +124,9 @@
 
 | Status | Count |
 |---|---|
-| ✅ Fixed | 15 (items 1-10, 14, 16, 17, 18, 19) |
+| ✅ Fixed | 16 (items 1-11, 14, 16, 17, 18, 19) |
 | 🔴 Critical remaining | 0 |
 | 🟠 High remaining | 0 |
-| 🟡 Medium remaining | 4 (items 11, 12, 13, 20) |
+| 🟡 Medium remaining | 3 (items 12, 13, 20) |
 | ⚪ Low remaining | 5 (items 15, 21, 22, 23, 24) |
-| **Total open** | **9** |
+| **Total open** | **8** |
