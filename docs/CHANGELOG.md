@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Detailed Sync Tooltips**: The pending changes indicator in Settings now displays a detailed list of all locally modified items waiting to be synced to the cloud.
 
+### Changed
+- **Onboarding UX**: Redesigned the onboarding flow. Replaced fragile DOM-spotlight navigation steps with a linear sequence of interactive, custom setup modals (`Welcome` → `Preferences` → `Accounts` → `Methods` → `Categories`). Users can fully edit Accounts and Categories inline before saving.
+- **Tour Stability**: Fixed race conditions where the tour engine would silently abort by trying to highlight elements before the React router finished rendering them. Implemented robust DOM polling (`waitForElement`) for guaranteed, reliable step transitions.
+- **Tour Styling**: Fixed a CSS conflict where a solid black background was painted over the `driver.js` SVG cutout, causing highlighted targets to appear dim. Highlighted elements now correctly shine through at 100% brightness. Separated custom button CSS from the built-in tour close button (`×`) to prevent layout distortions.
+
 ---
 
 ## [0.7.1] - 2026-05-25

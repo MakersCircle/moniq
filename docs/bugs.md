@@ -46,6 +46,10 @@
   The `Categories` sheet contains an `Initial Balance` column intended for tracking starting balances of Investments, Loans, and Debts. However, the UI does not expose an input field for this value, even when creating or editing a category under the "Invest", "Lend", or "Borrow" groups.
   **Fix:** Add an `Initial Balance` number input to the Category creation/edit modal that conditionally appears when the selected Group is "Invest", "Lend", or "Borrow".
 
+- [ ] **#25 — Date Format setting is unused globally**
+  The `dateFormat` preference stored in Settings is completely orphaned. The `formatDateShort` utility function hardcodes `en-IN` instead of using the setting, and `TransactionModal` uses a standard HTML5 date input that uses the OS locale instead of the configured format.
+  **Fix:** Wire up `settings.dateFormat` throughout the UI using a library like `date-fns` for text dates, and consider custom date pickers for inputs to respect the user's preference.
+
 ---
 
 ## ✅ DONE

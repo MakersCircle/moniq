@@ -58,6 +58,7 @@ export default function TopBar({ onNewTransaction }: TopBarProps) {
           </div>
         )}
         <Button
+          id="tour-target-new-tx"
           size="sm"
           className="h-8 gap-1.5 text-xs px-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all active:scale-95"
           onClick={() => onNewTransaction()}

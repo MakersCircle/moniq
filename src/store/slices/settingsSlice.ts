@@ -61,6 +61,15 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
     markDirty('settings', 'settings', 'update');
   },
 
+  setTourStep: (step: string) => {
+    set(state => {
+      const newSettings = { ...state.settings, tourStep: step };
+      putSetting('tourStep', step);
+      return { settings: newSettings };
+    });
+    markDirty('settings', 'tourStep', 'update');
+  },
+
   setAccessToken: (token, expiresAt) => {
     set(() => ({
       accessToken: token,

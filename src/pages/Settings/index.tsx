@@ -32,6 +32,7 @@ import SettingsLayout from '@/components/Layout/SettingsLayout';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 import { getAllCurrencies, COMMON_LOCALES } from '@/constants/currencies';
 import { formatCurrency } from '@/utils/format';
+import { format } from 'date-fns';
 
 export default function SettingsIndex() {
   const {
@@ -84,8 +85,8 @@ export default function SettingsIndex() {
   const confirmAndLogout = () => {
     googleLogout();
     SyncEngine.reset();
-    setAccessToken(null);
-    setUserProfile(null);
+    const { resetData } = useDataStore.getState();
+    resetData();
     setIsLoggingOut(false);
     setLogoutConfirmOpen(false);
     sessionStorage.removeItem('skipOnboarding');
@@ -200,7 +201,7 @@ export default function SettingsIndex() {
         </section>
 
         {/* Cloud Persistence */}
-        <section className="space-y-4">
+        <section id="tour-target-sync" className="space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
             Cloud Sync
           </h3>
@@ -437,7 +438,7 @@ export default function SettingsIndex() {
           </div>
           <Card className="border-border shadow-sm">
             <CardContent className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="space-y-2">
                   <Label className="text-[10px] uppercase font-bold text-muted-foreground">
                     Currency
@@ -468,7 +469,7 @@ export default function SettingsIndex() {
 
                 <div className="space-y-2">
                   <Label className="text-[10px] uppercase font-bold text-muted-foreground">
-                    Number Format (Separators)
+                    Number Format
                   </Label>
                   <Select
                     value={settings.numberLocale}
@@ -485,8 +486,37 @@ export default function SettingsIndex() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-[9px] text-muted-foreground italic">
+                  <p className="text-[9px] text-muted-foreground italic pt-1">
                     Preview: {formatCurrency(1234567.89, settings)}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">
+                    Date Format
+                  </Label>
+                  <Select
+                    value={settings.dateFormat || 'MMM d, yyyy'}
+                    onValueChange={val => updateSettings({ dateFormat: val })}
+                  >
+                    <SelectTrigger className="h-10 border-border/50 focus:ring-primary/20">
+                      <SelectValue placeholder="Select format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[
+                        'MMM d, yyyy',
+                        'dd/MM/yyyy',
+                        'MM/dd/yyyy',
+                        'yyyy-MM-dd'
+                      ].map(fmt => (
+                        <SelectItem key={fmt} value={fmt}>
+                          {format(new Date(), fmt)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[9px] text-muted-foreground italic pt-1">
+                    Default date format across the app
                   </p>
                 </div>
               </div>

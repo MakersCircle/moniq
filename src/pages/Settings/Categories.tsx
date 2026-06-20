@@ -106,19 +106,21 @@ export default function Categories() {
 
   return (
     <SettingsLayout>
-      <div className="space-y-8">
+      <div id="tour-target-categories-page" className="space-y-6">
         <div className="sticky top-0 bg-background/95 backdrop-blur-md z-40 pb-4 pt-2 -mx-1 px-1">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold tracking-tight">Categories</h2>
-              <InfoTooltip
-                position="bottom"
-                text="Categories organize your income and expenses into a hierarchy. Drag to reorder within groups."
-              />
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold tracking-tight">Categories</h2>
+                <InfoTooltip
+                  position="bottom"
+                  text="Categories organize your income and expenses into a hierarchy. Drag to reorder within groups."
+                />
+              </div>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                Expense & Income Classification
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-              Expense & Income Classification
-            </p>
             <Button size="sm" onClick={openAdd} className="h-9 gap-2">
               <Plus className="h-4 w-4" /> Add Category
             </Button>

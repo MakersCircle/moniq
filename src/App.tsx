@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Insights from './pages/Insights';
@@ -116,6 +116,10 @@ export default function App() {
     };
   }, [accessToken, setSyncStatus]);
 
+  // Stable ref for hydrateFromSync so it doesn't cause initCloud to re-run on every settings update
+  const hydrateFromSyncRef = useRef(hydrateFromSync);
+  useEffect(() => { hydrateFromSyncRef.current = hydrateFromSync; }, [hydrateFromSync]);
+
   // 4. Cloud initialization (Google Sheets)
   useEffect(() => {
     if (!accessToken || !isHydrated) return;
@@ -166,7 +170,7 @@ export default function App() {
         const reconciledData = await engine.initialize(sheetId);
         if (reconciledData) {
           const wasAlreadyInitialized = useDataStore.getState().isCloudInitialized;
-          hydrateFromSync(reconciledData);
+          hydrateFromSyncRef.current(reconciledData);
           if (wasAlreadyInitialized) {
             setShowSyncToast(true);
             setTimeout(() => setShowSyncToast(false), 3500);
@@ -188,7 +192,6 @@ export default function App() {
     isHydrated,
     setUserProfile,
     setSpreadsheetId,
-    hydrateFromSync,
     setCloudInitialized,
     retryCount,
   ]);

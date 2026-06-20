@@ -92,6 +92,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
           else if (key === 'numberLocale') current.numberLocale = value;
           else if (key === 'fiscalYearStartMonth') current.fiscalYearStartMonth = Number(value);
           else if (key === 'dateFormat') current.dateFormat = value;
+          else if (key === 'tourStep') current.tourStep = value;
           else if (key === 'hasCompletedOnboarding')
             current.hasCompletedOnboarding = String(value).toLowerCase() === 'true';
           else if (key === 'lastDailyBackup') current.lastDailyBackup = value;
@@ -109,17 +110,9 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
   },
 
   resetData: () => {
-    [
-      'accounts',
-      'methods',
-      'categories',
-      'transactions',
-      'budgets',
-      'settings',
-      'meta',
-      'sync_queue',
-      'remote_snapshot',
-    ].forEach(s => clearStore(s as Parameters<typeof clearStore>[0]));
+    import('../../lib/db').then(({ clearLocalData }) => {
+      clearLocalData().catch(console.error);
+    });
 
     set(() => ({
       accounts: [],
@@ -216,6 +209,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         if (settings.fiscalYearStartMonth)
           userSettings.fiscalYearStartMonth = Number(settings.fiscalYearStartMonth);
         if (settings.dateFormat) userSettings.dateFormat = settings.dateFormat;
+        if (settings.tourStep) userSettings.tourStep = settings.tourStep;
         if (settings.hasCompletedOnboarding) {
           userSettings.hasCompletedOnboarding =
             String(settings.hasCompletedOnboarding).toLowerCase() === 'true';

@@ -180,6 +180,8 @@ export interface UserSettings {
   fiscalYearStartMonth: number;
   /** Preferred date display format */
   dateFormat: string;
+  /** The current step of the interactive onboarding tour */
+  tourStep?: string;
   /** Whether the user has completed the first-run onboarding */
   hasCompletedOnboarding?: boolean;
 

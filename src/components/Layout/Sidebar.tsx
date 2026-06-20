@@ -49,6 +49,7 @@ export default function Sidebar() {
 
       <div className="p-3 border-t border-border/50">
         <NavLink
+          id="tour-target-settings-nav"
           to="/settings"
           className={({ isActive }) =>
             cn(

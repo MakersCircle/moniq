@@ -86,6 +86,7 @@ export interface DataState {
 
   // Settings
   updateSettings: (patch: Partial<UserSettings>) => void;
+  setTourStep: (step: string) => void;
   setAccessToken: (token: string | null, expiresAt?: number | null) => void;
   completeOnboarding: (
     accounts?: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>[],
