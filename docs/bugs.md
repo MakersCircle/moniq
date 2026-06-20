@@ -9,9 +9,6 @@
 ### 🟡 Medium Priority
 
 
-- [ ] **#12 — Backup cycle triggered after every single flush**
-  `SyncEngine.ts` `flush()` — `BackupManager.runBackupCycle()` is called non-blocking after every successful sync, even if no backup tier is due. On first call of the day this makes a Drive API call to verify the backup folder.
-  **Fix:** Track a session-scoped flag (`backupCheckedThisSession`) so the cycle runs at most once per session, not per flush.
 
 - [ ] **#13 — No user feedback during first-ever Drive workspace setup**
   `App.tsx` / `api/google.ts` — On a true first run, `initializeDatabase` creates a folder and a spreadsheet before sync begins. The loading spinner just says *"Syncing your data…"* throughout, which is inaccurate and gives no sense of progress.
@@ -93,6 +90,10 @@
 
 ### 🟡 Medium & ⚪ Low
 
+- [x] **#12 — Backup cycle triggered after every single flush**
+  `SyncEngine.ts` `flush()` — `BackupManager.runBackupCycle()` is called non-blocking after every successful sync, even if no backup tier is due. On first call of the day this makes a Drive API call to verify the backup folder.
+  **Fix:** Tracked a session-scoped static flag (`SyncEngine.backupCheckedThisSession`) so the cycle runs at most once per session, not per flush. *(Fixed)*
+
 - [x] **#11 — "Sync Now" button runs a full pull instead of a targeted push**
   `Settings/index.tsx` `handleManualSync()` — Calls `engine.initialize(spreadsheetId)` which reads all 6 sheets, reconciles every entity, and clears the sync queue. Users expect a fast push of pending changes; instead they wait 2–5 seconds for a full bidirectional sync.
   **Fix:** Modified `handleManualSync` to call `engine.forceSync()` (fast push) if `pendingCount > 0`. It only falls back to the slow `initialize()` pull if there are no pending ops. *(Fixed)*
@@ -124,9 +125,9 @@
 
 | Status | Count |
 |---|---|
-| ✅ Fixed | 16 (items 1-11, 14, 16, 17, 18, 19) |
+| ✅ Fixed | 17 (items 1-12, 14, 16, 17, 18, 19) |
 | 🔴 Critical remaining | 0 |
 | 🟠 High remaining | 0 |
-| 🟡 Medium remaining | 3 (items 12, 13, 20) |
+| 🟡 Medium remaining | 2 (items 13, 20) |
 | ⚪ Low remaining | 5 (items 15, 21, 22, 23, 24) |
-| **Total open** | **8** |
+| **Total open** | **7** |

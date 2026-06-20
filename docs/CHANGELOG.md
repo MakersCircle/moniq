@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Backup Cycle Performance** (`SyncEngine.ts`): Fixed an issue where the background backup verification cycle was being redundantly triggered after every single sync flush. It now properly uses a session-scoped flag to verify the backup folder at most once per browser session.
 - **Sync Now Performance** (`Settings/index.tsx`): Fixed an issue where clicking the "Sync Now" button always triggered a full bidirectional pull (which is slow). It now smartly performs a highly targeted "delta push" of pending changes, falling back to a full pull only if there are no pending operations.
 - **Silent Cloud Failure** (`App.tsx`): Fixed a critical bug where cloud initialization errors were swallowed and the app was loaded in a broken sync state without user feedback. Added a dedicated full-screen connection error state with "Retry Connection" and "Sign Out" actions to properly surface Drive/Sheets errors to the user.
 - **Authentication Resilience**: Fixed an issue where background token refresh timeouts could silently abort the initialization process, permanently locking the sync queue.

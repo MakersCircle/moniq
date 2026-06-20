@@ -251,6 +251,7 @@ type SyncListener = (status: SyncStatus, pendingCount: number, error?: string) =
  */
 export class SyncEngine {
   private static instance: SyncEngine | null = null;
+  private static backupCheckedThisSession = false;
 
   private client: SheetClient | null = null;
   private config: SyncConfig;
@@ -678,13 +679,17 @@ export class SyncEngine {
       const { useDataStore } = await import('../store/dataStore');
       useDataStore.getState().setLastSyncedAt(syncTime);
 
-      // Trigger Backup Cycle (non-blocking)
-      const { BackupManager } = await import('./BackupManager');
-      BackupManager.getInstance()
-        .runBackupCycle()
-        .catch(err => {
-          console.warn('[SyncEngine] Triggering backup failed:', err);
-        });
+      // Trigger Backup Cycle (non-blocking) - at most once per session (Fix #12)
+      if (!SyncEngine.backupCheckedThisSession) {
+        SyncEngine.backupCheckedThisSession = true;
+        const { BackupManager } = await import('./BackupManager');
+        BackupManager.getInstance()
+          .runBackupCycle()
+          .catch(err => {
+            console.warn('[SyncEngine] Triggering backup failed:', err);
+            SyncEngine.backupCheckedThisSession = false; // reset on failure so it can try again
+          });
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sync failed';
       console.error('[SyncEngine] Flush failed:', err);
