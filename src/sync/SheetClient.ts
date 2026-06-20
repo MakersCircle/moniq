@@ -89,7 +89,7 @@ export class SheetClient {
 
     const data = await res.json();
     const updatedRange = data.updates?.updatedRange; // e.g. "Transactions!A16:M16" or "'My Sheet'!A16:M17"
-    
+
     if (updatedRange) {
       const match = updatedRange.match(/!A(\d+)/);
       if (match && match[1]) {
@@ -97,7 +97,9 @@ export class SheetClient {
       }
     }
 
-    throw new Error(`Failed to parse starting row from Sheets API response: ${JSON.stringify(data)}`);
+    throw new Error(
+      `Failed to parse starting row from Sheets API response: ${JSON.stringify(data)}`
+    );
   }
 
   /** Update a specific row (1-based index) with new data. */

@@ -59,7 +59,9 @@ export default function App() {
     defaultType?: TransactionType;
   }>({ isOpen: false });
 
-  const [initPhase, setInitPhase] = useState<'connecting' | 'creating-folder' | 'creating-sheet'>('connecting');
+  const [initPhase, setInitPhase] = useState<'connecting' | 'creating-folder' | 'creating-sheet'>(
+    'connecting'
+  );
 
   const openNew = useCallback((type?: TransactionType | React.MouseEvent | React.KeyboardEvent) => {
     // If called as an event handler (e.g. onClick), the first arg is an event object.
@@ -120,7 +122,9 @@ export default function App() {
 
   // Stable ref for hydrateFromSync so it doesn't cause initCloud to re-run on every settings update
   const hydrateFromSyncRef = useRef(hydrateFromSync);
-  useEffect(() => { hydrateFromSyncRef.current = hydrateFromSync; }, [hydrateFromSync]);
+  useEffect(() => {
+    hydrateFromSyncRef.current = hydrateFromSync;
+  }, [hydrateFromSync]);
 
   // 4. Cloud initialization (Google Sheets)
   useEffect(() => {
@@ -136,11 +140,15 @@ export default function App() {
           if (!newToken) {
             const isFullyExpired = Date.now() > tokenExpiresAt;
             if (isFullyExpired) {
-              console.warn('[App] Silent refresh failed and token is fully expired. Unblocking spinner.');
+              console.warn(
+                '[App] Silent refresh failed and token is fully expired. Unblocking spinner.'
+              );
               useDataStore.getState().setAccessToken(null);
               return;
             } else {
-              console.warn('[App] Silent refresh failed, but token is still valid. Proceeding with init...');
+              console.warn(
+                '[App] Silent refresh failed, but token is still valid. Proceeding with init...'
+              );
             }
           }
         }
@@ -153,10 +161,12 @@ export default function App() {
         // previous user's spreadsheet.
         const storedEmail = await getMeta('userEmail');
         if (storedEmail && storedEmail !== profile.email) {
-          console.log('[App] Different Google account detected — wiping local data to prevent cross-contamination.');
+          console.log(
+            '[App] Different Google account detected — wiping local data to prevent cross-contamination.'
+          );
           const { clearLocalData } = await import('./lib/db');
           await clearLocalData();
-          
+
           const store = useDataStore.getState();
           store.clearZustandData();
         }
@@ -177,7 +187,7 @@ export default function App() {
             setShowSyncToast(true);
             setTimeout(() => setShowSyncToast(false), 3500);
           }
-          
+
           // Trigger the backup check after a successful initial load
           engine.triggerBackupCycle();
         } else {
@@ -218,10 +228,18 @@ export default function App() {
             <p className="text-zinc-400 text-sm mb-4">
               We couldn't connect to your Google Drive. {initError}
             </p>
-            <Button onClick={() => setRetryCount(c => c + 1)} variant="secondary" className="w-full sm:w-auto">
+            <Button
+              onClick={() => setRetryCount(c => c + 1)}
+              variant="secondary"
+              className="w-full sm:w-auto"
+            >
               Retry Connection
             </Button>
-            <Button onClick={handleDisconnect} variant="ghost" className="text-zinc-500 hover:text-zinc-300 w-full sm:w-auto">
+            <Button
+              onClick={handleDisconnect}
+              variant="ghost"
+              className="text-zinc-500 hover:text-zinc-300 w-full sm:w-auto"
+            >
               Sign Out
             </Button>
           </div>
@@ -253,12 +271,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* Landing/Home page - No Sidebar/TopBar */}
-        <Route
-          path="/"
-          element={
-            accessToken ? <Navigate to="/dashboard" replace /> : <Home />
-          }
-        />
+        <Route path="/" element={accessToken ? <Navigate to="/dashboard" replace /> : <Home />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/docs" element={<Navigate to="/docs/user/getting-started" replace />} />
@@ -295,10 +308,7 @@ export default function App() {
                   <Route path="settings/methods" element={<Methods />} />
                   <Route path="settings/categories" element={<Categories />} />
                   <Route path="settings/trash" element={<SettingsTrash />} />
-                  <Route
-                    path="*"
-                    element={<Navigate to="/dashboard" replace />}
-                  />
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Routes>
               </LayoutShell>
             ) : (
