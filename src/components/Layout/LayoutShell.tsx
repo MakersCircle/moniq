@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { type TransactionType } from '@/types';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
@@ -13,8 +13,12 @@ interface LayoutShellProps {
 
 export default function LayoutShell({ children, onNewTransaction }: LayoutShellProps) {
   const { settings, accounts, isCloudInitialized, accessToken } = useDataStore();
+  const [sessionSkipped, setSessionSkipped] = useState(() => 
+    sessionStorage.getItem('skipOnboarding') === 'true'
+  );
+
   const showOnboarding =
-    isCloudInitialized && accounts.length === 0 && !settings.hasCompletedOnboarding;
+    isCloudInitialized && accounts.length === 0 && !settings.hasCompletedOnboarding && !sessionSkipped;
   const isSessionExpired = !accessToken && isCloudInitialized;
 
   // Global Keyboard Shortcuts
@@ -53,7 +57,10 @@ export default function LayoutShell({ children, onNewTransaction }: LayoutShellP
 
   return (
     <div className="h-screen bg-background text-foreground overflow-hidden">
-      {showOnboarding && <OnboardingModal />}
+      {showOnboarding && <OnboardingModal onSkip={() => {
+        sessionStorage.setItem('skipOnboarding', 'true');
+        setSessionSkipped(true);
+      }} />}
       <Sidebar />
       <TopBar onNewTransaction={onNewTransaction} />
       <div className="pl-[220px] pt-[48px] h-screen">

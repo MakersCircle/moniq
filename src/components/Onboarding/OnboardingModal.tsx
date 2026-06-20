@@ -7,7 +7,11 @@ import defaults from '@/data/defaults.json';
 import { Wallet, Settings, ArrowRight, Play } from 'lucide-react';
 import type { Account, Category } from '@/types';
 
-export default function OnboardingModal() {
+interface OnboardingModalProps {
+  onSkip?: () => void;
+}
+
+export default function OnboardingModal({ onSkip }: OnboardingModalProps) {
   const completeOnboarding = useDataStore(s => s.completeOnboarding);
 
   // We omit IDs and createdAt, just handle names
@@ -101,16 +105,25 @@ export default function OnboardingModal() {
           <Button
             variant="ghost"
             className="text-muted-foreground font-bold tracking-widest uppercase text-[10px]"
-            onClick={handleStartFromScratch}
+            onClick={onSkip}
           >
-            Skip & Start from Scratch
+            Skip for now
           </Button>
-          <Button
-            className="gap-2 px-8 font-bold tracking-widest uppercase text-[10px]"
-            onClick={handleStartWithDefaults}
-          >
-            Start with Configuration <ArrowRight className="h-4 w-4" />
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              className="font-bold tracking-widest uppercase text-[10px]"
+              onClick={handleStartFromScratch}
+            >
+              Start Blank
+            </Button>
+            <Button
+              className="gap-2 px-8 font-bold tracking-widest uppercase text-[10px]"
+              onClick={handleStartWithDefaults}
+            >
+              Start with Configuration <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

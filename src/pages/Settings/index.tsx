@@ -64,11 +64,21 @@ export default function SettingsIndex() {
   const [pendingOps, setPendingOps] = useState<SyncOperation[]>([]);
 
   useEffect(() => {
+    let active = true;
     if (pendingCount > 0) {
-      getAllSyncQueue().then(setPendingOps).catch(console.error);
+      getAllSyncQueue()
+        .then(ops => {
+          if (active) setPendingOps(ops);
+        })
+        .catch(console.error);
     } else {
-      setPendingOps([]);
+      Promise.resolve().then(() => {
+        if (active) setPendingOps([]);
+      });
     }
+    return () => {
+      active = false;
+    };
   }, [pendingCount]);
 
   const confirmAndLogout = () => {
@@ -78,6 +88,7 @@ export default function SettingsIndex() {
     setUserProfile(null);
     setIsLoggingOut(false);
     setLogoutConfirmOpen(false);
+    sessionStorage.removeItem('skipOnboarding');
   };
 
   const handleLogout = async () => {
@@ -256,10 +267,18 @@ export default function SettingsIndex() {
                                       if (!name) {
                                         if (t.uiType === 'transfer') name = 'Transfer';
                                         else {
-                                          const catEntry = t.entries.find(e => categories.some(c => c.id === e.accountId));
+                                          const catEntry = t.entries.find(e =>
+                                            categories.some(c => c.id === e.accountId)
+                                          );
                                           if (catEntry) {
-                                            const cat = categories.find(c => c.id === catEntry.accountId);
-                                            name = cat ? (cat.subHead ? `${cat.head} - ${cat.subHead}` : cat.head) : 'Transaction';
+                                            const cat = categories.find(
+                                              c => c.id === catEntry.accountId
+                                            );
+                                            name = cat
+                                              ? cat.subHead
+                                                ? `${cat.head} - ${cat.subHead}`
+                                                : cat.head
+                                              : 'Transaction';
                                           } else {
                                             name = 'Transaction';
                                           }
@@ -275,21 +294,28 @@ export default function SettingsIndex() {
                                     if (m) details = m.name;
                                   } else if (op.entity === 'category') {
                                     const c = categories.find(x => x.id === op.entityId);
-                                    if (c) details = c.subHead ? `${c.head} - ${c.subHead}` : c.head;
+                                    if (c)
+                                      details = c.subHead ? `${c.head} - ${c.subHead}` : c.head;
                                   } else if (op.entity === 'budget') {
                                     const b = budgets.find(x => x.id === op.entityId);
                                     if (b) {
                                       const c = categories.find(x => x.id === b.categoryId);
-                                      details = c ? `${c.subHead ? `${c.head} - ${c.subHead}` : c.head} Budget` : 'Budget';
+                                      details = c
+                                        ? `${c.subHead ? `${c.head} - ${c.subHead}` : c.head} Budget`
+                                        : 'Budget';
                                     }
                                   }
                                 }
 
                                 return (
                                   <li key={op.id} className="whitespace-nowrap">
-                                    <span className="font-semibold text-[9px] text-muted-foreground">{op.action.toUpperCase()} {op.entity.toUpperCase()}</span>
+                                    <span className="font-semibold text-[9px] text-muted-foreground">
+                                      {op.action.toUpperCase()} {op.entity.toUpperCase()}
+                                    </span>
                                     <br />
-                                    <span className="font-medium text-popover-foreground">{details}</span>
+                                    <span className="font-medium text-popover-foreground">
+                                      {details}
+                                    </span>
                                   </li>
                                 );
                               })}
@@ -588,8 +614,8 @@ export default function SettingsIndex() {
             <div>
               <h3 className="text-zinc-100 text-lg font-medium mb-2">Unsaved Changes</h3>
               <p className="text-zinc-400 text-sm">
-                You have {logoutPendingCount} changes that couldn't be saved to Google Drive due to a network error. 
-                If you sign out now, these changes will be lost.
+                You have {logoutPendingCount} changes that couldn't be saved to Google Drive due to
+                a network error. If you sign out now, these changes will be lost.
               </p>
             </div>
             <div className="flex gap-3 w-full mt-4">
