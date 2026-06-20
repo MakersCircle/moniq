@@ -718,29 +718,18 @@ export class SyncEngine {
     const entityArray = (state[storeName as EntityArrayKey] as AnyEntity[]) || [];
 
     for (const op of ops) {
-      if (op.action === 'create') {
-        // Read entity from Zustand state
-        const entity = entityArray.find((e: AnyEntity) => e.id === op.entityId);
-        if (!entity) continue;
+      const entity = entityArray.find((e: AnyEntity) => e.id === op.entityId);
+      if (!entity) continue;
 
-        const row = serializeFn(entity);
-        // Set checksum
-        row[row.length - 1] = checksumFromRow(row);
+      const row = serializeFn(entity);
+      row[row.length - 1] = checksumFromRow(row);
+
+      const existingRowIdx = rowIndex.get(op.entityId);
+      if (existingRowIdx) {
+        updateBatch.push({ rowIndex: existingRowIdx, data: row });
+      } else {
+        // Entity exists locally but has no sheet row — append it
         newRows.push(row);
-      } else if (op.action === 'update' || op.action === 'delete') {
-        const existingRowIdx = rowIndex.get(op.entityId);
-        const entity = entityArray.find((e: AnyEntity) => e.id === op.entityId);
-        if (!entity) continue;
-
-        const row = serializeFn(entity);
-        row[row.length - 1] = checksumFromRow(row);
-
-        if (existingRowIdx) {
-          updateBatch.push({ rowIndex: existingRowIdx, data: row });
-        } else {
-          // Entity exists locally but has no sheet row — append it
-          newRows.push(row);
-        }
       }
     }
 

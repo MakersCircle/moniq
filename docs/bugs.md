@@ -87,9 +87,9 @@
   2. **No concurrency guard**: `runBackupCycle` could be called concurrently (e.g., manual "Backup Now" triggers a settings flush which triggers an auto backup cycle). Two concurrent calls could both enter `ensureBackupFolder` with `backupFolderId = null`. **Fixed:** `BackupManager` now has an `isRunning` guard that skips any concurrent invocation.
   **Remaining:** The duplicate folders already in the user's Drive need manual cleanup. Future runs will not create new duplicates.
 
-- [ ] **#18 — Duplicate rows created on partial sync batch failure (Idempotent Appends)**
+- [x] **#18 — Duplicate rows created on partial sync batch failure (Idempotent Appends)**
   `SyncEngine.ts` `flush()` processes all entity sheets via `Promise.all`. If one sheet fails, the sync queue is NOT cleared. The next sync retries all ops in the queue. For `create` ops, `flushEntityOps` currently pushes them directly to `newRows` without checking if the entity's ID already exists in `this.rowIndexes`. This results in duplicate row appends on Google Sheets.
-  **Fix:** In `flushEntityOps`, check `rowIndex.get(op.entityId)` for `create` ops as well. If it exists, convert the append into an update and push to `updateBatch`.
+  **Fix:** `flushEntityOps` was refactored to treat `create` ops identically to updates. It now checks `rowIndex.get(op.entityId)` before appending, converting redundant appends into safe updates. *(Fixed)*
 
 - [ ] **#19 — O(N) performance degradation on row appends**
   `SyncEngine.ts` `flushEntityOps` calls `this.client.getRowCount(sheetName)` after appending rows to calculate the new row indexes. `getRowCount` uses `readSheet()`, which downloads the *entire* sheet contents over the network. For a user with 5,000 transactions, every single new transaction triggers a 5,000-row download.
@@ -106,16 +106,18 @@
 - [ ] **#22 — API Rate limiting awareness**
   Google Sheets API allows 60 reads / 60 writes per minute. If a user with a massive legacy dataset (years of transactions) triggers multiple sync ops, it could easily hit the quota limit.
   **Fix:** Add a simple request counter inside `SheetClient` and proactively backoff (sleep) when approaching the 60 requests/min threshold.
-
+- [ ] **#23 — Transaction modal openable without required prerequisites**
+  Users can open the "Create Transaction" modal even if they have no Accounts, Payment Methods, or Categories set up yet, leading to confusion or errors when they try to save.
+  **Fix:** Show a helper state, disabled button, or a tooltip advising the user to set up at least one Account, Method, and Category before adding transactions.
 ---
 
 ## Summary
 
 | Status | Count |
 |---|---|
-| ✅ Fixed | 12 (items 1-9, 14, 16, 17) |
+| ✅ Fixed | 13 (items 1-9, 14, 16, 17, 18) |
 | 🔴 Critical remaining | 0 |
-| 🟠 High remaining | 2 (items 18, 19) |
+| 🟠 High remaining | 1 (item 19) |
 | 🟡 Medium remaining | 5 (items 10, 11, 12, 13, 20) |
-| ⚪ Low remaining | 3 (items 15, 21, 22) |
-| **Total open** | **13** |
+| ⚪ Low remaining | 4 (items 15, 21, 22, 23) |
+| **Total open** | **14** |
