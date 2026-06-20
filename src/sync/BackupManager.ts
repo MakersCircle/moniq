@@ -5,11 +5,20 @@ import type { UserSettings } from '../types';
 const BACKUP_FOLDER_NAME = 'Moniq Backups';
 
 const RETENTION_LIMITS = {
+  manual: 5,
   daily: 7,
   weekly: 5,
   monthly: 12,
   yearly: 999, // Practically infinite
 };
+
+export interface BackupSnapshot {
+  id: string;
+  name: string;
+  date: string; // The parsed suffix (e.g. 2026-06-20)
+  timestamp: string; // The actual file createdTime from Drive
+  tier: string;
+}
 
 /**
  * BackupManager handles the tiered backup logic for Moniq.
@@ -39,8 +48,8 @@ export class BackupManager {
     if (!spreadsheetId) return;
 
     const requiredTiers = force
-      ? ['daily', 'weekly', 'monthly', 'yearly']
-      : this.getRequiredTiers(settings);
+      ? ['manual']
+      : await this.getRequiredTiers(settings);
 
     if (requiredTiers.length === 0) return;
 
@@ -119,68 +128,62 @@ export class BackupManager {
     return newId;
   }
 
-  /** Determines which backup tiers are due based on current settings and date. */
-  private getRequiredTiers(settings: UserSettings): string[] {
+  /** Determines which backup tiers are due based on actual Drive contents. */
+  private async getRequiredTiers(settings: UserSettings): Promise<string[]> {
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
     const tiers: string[] = [];
+    
+    const latestBackups = await this.getLatestBackups();
+    const getTimestamp = (tier: string) => latestBackups[tier] ? new Date(latestBackups[tier]!.timestamp) : new Date(0);
 
-    // 1. Daily: If not backed up today
-    if (settings.lastDailyBackup !== todayStr) {
+    // 1. Daily: If no backup from today
+    const lastDaily = getTimestamp('daily');
+    const lastDailyStr = lastDaily.getTime() === 0 ? '' : lastDaily.toISOString().split('T')[0];
+    if (lastDailyStr !== todayStr) {
       tiers.push('daily');
     }
 
-    // 2. Weekly: Every Monday
-    const isMonday = now.getDay() === 1;
-    if (isMonday) {
-      const weekStr = this.getWeekString(now);
-      if (settings.lastWeeklyBackup !== weekStr) {
-        tiers.push('weekly');
-      }
+    // 2. Weekly: If no backup from current ISO week
+    const currentWeekStr = this.getWeekString(now);
+    const lastWeekly = getTimestamp('weekly');
+    const lastWeeklyStr = lastWeekly.getTime() === 0 ? '' : this.getWeekString(lastWeekly);
+    if (lastWeeklyStr !== currentWeekStr) {
+      tiers.push('weekly');
     }
 
-    // 3. Monthly: 1st of every month
-    const isFirstOfMonth = now.getDate() === 1;
-    if (isFirstOfMonth) {
-      const monthStr = todayStr.substring(0, 7); // YYYY-MM
-      if (settings.lastMonthlyBackup !== monthStr) {
-        tiers.push('monthly');
-      }
+    // 3. Monthly: If no backup from current month
+    const currentMonthStr = todayStr.substring(0, 7); // YYYY-MM
+    const lastMonthly = getTimestamp('monthly');
+    const lastMonthlyStr = lastMonthly.getTime() === 0 ? '' : lastMonthly.toISOString().substring(0, 7);
+    if (lastMonthlyStr !== currentMonthStr) {
+      tiers.push('monthly');
     }
 
-    // 4. Yearly: Start of Fiscal Year (respects user settings)
-    const currentMonth = now.getMonth() + 1;
-    const isFiscalStart = currentMonth === settings.fiscalYearStartMonth && now.getDate() === 1;
-    if (isFiscalStart) {
-      const yearStr = String(now.getFullYear());
-      if (settings.lastYearlyBackup !== yearStr) {
-        tiers.push('yearly');
-      }
+    // 4. Yearly: If no backup from current fiscal year
+    const currentFY = this.getFiscalYearString(now, settings.fiscalYearStartMonth);
+    const lastYearly = getTimestamp('yearly');
+    const lastYearlyStr = lastYearly.getTime() === 0 ? '' : this.getFiscalYearString(lastYearly, settings.fiscalYearStartMonth);
+    if (lastYearlyStr !== currentFY) {
+      tiers.push('yearly');
     }
 
     return tiers;
   }
 
-  /** Performs the file copy and updates local settings. */
+  /** Performs the file copy (Google Drive is now the absolute source of truth, so we don't patch local settings). */
   private async performBackup(
     tier: string,
     spreadsheetId: string,
     folderId: string
   ): Promise<void> {
     const now = new Date();
-    const dateStr = now.toISOString().split('T')[0];
-    const newName = `moniq-backup-${tier}-${dateStr}`;
+    
+    // Always include the full timestamp to avoid any collisions and track exact time
+    const suffix = now.toISOString().replace(/[:.]/g, '-');
+    const newName = `moniq-backup-${tier}-${suffix}`;
 
     await googleService.copyFile(spreadsheetId, folderId, newName);
-
-    // Update settings in store (which triggers a sync to the remote Settings sheet)
-    const patch: Partial<UserSettings> = {};
-    if (tier === 'daily') patch.lastDailyBackup = dateStr;
-    if (tier === 'weekly') patch.lastWeeklyBackup = this.getWeekString(now);
-    if (tier === 'monthly') patch.lastMonthlyBackup = dateStr.substring(0, 7);
-    if (tier === 'yearly') patch.lastYearlyBackup = String(now.getFullYear());
-
-    useDataStore.getState().updateSettings(patch);
   }
 
   /** Removes old backups for a tier if the retention limit is exceeded. */
@@ -207,5 +210,53 @@ export class BackupManager {
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
     const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
     return `${d.getUTCFullYear()}-W${weekNo}`;
+  }
+
+  /** Helper to get the fiscal year string. */
+  private getFiscalYearString(date: Date, startMonth: number): string {
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    // If the current month is before the fiscal start month, we're in the previous fiscal year
+    return String(month >= startMonth ? year : year - 1);
+  }
+
+  /**
+   * Fetches the actual list of backups from Google Drive, returning
+   * the most recent snapshot for each tier.
+   */
+  async getLatestBackups(): Promise<Record<string, BackupSnapshot | null>> {
+    const folderId = await this.ensureBackupFolder();
+    if (!folderId) return {};
+
+    // Get all files with 'moniq-backup-' prefix
+    // listFiles sorts by createdTime desc, so the first match per tier is the latest.
+    const files = await googleService.listFiles(folderId, 'moniq-backup-');
+    
+    const results: Record<string, BackupSnapshot | null> = {
+      manual: null,
+      daily: null,
+      weekly: null,
+      monthly: null,
+      yearly: null,
+    };
+
+    for (const file of files) {
+      const match = file.name.match(/^moniq-backup-(manual|daily|weekly|monthly|yearly)-(.*)$/);
+      if (match) {
+        const tier = match[1];
+        const dateSuffix = match[2];
+        if (!results[tier]) {
+          results[tier] = {
+            id: file.id,
+            name: file.name,
+            date: dateSuffix,
+            timestamp: file.createdTime || new Date().toISOString(),
+            tier
+          };
+        }
+      }
+    }
+    
+    return results;
   }
 }

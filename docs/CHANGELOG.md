@@ -24,9 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Onboarding Navigation**: Fixed a routing loop that forced brand new accounts back to the landing page immediately after logging in, preventing them from seeing the onboarding wizard.
 
 ### Added
+- **True Drive Backups**: The Backup Architecture has been entirely revamped to use Google Drive as the absolute source of truth. Automated backups (Daily, Weekly, Monthly, Yearly) now check live Drive data to determine if a snapshot is missing, instantly recovering from manual file deletions or cross-device inconsistencies.
+- **Background Backup Polling**: The Sync Engine now runs a 12-hour background polling timer to automatically generate required backup snapshots while the app is left open.
+- **Manual Backup Tier**: Added a dedicated `manual` backup tier (retaining up to 5 manual snapshots) to separate user-triggered backups from the automated timeline.
 - **Detailed Sync Tooltips**: The pending changes indicator in Settings now displays a detailed list of all locally modified items waiting to be synced to the cloud.
 
 ### Changed
+- **Backup Settings UI**: Replaced the 4-box automated backup layout with a clean, collapsible "View Latest Snapshots" section. This UI now fetches and displays live, chronological snapshot data directly from the "Moniq Backups" folder.
+- **Backup Timestamps**: Automated backups now include full ISO timestamps in their filenames instead of just the date, eliminating same-day collision risks and allowing precise creation tracking.
 - **Onboarding UX**: Redesigned the onboarding flow. Replaced fragile DOM-spotlight navigation steps with a linear sequence of interactive, custom setup modals (`Welcome` → `Preferences` → `Accounts` → `Methods` → `Categories`). Users can fully edit Accounts and Categories inline before saving.
 - **Tour Stability**: Fixed race conditions where the tour engine would silently abort by trying to highlight elements before the React router finished rendering them. Implemented robust DOM polling (`waitForElement`) for guaranteed, reliable step transitions.
 - **Tour Styling**: Fixed a CSS conflict where a solid black background was painted over the `driver.js` SVG cutout, causing highlighted targets to appear dim. Highlighted elements now correctly shine through at 100% brightness. Separated custom button CSS from the built-in tour close button (`×`) to prevent layout distortions.

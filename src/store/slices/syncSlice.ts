@@ -95,10 +95,6 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
           else if (key === 'tourStep') current.tourStep = value;
           else if (key === 'hasCompletedOnboarding')
             current.hasCompletedOnboarding = String(value).toLowerCase() === 'true';
-          else if (key === 'lastDailyBackup') current.lastDailyBackup = value;
-          else if (key === 'lastWeeklyBackup') current.lastWeeklyBackup = value;
-          else if (key === 'lastMonthlyBackup') current.lastMonthlyBackup = value;
-          else if (key === 'lastYearlyBackup') current.lastYearlyBackup = value;
         }
         nextState.settings = current;
       }
@@ -210,14 +206,9 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
           userSettings.fiscalYearStartMonth = Number(settings.fiscalYearStartMonth);
         if (settings.dateFormat) userSettings.dateFormat = settings.dateFormat;
         if (settings.tourStep) userSettings.tourStep = settings.tourStep;
-        if (settings.hasCompletedOnboarding) {
-          userSettings.hasCompletedOnboarding =
-            String(settings.hasCompletedOnboarding).toLowerCase() === 'true';
+        if (settings.hasCompletedOnboarding !== undefined) {
+          userSettings.hasCompletedOnboarding = String(settings.hasCompletedOnboarding).toLowerCase() === 'true';
         }
-        if (settings.lastDailyBackup) userSettings.lastDailyBackup = settings.lastDailyBackup;
-        if (settings.lastWeeklyBackup) userSettings.lastWeeklyBackup = settings.lastWeeklyBackup;
-        if (settings.lastMonthlyBackup) userSettings.lastMonthlyBackup = settings.lastMonthlyBackup;
-        if (settings.lastYearlyBackup) userSettings.lastYearlyBackup = settings.lastYearlyBackup;
       }
 
       set({

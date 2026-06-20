@@ -184,15 +184,6 @@ export interface UserSettings {
   tourStep?: string;
   /** Whether the user has completed the first-run onboarding */
   hasCompletedOnboarding?: boolean;
-
-  /** Timestamp of the last successful daily backup to Google Drive */
-  lastDailyBackup?: string;
-  /** Timestamp of the last successful weekly backup */
-  lastWeeklyBackup?: string;
-  /** Timestamp of the last successful monthly backup */
-  lastMonthlyBackup?: string;
-  /** Timestamp of the last successful yearly backup */
-  lastYearlyBackup?: string;
 }
 
 /**

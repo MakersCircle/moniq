@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   ShieldCheck,
   History,
+  ChevronDown,
 } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { googleLogout } from '@react-oauth/google';
@@ -61,6 +62,8 @@ export default function SettingsIndex() {
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [logoutPendingCount, setLogoutPendingCount] = useState(0);
   const [pendingOps, setPendingOps] = useState<SyncOperation[]>([]);
+  const [showSnapshots, setShowSnapshots] = useState(false);
+  const [latestBackups, setLatestBackups] = useState<Record<string, any> | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -401,34 +404,70 @@ export default function SettingsIndex() {
               <div className="p-3 bg-accent/30 rounded-lg border border-border/50 mb-6">
                 <p className="text-[10px] text-muted-foreground leading-relaxed">
                   Moniq automatically creates snapshots of your data at specific intervals. Clicking{' '}
-                  <strong>Backup Now</strong> immediately forces a full backup across all tiers
-                  (daily, weekly, monthly, yearly) regardless of schedule. Each backup is saved as a
-                  new copy in the &quot;Moniq Backups&quot; folder in your Google Drive — existing
+                  <strong>Backup Now</strong> immediately creates a new manual snapshot (up to 5 are retained). 
+                  Each backup is saved as a new copy in the &quot;Moniq Backups&quot; folder in your Google Drive — existing
                   backups are never overwritten.
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {[
-                  { label: 'Daily', date: settings.lastDailyBackup, limit: '7 Days' },
-                  { label: 'Weekly', date: settings.lastWeeklyBackup, limit: '5 Weeks' },
-                  { label: 'Monthly', date: settings.lastMonthlyBackup, limit: '12 Months' },
-                  { label: 'Yearly', date: settings.lastYearlyBackup, limit: 'Infinite' },
-                ].map(tier => (
-                  <div
-                    key={tier.label}
-                    className="p-3 bg-accent/30 rounded-xl border border-border/50 flex flex-col gap-1"
-                  >
-                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">
-                      {tier.label}
-                    </p>
-                    <p className="text-xs font-bold truncate">{tier.date || 'Never'}</p>
-                    <div className="flex items-center gap-1 mt-1 text-[8px] text-muted-foreground/70 font-medium uppercase tracking-tighter">
-                      <History className="h-2 w-2" />
-                      <span>Retain: {tier.limit}</span>
-                    </div>
+              <div className="border border-border/50 rounded-xl overflow-hidden bg-accent/10">
+                <button 
+                  onClick={() => {
+                    setShowSnapshots(s => !s);
+                    if (!showSnapshots && !latestBackups) {
+                      import('@/sync/BackupManager').then(m => {
+                        m.BackupManager.getInstance().getLatestBackups().then(setLatestBackups);
+                      });
+                    }
+                  }}
+                  className="w-full flex items-center justify-between p-4 bg-accent/20 hover:bg-accent/40 transition-colors"
+                >
+                  <div className="flex items-center gap-2 text-sm font-bold tracking-tight">
+                    <History className="h-4 w-4 text-muted-foreground" />
+                    View Latest Snapshots
                   </div>
-                ))}
+                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${showSnapshots ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showSnapshots && (
+                  <div className="p-4 border-t border-border/50 space-y-3">
+                    {!latestBackups ? (
+                      <p className="text-xs text-muted-foreground animate-pulse flex items-center gap-2">
+                        <RefreshCw className="h-3 w-3 animate-spin" /> Fetching from Google Drive...
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {[
+                          { id: 'manual', label: 'Manual Backup', limit: 'Retains last 5' },
+                          { id: 'daily', label: 'Daily Backup', limit: 'Retains last 7 days' },
+                          { id: 'weekly', label: 'Weekly Backup', limit: 'Retains last 5 weeks' },
+                          { id: 'monthly', label: 'Monthly Backup', limit: 'Retains last 12 months' },
+                          { id: 'yearly', label: 'Yearly Backup', limit: 'Retained indefinitely' },
+                        ].map(tier => {
+                          const snapshot = latestBackups[tier.id];
+                          return (
+                            <div key={tier.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-background border border-border/50 gap-2">
+                              <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-0.5">{tier.label}</p>
+                                <p className="text-xs text-muted-foreground tracking-tight">{tier.limit}</p>
+                              </div>
+                              <div className="text-left sm:text-right">
+                                {snapshot ? (
+                                  <>
+                                    <p className="text-xs font-bold">{format(new Date(snapshot.timestamp), 'MMM d, yyyy • h:mm a')}</p>
+                                    <p className="text-[9px] text-muted-foreground mt-0.5 truncate max-w-[200px]">{snapshot.name}</p>
+                                  </>
+                                ) : (
+                                  <p className="text-xs font-bold text-muted-foreground/50">No snapshot yet</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

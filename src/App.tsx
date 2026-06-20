@@ -175,6 +175,9 @@ export default function App() {
             setShowSyncToast(true);
             setTimeout(() => setShowSyncToast(false), 3500);
           }
+          
+          // Trigger the backup check after a successful initial load
+          engine.triggerBackupCycle();
         } else {
           setCloudInitialized(true);
         }

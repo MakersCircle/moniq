@@ -259,6 +259,7 @@ export class SyncEngine {
 
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
+  private backupPollingTimer: ReturnType<typeof setInterval> | null = null;
   private _status: SyncStatus = 'idle';
   private _pendingCount = 0;
   private _lastError: string | undefined;
@@ -275,6 +276,18 @@ export class SyncEngine {
       budgets: new Map(),
       settings: new Map(),
     };
+
+    // Poll every 12 hours to check if a backup tier has become due while the app was left open
+    this.backupPollingTimer = setInterval(async () => {
+      if (this.status === 'idle' || this.status === 'success') {
+        try {
+          const { BackupManager } = await import('./BackupManager');
+          await BackupManager.getInstance().runBackupCycle();
+        } catch (err) {
+          console.error('[SyncEngine] Background backup poll failed:', err);
+        }
+      }
+    }, 12 * 60 * 60 * 1000); // 12 hours
   }
 
   static getInstance(config?: Partial<SyncConfig>): SyncEngine {
@@ -318,7 +331,20 @@ export class SyncEngine {
   private setStatus(status: SyncStatus, error?: string) {
     this._status = status;
     this._lastError = error;
-    this.notifyListeners();
+    this.listeners.forEach(l => l(status, this._pendingCount, error));
+  }
+
+  /** Triggers the background backup cycle if not already checked this session */
+  public triggerBackupCycle() {
+    if (!SyncEngine.backupCheckedThisSession) {
+      SyncEngine.backupCheckedThisSession = true;
+      import('./BackupManager')
+        .then(({ BackupManager }) => BackupManager.getInstance().runBackupCycle())
+        .catch(err => {
+          console.warn('[SyncEngine] Triggering backup failed:', err);
+          SyncEngine.backupCheckedThisSession = false; // reset on failure
+        });
+    }
   }
 
   private async updatePendingCount() {
@@ -680,16 +706,7 @@ export class SyncEngine {
       useDataStore.getState().setLastSyncedAt(syncTime);
 
       // Trigger Backup Cycle (non-blocking) - at most once per session (Fix #12)
-      if (!SyncEngine.backupCheckedThisSession) {
-        SyncEngine.backupCheckedThisSession = true;
-        const { BackupManager } = await import('./BackupManager');
-        BackupManager.getInstance()
-          .runBackupCycle()
-          .catch(err => {
-            console.warn('[SyncEngine] Triggering backup failed:', err);
-            SyncEngine.backupCheckedThisSession = false; // reset on failure so it can try again
-          });
-      }
+      this.triggerBackupCycle();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sync failed';
       console.error('[SyncEngine] Flush failed:', err);
@@ -914,6 +931,7 @@ export class SyncEngine {
   destroy() {
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     if (this.retryTimer) clearTimeout(this.retryTimer);
+    if (this.backupPollingTimer) clearInterval(this.backupPollingTimer);
     this.listeners.clear();
     this.client = null;
     this.isInitialized = false;
