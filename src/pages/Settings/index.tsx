@@ -455,7 +455,7 @@ export default function SettingsIndex() {
                                 {snapshot ? (
                                   <>
                                     <p className="text-xs font-bold">{format(new Date(snapshot.timestamp), 'MMM d, yyyy • h:mm a')}</p>
-                                    <p className="text-[9px] text-muted-foreground mt-0.5 truncate max-w-[200px]">{snapshot.name}</p>
+                                    <p className="text-[9px] text-muted-foreground mt-0.5 truncate max-w-50">{snapshot.name}</p>
                                   </>
                                 ) : (
                                   <p className="text-xs font-bold text-muted-foreground/50">No snapshot yet</p>

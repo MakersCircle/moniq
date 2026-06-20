@@ -437,7 +437,7 @@ export default function AddTransactionModal({
               )}
             >
               {isFullyAllocated
-                ? '✓ All Split'
+                ? '✓ All Splits'
                 : `Allocated ${formatCurrency(totalSplitAmount, settings)} of ${formatCurrency(parsedAmount, settings)}`}
             </div>
           )}
