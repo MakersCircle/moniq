@@ -63,7 +63,7 @@ export default function TourDriver() {
         const el = document.getElementById('tour-target-settings-nav');
         try {
           // Use highlight — user advances by physically clicking the link
-          driverObj.highlight({
+          driverObj?.highlight({
             element: '#tour-target-settings-nav',
             popover: {
               title: 'Step 1 — Open Settings',
@@ -91,7 +91,7 @@ export default function TourDriver() {
           driverObj = makeDriver();
           try {
             // Use drive() with setSteps so the Done button fires onNextClick
-            driverObj.setSteps([
+            driverObj?.setSteps([
               {
                 element: '#tour-target-accounts-page',
                 popover: {
@@ -102,13 +102,13 @@ export default function TourDriver() {
                   align: 'start',
                   doneBtnText: 'Next →',
                   onNextClick: () => {
-                    driverObj.destroy();
+                    driverObj?.destroy();
                     setTourStepRef.current('setup_methods');
                   },
                 },
               },
             ]);
-            driverObj.drive();
+            driverObj?.drive();
           } catch {
             setTourStepRef.current('setup_methods');
           }
@@ -133,13 +133,13 @@ export default function TourDriver() {
                   align: 'start',
                   doneBtnText: 'Next →',
                   onNextClick: () => {
-                    driverObj.destroy();
+                    driverObj?.destroy();
                     setTourStepRef.current('setup_categories');
                   },
                 },
               },
             ]);
-            driverObj.drive();
+            driverObj?.drive();
           } catch {
             setTourStepRef.current('setup_categories');
           }
@@ -164,13 +164,13 @@ export default function TourDriver() {
                   align: 'start',
                   doneBtnText: 'Next →',
                   onNextClick: () => {
-                    driverObj.destroy();
+                    driverObj?.destroy();
                     setTourStepRef.current('nav_new_tx');
                   },
                 },
               },
             ]);
-            driverObj.drive();
+            driverObj?.drive();
           } catch {
             setTourStepRef.current('nav_new_tx');
           }
@@ -193,13 +193,13 @@ export default function TourDriver() {
                   align: 'end',
                   doneBtnText: 'Next →',
                   onNextClick: () => {
-                    driverObj.destroy();
+                    driverObj?.destroy();
                     setTourStepRef.current('tour_sync_backup');
                   },
                 },
               },
             ]);
-            driverObj.drive();
+            driverObj?.drive();
           } catch {
             setTourStepRef.current('tour_sync_backup');
           }
@@ -224,14 +224,14 @@ export default function TourDriver() {
                   align: 'end',
                   doneBtnText: 'Finish ✓',
                   onNextClick: () => {
-                    driverObj.destroy();
+                    driverObj?.destroy();
                     completeOnboardingRef.current([], []);
                     setTourStepRef.current('completed');
                   },
                 },
               },
             ]);
-            driverObj.drive();
+            driverObj?.drive();
           } catch {
             completeOnboardingRef.current([], []);
           }

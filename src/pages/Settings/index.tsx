@@ -15,6 +15,7 @@ import { googleLogout } from '@react-oauth/google';
 import { useDataStore } from '@/store/dataStore';
 import { SyncEngine } from '@/sync/SyncEngine';
 import { getAllSyncQueue } from '@/lib/db';
+import type { BackupSnapshot } from '@/sync/BackupManager';
 import type { SyncOperation } from '@/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -63,7 +64,7 @@ export default function SettingsIndex() {
   const [logoutPendingCount, setLogoutPendingCount] = useState(0);
   const [pendingOps, setPendingOps] = useState<SyncOperation[]>([]);
   const [showSnapshots, setShowSnapshots] = useState(false);
-  const [latestBackups, setLatestBackups] = useState<Record<string, unknown> | null>(null);
+  const [latestBackups, setLatestBackups] = useState<Record<string, BackupSnapshot | null> | null>(null);
 
   useEffect(() => {
     let active = true;

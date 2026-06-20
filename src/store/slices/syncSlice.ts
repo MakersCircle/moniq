@@ -3,7 +3,7 @@ import type { DataState } from '../types';
 import type { SyncStatus, Account, PaymentMethod, Category, Transaction, Budget } from '@/types';
 import { defaultSettings } from './settingsSlice';
 import { getCurrencySymbol } from '../../constants/currencies';
-import { getAll, getAllSettings, getMeta, setMeta, delMeta } from '../../lib/db';
+import { getAll, getAllSettings, getMeta, setMeta, delMeta, getAllSyncQueue } from '../../lib/db';
 
 export interface SyncSlice {
   spreadsheetId: string | null;
@@ -19,6 +19,9 @@ export interface SyncSlice {
   isCloudInitialized: boolean;
 
   setSpreadsheetId: (id: string | null) => void;
+  setFolderId: (id: string | null) => void;
+  setBackupFolderId: (id: string | null) => void;
+  clearZustandData: () => void;
   setSyncStatus: (status: SyncStatus, pendingCount: number, error?: string) => void;
   setLastSyncedAt: (timestamp: string) => void;
   setCloudInitialized: (initialized: boolean) => void;
