@@ -63,7 +63,7 @@ export default function SettingsIndex() {
   const [logoutPendingCount, setLogoutPendingCount] = useState(0);
   const [pendingOps, setPendingOps] = useState<SyncOperation[]>([]);
   const [showSnapshots, setShowSnapshots] = useState(false);
-  const [latestBackups, setLatestBackups] = useState<Record<string, any> | null>(null);
+  const [latestBackups, setLatestBackups] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     let active = true;

@@ -20,6 +20,7 @@ const currencies = currenciesData as Record<string, CurrencyData>;
 /**
  * Returns a list of all currencies supported by the browser with their names and symbols.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getAllCurrencies(_locale: string = 'en-US'): CurrencyInfo[] {
   return Object.values(currencies).map(c => ({
     code: c.code,
@@ -31,6 +32,7 @@ export function getAllCurrencies(_locale: string = 'en-US'): CurrencyInfo[] {
 /**
  * Fetches the standard symbol for a given currency code and locale.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getCurrencySymbol(code: string, _locale: string = 'en-US'): string {
   const c = currencies[code];
   return c ? (c.symbolNative || c.symbol || code) : code;

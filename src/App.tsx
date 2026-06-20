@@ -34,7 +34,7 @@ export default function App() {
   const setSpreadsheetId = useDataStore(s => s.setSpreadsheetId);
   const setSyncStatus = useDataStore(s => s.setSyncStatus);
   const hydrateFromSync = useDataStore(s => s.hydrateFromSync);
-  const settings = useDataStore(s => s.settings);
+
   const isHydrated = useDataStore(s => s.isHydrated);
   const isCloudInitialized = useDataStore(s => s.isCloudInitialized);
   const setCloudInitialized = useDataStore(s => s.setCloudInitialized);

@@ -1,4 +1,4 @@
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import { openDB, type DBSchema, type IDBPDatabase, type StoreNames } from 'idb';
 import type {
   Account,
   PaymentMethod,
@@ -231,8 +231,8 @@ export async function deleteMoniqDB(): Promise<void> {
 
 export async function clearLocalData(): Promise<void> {
   const db = await getDB();
-  const stores = ['transactions', 'accounts', 'methods', 'categories', 'budgets', 'sync_queue', 'remote_snapshot', 'settings', 'meta'];
+  const stores: StoreNames<MoniqDB>[] = ['transactions', 'accounts', 'methods', 'categories', 'budgets', 'sync_queue', 'remote_snapshot', 'settings', 'meta'];
   const tx = db.transaction(stores, 'readwrite');
-  await Promise.all(stores.map(store => tx.objectStore(store as any).clear()));
+  await Promise.all(stores.map(store => tx.objectStore(store).clear()));
   await tx.done;
 }

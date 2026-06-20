@@ -278,16 +278,19 @@ export class SyncEngine {
     };
 
     // Poll every 12 hours to check if a backup tier has become due while the app was left open
-    this.backupPollingTimer = setInterval(async () => {
-      if (this.status === 'idle' || this.status === 'success') {
-        try {
-          const { BackupManager } = await import('./BackupManager');
-          await BackupManager.getInstance().runBackupCycle();
-        } catch (err) {
-          console.error('[SyncEngine] Background backup poll failed:', err);
+    this.backupPollingTimer = setInterval(
+      async () => {
+        if (this.status === 'idle') {
+          try {
+            const { BackupManager } = await import('./BackupManager');
+            await BackupManager.getInstance().runBackupCycle();
+          } catch (err) {
+            console.error('[SyncEngine] Background backup poll failed:', err);
+          }
         }
-      }
-    }, 12 * 60 * 60 * 1000); // 12 hours
+      },
+      12 * 60 * 60 * 1000
+    ); // 12 hours
   }
 
   static getInstance(config?: Partial<SyncConfig>): SyncEngine {

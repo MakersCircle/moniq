@@ -1,13 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { DataState } from '../types';
-import type {
-  SyncStatus,
-  Account,
-  PaymentMethod,
-  Category,
-  Transaction,
-  Budget,
-} from '@/types';
+import type { SyncStatus, Account, PaymentMethod, Category, Transaction, Budget } from '@/types';
 import { defaultSettings } from './settingsSlice';
 import { getCurrencySymbol } from '@/constants/currencies';
 import { getAll, getAllSettings, getMeta, setMeta, delMeta, getAllSyncQueue } from '@/lib/db';
@@ -28,6 +21,7 @@ export interface SyncSlice {
   setSpreadsheetId: (id: string | null) => void;
   setFolderId: (id: string | null) => void;
   setBackupFolderId: (id: string | null) => void;
+  clearZustandData: () => void;
   setSyncStatus: (status: SyncStatus, pendingCount: number, error?: string) => void;
   setLastSyncedAt: (timestamp: string) => void;
   setCloudInitialized: (initialized: boolean) => void;
@@ -207,7 +201,8 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         if (settings.dateFormat) userSettings.dateFormat = settings.dateFormat;
         if (settings.tourStep) userSettings.tourStep = settings.tourStep;
         if (settings.hasCompletedOnboarding !== undefined) {
-          userSettings.hasCompletedOnboarding = String(settings.hasCompletedOnboarding).toLowerCase() === 'true';
+          userSettings.hasCompletedOnboarding =
+            String(settings.hasCompletedOnboarding).toLowerCase() === 'true';
         }
       }
 

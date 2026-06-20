@@ -22,7 +22,7 @@ export default function CategoriesSetupStep() {
   const completeOnboardingFn = useDataStore(s => s.completeOnboarding);
 
   const [categories, setCategories] = useState<DraftCategory[]>(
-    (defaults.categories as any[]).map(cat => ({
+    (defaults.categories as { group: string, head: string, subHead?: string }[]).map(cat => ({
       group: cat.group as CategoryGroup,
       head: cat.head,
       subHead: cat.subHead || '',

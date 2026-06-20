@@ -184,7 +184,7 @@ export class SheetClient {
     const sheet1 = metaData.sheets.find(s => s.properties.title === 'Sheet1');
     const willHaveOtherSheets = existing.size > (sheet1 ? 1 : 0) || missing.length > 0;
 
-    const requests: any[] = [];
+    const requests: Record<string, unknown>[] = [];
 
     // 1. Add missing sheets
     missing.forEach(title => {

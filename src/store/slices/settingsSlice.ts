@@ -23,6 +23,7 @@ export interface SettingsSlice {
   userProfile: UserProfile | null;
 
   updateSettings: (patch: Partial<UserSettings>) => void;
+  setTourStep: (step: string) => void;
   setAccessToken: (token: string | null, expiresAt?: number | null) => void;
   setUserProfile: (profile: UserProfile | null) => void;
   completeOnboarding: (

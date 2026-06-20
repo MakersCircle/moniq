@@ -18,7 +18,7 @@ export default function AccountsSetupStep() {
   const completeOnboardingFn = useDataStore(s => s.completeOnboarding);
 
   const [accounts, setAccounts] = useState<DraftAccount[]>(
-    (defaults.accounts as any[]).map(acc => ({
+    (defaults.accounts as { name: string, type: string, description?: string }[]).map(acc => ({
       name: acc.name,
       type: acc.type as AccountType,
       description: acc.description || '',

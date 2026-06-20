@@ -39,7 +39,7 @@ export default function TourDriver() {
     const overlaySteps = ['nav_settings', 'view_accounts', 'view_methods', 'view_categories', 'nav_new_tx', 'tour_sync_backup'];
     if (!tourStep || !overlaySteps.includes(tourStep)) return;
 
-    let driverObj: any = null;
+    let driverObj: ReturnType<typeof driver> | null = null;
     let cleanupClick: (() => void) | null = null;
 
     const skipTour = () => completeOnboardingRef.current([], []);
@@ -73,7 +73,7 @@ export default function TourDriver() {
               doneBtnText: 'Skip Tour',
             }
           });
-        } catch (err) {
+        } catch {
           // silently fail
         }
         if (el) {
@@ -109,7 +109,7 @@ export default function TourDriver() {
               },
             ]);
             driverObj.drive();
-          } catch (err) {
+          } catch {
             setTourStepRef.current('setup_methods');
           }
         });
@@ -140,7 +140,7 @@ export default function TourDriver() {
               },
             ]);
             driverObj.drive();
-          } catch (err) {
+          } catch {
             setTourStepRef.current('setup_categories');
           }
         });
@@ -171,7 +171,7 @@ export default function TourDriver() {
               },
             ]);
             driverObj.drive();
-          } catch (err) {
+          } catch {
             setTourStepRef.current('nav_new_tx');
           }
         });
@@ -200,7 +200,7 @@ export default function TourDriver() {
               },
             ]);
             driverObj.drive();
-          } catch (err) {
+          } catch {
             setTourStepRef.current('tour_sync_backup');
           }
         });
@@ -232,7 +232,7 @@ export default function TourDriver() {
               },
             ]);
             driverObj.drive();
-          } catch (err) {
+          } catch {
             completeOnboardingRef.current([], []);
           }
         });
