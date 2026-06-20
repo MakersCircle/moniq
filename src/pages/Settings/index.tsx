@@ -43,8 +43,6 @@ export default function SettingsIndex() {
     syncStatus,
     pendingCount,
     lastSyncError,
-    setAccessToken,
-    setUserProfile,
     accessToken,
     spreadsheetId,
     hydrateFromSync,
@@ -393,7 +391,7 @@ export default function SettingsIndex() {
                   disabled={isBackingUp}
                   variant="outline"
                   size="sm"
-                  className="h-8 px-4 font-bold uppercase text-[9px] tracking-widest min-w-[100px]"
+                  className="h-8 px-4 font-bold uppercase text-[9px] tracking-widest min-w-25"
                 >
                   {isBackingUp ? <RefreshCw className="h-3 w-3 animate-spin mr-2" /> : null}
                   {isBackingUp ? 'Backing up...' : 'Backup Now'}

@@ -1,9 +1,9 @@
 import type { StateCreator } from 'zustand';
 import type { DataState, UserProfile } from '../types';
-import type { UserSettings, Account, Category, PaymentMethod } from '../../types';
+import type { UserSettings, Account, Category, PaymentMethod } from '@/types';
 import { uuid, now, markDirty } from '../helpers';
-import { detectLocalSettings, getCurrencySymbol } from '../../constants/currencies';
-import { putMany, putSetting, setMeta, delMeta } from '../../lib/db';
+import { detectLocalSettings, getCurrencySymbol } from '@/constants/currencies';
+import { putMany, putSetting, setMeta, delMeta } from '@/lib/db';
 
 const detected = detectLocalSettings();
 

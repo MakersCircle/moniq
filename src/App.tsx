@@ -195,9 +195,6 @@ export default function App() {
     setCloudInitialized,
     retryCount,
   ]);
-
-  const hasCompletedOnboarding = settings.hasCompletedOnboarding;
-
   useEffect(() => {
     if (accessToken) {
       window.openTransactionModal = { openNew, openEdit, openDuplicate };

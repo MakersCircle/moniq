@@ -7,10 +7,10 @@ import type {
   Category,
   Transaction,
   Budget,
-} from '../../types';
+} from '@/types';
 import { defaultSettings } from './settingsSlice';
-import { getCurrencySymbol } from '../../constants/currencies';
-import { getAll, getAllSettings, getMeta, setMeta, delMeta, clearStore, getAllSyncQueue } from '../../lib/db';
+import { getCurrencySymbol } from '@/constants/currencies';
+import { getAll, getAllSettings, getMeta, setMeta, delMeta, getAllSyncQueue } from '@/lib/db';
 
 export interface SyncSlice {
   spreadsheetId: string | null;
