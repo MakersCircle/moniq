@@ -59,6 +59,8 @@ export default function App() {
     defaultType?: TransactionType;
   }>({ isOpen: false });
 
+  const [initPhase, setInitPhase] = useState<'connecting' | 'creating-folder' | 'creating-sheet'>('connecting');
+
   const openNew = useCallback((type?: TransactionType | React.MouseEvent | React.KeyboardEvent) => {
     // If called as an event handler (e.g. onClick), the first arg is an event object.
     // We only want to set defaultType if it's a valid string.
@@ -163,7 +165,7 @@ export default function App() {
 
         setUserProfile(profile);
 
-        const sheetId = await initializeDatabase();
+        const sheetId = await initializeDatabase(setInitPhase);
         setSpreadsheetId(sheetId);
 
         const engine = SyncEngine.getInstance();
@@ -229,9 +231,13 @@ export default function App() {
 
     const message = !isHydrated
       ? 'Loading your space...'
-      : syncStatus === 'pulling'
-        ? 'Pulling your data from Google Drive...'
-        : 'Connecting to Google Drive...';
+      : initPhase === 'creating-folder'
+        ? 'Setting up your personal Drive folder...'
+        : initPhase === 'creating-sheet'
+          ? 'Initializing your Moniq database...'
+          : syncStatus === 'pulling'
+            ? 'Pulling your data from Google Drive...'
+            : 'Connecting to Google Drive...';
 
     return (
       <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center">

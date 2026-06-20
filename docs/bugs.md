@@ -10,9 +10,6 @@
 
 
 
-- [ ] **#13 — No user feedback during first-ever Drive workspace setup**
-  `App.tsx` / `api/google.ts` — On a true first run, `initializeDatabase` creates a folder and a spreadsheet before sync begins. The loading spinner just says *"Syncing your data…"* throughout, which is inaccurate and gives no sense of progress.
-  **Fix:** Expose a setup phase (e.g., `initPhase: 'creating-workspace' | 'syncing' | ...`) and display *"Setting up your personal Drive workspace…"* during folder/sheet creation.
 
 - [ ] **#20 — Conflict Resolution clock drift gap**
   `SyncEngine.ts` resolves sync conflicts by comparing the `updatedAt` timestamp of the local and remote entities. If both sides changed offline while disconnected, this logic assumes the device clocks are perfectly synchronized, which is rarely true across diverse devices.
@@ -49,6 +46,9 @@
 ## ✅ DONE
 
 ### 🔴 Critical
+
+- [x] **#13 — No user feedback during first-ever Drive workspace setup**
+  `App.tsx` / `api/google.ts` — Implemented `initPhase` state to provide accurate feedback (`"Setting up your personal Drive folder…"` and `"Initializing your Moniq database…"`) during first-run Google Drive setup instead of hanging on generic text. *(Fixed)*
 
 - [x] **#1 — Cross-device creates a fresh account instead of finding existing data**
   `api/google.ts` — Three-tier resolution (IndexedDB → Drive search → create) added. *(Fixed: v0.7.0)*
