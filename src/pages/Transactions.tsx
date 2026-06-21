@@ -127,10 +127,10 @@ export default function Transactions() {
               onValueChange={val => updateFilter({ month: val === 'all' ? undefined : val })}
             >
               <SelectTrigger className="h-9 w-[160px] text-xs">
-                <SelectValue placeholder="All time" />
+                <SelectValue placeholder="All Time" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All time</SelectItem>
+                <SelectItem value="all">All Time</SelectItem>
                 {Array.from({ length: 12 }).map((_, i) => {
                   const d = new Date();
                   d.setMonth(d.getMonth() - i);

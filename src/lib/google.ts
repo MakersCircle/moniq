@@ -81,12 +81,19 @@ export class GoogleService {
         return resolve(null);
       }
 
+      const timeoutId = setTimeout(() => {
+        console.warn('[GoogleService] silentRefresh timed out after 10s');
+        this.isRefreshing = false;
+        resolve(null);
+      }, 10000);
+
       const client = window.google.accounts.oauth2.initTokenClient({
         client_id: VITE_GOOGLE_CLIENT_ID,
         scope:
           'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
         prompt: 'none',
         callback: (response: GoogleOAuthResponse) => {
+          clearTimeout(timeoutId);
           this.isRefreshing = false;
           if (response.access_token) {
             const expiresAt = Date.now() + (Number(response.expires_in) || 3600) * 1000;
@@ -133,8 +140,19 @@ export class GoogleService {
 
     if (!currentToken || isAboutToExpire) {
       if (isAboutToExpire) console.log('[GoogleService] Token about to expire, refreshing...');
-      currentToken = await this.silentRefresh();
-      if (!currentToken) throw new Error('Unauthenticated: No access token found');
+      const newToken = await this.silentRefresh();
+      
+      if (newToken) {
+        currentToken = newToken;
+      } else {
+        const isFullyExpired = expiresAt && Date.now() > expiresAt;
+        if (!currentToken || isFullyExpired) {
+          useDataStore.getState().setAccessToken(null);
+          throw new Error('Unauthenticated: Session expired');
+        } else {
+          console.warn('[GoogleService] Proactive refresh failed, but token is still valid. Proceeding...');
+        }
+      }
     }
 
     let response = await fetch(url, {

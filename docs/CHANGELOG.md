@@ -9,18 +9,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-06-21
+
 ### Fixed
+- **API Rate Limiting** (`SheetClient.ts`): Implemented request throttling and exponential backoff to handle Google Sheets API 429 (Too Many Requests) errors gracefully.
+- **Transaction Prerequisites** (`AddTransactionModal.tsx`): Prevented the transaction modal from opening if the user has not yet created at least one Account, one Payment Method, and one Category, displaying a clear prerequisite error instead.
+- **`pushReconciled` Duplicate Row** (`SyncEngine.ts`): Fixed a bug where `pushReconciled` discarded the `appendRows` return value, leaving newly appended entities unregistered in the in-memory row index. A subsequent `flush()` in the same session would not find them and re-append them as duplicate sheet rows.
+- **Retry-on-Timeout Duplicate Row** (`SyncEngine.ts`): Fixed a bug where a network timeout during `appendRows` (server wrote the row but client lost the response) caused the entity to be appended again on retry. Added a `pendingAppendIds` registry that marks entity IDs in-flight before each network call; on retry, detects ambiguous appends via a targeted `rebuildRowIndexForStore` (`readSheet`) and converts re-appends to idempotent updates.
+- **Exponential Backoff & Retry Ceiling** (`SyncEngine.ts`): Fixed sync retry logic that was computing a constant 2-second delay and never enforcing `maxRetries`. Retries now use true exponential backoff (`baseRetryDelayMs * 2^attempt`, capped at `maxRetryDelayMs`), giving delays of 1s → 2s → 4s → … → 60s. After 8 consecutive failures the engine surfaces a permanent error and stops retrying; the queue persists in IndexedDB and recovers on next page load.
+- **Sync Startup Optimization** (`SyncEngine.ts`, `SheetClient.ts`): Reduced the API cost of a sync initialization from 13 requests down to 1 request for returning users in the same session. Replaced the 6 individual `readSheet` calls with a single `values:batchGet` call. Implemented a session-storage flag to safely bypass the 7 schema/header verification requests on subsequent reloads.
+- **Sync Clock Drift** (`ConflictResolver.ts`): Resolved a conflict resolution bug where minor clock drifts between local devices and the Google Sheets server caused false update collisions during bidirectional syncs.
+- **Phantom DB Locks & Hard Reset** (`db.ts`, `SyncEngine.ts`): Fixed a critical leak where `Promise.all` opened multiple overlapping database connections at startup, permanently blocking Hard Resets. Hard Resets are now fully atomic—safely deleting local data before touching the cloud—and use custom Shadcn error dialogs instead of native alerts.
+- **Background Backup Cycle** (`SyncEngine.ts`): Fixed an issue where the background backup verification cycle was being redundantly triggered after every single sync flush. It now properly uses a session-scoped flag to verify the backup folder at most once per browser session.
+- **Sync Now Performance** (`Settings/index.tsx`): Fixed an issue where clicking the "Sync Now" button always triggered a full bidirectional pull (which is slow). It now smartly performs a highly targeted "delta push" of pending changes, falling back to a full pull only if there are no pending operations.
 - **Silent Cloud Failure** (`App.tsx`): Fixed a critical bug where cloud initialization errors were swallowed and the app was loaded in a broken sync state without user feedback. Added a dedicated full-screen connection error state with "Retry Connection" and "Sign Out" actions to properly surface Drive/Sheets errors to the user.
+- **Authentication Resilience**: Fixed an issue where background token refresh timeouts could silently abort the initialization process, permanently locking the sync queue.
+- **Cross-Account Data Leakage**: Added a safety measure to completely wipe local IndexedDB data if a different Google account logs in on the same browser, preventing cross-contamination of Drive spreadsheets.
+- **Dismissible Onboarding**: Added a "Skip for now" button to the initial setup modal. This suppresses the modal for the remainder of the session without permanently marking onboarding as complete, preventing users from getting locked out if they aren't ready to set up accounts.
+- **Duplicate Row Prevention**: The Sync Engine now employs strictly idempotent operations. If a background sync fails halfway through, the engine will safely resume and update existing rows instead of accidentally appending duplicate transactions.
+- **O(N) Append Performance**: Modified the Sync Engine to extract row indexes directly from the Google Sheets API response when appending data, eliminating a massive O(N) network bottleneck where the entire sheet was re-downloaded just to count the rows.
+- **Sync Engine Retries**: Properly destroy the Sync Engine background polling loop upon user logout, fixing a memory and API request leak.
+- **Duplicate Backup Folders**: Prevented the creation of duplicate `Moniq Backups` folders across different devices by implementing a pre-creation folder search.
+- **Orphaned Sheets**: The Sync Engine now automatically deletes the default, empty `Sheet1` tab when provisioning a new Google Spreadsheet.
+- **Onboarding Navigation**: Fixed a routing loop that forced brand new accounts back to the landing page immediately after logging in, preventing them from seeing the onboarding wizard.
 
----
+### Added
+- **True Drive Backups**: The Backup Architecture has been entirely revamped to use Google Drive as the absolute source of truth. Automated backups (Daily, Weekly, Monthly, Yearly) now check live Drive data to determine if a snapshot is missing, instantly recovering from manual file deletions or cross-device inconsistencies.
+- **Background Backup Polling**: The Sync Engine now runs a 12-hour background polling timer to automatically generate required backup snapshots while the app is left open.
+- **Manual Backup Tier**: Added a dedicated `manual` backup tier (retaining up to 5 manual snapshots) to separate user-triggered backups from the automated timeline.
+- **Detailed Sync Tooltips**: The pending changes indicator in Settings now displays a detailed list of all locally modified items waiting to be synced to the cloud.
 
-## [0.7.1] - 2026-05-25
-
-### Fixed
-- **Infinite Loading Screen** (`App.tsx`): Fixed a critical bug where a failed silent token refresh resulted in an infinite loading spinner. Now appropriately resolves the spinner to show the Session Expired banner.
-- **Duplicate Backup Folders** (`api/google.ts`, `BackupManager.ts`):
-  - Fixed a race condition causing multiple "Moniq Backups" folders. Google Drive IDs are now properly awaited before IndexedDB persistence, preventing null-ID bugs upon immediate page reload.
-  - Added a concurrency guard (`isRunning`) to `BackupManager` to prevent overlapping auto-backup cycles when `forceSync` is manually triggered.
+### Changed
+- **Backup Settings UI**: Replaced the 4-box automated backup layout with a clean, collapsible "View Latest Snapshots" section. This UI now fetches and displays live, chronological snapshot data directly from the "Moniq Backups" folder.
+- **Backup Timestamps**: Automated backups now include full ISO timestamps in their filenames instead of just the date, eliminating same-day collision risks and allowing precise creation tracking.
+- **Onboarding UX**: Redesigned the onboarding flow. Replaced fragile DOM-spotlight navigation steps with a linear sequence of interactive, custom setup modals (`Welcome` → `Preferences` → `Accounts` → `Methods` → `Categories`). Users can fully edit Accounts and Categories inline before saving.
+- **Tour Stability**: Fixed race conditions where the tour engine would silently abort by trying to highlight elements before the React router finished rendering them. Implemented robust DOM polling (`waitForElement`) for guaranteed, reliable step transitions.
+- **Tour Styling**: Fixed a CSS conflict where a solid black background was painted over the `driver.js` SVG cutout, causing highlighted targets to appear dim. Highlighted elements now correctly shine through at 100% brightness. Separated custom button CSS from the built-in tour close button (`×`) to prevent layout distortions.
 
 ---
 
@@ -116,6 +140,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Smart Date Entry**: Added support for shorthand date entry (`ddmm` for current year) and flexible formatting (`ddmmyyyy`, `dd-mm-yyyy`, etc.).
 
 ---
+
 
 ## [0.4.0] - 2026-05-02
 

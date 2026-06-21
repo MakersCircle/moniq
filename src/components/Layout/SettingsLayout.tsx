@@ -40,6 +40,15 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             return (
               <NavLink
                 key={item.to}
+                id={
+                  item.label === 'Accounts'
+                    ? 'tour-target-settings-accounts'
+                    : item.label === 'Pay Methods'
+                      ? 'tour-target-settings-methods'
+                      : item.label === 'Categories'
+                        ? 'tour-target-settings-categories'
+                        : undefined
+                }
                 to={item.to}
                 end={item.to === '/settings'}
                 className={({ isActive }) =>

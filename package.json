@@ -1,7 +1,7 @@
 {
   "name": "moniq-app",
   "private": true,
-  "version": "0.7.1",
+  "version": "0.8.0",
   "engines": {
     "node": ">=24"
   },
@@ -45,6 +45,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "driver.js": "^1.4.0",
     "framer-motion": "^12.38.0",
     "idb": "^8.0.3",
     "lucide-react": "^0.469.0",

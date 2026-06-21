@@ -39,7 +39,7 @@ export default function RecentTransactionsTable({ transactions }: RecentTransact
               <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                 {format(new Date(t.date), 'dd MMM')}
               </td>
-              <td className="px-4 py-3 font-medium text-foreground max-w-[200px] truncate">
+              <td className="px-4 py-3 font-medium text-foreground max-w-50 truncate">
                 {t.note || 'No description'}
               </td>
               <td className="px-4 py-3 text-muted-foreground">

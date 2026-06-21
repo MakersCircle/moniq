@@ -1,5 +1,6 @@
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useDataStore } from '@/store/dataStore';
 import { useEffect, useRef } from 'react';
 
 interface TopBarProps {
@@ -7,7 +8,10 @@ interface TopBarProps {
 }
 
 export default function TopBar({ onNewTransaction }: TopBarProps) {
+  const { syncStatus } = useDataStore();
   const searchRef = useRef<HTMLInputElement>(null);
+  
+  const isSyncing = syncStatus === 'syncing' || syncStatus === 'pulling';
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -47,7 +51,14 @@ export default function TopBar({ onNewTransaction }: TopBarProps) {
 
       {/* Right actions */}
       <div className="flex items-center gap-3">
+        {isSyncing && (
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-accent/30 border border-border/50 text-muted-foreground animate-pulse">
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+            <span className="text-[10px] font-medium tracking-wide uppercase">Syncing</span>
+          </div>
+        )}
         <Button
+          id="tour-target-new-tx"
           size="sm"
           className="h-8 gap-1.5 text-xs px-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all active:scale-95"
           onClick={() => onNewTransaction()}

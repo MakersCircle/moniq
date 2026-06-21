@@ -23,7 +23,7 @@ const FOLDER_NAME = 'moniq';
  *    this app previously created for the same user + OAuth client ID)
  * 3. Create a new folder (true first-run only)
  */
-async function getOrCreateFolder(): Promise<string> {
+async function getOrCreateFolder(onPhaseChange?: (phase: 'connecting' | 'creating-folder' | 'creating-sheet') => void): Promise<string> {
   const { folderId: storedId, setFolderId } = useDataStore.getState();
 
   // ── Tier 1: Persisted ID ──────────────────────────────────────────
@@ -58,6 +58,7 @@ async function getOrCreateFolder(): Promise<string> {
 
   // ── Tier 3: Create (true first-run) ──────────────────────────────
   console.log('[initializeDatabase] Creating new moniq folder...');
+  onPhaseChange?.('creating-folder');
   const createRes = await googleService.driveRequest('/files', {
     method: 'POST',
     body: JSON.stringify({
@@ -81,7 +82,7 @@ async function getOrCreateFolder(): Promise<string> {
  *
  * @returns The spreadsheet ID, guaranteed to be alive and inside the moniq folder.
  */
-export async function initializeDatabase(): Promise<string> {
+export async function initializeDatabase(onPhaseChange?: (phase: 'connecting' | 'creating-folder' | 'creating-sheet') => void): Promise<string> {
   const { spreadsheetId: storedId, setSpreadsheetId } = useDataStore.getState();
 
   // ── Tier 1: Persisted ID ──────────────────────────────────────────
@@ -98,7 +99,7 @@ export async function initializeDatabase(): Promise<string> {
   }
 
   // Resolve (or create) the parent folder first
-  const folderId = await getOrCreateFolder();
+  const folderId = await getOrCreateFolder(onPhaseChange);
 
   // ── Tier 2: Drive search within the folder ────────────────────────
   const q = encodeURIComponent(
@@ -119,6 +120,7 @@ export async function initializeDatabase(): Promise<string> {
   // Use drive.files.create (Drive API) with mimeType=spreadsheet — this is
   // fully compatible with drive.file scope, unlike sheetsRequest('/spreadsheets').
   console.log('[initializeDatabase] Creating new spreadsheet in folder:', folderId);
+  onPhaseChange?.('creating-sheet');
   const createRes = await googleService.driveRequest('/files', {
     method: 'POST',
     body: JSON.stringify({

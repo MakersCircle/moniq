@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Insights from './pages/Insights';
@@ -20,6 +20,10 @@ import { SyncEngine } from './sync/SyncEngine';
 import { googleService } from './lib/google';
 import { getMeta, setMeta } from './lib/db';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Alert, AlertDescription } from './components/ui/alert';
+import { googleLogout } from '@react-oauth/google';
 
 import AddTransactionModal from './components/Transactions/AddTransactionModal';
 import type { Transaction, TransactionType } from './types';
@@ -31,12 +35,23 @@ export default function App() {
   const setSpreadsheetId = useDataStore(s => s.setSpreadsheetId);
   const setSyncStatus = useDataStore(s => s.setSyncStatus);
   const hydrateFromSync = useDataStore(s => s.hydrateFromSync);
-  const settings = useDataStore(s => s.settings);
+
   const isHydrated = useDataStore(s => s.isHydrated);
   const isCloudInitialized = useDataStore(s => s.isCloudInitialized);
   const setCloudInitialized = useDataStore(s => s.setCloudInitialized);
   const syncStatus = useDataStore(s => s.syncStatus);
   const initializeFromDB = useDataStore(s => s.initializeFromDB);
+
+  const [initError, setInitError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [showSyncToast, setShowSyncToast] = useState(false);
+
+  const handleDisconnect = useCallback(() => {
+    googleLogout();
+    useDataStore.getState().setAccessToken(null);
+    useDataStore.getState().setUserProfile(null);
+    SyncEngine.reset();
+  }, []);
 
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -44,6 +59,10 @@ export default function App() {
     isDuplicate?: boolean;
     defaultType?: TransactionType;
   }>({ isOpen: false });
+
+  const [initPhase, setInitPhase] = useState<'connecting' | 'creating-folder' | 'creating-sheet'>(
+    'connecting'
+  );
 
   const openNew = useCallback((type?: TransactionType | React.MouseEvent | React.KeyboardEvent) => {
     // If called as an event handler (e.g. onClick), the first arg is an event object.
@@ -94,25 +113,44 @@ export default function App() {
       setSyncStatus(status, pendingCount, error);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (!useDataStore.getState().accessToken) {
+        engine.destroy();
+      }
+    };
   }, [accessToken, setSyncStatus]);
+
+  // Stable ref for hydrateFromSync so it doesn't cause initCloud to re-run on every settings update
+  const hydrateFromSyncRef = useRef(hydrateFromSync);
+  useEffect(() => {
+    hydrateFromSyncRef.current = hydrateFromSync;
+  }, [hydrateFromSync]);
 
   // 4. Cloud initialization (Google Sheets)
   useEffect(() => {
     if (!accessToken || !isHydrated) return;
 
     async function initCloud() {
+      setInitError(null);
       try {
         // If token is expired or near expiry, try silent refresh first
         if (tokenExpiresAt && Date.now() > tokenExpiresAt - 300000) {
           console.log('[App] Token expired or near expiry, refreshing...');
           const newToken = await googleService.silentRefresh();
           if (!newToken) {
-            // Cannot refresh — unblock the spinner and surface the error so the
-            // user sees the Session Expired banner rather than a frozen screen.
-            console.warn('[App] Silent refresh failed — unblocking spinner.');
-            setCloudInitialized(true);
-            return;
+            const isFullyExpired = Date.now() > tokenExpiresAt;
+            if (isFullyExpired) {
+              console.warn(
+                '[App] Silent refresh failed and token is fully expired. Unblocking spinner.'
+              );
+              useDataStore.getState().setAccessToken(null);
+              return;
+            } else {
+              console.warn(
+                '[App] Silent refresh failed, but token is still valid. Proceeding with init...'
+              );
+            }
           }
         }
 
@@ -124,30 +162,42 @@ export default function App() {
         // previous user's spreadsheet.
         const storedEmail = await getMeta('userEmail');
         if (storedEmail && storedEmail !== profile.email) {
-          console.log('[App] Different Google account detected — clearing Drive IDs.');
+          console.log(
+            '[App] Different Google account detected — wiping local data to prevent cross-contamination.'
+          );
+          const { clearLocalData } = await import('./lib/db');
+          await clearLocalData();
+
           const store = useDataStore.getState();
-          store.setSpreadsheetId(null);
-          store.setFolderId(null);
-          store.setBackupFolderId(null);
+          store.clearZustandData();
         }
         // Persist the current user's email for future account-switch checks.
         await setMeta('userEmail', profile.email);
 
         setUserProfile(profile);
 
-        const sheetId = await initializeDatabase();
+        const sheetId = await initializeDatabase(setInitPhase);
         setSpreadsheetId(sheetId);
 
         const engine = SyncEngine.getInstance();
         const reconciledData = await engine.initialize(sheetId);
         if (reconciledData) {
-          hydrateFromSync(reconciledData);
+          const wasAlreadyInitialized = useDataStore.getState().isCloudInitialized;
+          hydrateFromSyncRef.current(reconciledData);
+          if (wasAlreadyInitialized) {
+            setShowSyncToast(true);
+            setTimeout(() => setShowSyncToast(false), 3500);
+          }
+
+          // Trigger the backup check after a successful initial load
+          engine.triggerBackupCycle();
         } else {
           setCloudInitialized(true);
         }
       } catch (err) {
         console.error('Failed to initialize cloud database:', err);
-        setCloudInitialized(true);
+        setInitError(err instanceof Error ? err.message : 'Unknown connection error');
+        // Do not call setCloudInitialized(true) here! The app should not proceed into a broken state.
       }
     }
 
@@ -158,12 +208,9 @@ export default function App() {
     isHydrated,
     setUserProfile,
     setSpreadsheetId,
-    hydrateFromSync,
     setCloudInitialized,
+    retryCount,
   ]);
-
-  const hasCompletedOnboarding = settings.hasCompletedOnboarding;
-
   useEffect(() => {
     if (accessToken) {
       window.openTransactionModal = { openNew, openEdit, openDuplicate };
@@ -171,11 +218,45 @@ export default function App() {
   }, [accessToken, openNew, openEdit, openDuplicate]);
 
   if (!isHydrated || (accessToken && !isCloudInitialized)) {
+    if (initError) {
+      return (
+        <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4 text-center max-w-md px-6">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-2">
+              <AlertCircle className="w-6 h-6 text-red-500" />
+            </div>
+            <h3 className="text-zinc-100 text-lg font-medium">Connection Error</h3>
+            <p className="text-zinc-400 text-sm mb-4">
+              We couldn't connect to your Google Drive. {initError}
+            </p>
+            <Button
+              onClick={() => setRetryCount(c => c + 1)}
+              variant="secondary"
+              className="w-full sm:w-auto"
+            >
+              Retry Connection
+            </Button>
+            <Button
+              onClick={handleDisconnect}
+              variant="ghost"
+              className="text-zinc-500 hover:text-zinc-300 w-full sm:w-auto"
+            >
+              Sign Out
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
     const message = !isHydrated
       ? 'Loading your space...'
-      : syncStatus === 'pulling'
-        ? 'Pulling your data from Google Drive...'
-        : 'Syncing your data...';
+      : initPhase === 'creating-folder'
+        ? 'Setting up your personal Drive folder...'
+        : initPhase === 'creating-sheet'
+          ? 'Initializing your Moniq database...'
+          : syncStatus === 'pulling'
+            ? 'Pulling your data from Google Drive...'
+            : 'Connecting to Google Drive...';
 
     return (
       <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center">
@@ -191,12 +272,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* Landing/Home page - No Sidebar/TopBar */}
-        <Route
-          path="/"
-          element={
-            accessToken && hasCompletedOnboarding ? <Navigate to="/dashboard" replace /> : <Home />
-          }
-        />
+        <Route path="/" element={accessToken ? <Navigate to="/dashboard" replace /> : <Home />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/docs" element={<Navigate to="/docs/user/getting-started" replace />} />
@@ -233,10 +309,7 @@ export default function App() {
                   <Route path="settings/methods" element={<Methods />} />
                   <Route path="settings/categories" element={<Categories />} />
                   <Route path="settings/trash" element={<SettingsTrash />} />
-                  <Route
-                    path="*"
-                    element={<Navigate to={hasCompletedOnboarding ? '/dashboard' : '/'} replace />}
-                  />
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Routes>
               </LayoutShell>
             ) : (
@@ -260,6 +333,20 @@ export default function App() {
             />
           </DialogContent>
         </Dialog>
+      )}
+
+      {showSyncToast && (
+        <div className="fixed bottom-6 right-6 z-[100] w-72 animate-in fade-in slide-in-from-bottom-4 pointer-events-none">
+          <Alert
+            variant="success"
+            className="py-3 px-4 flex items-center shadow-lg bg-emerald-500/10 border-emerald-500/20 text-emerald-500 backdrop-blur-md"
+          >
+            <CheckCircle2 className="h-5 w-5 mr-3" />
+            <AlertDescription className="font-medium text-sm pt-0.5">
+              Data synced from cloud
+            </AlertDescription>
+          </Alert>
+        </div>
       )}
     </BrowserRouter>
   );

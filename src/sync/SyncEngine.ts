@@ -251,18 +251,30 @@ type SyncListener = (status: SyncStatus, pendingCount: number, error?: string) =
  */
 export class SyncEngine {
   private static instance: SyncEngine | null = null;
+  private static backupCheckedThisSession = false;
 
   private client: SheetClient | null = null;
   private config: SyncConfig;
   private rowIndexes: RowIndexMap;
+  /**
+   * Tracks entity IDs for which an `appendRows` call was *sent* but may not
+   * have been confirmed (e.g., the server wrote the row but the client lost the
+   * network response). On the next retry, if an entity ID appears here we
+   * re-read the live sheet before deciding whether to append again, preventing
+   * duplicate rows.
+   */
+  private pendingAppendIds: Map<string, Set<string>> = new Map();
 
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
+  private backupPollingTimer: ReturnType<typeof setInterval> | null = null;
   private _status: SyncStatus = 'idle';
   private _pendingCount = 0;
   private _lastError: string | undefined;
   private listeners: Set<SyncListener> = new Set();
   private isInitialized = false;
+  /** Tracks how many consecutive flush failures have occurred. Reset on success. */
+  private flushRetryCount = 0;
 
   private constructor(config?: Partial<SyncConfig>) {
     this.config = { ...DEFAULT_SYNC_CONFIG, ...config };
@@ -274,6 +286,21 @@ export class SyncEngine {
       budgets: new Map(),
       settings: new Map(),
     };
+
+    // Poll every 12 hours to check if a backup tier has become due while the app was left open
+    this.backupPollingTimer = setInterval(
+      async () => {
+        if (this.status === 'idle') {
+          try {
+            const { BackupManager } = await import('./BackupManager');
+            await BackupManager.getInstance().runBackupCycle();
+          } catch (err) {
+            console.error('[SyncEngine] Background backup poll failed:', err);
+          }
+        }
+      },
+      12 * 60 * 60 * 1000
+    ); // 12 hours
   }
 
   static getInstance(config?: Partial<SyncConfig>): SyncEngine {
@@ -317,7 +344,20 @@ export class SyncEngine {
   private setStatus(status: SyncStatus, error?: string) {
     this._status = status;
     this._lastError = error;
-    this.notifyListeners();
+    this.listeners.forEach(l => l(status, this._pendingCount, error));
+  }
+
+  /** Triggers the background backup cycle if not already checked this session */
+  public triggerBackupCycle() {
+    if (!SyncEngine.backupCheckedThisSession) {
+      SyncEngine.backupCheckedThisSession = true;
+      import('./BackupManager')
+        .then(({ BackupManager }) => BackupManager.getInstance().runBackupCycle())
+        .catch(err => {
+          console.warn('[SyncEngine] Triggering backup failed:', err);
+          SyncEngine.backupCheckedThisSession = false; // reset on failure
+        });
+    }
   }
 
   private async updatePendingCount() {
@@ -369,23 +409,55 @@ export class SyncEngine {
     try {
       this.setStatus('pulling');
 
-      // Ensure all sheet tabs exist
-      await this.client!.ensureSheetTabs(Object.values(SHEET_NAMES));
+      const sessionTabsKey = `moniq_tabs_verified_${spreadsheetId}`;
+      const tabsVerified = sessionStorage.getItem(sessionTabsKey) === 'true';
 
-      // Ensure headers exist on each sheet
-      for (const sheetName of Object.values(SHEET_NAMES)) {
-        await this.client!.ensureHeaders(sheetName);
+      let txRows: string[][],
+        accRows: string[][],
+        metRows: string[][],
+        catRows: string[][],
+        budRows: string[][],
+        setRows: string[][];
+
+      const fetchWithBatch = async () => {
+        return await this.client!.batchGetSheets([
+          'Transactions',
+          'Accounts',
+          'Methods',
+          'Categories',
+          'Budgets',
+          'Settings',
+        ]);
+      };
+
+      if (!tabsVerified) {
+        // Ensure all sheet tabs exist
+        await this.client!.ensureSheetTabs(Object.values(SHEET_NAMES));
+
+        // Ensure headers exist on each sheet
+        for (const sheetName of Object.values(SHEET_NAMES)) {
+          await this.client!.ensureHeaders(sheetName);
+        }
+
+        sessionStorage.setItem(sessionTabsKey, 'true');
+        [txRows, accRows, metRows, catRows, budRows, setRows] = await fetchWithBatch();
+      } else {
+        try {
+          [txRows, accRows, metRows, catRows, budRows, setRows] = await fetchWithBatch();
+        } catch (err) {
+          // If batchGet fails (e.g., a tab was manually deleted since last check),
+          // clear the session flag and fall back to the full audit path.
+          console.warn('[SyncEngine] Fast batchGet failed, falling back to full audit:', err);
+          sessionStorage.removeItem(sessionTabsKey);
+
+          await this.client!.ensureSheetTabs(Object.values(SHEET_NAMES));
+          for (const sheetName of Object.values(SHEET_NAMES)) {
+            await this.client!.ensureHeaders(sheetName);
+          }
+          sessionStorage.setItem(sessionTabsKey, 'true');
+          [txRows, accRows, metRows, catRows, budRows, setRows] = await fetchWithBatch();
+        }
       }
-
-      // Pull all data from sheets
-      const [txRows, accRows, metRows, catRows, budRows, setRows] = await Promise.all([
-        this.client!.readSheet('Transactions'),
-        this.client!.readSheet('Accounts'),
-        this.client!.readSheet('Methods'),
-        this.client!.readSheet('Categories'),
-        this.client!.readSheet('Budgets'),
-        this.client!.readSheet('Settings'),
-      ]);
 
       // Parse remote data (skip header rows)
       const txHeader = txRows[0] || [];
@@ -477,37 +549,43 @@ export class SyncEngine {
       const localMets = state.methods;
       const localCats = state.categories;
       const localBuds = state.budgets;
+      const lastSyncedAt = state.lastSyncedAt;
 
       // Reconcile each entity type
       const txResult = reconcile(
         localTxns,
         remoteTxnsDeduped,
         txChecksums,
-        makeEntityChecksumFn(serializeTransaction)
+        makeEntityChecksumFn(serializeTransaction),
+        lastSyncedAt
       );
       const accResult = reconcile(
         localAccs,
         remoteAccsDeduped,
         accChecksums,
-        makeEntityChecksumFn(serializeAccount)
+        makeEntityChecksumFn(serializeAccount),
+        lastSyncedAt
       );
       const metResult = reconcile(
         localMets,
         remoteMetsDeduped,
         metChecksums,
-        makeEntityChecksumFn(serializeMethod)
+        makeEntityChecksumFn(serializeMethod),
+        lastSyncedAt
       );
       const catResult = reconcile(
         localCats,
         remoteCatsDeduped,
         catChecksums,
-        makeEntityChecksumFn(serializeCategory)
+        makeEntityChecksumFn(serializeCategory),
+        lastSyncedAt
       );
       const budResult = reconcile(
         localBuds,
         remoteBudsDeduped,
         budChecksums,
-        makeEntityChecksumFn(serializeBudget)
+        makeEntityChecksumFn(serializeBudget),
+        lastSyncedAt
       );
 
       // Build row indexes from current sheet data
@@ -553,6 +631,8 @@ export class SyncEngine {
       console.error('[SyncEngine] Initialization failed:', err);
       this.setStatus('error', message);
       return null;
+    } finally {
+      await this.updatePendingCount();
     }
   }
 
@@ -632,6 +712,9 @@ export class SyncEngine {
   async forceSync(): Promise<void> {
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     await this.flush();
+    if (this._pendingCount > 0 || this._status === 'error') {
+      throw new Error(this._lastError || 'Sync failed');
+    }
   }
 
   private async flush(): Promise<void> {
@@ -668,22 +751,19 @@ export class SyncEngine {
       await clearSyncQueue();
       await setMeta('lastSyncedAt', syncTime);
       await this.updatePendingCount();
+      this.flushRetryCount = 0; // reset backoff counter on success
       this.setStatus('idle');
 
       const { useDataStore } = await import('../store/dataStore');
       useDataStore.getState().setLastSyncedAt(syncTime);
 
-      // Trigger Backup Cycle (non-blocking)
-      const { BackupManager } = await import('./BackupManager');
-      BackupManager.getInstance()
-        .runBackupCycle()
-        .catch(err => {
-          console.warn('[SyncEngine] Triggering backup failed:', err);
-        });
+      // Trigger Backup Cycle (non-blocking) - at most once per session (Fix #12)
+      this.triggerBackupCycle();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sync failed';
       console.error('[SyncEngine] Flush failed:', err);
       this.setStatus('error', message);
+      await this.updatePendingCount();
       this.scheduleRetry();
     }
   }
@@ -702,6 +782,17 @@ export class SyncEngine {
     const rowIndex = this.rowIndexes[storeName as keyof RowIndexMap] as RowIndex;
     const serializeFn = this.getSerializeFn(entityType);
 
+    // Pending appends from a previous flush that lost its network response.
+    const pendingForStore = this.pendingAppendIds.get(storeName) || new Set<string>();
+
+    // If any entity was previously sent to appendRows but unconfirmed, rebuild
+    // the row index from the live sheet once before processing this batch.
+    // This lets us detect rows the server already wrote and avoid re-appending.
+    const hasPending = ops.some(op => pendingForStore.has(op.entityId));
+    if (hasPending) {
+      await this.rebuildRowIndexForStore(sheetName, storeName, rowIndex);
+    }
+
     const newRows: string[][] = [];
     const updateBatch: { rowIndex: number; data: string[] }[] = [];
 
@@ -712,45 +803,66 @@ export class SyncEngine {
     const entityArray = (state[storeName as EntityArrayKey] as AnyEntity[]) || [];
 
     for (const op of ops) {
-      if (op.action === 'create') {
-        // Read entity from Zustand state
-        const entity = entityArray.find((e: AnyEntity) => e.id === op.entityId);
-        if (!entity) continue;
+      const entity = entityArray.find((e: AnyEntity) => e.id === op.entityId);
+      if (!entity) continue;
 
-        const row = serializeFn(entity);
-        // Set checksum
-        row[row.length - 1] = checksumFromRow(row);
+      const row = serializeFn(entity);
+      row[row.length - 1] = checksumFromRow(row);
+
+      const existingRowIdx = rowIndex.get(op.entityId);
+      if (existingRowIdx) {
+        // Found in index (either original or rebuilt from live sheet) — update.
+        updateBatch.push({ rowIndex: existingRowIdx, data: row });
+        pendingForStore.delete(op.entityId); // no longer ambiguous
+      } else {
+        // Mark as in-flight BEFORE the network call so a crash/timeout leaves
+        // the entity in the pending set for the next retry cycle.
+        pendingForStore.add(op.entityId);
         newRows.push(row);
-      } else if (op.action === 'update' || op.action === 'delete') {
-        const existingRowIdx = rowIndex.get(op.entityId);
-        const entity = entityArray.find((e: AnyEntity) => e.id === op.entityId);
-        if (!entity) continue;
-
-        const row = serializeFn(entity);
-        row[row.length - 1] = checksumFromRow(row);
-
-        if (existingRowIdx) {
-          updateBatch.push({ rowIndex: existingRowIdx, data: row });
-        } else {
-          // Entity exists locally but has no sheet row — append it
-          newRows.push(row);
-        }
       }
     }
+
+    this.pendingAppendIds.set(storeName, pendingForStore);
 
     // Execute writes
     if (updateBatch.length > 0) {
       await this.client.batchUpdateRows(sheetName, updateBatch);
     }
     if (newRows.length > 0) {
-      const appendedCount = await this.client.appendRows(sheetName, newRows);
-      // Update row index for newly appended rows
-      const currentRowCount = await this.client.getRowCount(sheetName);
-      const startRow = currentRowCount - appendedCount + 2; // +2: 1-based + header
+      const startRow = await this.client.appendRows(sheetName, newRows);
+      // Append confirmed — update row index and clear pending flags.
       for (let i = 0; i < newRows.length; i++) {
         const entityId = newRows[i][0];
         rowIndex.set(entityId, startRow + i);
+        pendingForStore.delete(entityId);
       }
+    }
+  }
+
+  /**
+   * Re-reads the live sheet and merges any new row positions into `rowIndex`.
+   * Called when a previous `appendRows` response was lost — ensures we detect
+   * rows the server already wrote before deciding to append again.
+   */
+  private async rebuildRowIndexForStore(
+    sheetName: string,
+    storeName: string,
+    rowIndex: RowIndex
+  ): Promise<void> {
+    if (!this.client) return;
+    try {
+      console.warn(
+        `[SyncEngine] Detected unconfirmed append for "${sheetName}". Re-reading sheet to prevent duplicates.`
+      );
+      const rows = await this.client.readSheet(sheetName);
+      const rebuilt = this.buildIndex(rows);
+      for (const [id, row] of rebuilt) {
+        rowIndex.set(id, row);
+      }
+    } catch (err) {
+      // Non-fatal: if we can't rebuild, we'll proceed with the stale index.
+      // Worst case is a duplicate row, which initialize() will deduplicate later.
+      console.error(`[SyncEngine] Failed to rebuild row index for "${sheetName}":`, err);
     }
   }
 
@@ -774,7 +886,12 @@ export class SyncEngine {
   async performHardReset(): Promise<void> {
     this.setStatus('syncing');
     try {
-      // 1. Wipe remote sheets (Attempt but don't block if client missing)
+      // 1. Delete IndexedDB (Blocking attempt)
+      // We do this FIRST so if it's locked, we abort without touching the cloud data.
+      const { deleteMoniqDB } = await import('../lib/db');
+      await deleteMoniqDB();
+
+      // 2. Wipe remote sheets (Attempt but don't block if client missing)
       if (this.client || (await this.ensureClient())) {
         try {
           const { SHEET_NAMES } = await import('./types');
@@ -784,17 +901,11 @@ export class SyncEngine {
         }
       }
 
-      // 2. Clear persistence layer directly
+      // 3. Clear persistence layer directly
       // Note: We avoid calling state.resetData() here because it re-opens the DB
       // via clearStore() calls, which can deadlock the subsequent deletion.
       localStorage.clear();
       sessionStorage.clear();
-
-      // 3. Delete IndexedDB (Non-blocking attempt)
-      const { deleteMoniqDB } = await import('../lib/db');
-      await deleteMoniqDB().catch(err => {
-        console.error('Non-blocking DB deletion warning:', err);
-      });
 
       // 4. Reset internal engine state
       this.rowIndexes = {
@@ -805,6 +916,8 @@ export class SyncEngine {
         budgets: new Map(),
         settings: new Map(),
       };
+      this.pendingAppendIds.clear();
+      this.flushRetryCount = 0;
       this.client = null;
       this.isInitialized = false;
 
@@ -847,7 +960,16 @@ export class SyncEngine {
       await this.client.batchUpdateRows(sheetName, updateBatch);
     }
     if (newRows.length > 0) {
-      await this.client.appendRows(sheetName, newRows);
+      // Capture the starting row so we can update the in-memory index.
+      // Without this, a subsequent flush() in the same session would not
+      // find these entities in rowIndex and would re-append them as duplicates.
+      const startRow = await this.client.appendRows(sheetName, newRows);
+      if (rowIndex) {
+        for (let i = 0; i < newRows.length; i++) {
+          const entityId = newRows[i][0];
+          rowIndex.set(entityId, startRow + i);
+        }
+      }
     }
   }
 
@@ -903,8 +1025,26 @@ export class SyncEngine {
   private scheduleRetry() {
     if (this.retryTimer) clearTimeout(this.retryTimer);
 
-    // Simple exponential backoff based on pending queue
-    const delay = Math.min(this.config.baseRetryDelayMs * 2, this.config.maxRetryDelayMs);
+    this.flushRetryCount++;
+
+    if (this.flushRetryCount > this.config.maxRetries) {
+      // Retries exhausted — surface a permanent error and stop.
+      // The queue remains in IndexedDB; the next initialize() will recover it.
+      const message = `Sync failed after ${this.config.maxRetries} retries. Changes are queued locally and will be retried when you reload.`;
+      this.flushRetryCount = 0;
+      this.setStatus('error', message);
+      return;
+    }
+
+    // True exponential backoff: base * 2^attempt, capped at maxRetryDelayMs
+    const delay = Math.min(
+      this.config.baseRetryDelayMs * Math.pow(2, this.flushRetryCount - 1),
+      this.config.maxRetryDelayMs
+    );
+
+    console.warn(
+      `[SyncEngine] Retry ${this.flushRetryCount}/${this.config.maxRetries} in ${Math.round(delay / 1000)}s...`
+    );
 
     this.retryTimer = setTimeout(() => {
       this.flush();
@@ -916,8 +1056,12 @@ export class SyncEngine {
   destroy() {
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     if (this.retryTimer) clearTimeout(this.retryTimer);
+    if (this.backupPollingTimer) clearInterval(this.backupPollingTimer);
     this.listeners.clear();
+    this.pendingAppendIds.clear();
+    this.flushRetryCount = 0;
     this.client = null;
     this.isInitialized = false;
+    SyncEngine.instance = null;
   }
 }
