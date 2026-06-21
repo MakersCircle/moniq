@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
@@ -65,6 +66,10 @@ export default function SettingsIndex() {
   const [pendingOps, setPendingOps] = useState<SyncOperation[]>([]);
   const [showSnapshots, setShowSnapshots] = useState(false);
   const [latestBackups, setLatestBackups] = useState<Record<string, BackupSnapshot | null> | null>(null);
+  const [formatOpen, setFormatOpen] = useState(false);
+  const [formatSearch, setFormatSearch] = useState('');
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [currencySearch, setCurrencySearch] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -488,23 +493,55 @@ export default function SettingsIndex() {
                   <Label className="text-[10px] uppercase font-bold text-muted-foreground">
                     Currency
                   </Label>
-                  <Select
-                    value={settings.currency}
-                    onValueChange={val => updateSettings({ currency: val })}
-                  >
-                    <SelectTrigger className="h-10 border-border/50 focus:ring-primary/20">
-                      <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currencies.map(c => (
-                        <SelectItem key={c.code} value={c.code}>
-                          <span className="font-medium">{c.code}</span>
-                          <span className="mx-2 text-muted-foreground/50">—</span>
-                          <span className="text-xs text-muted-foreground">{c.name}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left font-normal h-10 border-border/50 overflow-hidden">
+                        <span className="truncate">
+                          {getAllCurrencies().find(c => c.code === settings.currency)?.name 
+                            ? `${settings.currency} — ${getAllCurrencies().find(c => c.code === settings.currency)?.name}`
+                            : "Select currency"}
+                        </span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0" align="start">
+                      <div className="p-2 border-b">
+                        <Input
+                          placeholder="Search currency..."
+                          value={currencySearch}
+                          onChange={(e) => setCurrencySearch(e.target.value)}
+                          className="h-8 w-full shadow-none focus-visible:ring-0"
+                        />
+                      </div>
+                      <div className="max-h-[250px] overflow-y-auto p-1">
+                        {getAllCurrencies()
+                          .filter(c => 
+                            c.name.toLowerCase().includes(currencySearch.toLowerCase()) || 
+                            c.code.toLowerCase().includes(currencySearch.toLowerCase())
+                          )
+                          .map(c => (
+                          <div
+                            key={c.code}
+                            className={cn(
+                              "px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm truncate",
+                              settings.currency === c.code && "bg-accent font-medium text-accent-foreground"
+                            )}
+                            title={`${c.code} — ${c.name}`}
+                            onClick={() => {
+                              updateSettings({ currency: c.code });
+                              setCurrencyOpen(false);
+                            }}
+                          >
+                            <span className="font-medium">{c.code}</span>
+                            <span className="mx-2 text-muted-foreground/50">—</span>
+                            <span className="text-xs text-muted-foreground">{c.name}</span>
+                          </div>
+                        ))}
+                        {getAllCurrencies().filter(c => c.name.toLowerCase().includes(currencySearch.toLowerCase()) || c.code.toLowerCase().includes(currencySearch.toLowerCase())).length === 0 && (
+                          <div className="p-4 text-center text-sm text-muted-foreground">No currencies found.</div>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                   <div className="flex items-center justify-between pt-1">
                     <p className="text-[9px] text-muted-foreground italic">
                       Selected: {currentCurrency.symbol} ({currentCurrency.name})
@@ -516,21 +553,46 @@ export default function SettingsIndex() {
                   <Label className="text-[10px] uppercase font-bold text-muted-foreground">
                     Number Format
                   </Label>
-                  <Select
-                    value={settings.numberLocale}
-                    onValueChange={val => updateSettings({ numberLocale: val })}
-                  >
-                    <SelectTrigger className="h-10 border-border/50 focus:ring-primary/20">
-                      <SelectValue placeholder="Select format" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {COMMON_LOCALES.map(l => (
-                        <SelectItem key={l.code} value={l.code}>
-                          {l.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={formatOpen} onOpenChange={setFormatOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left font-normal h-10 border-border/50 overflow-hidden">
+                        <span className="truncate">
+                          {COMMON_LOCALES.find(l => l.code === settings.numberLocale)?.name || "Select format"}
+                        </span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0" align="start">
+                      <div className="p-2 border-b">
+                        <Input
+                          placeholder="Search format..."
+                          value={formatSearch}
+                          onChange={(e) => setFormatSearch(e.target.value)}
+                          className="h-8 w-full shadow-none focus-visible:ring-0"
+                        />
+                      </div>
+                      <div className="max-h-[250px] overflow-y-auto p-1">
+                        {COMMON_LOCALES.filter(l => l.name.toLowerCase().includes(formatSearch.toLowerCase())).map(l => (
+                          <div
+                            key={l.code}
+                            className={cn(
+                              "px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm truncate",
+                              settings.numberLocale === l.code && "bg-accent font-medium text-accent-foreground"
+                            )}
+                            title={l.name}
+                            onClick={() => {
+                              updateSettings({ numberLocale: l.code });
+                              setFormatOpen(false);
+                            }}
+                          >
+                            {l.name}
+                          </div>
+                        ))}
+                        {COMMON_LOCALES.filter(l => l.name.toLowerCase().includes(formatSearch.toLowerCase())).length === 0 && (
+                          <div className="p-4 text-center text-sm text-muted-foreground">No formats found.</div>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                   <p className="text-[9px] text-muted-foreground italic pt-1">
                     Preview: {formatCurrency(1234567.89, settings)}
                   </p>
