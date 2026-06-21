@@ -870,7 +870,16 @@ export class SyncEngine {
       await this.client.batchUpdateRows(sheetName, updateBatch);
     }
     if (newRows.length > 0) {
-      await this.client.appendRows(sheetName, newRows);
+      // Capture the starting row so we can update the in-memory index.
+      // Without this, a subsequent flush() in the same session would not
+      // find these entities in rowIndex and would re-append them as duplicates.
+      const startRow = await this.client.appendRows(sheetName, newRows);
+      if (rowIndex) {
+        for (let i = 0; i < newRows.length; i++) {
+          const entityId = newRows[i][0];
+          rowIndex.set(entityId, startRow + i);
+        }
+      }
     }
   }
 

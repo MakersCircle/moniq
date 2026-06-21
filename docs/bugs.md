@@ -6,20 +6,27 @@
 
 ## 📝 TODO
 
+### 🟠 High Priority
+
+- [ ] **#28 — Retry path re-appends on network timeout (Duplicate Row Bug)**
+  If `appendRows` succeeds server-side but the client never receives the response (timeout/connection drop), the call throws before `rowIndex.set(...)` is reached. On retry, `rowIndex.get(entityId)` returns `undefined` → the entity is appended again → duplicate row on the sheet. No server-side idempotency key is used.
+  **Fix:** Store a pending-append set in memory so retries detect already-written rows, or run a post-flush `initialize()` to re-read the true sheet state.
+
 ### 🟡 Medium Priority
 
+- [ ] **#29 — Backoff is not exponential; `maxRetries` is never enforced**
+  `scheduleRetry()` always computes `Math.min(baseRetryDelayMs * 2, maxRetryDelayMs)` = a constant 2000ms. The `retryCount` field on `SyncOperation` is never incremented or read. `maxRetries: 8` is declared but never checked — retries continue indefinitely.
+  **Fix:** Track retry count per flush cycle; use `baseRetryDelayMs * 2^retryCount`; stop after `maxRetries` and surface a permanent error.
 
-
-
-
+- [ ] **#30 — `initialize()` makes 13 API requests per session (no batchGet)**
+  Every `initialize()` fires: 1× `GET /spreadsheets/{id}` + 6× `readSheet` inside `ensureHeaders` + 6× `readSheet` in `Promise.all` = **13 requests minimum**, against a 60 req/min API limit.
+  **Fix:** (1) Replace the 6 data `readSheet` calls with a single `values:batchGet`. (2) Cache the "tabs verified" flag in `sessionStorage` to skip `ensureSheetTabs` + `ensureHeaders` on subsequent inits within the same session.
 
 ### ⚪ Low Priority
 
 - [ ] **#21 — Schema Version tracking**
   Future schema changes require a way to detect outdated remote schemas to perform data migrations before syncing.
   **Fix:** Add `schemaVersion: 1` to the Settings sheet tab so older versions can be properly detected during `initialize()`.
-
-
 
 - [ ] **#24 — "Initial Balance" field missing in Category UI**
   The `Categories` sheet contains an `Initial Balance` column intended for tracking starting balances of Investments, Loans, and Debts. However, the UI does not expose an input field for this value, even when creating or editing a category under the "Invest", "Lend", or "Borrow" groups.
@@ -28,6 +35,10 @@
 - [ ] **#25 — Date Format setting is unused globally**
   The `dateFormat` preference stored in Settings is completely orphaned. The `formatDateShort` utility function hardcodes `en-IN` instead of using the setting, and `TransactionModal` uses a standard HTML5 date input that uses the OS locale instead of the configured format.
   **Fix:** Wire up `settings.dateFormat` throughout the UI using a library like `date-fns` for text dates, and consider custom date pickers for inputs to respect the user's preference.
+
+- [ ] **#31 — Multi-tab concurrent flushes can create duplicate sheet rows**
+  Two browser tabs each hold an independent `SyncEngine` singleton with independent in-memory `rowIndexes`. If both tabs flush a new entity simultaneously, both will see `rowIndex.get(entityId) === undefined` and both will `appendRows` → two rows for the same entity ID. The next `initialize()` de-dupes locally but the duplicate row stays on the sheet.
+  **Fix:** Use a Web Lock (`navigator.locks.request`) or `BroadcastChannel` to ensure only one tab flushes at a time.
 
 ---
 
@@ -38,6 +49,7 @@
 - [x] **#13 — No user feedback during first-ever Drive workspace setup**
 - [x] **#15 — Hard reset: IndexedDB deletion may fail silently**
 - [x] **#26 — "Ghost" DB connections blocking reset**
+- [x] **#27 — `pushReconciled` discards `appendRows` return value → duplicate rows on sheet**
 - [x] **#20 — Conflict Resolution clock drift gap**
 - [x] **#22 — API Rate limiting awareness**
   `App.tsx` / `api/google.ts` — Implemented `initPhase` state to provide accurate feedback (`"Setting up your personal Drive folder…"` and `"Initializing your Moniq database…"`) during first-run Google Drive setup instead of hanging on generic text. *(Fixed)*
@@ -111,15 +123,14 @@
   2. **No concurrency guard**: `runBackupCycle` could be called concurrently (e.g., manual "Backup Now" triggers a settings flush which triggers an auto backup cycle). Two concurrent calls could both enter `ensureBackupFolder` with `backupFolderId = null`. **Fixed:** `BackupManager` now has an `isRunning` guard that skips any concurrent invocation.
   **Remaining:** The duplicate folders already in the user's Drive need manual cleanup. Future runs will not create new duplicates.
 
----
 
 ## Summary
 
 | Status | Count |
 |---|---|
-| ✅ Fixed | 17 (items 1-12, 14, 16, 17, 18, 19) |
+| ✅ Fixed | 18 (items 1–12, 14, 16, 17, 18, 19, 23, 26, 27) |
 | 🔴 Critical remaining | 0 |
-| 🟠 High remaining | 0 |
-| 🟡 Medium remaining | 2 (items 13, 20) |
-| ⚪ Low remaining | 4 (items 15, 21, 22, 24) |
-| **Total open** | **5** |
+| 🟠 High remaining | 1 (item 28) |
+| 🟡 Medium remaining | 4 (items 13, 20, 29, 30) |
+| ⚪ Low remaining | 6 (items 15, 21, 24, 25, 31) |
+| **Total open** | **11** |
