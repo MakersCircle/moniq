@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-06-21
+
+### Fixed
+- **Mobile OAuth**: Fixed an issue where Google login falling back to a redirect on mobile browsers left the user stranded on the home page. The app now explicitly parses the URL hash for the access token on mount.
+- **Node Environment**: Updated `.nvmrc` to `24` to ensure stable deployments on Cloudflare Pages.
+
+### Changed
+- **Mobile UX**: Overhauled the Home page responsive layout. The wordmark now stacks in a single row on small screens, and the "Sign in with Google" button remains permanently expanded on touch devices.
+
 ## [0.8.0] - 2026-06-21
 
 ### Fixed
