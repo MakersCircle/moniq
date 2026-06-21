@@ -81,7 +81,7 @@ export default function Methods() {
 
   return (
     <SettingsLayout>
-      <div className="space-y-6">
+      <div id="tour-target-methods-page" className="space-y-6">
         <div className="sticky top-0 bg-background/95 backdrop-blur-md z-40 pb-4 pt-2 -mx-1 px-1">
           <div className="flex items-center justify-between">
             <div>

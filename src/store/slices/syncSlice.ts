@@ -1,16 +1,9 @@
 import type { StateCreator } from 'zustand';
 import type { DataState } from '../types';
-import type {
-  SyncStatus,
-  Account,
-  PaymentMethod,
-  Category,
-  Transaction,
-  Budget,
-} from '../../types';
+import type { SyncStatus, Account, PaymentMethod, Category, Transaction, Budget } from '@/types';
 import { defaultSettings } from './settingsSlice';
 import { getCurrencySymbol } from '../../constants/currencies';
-import { getAll, getAllSettings, getMeta, setMeta, delMeta, clearStore } from '../../lib/db';
+import { getAll, getAllSettings, getMeta, setMeta, delMeta, getAllSyncQueue } from '../../lib/db';
 
 export interface SyncSlice {
   spreadsheetId: string | null;
@@ -28,6 +21,7 @@ export interface SyncSlice {
   setSpreadsheetId: (id: string | null) => void;
   setFolderId: (id: string | null) => void;
   setBackupFolderId: (id: string | null) => void;
+  clearZustandData: () => void;
   setSyncStatus: (status: SyncStatus, pendingCount: number, error?: string) => void;
   setLastSyncedAt: (timestamp: string) => void;
   setCloudInitialized: (initialized: boolean) => void;
@@ -92,12 +86,9 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
           else if (key === 'numberLocale') current.numberLocale = value;
           else if (key === 'fiscalYearStartMonth') current.fiscalYearStartMonth = Number(value);
           else if (key === 'dateFormat') current.dateFormat = value;
+          else if (key === 'tourStep') current.tourStep = value;
           else if (key === 'hasCompletedOnboarding')
             current.hasCompletedOnboarding = String(value).toLowerCase() === 'true';
-          else if (key === 'lastDailyBackup') current.lastDailyBackup = value;
-          else if (key === 'lastWeeklyBackup') current.lastWeeklyBackup = value;
-          else if (key === 'lastMonthlyBackup') current.lastMonthlyBackup = value;
-          else if (key === 'lastYearlyBackup') current.lastYearlyBackup = value;
         }
         nextState.settings = current;
       }
@@ -109,17 +100,9 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
   },
 
   resetData: () => {
-    [
-      'accounts',
-      'methods',
-      'categories',
-      'transactions',
-      'budgets',
-      'settings',
-      'meta',
-      'sync_queue',
-      'remote_snapshot',
-    ].forEach(s => clearStore(s as Parameters<typeof clearStore>[0]));
+    import('../../lib/db').then(({ clearLocalData }) => {
+      clearLocalData().catch(console.error);
+    });
 
     set(() => ({
       accounts: [],
@@ -138,6 +121,23 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
       accessToken: null,
       userProfile: null,
       tokenExpiresAt: null,
+      isCloudInitialized: false,
+    }));
+  },
+
+  clearZustandData: () => {
+    set(() => ({
+      accounts: [],
+      methods: [],
+      categories: [],
+      transactions: [],
+      budgets: [],
+      pendingCount: 0,
+      syncStatus: 'idle',
+      lastSyncError: undefined,
+      spreadsheetId: null,
+      folderId: null,
+      backupFolderId: null,
     }));
   },
 
@@ -157,6 +157,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         spreadsheetId,
         folderId,
         backupFolderId,
+        syncQueue,
       ] = await Promise.all([
         getAll<Account>('accounts'),
         getAll<PaymentMethod>('methods'),
@@ -171,6 +172,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         getMeta('spreadsheetId'),
         getMeta('folderId'),
         getMeta('backupFolderId'),
+        getAllSyncQueue(),
       ]);
 
       let userProfile = null;
@@ -197,14 +199,11 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         if (settings.fiscalYearStartMonth)
           userSettings.fiscalYearStartMonth = Number(settings.fiscalYearStartMonth);
         if (settings.dateFormat) userSettings.dateFormat = settings.dateFormat;
-        if (settings.hasCompletedOnboarding) {
+        if (settings.tourStep) userSettings.tourStep = settings.tourStep;
+        if (settings.hasCompletedOnboarding !== undefined) {
           userSettings.hasCompletedOnboarding =
             String(settings.hasCompletedOnboarding).toLowerCase() === 'true';
         }
-        if (settings.lastDailyBackup) userSettings.lastDailyBackup = settings.lastDailyBackup;
-        if (settings.lastWeeklyBackup) userSettings.lastWeeklyBackup = settings.lastWeeklyBackup;
-        if (settings.lastMonthlyBackup) userSettings.lastMonthlyBackup = settings.lastMonthlyBackup;
-        if (settings.lastYearlyBackup) userSettings.lastYearlyBackup = settings.lastYearlyBackup;
       }
 
       set({
@@ -221,6 +220,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         accessToken: accessToken || null,
         tokenExpiresAt: tokenExpiresAt ? Number(tokenExpiresAt) : null,
         userProfile,
+        pendingCount: syncQueue ? syncQueue.length : 0,
         isHydrated: true,
         isCloudInitialized: !!lastSyncedAt,
       });

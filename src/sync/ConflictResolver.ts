@@ -33,7 +33,8 @@ export function reconcile<T extends { id: string; updatedAt: string }>(
   local: T[],
   remote: T[],
   remoteChecksums: Map<string, string>,
-  computeLocalChecksum: (entity: T) => string
+  computeLocalChecksum: (entity: T) => string,
+  syncedAt: string | null
 ): ReconcileResult<T> {
   const localMap = new Map(local.map(e => [e.id, e]));
   const remoteMap = new Map(remote.map(e => [e.id, e]));
@@ -74,16 +75,30 @@ export function reconcile<T extends { id: string; updatedAt: string }>(
     // Standard timestamp comparison
     const localTime = new Date(localEntity.updatedAt).getTime();
     const remoteTime = new Date(remoteEntity.updatedAt).getTime();
+    const syncedTime = syncedAt ? new Date(syncedAt).getTime() : 0;
 
-    if (localTime > remoteTime) {
-      // Local is newer → upload
+    const localChanged = localTime > syncedTime;
+    const remoteChanged = remoteTime > syncedTime;
+
+    if (localChanged && !remoteChanged) {
+      // Only local changed since last sync
       merged.push(localEntity);
       toUpload.push(localEntity);
-    } else {
-      // Remote is newer or equal → remote wins
+    } else if (remoteChanged && !localChanged) {
+      // Only remote changed since last sync
       merged.push(remoteEntity);
-      if (remoteTime > localTime) {
-        toDownload.push(remoteEntity);
+      toDownload.push(remoteEntity);
+    } else {
+      // True conflict (both changed) OR neither changed (clocks might be wonky)
+      // Fallback to highest timestamp
+      if (localTime > remoteTime) {
+        merged.push(localEntity);
+        if (localChanged) toUpload.push(localEntity);
+      } else {
+        merged.push(remoteEntity);
+        if (remoteTime > localTime) {
+          toDownload.push(remoteEntity);
+        }
       }
     }
   }

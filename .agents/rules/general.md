@@ -12,4 +12,4 @@ If a particular change is important enough, update all docs/* accordingly.
 
 Document all changes in the `[Unreleased]` section of `docs/CHANGELOG.md` immediately after implementation. Bump the project version in `package.json` and finalize the changelog version only when a significant set of changes or a key milestone has been reached.
 
-Use the **Conventional Commits** format for all commit messages (e.g., `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`, `perf:`, `style:`) to ensure clarity and support automated tools.
+Only use the **Conventional Commits** format for all commit messages (e.g., `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`, `perf:`, `style:`) to ensure clarity and support automated tools.

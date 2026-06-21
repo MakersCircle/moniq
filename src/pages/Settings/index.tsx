@@ -8,11 +8,15 @@ import {
   AlertTriangle,
   ShieldCheck,
   History,
+  ChevronDown,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { googleLogout } from '@react-oauth/google';
 import { useDataStore } from '@/store/dataStore';
 import { SyncEngine } from '@/sync/SyncEngine';
+import { getAllSyncQueue } from '@/lib/db';
+import type { BackupSnapshot } from '@/sync/BackupManager';
+import type { SyncOperation } from '@/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,10 +29,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
+import { InfoTooltip } from '@/components/ui/info-tooltip';
 import { getAllCurrencies, COMMON_LOCALES } from '@/constants/currencies';
 import { formatCurrency } from '@/utils/format';
+import { format } from 'date-fns';
 
 export default function SettingsIndex() {
   const {
@@ -39,18 +46,62 @@ export default function SettingsIndex() {
     syncStatus,
     pendingCount,
     lastSyncError,
-    setAccessToken,
-    setUserProfile,
     accessToken,
     spreadsheetId,
     hydrateFromSync,
+    transactions,
+    accounts,
+    methods,
+    categories,
+    budgets,
   } = useDataStore();
 
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [logoutPendingCount, setLogoutPendingCount] = useState(0);
+  const [pendingOps, setPendingOps] = useState<SyncOperation[]>([]);
+  const [showSnapshots, setShowSnapshots] = useState(false);
+  const [latestBackups, setLatestBackups] = useState<Record<string, BackupSnapshot | null> | null>(
+    null
+  );
+  const [formatOpen, setFormatOpen] = useState(false);
+  const [formatSearch, setFormatSearch] = useState('');
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [currencySearch, setCurrencySearch] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    if (pendingCount > 0) {
+      getAllSyncQueue()
+        .then(ops => {
+          if (active) setPendingOps(ops);
+        })
+        .catch(console.error);
+    } else {
+      Promise.resolve().then(() => {
+        if (active) setPendingOps([]);
+      });
+    }
+    return () => {
+      active = false;
+    };
+  }, [pendingCount]);
+
+  const confirmAndLogout = () => {
+    googleLogout();
+    SyncEngine.reset();
+    const { resetData } = useDataStore.getState();
+    resetData();
+    setIsLoggingOut(false);
+    setLogoutConfirmOpen(false);
+    sessionStorage.removeItem('skipOnboarding');
+  };
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -59,29 +110,29 @@ export default function SettingsIndex() {
         const engine = SyncEngine.getInstance();
         await engine.forceSync();
       }
+      confirmAndLogout();
     } catch (err) {
       console.error('Failed to sync before logout', err);
+      setLogoutPendingCount(pendingCount);
+      setLogoutConfirmOpen(true);
     }
-    googleLogout();
-    SyncEngine.reset();
-    setAccessToken(null);
-    setUserProfile(null);
-    // NOTE: Drive IDs (spreadsheetId, folderId, backupFolderId) are intentionally
-    // NOT cleared here. They are "connection settings" that must survive logout so
-    // the same user can reconnect to their existing sheet on next login.
-    // A different Google account logging in on this device is handled in App.tsx
-    // via the stored-email comparison (account-switch detection).
-    setIsLoggingOut(false);
   };
 
   const handleManualSync = async () => {
     if (!accessToken || !spreadsheetId) return;
     try {
-      // Execute a full two-way pull + push and hydrate store with any remote updates
       const engine = SyncEngine.getInstance();
-      const reconciledData = await engine.initialize(spreadsheetId);
-      if (reconciledData) {
-        hydrateFromSync(reconciledData);
+
+      // Fix #11: "Sync Now" button runs a full pull instead of a targeted push
+      // If there are pending operations, just do a fast push (forceSync).
+      // Only do a full pull (initialize) if everything is already synced.
+      if (pendingCount > 0) {
+        await engine.forceSync();
+      } else {
+        const reconciledData = await engine.initialize(spreadsheetId);
+        if (reconciledData) {
+          hydrateFromSync(reconciledData);
+        }
       }
     } catch (err) {
       console.error('Manual sync failed:', err);
@@ -102,6 +153,12 @@ export default function SettingsIndex() {
       window.location.href = '/';
     } catch (err) {
       console.error('Hard reset failed:', err);
+      setErrorMessage(
+        `Your database is locked by another tab. Please close all other Moniq tabs, manually clear your browser site data if necessary, and try again.\n\nError: ${
+          err instanceof Error ? err.message : err
+        }`
+      );
+      setErrorDialogOpen(true);
     } finally {
       setIsResetting(false);
     }
@@ -168,7 +225,7 @@ export default function SettingsIndex() {
         </section>
 
         {/* Cloud Persistence */}
-        <section className="space-y-4">
+        <section id="tour-target-sync" className="space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
             Cloud Sync
           </h3>
@@ -214,10 +271,83 @@ export default function SettingsIndex() {
                                 ? `Last synced ${new Date(lastSyncedAt).toLocaleString()}`
                                 : 'No sync recorded'}
                     </p>
-                    {pendingCount > 0 && syncStatus === 'idle' && (
-                      <p className="text-[10px] text-amber-500 font-medium mt-0.5">
-                        {pendingCount} change{pendingCount > 1 ? 's' : ''} pending
-                      </p>
+                    {pendingCount > 0 && (
+                      <div className="flex items-center mt-0.5">
+                        <p className="text-[10px] text-amber-500 font-medium">
+                          {pendingCount} change{pendingCount > 1 ? 's' : ''} pending
+                        </p>
+                        <InfoTooltip
+                          position="bottom"
+                          text={
+                            <ul className="space-y-1 text-left list-disc list-inside">
+                              {pendingOps.map(op => {
+                                let details = op.entityId;
+                                if (op.entity === 'settings') details = 'App Settings';
+                                else if (op.action === 'delete') details = 'Deleted item';
+                                else {
+                                  if (op.entity === 'transaction') {
+                                    const t = transactions.find(x => x.id === op.entityId);
+                                    if (t) {
+                                      let name = t.note;
+                                      if (!name) {
+                                        if (t.uiType === 'transfer') name = 'Transfer';
+                                        else {
+                                          const catEntry = t.entries.find(e =>
+                                            categories.some(c => c.id === e.accountId)
+                                          );
+                                          if (catEntry) {
+                                            const cat = categories.find(
+                                              c => c.id === catEntry.accountId
+                                            );
+                                            name = cat
+                                              ? cat.subHead
+                                                ? `${cat.head} - ${cat.subHead}`
+                                                : cat.head
+                                              : 'Transaction';
+                                          } else {
+                                            name = 'Transaction';
+                                          }
+                                        }
+                                      }
+                                      details = `${name} (${formatCurrency(t.amount, settings)})`;
+                                    }
+                                  } else if (op.entity === 'account') {
+                                    const a = accounts.find(x => x.id === op.entityId);
+                                    if (a) details = a.name;
+                                  } else if (op.entity === 'method') {
+                                    const m = methods.find(x => x.id === op.entityId);
+                                    if (m) details = m.name;
+                                  } else if (op.entity === 'category') {
+                                    const c = categories.find(x => x.id === op.entityId);
+                                    if (c)
+                                      details = c.subHead ? `${c.head} - ${c.subHead}` : c.head;
+                                  } else if (op.entity === 'budget') {
+                                    const b = budgets.find(x => x.id === op.entityId);
+                                    if (b) {
+                                      const c = categories.find(x => x.id === b.categoryId);
+                                      details = c
+                                        ? `${c.subHead ? `${c.head} - ${c.subHead}` : c.head} Budget`
+                                        : 'Budget';
+                                    }
+                                  }
+                                }
+
+                                return (
+                                  <li key={op.id} className="whitespace-nowrap">
+                                    <span className="font-semibold text-[9px] text-muted-foreground">
+                                      {op.action.toUpperCase()} {op.entity.toUpperCase()}
+                                    </span>
+                                    <br />
+                                    <span className="font-medium text-popover-foreground">
+                                      {details}
+                                    </span>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          }
+                        />
+                      </div>
                     )}
                   </div>
                 </div>
@@ -280,7 +410,7 @@ export default function SettingsIndex() {
                   disabled={isBackingUp}
                   variant="outline"
                   size="sm"
-                  className="h-8 px-4 font-bold uppercase text-[9px] tracking-widest min-w-[100px]"
+                  className="h-8 px-4 font-bold uppercase text-[9px] tracking-widest min-w-25"
                 >
                   {isBackingUp ? <RefreshCw className="h-3 w-3 animate-spin mr-2" /> : null}
                   {isBackingUp ? 'Backing up...' : 'Backup Now'}
@@ -290,34 +420,89 @@ export default function SettingsIndex() {
               <div className="p-3 bg-accent/30 rounded-lg border border-border/50 mb-6">
                 <p className="text-[10px] text-muted-foreground leading-relaxed">
                   Moniq automatically creates snapshots of your data at specific intervals. Clicking{' '}
-                  <strong>Backup Now</strong> immediately forces a full backup across all tiers
-                  (daily, weekly, monthly, yearly) regardless of schedule. Each backup is saved as a
-                  new copy in the &quot;Moniq Backups&quot; folder in your Google Drive — existing
-                  backups are never overwritten.
+                  <strong>Backup Now</strong> immediately creates a new manual snapshot (up to 5 are
+                  retained). Each backup is saved as a new copy in the &quot;Moniq Backups&quot;
+                  folder in your Google Drive — existing backups are never overwritten.
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {[
-                  { label: 'Daily', date: settings.lastDailyBackup, limit: '7 Days' },
-                  { label: 'Weekly', date: settings.lastWeeklyBackup, limit: '5 Weeks' },
-                  { label: 'Monthly', date: settings.lastMonthlyBackup, limit: '12 Months' },
-                  { label: 'Yearly', date: settings.lastYearlyBackup, limit: 'Infinite' },
-                ].map(tier => (
-                  <div
-                    key={tier.label}
-                    className="p-3 bg-accent/30 rounded-xl border border-border/50 flex flex-col gap-1"
-                  >
-                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">
-                      {tier.label}
-                    </p>
-                    <p className="text-xs font-bold truncate">{tier.date || 'Never'}</p>
-                    <div className="flex items-center gap-1 mt-1 text-[8px] text-muted-foreground/70 font-medium uppercase tracking-tighter">
-                      <History className="h-2 w-2" />
-                      <span>Retain: {tier.limit}</span>
-                    </div>
+              <div className="border border-border/50 rounded-xl overflow-hidden bg-accent/10">
+                <button
+                  onClick={() => {
+                    setShowSnapshots(s => !s);
+                    if (!showSnapshots && !latestBackups) {
+                      import('@/sync/BackupManager').then(m => {
+                        m.BackupManager.getInstance().getLatestBackups().then(setLatestBackups);
+                      });
+                    }
+                  }}
+                  className="w-full flex items-center justify-between p-4 bg-accent/20 hover:bg-accent/40 transition-colors"
+                >
+                  <div className="flex items-center gap-2 text-sm font-bold tracking-tight">
+                    <History className="h-4 w-4 text-muted-foreground" />
+                    View Latest Snapshots
                   </div>
-                ))}
+                  <ChevronDown
+                    className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${showSnapshots ? 'rotate-180' : ''}`}
+                  />
+                </button>
+
+                {showSnapshots && (
+                  <div className="p-4 border-t border-border/50 space-y-3">
+                    {!latestBackups ? (
+                      <p className="text-xs text-muted-foreground animate-pulse flex items-center gap-2">
+                        <RefreshCw className="h-3 w-3 animate-spin" /> Fetching from Google Drive...
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {[
+                          { id: 'manual', label: 'Manual Backup', limit: 'Retains last 5' },
+                          { id: 'daily', label: 'Daily Backup', limit: 'Retains last 7 days' },
+                          { id: 'weekly', label: 'Weekly Backup', limit: 'Retains last 5 weeks' },
+                          {
+                            id: 'monthly',
+                            label: 'Monthly Backup',
+                            limit: 'Retains last 12 months',
+                          },
+                          { id: 'yearly', label: 'Yearly Backup', limit: 'Retained indefinitely' },
+                        ].map(tier => {
+                          const snapshot = latestBackups[tier.id];
+                          return (
+                            <div
+                              key={tier.id}
+                              className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-background border border-border/50 gap-2"
+                            >
+                              <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-0.5">
+                                  {tier.label}
+                                </p>
+                                <p className="text-xs text-muted-foreground tracking-tight">
+                                  {tier.limit}
+                                </p>
+                              </div>
+                              <div className="text-left sm:text-right">
+                                {snapshot ? (
+                                  <>
+                                    <p className="text-xs font-bold">
+                                      {format(new Date(snapshot.timestamp), 'MMM d, yyyy • h:mm a')}
+                                    </p>
+                                    <p className="text-[9px] text-muted-foreground mt-0.5 truncate max-w-50">
+                                      {snapshot.name}
+                                    </p>
+                                  </>
+                                ) : (
+                                  <p className="text-xs font-bold text-muted-foreground/50">
+                                    No snapshot yet
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -332,28 +517,71 @@ export default function SettingsIndex() {
           </div>
           <Card className="border-border shadow-sm">
             <CardContent className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="space-y-2">
                   <Label className="text-[10px] uppercase font-bold text-muted-foreground">
                     Currency
                   </Label>
-                  <Select
-                    value={settings.currency}
-                    onValueChange={val => updateSettings({ currency: val })}
-                  >
-                    <SelectTrigger className="h-10 border-border/50 focus:ring-primary/20">
-                      <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currencies.map(c => (
-                        <SelectItem key={c.code} value={c.code}>
-                          <span className="font-medium">{c.code}</span>
-                          <span className="mx-2 text-muted-foreground/50">—</span>
-                          <span className="text-xs text-muted-foreground">{c.name}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal h-10 border-border/50 overflow-hidden"
+                      >
+                        <span className="truncate">
+                          {getAllCurrencies().find(c => c.code === settings.currency)?.name
+                            ? `${settings.currency} — ${getAllCurrencies().find(c => c.code === settings.currency)?.name}`
+                            : 'Select currency'}
+                        </span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0" align="start">
+                      <div className="p-2 border-b">
+                        <Input
+                          placeholder="Search currency..."
+                          value={currencySearch}
+                          onChange={e => setCurrencySearch(e.target.value)}
+                          className="h-8 w-full shadow-none focus-visible:ring-0"
+                        />
+                      </div>
+                      <div className="max-h-[250px] overflow-y-auto p-1">
+                        {getAllCurrencies()
+                          .filter(
+                            c =>
+                              c.name.toLowerCase().includes(currencySearch.toLowerCase()) ||
+                              c.code.toLowerCase().includes(currencySearch.toLowerCase())
+                          )
+                          .map(c => (
+                            <div
+                              key={c.code}
+                              className={cn(
+                                'px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm truncate',
+                                settings.currency === c.code &&
+                                  'bg-accent font-medium text-accent-foreground'
+                              )}
+                              title={`${c.code} — ${c.name}`}
+                              onClick={() => {
+                                updateSettings({ currency: c.code });
+                                setCurrencyOpen(false);
+                              }}
+                            >
+                              <span className="font-medium">{c.code}</span>
+                              <span className="mx-2 text-muted-foreground/50">—</span>
+                              <span className="text-xs text-muted-foreground">{c.name}</span>
+                            </div>
+                          ))}
+                        {getAllCurrencies().filter(
+                          c =>
+                            c.name.toLowerCase().includes(currencySearch.toLowerCase()) ||
+                            c.code.toLowerCase().includes(currencySearch.toLowerCase())
+                        ).length === 0 && (
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            No currencies found.
+                          </div>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                   <div className="flex items-center justify-between pt-1">
                     <p className="text-[9px] text-muted-foreground italic">
                       Selected: {currentCurrency.symbol} ({currentCurrency.name})
@@ -363,25 +591,85 @@ export default function SettingsIndex() {
 
                 <div className="space-y-2">
                   <Label className="text-[10px] uppercase font-bold text-muted-foreground">
-                    Number Format (Separators)
+                    Number Format
+                  </Label>
+                  <Popover open={formatOpen} onOpenChange={setFormatOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal h-10 border-border/50 overflow-hidden"
+                      >
+                        <span className="truncate">
+                          {COMMON_LOCALES.find(l => l.code === settings.numberLocale)?.name ||
+                            'Select format'}
+                        </span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0" align="start">
+                      <div className="p-2 border-b">
+                        <Input
+                          placeholder="Search format..."
+                          value={formatSearch}
+                          onChange={e => setFormatSearch(e.target.value)}
+                          className="h-8 w-full shadow-none focus-visible:ring-0"
+                        />
+                      </div>
+                      <div className="max-h-[250px] overflow-y-auto p-1">
+                        {COMMON_LOCALES.filter(l =>
+                          l.name.toLowerCase().includes(formatSearch.toLowerCase())
+                        ).map(l => (
+                          <div
+                            key={l.code}
+                            className={cn(
+                              'px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm truncate',
+                              settings.numberLocale === l.code &&
+                                'bg-accent font-medium text-accent-foreground'
+                            )}
+                            title={l.name}
+                            onClick={() => {
+                              updateSettings({ numberLocale: l.code });
+                              setFormatOpen(false);
+                            }}
+                          >
+                            {l.name}
+                          </div>
+                        ))}
+                        {COMMON_LOCALES.filter(l =>
+                          l.name.toLowerCase().includes(formatSearch.toLowerCase())
+                        ).length === 0 && (
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            No formats found.
+                          </div>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-[9px] text-muted-foreground italic pt-1">
+                    Preview: {formatCurrency(1234567.89, settings)}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">
+                    Date Format
                   </Label>
                   <Select
-                    value={settings.numberLocale}
-                    onValueChange={val => updateSettings({ numberLocale: val })}
+                    value={settings.dateFormat || 'MMM d, yyyy'}
+                    onValueChange={val => updateSettings({ dateFormat: val })}
                   >
                     <SelectTrigger className="h-10 border-border/50 focus:ring-primary/20">
                       <SelectValue placeholder="Select format" />
                     </SelectTrigger>
                     <SelectContent>
-                      {COMMON_LOCALES.map(l => (
-                        <SelectItem key={l.code} value={l.code}>
-                          {l.name}
+                      {['MMM d, yyyy', 'dd/MM/yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd'].map(fmt => (
+                        <SelectItem key={fmt} value={fmt}>
+                          {format(new Date(), fmt)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-[9px] text-muted-foreground italic">
-                    Preview: {formatCurrency(1234567.89, settings)}
+                  <p className="text-[9px] text-muted-foreground italic pt-1">
+                    Default date format across the app
                   </p>
                 </div>
               </div>
@@ -495,6 +783,55 @@ export default function SettingsIndex() {
                 onClick={handleHardReset}
               >
                 {isResetting ? <RefreshCw className="h-4 w-4 animate-spin" /> : 'Delete Everything'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
+        <DialogContent className="max-w-md p-6 bg-[#09090b] border border-red-500/20 shadow-2xl">
+          <div className="flex flex-col items-center text-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 text-red-500" />
+            </div>
+            <div>
+              <h3 className="text-zinc-100 text-lg font-medium mb-2">Unsaved Changes</h3>
+              <p className="text-zinc-400 text-sm">
+                You have {logoutPendingCount} changes that couldn't be saved to Google Drive due to
+                a network error. If you sign out now, these changes will be lost.
+              </p>
+            </div>
+            <div className="flex gap-3 w-full mt-4">
+              <Button
+                variant="outline"
+                className="flex-1 border-zinc-800 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+                onClick={() => {
+                  setLogoutConfirmOpen(false);
+                  setIsLoggingOut(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 bg-red-600 hover:bg-red-700"
+                onClick={confirmAndLogout}
+              >
+                Sign Out Anyway
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
+        <DialogContent className="max-w-md p-6">
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-destructive">Hard Reset Failed</h3>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{errorMessage}</p>
+            <div className="flex justify-end pt-4">
+              <Button variant="secondary" onClick={() => setErrorDialogOpen(false)}>
+                Close
               </Button>
             </div>
           </div>

@@ -1,9 +1,9 @@
 import type { StateCreator } from 'zustand';
 import type { DataState, UserProfile } from '../types';
-import type { UserSettings, Account, Category, PaymentMethod } from '../../types';
+import type { UserSettings, Account, Category, PaymentMethod } from '@/types';
 import { uuid, now, markDirty } from '../helpers';
-import { detectLocalSettings, getCurrencySymbol } from '../../constants/currencies';
-import { putMany, putSetting, setMeta, delMeta } from '../../lib/db';
+import { detectLocalSettings, getCurrencySymbol } from '@/constants/currencies';
+import { putMany, putSetting, delSetting, setMeta, delMeta } from '@/lib/db';
 
 const detected = detectLocalSettings();
 
@@ -23,6 +23,7 @@ export interface SettingsSlice {
   userProfile: UserProfile | null;
 
   updateSettings: (patch: Partial<UserSettings>) => void;
+  setTourStep: (step: string) => void;
   setAccessToken: (token: string | null, expiresAt?: number | null) => void;
   setUserProfile: (profile: UserProfile | null) => void;
   completeOnboarding: (
@@ -59,6 +60,15 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
       return { settings: nextSettings };
     });
     markDirty('settings', 'settings', 'update');
+  },
+
+  setTourStep: (step: string) => {
+    set(state => {
+      const newSettings = { ...state.settings, tourStep: step };
+      putSetting('tourStep', step);
+      return { settings: newSettings };
+    });
+    markDirty('settings', 'tourStep', 'update');
   },
 
   setAccessToken: (token, expiresAt) => {
@@ -130,7 +140,7 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
         accounts: [...state.accounts, ...newAccounts],
         categories: [...state.categories, ...newCategories],
         methods: [...state.methods, ...newMethods],
-        settings: { ...state.settings, hasCompletedOnboarding: true },
+        settings: { ...state.settings, hasCompletedOnboarding: true, tourStep: undefined },
       };
     });
 
@@ -139,7 +149,9 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
     putMany('categories', state.categories);
     putMany('methods', state.methods);
     putSetting('hasCompletedOnboarding', 'true');
+    delSetting('tourStep');
 
     markDirty('settings', 'hasCompletedOnboarding', 'update');
+    markDirty('settings', 'tourStep', 'delete');
   },
 });

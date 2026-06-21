@@ -348,6 +348,21 @@ export default function AddTransactionModal({
 
   const inputClasses = 'h-9 bg-muted/40 border-transparent focus:border-primary/30 transition-all';
 
+  if (activeAccounts.length === 0 || activeMethods.length === 0 || activeCategories.length === 0) {
+    return (
+      <div className="p-8 text-center space-y-4 bg-background rounded-lg border border-border/50">
+        <h3 className="text-lg font-bold text-destructive">Prerequisites Missing</h3>
+        <p className="text-sm text-muted-foreground pb-4">
+          You must create at least one <strong>Account</strong>, one <strong>Payment Method</strong>
+          , and one <strong>Category</strong> before adding a transaction.
+        </p>
+        <Button onClick={onClose} variant="secondary" className="w-full">
+          Close
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <form
       onSubmit={e => handleSubmit(e)}
@@ -437,7 +452,7 @@ export default function AddTransactionModal({
               )}
             >
               {isFullyAllocated
-                ? '✓ All Split'
+                ? '✓ All Splits'
                 : `Allocated ${formatCurrency(totalSplitAmount, settings)} of ${formatCurrency(parsedAmount, settings)}`}
             </div>
           )}
