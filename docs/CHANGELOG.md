@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-06-21
+
 ### Fixed
 - **API Rate Limiting** (`SheetClient.ts`): Implemented request throttling and exponential backoff to handle Google Sheets API 429 (Too Many Requests) errors gracefully.
 - **Transaction Prerequisites** (`AddTransactionModal.tsx`): Prevented the transaction modal from opening if the user has not yet created at least one Account, one Payment Method, and one Category, displaying a clear prerequisite error instead.
