@@ -507,37 +507,43 @@ export class SyncEngine {
       const localMets = state.methods;
       const localCats = state.categories;
       const localBuds = state.budgets;
+      const lastSyncedAt = state.lastSyncedAt;
 
       // Reconcile each entity type
       const txResult = reconcile(
         localTxns,
         remoteTxnsDeduped,
         txChecksums,
-        makeEntityChecksumFn(serializeTransaction)
+        makeEntityChecksumFn(serializeTransaction),
+        lastSyncedAt
       );
       const accResult = reconcile(
         localAccs,
         remoteAccsDeduped,
         accChecksums,
-        makeEntityChecksumFn(serializeAccount)
+        makeEntityChecksumFn(serializeAccount),
+        lastSyncedAt
       );
       const metResult = reconcile(
         localMets,
         remoteMetsDeduped,
         metChecksums,
-        makeEntityChecksumFn(serializeMethod)
+        makeEntityChecksumFn(serializeMethod),
+        lastSyncedAt
       );
       const catResult = reconcile(
         localCats,
         remoteCatsDeduped,
         catChecksums,
-        makeEntityChecksumFn(serializeCategory)
+        makeEntityChecksumFn(serializeCategory),
+        lastSyncedAt
       );
       const budResult = reconcile(
         localBuds,
         remoteBudsDeduped,
         budChecksums,
-        makeEntityChecksumFn(serializeBudget)
+        makeEntityChecksumFn(serializeBudget),
+        lastSyncedAt
       );
 
       // Build row indexes from current sheet data
