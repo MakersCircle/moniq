@@ -16,8 +16,40 @@ interface SpreadsheetSheetMeta {
 export class SheetClient {
   private spreadsheetId: string;
 
+  private static requestTimestamps: number[] = [];
+  private static readonly MAX_REQUESTS_PER_MINUTE = 50; // Keep a buffer of 10 requests
+
   constructor(spreadsheetId: string) {
     this.spreadsheetId = spreadsheetId;
+  }
+
+  /**
+   * Enforces the 60 requests per minute Google Sheets API limit across instances.
+   */
+  private async rateLimit(): Promise<void> {
+    const now = Date.now();
+    // Keep only timestamps from the last 60 seconds
+    SheetClient.requestTimestamps = SheetClient.requestTimestamps.filter(t => now - t < 60000);
+
+    if (SheetClient.requestTimestamps.length >= SheetClient.MAX_REQUESTS_PER_MINUTE) {
+      const oldest = SheetClient.requestTimestamps[0];
+      const waitTime = 60000 - (now - oldest);
+      if (waitTime > 0) {
+        console.warn(`[Moniq Sync] Approaching Google Sheets API rate limit. Pausing for ${Math.ceil(waitTime / 1000)} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+      return this.rateLimit(); // Re-evaluate after sleeping
+    }
+
+    SheetClient.requestTimestamps.push(Date.now());
+  }
+
+  /**
+   * A rate-limited wrapper around the global googleService.sheetsRequest
+   */
+  private async safeRequest(url: string, init?: RequestInit): Promise<Response> {
+    await this.rateLimit();
+    return googleService.sheetsRequest(url, init);
   }
 
   // ── Read Operations ─────────────────────────────────────────
@@ -25,7 +57,7 @@ export class SheetClient {
   /** Read all rows from a sheet tab (including header row). */
   async readSheet(sheetName: string): Promise<string[][]> {
     const url = `/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(sheetName)}`;
-    const res = await googleService.sheetsRequest(url);
+    const res = await this.safeRequest(url);
 
     if (!res.ok) {
       if (res.status === 400) {
@@ -44,7 +76,7 @@ export class SheetClient {
   async readRow(sheetName: string, rowIndex: number): Promise<string[] | null> {
     const range = `${sheetName}!A${rowIndex}:Z${rowIndex}`;
     const url = `/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(range)}`;
-    const res = await googleService.sheetsRequest(url);
+    const res = await this.safeRequest(url);
 
     if (!res.ok) return null;
 
@@ -77,7 +109,7 @@ export class SheetClient {
     const range = `${sheetName}!A1`;
     const url = `/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
 
-    const res = await googleService.sheetsRequest(url, {
+    const res = await this.safeRequest(url, {
       method: 'POST',
       body: JSON.stringify({ values: rows }),
     });
@@ -120,7 +152,7 @@ export class SheetClient {
     }));
 
     const url = `/spreadsheets/${this.spreadsheetId}/values:batchUpdate`;
-    const res = await googleService.sheetsRequest(url, {
+    const res = await this.safeRequest(url, {
       method: 'POST',
       body: JSON.stringify({ valueInputOption: 'USER_ENTERED', data }),
     });
@@ -140,7 +172,7 @@ export class SheetClient {
     const range = `${sheetName}!${startCell}`;
     const url = `/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
 
-    const res = await googleService.sheetsRequest(url, {
+    const res = await this.safeRequest(url, {
       method: 'PUT',
       body: JSON.stringify({ values }),
     });
@@ -157,7 +189,7 @@ export class SheetClient {
   async overwriteSheet(sheetName: string, rows: string[][]): Promise<void> {
     // Clear existing data
     const clearUrl = `/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(sheetName)}:clear`;
-    await googleService.sheetsRequest(clearUrl, { method: 'POST' });
+    await this.safeRequest(clearUrl, { method: 'POST' });
 
     // Write header + rows
     const headerDef = SHEET_HEADERS[sheetName];
@@ -173,7 +205,7 @@ export class SheetClient {
   /** Ensure required sheet tabs exist. Creates missing ones. */
   async ensureSheetTabs(requiredSheets: string[]): Promise<void> {
     const metaUrl = `/spreadsheets/${this.spreadsheetId}`;
-    const metaRes = await googleService.sheetsRequest(metaUrl);
+    const metaRes = await this.safeRequest(metaUrl);
 
     if (!metaRes.ok) throw new Error('Failed to fetch spreadsheet metadata');
 
@@ -201,7 +233,7 @@ export class SheetClient {
     if (requests.length === 0) return;
 
     const batchUrl = `/spreadsheets/${this.spreadsheetId}:batchUpdate`;
-    const res = await googleService.sheetsRequest(batchUrl, {
+    const res = await this.safeRequest(batchUrl, {
       method: 'POST',
       body: JSON.stringify({ requests }),
     });
@@ -214,7 +246,7 @@ export class SheetClient {
   /** Clear all data rows from all registered application sheets (keeping headers). */
   async clearAllData(sheetNames: string[]): Promise<void> {
     const url = `/spreadsheets/${this.spreadsheetId}/values:batchClear`;
-    const res = await googleService.sheetsRequest(url, {
+    const res = await this.safeRequest(url, {
       method: 'POST',
       body: JSON.stringify({
         ranges: sheetNames.map(name => `${name}!A2:Z`),

@@ -23,9 +23,7 @@
   Future schema changes require a way to detect outdated remote schemas to perform data migrations before syncing.
   **Fix:** Add `schemaVersion: 1` to the Settings sheet tab so older versions can be properly detected during `initialize()`.
 
-- [ ] **#22 — API Rate limiting awareness**
-  Google Sheets API allows 60 reads / 60 writes per minute. If a user with a massive legacy dataset (years of transactions) triggers multiple sync ops, it could easily hit the quota limit.
-  **Fix:** Add a simple request counter inside `SheetClient` and proactively backoff (sleep) when approaching the 60 requests/min threshold.
+
 
 - [ ] **#23 — Transaction modal openable without required prerequisites**
   Users can open the "Create Transaction" modal even if they have no Accounts, Payment Methods, or Categories set up yet, leading to confusion or errors when they try to save.
@@ -47,6 +45,7 @@
 
 - [x] **#13 — No user feedback during first-ever Drive workspace setup**
 - [x] **#20 — Conflict Resolution clock drift gap**
+- [x] **#22 — API Rate limiting awareness**
   `App.tsx` / `api/google.ts` — Implemented `initPhase` state to provide accurate feedback (`"Setting up your personal Drive folder…"` and `"Initializing your Moniq database…"`) during first-run Google Drive setup instead of hanging on generic text. *(Fixed)*
 
 - [x] **#1 — Cross-device creates a fresh account instead of finding existing data**
