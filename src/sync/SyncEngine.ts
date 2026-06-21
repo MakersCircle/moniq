@@ -256,6 +256,14 @@ export class SyncEngine {
   private client: SheetClient | null = null;
   private config: SyncConfig;
   private rowIndexes: RowIndexMap;
+  /**
+   * Tracks entity IDs for which an `appendRows` call was *sent* but may not
+   * have been confirmed (e.g., the server wrote the row but the client lost the
+   * network response). On the next retry, if an entity ID appears here we
+   * re-read the live sheet before deciding whether to append again, preventing
+   * duplicate rows.
+   */
+  private pendingAppendIds: Map<string, Set<string>> = new Map();
 
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -739,6 +747,17 @@ export class SyncEngine {
     const rowIndex = this.rowIndexes[storeName as keyof RowIndexMap] as RowIndex;
     const serializeFn = this.getSerializeFn(entityType);
 
+    // Pending appends from a previous flush that lost its network response.
+    const pendingForStore = this.pendingAppendIds.get(storeName) || new Set<string>();
+
+    // If any entity was previously sent to appendRows but unconfirmed, rebuild
+    // the row index from the live sheet once before processing this batch.
+    // This lets us detect rows the server already wrote and avoid re-appending.
+    const hasPending = ops.some(op => pendingForStore.has(op.entityId));
+    if (hasPending) {
+      await this.rebuildRowIndexForStore(sheetName, storeName, rowIndex);
+    }
+
     const newRows: string[][] = [];
     const updateBatch: { rowIndex: number; data: string[] }[] = [];
 
@@ -757,12 +776,18 @@ export class SyncEngine {
 
       const existingRowIdx = rowIndex.get(op.entityId);
       if (existingRowIdx) {
+        // Found in index (either original or rebuilt from live sheet) — update.
         updateBatch.push({ rowIndex: existingRowIdx, data: row });
+        pendingForStore.delete(op.entityId); // no longer ambiguous
       } else {
-        // Entity exists locally but has no sheet row — append it
+        // Mark as in-flight BEFORE the network call so a crash/timeout leaves
+        // the entity in the pending set for the next retry cycle.
+        pendingForStore.add(op.entityId);
         newRows.push(row);
       }
     }
+
+    this.pendingAppendIds.set(storeName, pendingForStore);
 
     // Execute writes
     if (updateBatch.length > 0) {
@@ -770,11 +795,39 @@ export class SyncEngine {
     }
     if (newRows.length > 0) {
       const startRow = await this.client.appendRows(sheetName, newRows);
-      // Update row index for newly appended rows
+      // Append confirmed — update row index and clear pending flags.
       for (let i = 0; i < newRows.length; i++) {
         const entityId = newRows[i][0];
         rowIndex.set(entityId, startRow + i);
+        pendingForStore.delete(entityId);
       }
+    }
+  }
+
+  /**
+   * Re-reads the live sheet and merges any new row positions into `rowIndex`.
+   * Called when a previous `appendRows` response was lost — ensures we detect
+   * rows the server already wrote before deciding to append again.
+   */
+  private async rebuildRowIndexForStore(
+    sheetName: string,
+    storeName: string,
+    rowIndex: RowIndex
+  ): Promise<void> {
+    if (!this.client) return;
+    try {
+      console.warn(
+        `[SyncEngine] Detected unconfirmed append for "${sheetName}". Re-reading sheet to prevent duplicates.`
+      );
+      const rows = await this.client.readSheet(sheetName);
+      const rebuilt = this.buildIndex(rows);
+      for (const [id, row] of rebuilt) {
+        rowIndex.set(id, row);
+      }
+    } catch (err) {
+      // Non-fatal: if we can't rebuild, we'll proceed with the stale index.
+      // Worst case is a duplicate row, which initialize() will deduplicate later.
+      console.error(`[SyncEngine] Failed to rebuild row index for "${sheetName}":`, err);
     }
   }
 
@@ -828,6 +881,7 @@ export class SyncEngine {
         budgets: new Map(),
         settings: new Map(),
       };
+      this.pendingAppendIds.clear();
       this.client = null;
       this.isInitialized = false;
 
@@ -950,6 +1004,7 @@ export class SyncEngine {
     if (this.retryTimer) clearTimeout(this.retryTimer);
     if (this.backupPollingTimer) clearInterval(this.backupPollingTimer);
     this.listeners.clear();
+    this.pendingAppendIds.clear();
     this.client = null;
     this.isInitialized = false;
     SyncEngine.instance = null;

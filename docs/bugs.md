@@ -8,10 +8,6 @@
 
 ### 🟠 High Priority
 
-- [ ] **#28 — Retry path re-appends on network timeout (Duplicate Row Bug)**
-  If `appendRows` succeeds server-side but the client never receives the response (timeout/connection drop), the call throws before `rowIndex.set(...)` is reached. On retry, `rowIndex.get(entityId)` returns `undefined` → the entity is appended again → duplicate row on the sheet. No server-side idempotency key is used.
-  **Fix:** Store a pending-append set in memory so retries detect already-written rows, or run a post-flush `initialize()` to re-read the true sheet state.
-
 ### 🟡 Medium Priority
 
 - [ ] **#29 — Backoff is not exponential; `maxRetries` is never enforced**
@@ -50,6 +46,7 @@
 - [x] **#15 — Hard reset: IndexedDB deletion may fail silently**
 - [x] **#26 — "Ghost" DB connections blocking reset**
 - [x] **#27 — `pushReconciled` discards `appendRows` return value → duplicate rows on sheet**
+- [x] **#28 — Retry on network timeout re-appends entity → duplicate rows on sheet**
 - [x] **#20 — Conflict Resolution clock drift gap**
 - [x] **#22 — API Rate limiting awareness**
   `App.tsx` / `api/google.ts` — Implemented `initPhase` state to provide accurate feedback (`"Setting up your personal Drive folder…"` and `"Initializing your Moniq database…"`) during first-run Google Drive setup instead of hanging on generic text. *(Fixed)*
@@ -128,9 +125,9 @@
 
 | Status | Count |
 |---|---|
-| ✅ Fixed | 18 (items 1–12, 14, 16, 17, 18, 19, 23, 26, 27) |
+| ✅ Fixed | 19 (items 1–12, 14, 16, 17, 18, 19, 23, 26, 27, 28) |
 | 🔴 Critical remaining | 0 |
-| 🟠 High remaining | 1 (item 28) |
+| 🟠 High remaining | 0 |
 | 🟡 Medium remaining | 4 (items 13, 20, 29, 30) |
 | ⚪ Low remaining | 6 (items 15, 21, 24, 25, 31) |
-| **Total open** | **11** |
+| **Total open** | **10** |
