@@ -59,13 +59,17 @@ export default function SettingsIndex() {
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [logoutPendingCount, setLogoutPendingCount] = useState(0);
   const [pendingOps, setPendingOps] = useState<SyncOperation[]>([]);
   const [showSnapshots, setShowSnapshots] = useState(false);
-  const [latestBackups, setLatestBackups] = useState<Record<string, BackupSnapshot | null> | null>(null);
+  const [latestBackups, setLatestBackups] = useState<Record<string, BackupSnapshot | null> | null>(
+    null
+  );
   const [formatOpen, setFormatOpen] = useState(false);
   const [formatSearch, setFormatSearch] = useState('');
   const [currencyOpen, setCurrencyOpen] = useState(false);
@@ -118,7 +122,7 @@ export default function SettingsIndex() {
     if (!accessToken || !spreadsheetId) return;
     try {
       const engine = SyncEngine.getInstance();
-      
+
       // Fix #11: "Sync Now" button runs a full pull instead of a targeted push
       // If there are pending operations, just do a fast push (forceSync).
       // Only do a full pull (initialize) if everything is already synced.
@@ -149,6 +153,12 @@ export default function SettingsIndex() {
       window.location.href = '/';
     } catch (err) {
       console.error('Hard reset failed:', err);
+      setErrorMessage(
+        `Your database is locked by another tab. Please close all other Moniq tabs, manually clear your browser site data if necessary, and try again.\n\nError: ${
+          err instanceof Error ? err.message : err
+        }`
+      );
+      setErrorDialogOpen(true);
     } finally {
       setIsResetting(false);
     }
@@ -410,14 +420,14 @@ export default function SettingsIndex() {
               <div className="p-3 bg-accent/30 rounded-lg border border-border/50 mb-6">
                 <p className="text-[10px] text-muted-foreground leading-relaxed">
                   Moniq automatically creates snapshots of your data at specific intervals. Clicking{' '}
-                  <strong>Backup Now</strong> immediately creates a new manual snapshot (up to 5 are retained). 
-                  Each backup is saved as a new copy in the &quot;Moniq Backups&quot; folder in your Google Drive — existing
-                  backups are never overwritten.
+                  <strong>Backup Now</strong> immediately creates a new manual snapshot (up to 5 are
+                  retained). Each backup is saved as a new copy in the &quot;Moniq Backups&quot;
+                  folder in your Google Drive — existing backups are never overwritten.
                 </p>
               </div>
 
               <div className="border border-border/50 rounded-xl overflow-hidden bg-accent/10">
-                <button 
+                <button
                   onClick={() => {
                     setShowSnapshots(s => !s);
                     if (!showSnapshots && !latestBackups) {
@@ -432,9 +442,11 @@ export default function SettingsIndex() {
                     <History className="h-4 w-4 text-muted-foreground" />
                     View Latest Snapshots
                   </div>
-                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${showSnapshots ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${showSnapshots ? 'rotate-180' : ''}`}
+                  />
                 </button>
-                
+
                 {showSnapshots && (
                   <div className="p-4 border-t border-border/50 space-y-3">
                     {!latestBackups ? (
@@ -447,24 +459,41 @@ export default function SettingsIndex() {
                           { id: 'manual', label: 'Manual Backup', limit: 'Retains last 5' },
                           { id: 'daily', label: 'Daily Backup', limit: 'Retains last 7 days' },
                           { id: 'weekly', label: 'Weekly Backup', limit: 'Retains last 5 weeks' },
-                          { id: 'monthly', label: 'Monthly Backup', limit: 'Retains last 12 months' },
+                          {
+                            id: 'monthly',
+                            label: 'Monthly Backup',
+                            limit: 'Retains last 12 months',
+                          },
                           { id: 'yearly', label: 'Yearly Backup', limit: 'Retained indefinitely' },
                         ].map(tier => {
                           const snapshot = latestBackups[tier.id];
                           return (
-                            <div key={tier.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-background border border-border/50 gap-2">
+                            <div
+                              key={tier.id}
+                              className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-background border border-border/50 gap-2"
+                            >
                               <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-0.5">{tier.label}</p>
-                                <p className="text-xs text-muted-foreground tracking-tight">{tier.limit}</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-0.5">
+                                  {tier.label}
+                                </p>
+                                <p className="text-xs text-muted-foreground tracking-tight">
+                                  {tier.limit}
+                                </p>
                               </div>
                               <div className="text-left sm:text-right">
                                 {snapshot ? (
                                   <>
-                                    <p className="text-xs font-bold">{format(new Date(snapshot.timestamp), 'MMM d, yyyy • h:mm a')}</p>
-                                    <p className="text-[9px] text-muted-foreground mt-0.5 truncate max-w-50">{snapshot.name}</p>
+                                    <p className="text-xs font-bold">
+                                      {format(new Date(snapshot.timestamp), 'MMM d, yyyy • h:mm a')}
+                                    </p>
+                                    <p className="text-[9px] text-muted-foreground mt-0.5 truncate max-w-50">
+                                      {snapshot.name}
+                                    </p>
                                   </>
                                 ) : (
-                                  <p className="text-xs font-bold text-muted-foreground/50">No snapshot yet</p>
+                                  <p className="text-xs font-bold text-muted-foreground/50">
+                                    No snapshot yet
+                                  </p>
                                 )}
                               </div>
                             </div>
@@ -495,11 +524,14 @@ export default function SettingsIndex() {
                   </Label>
                   <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start text-left font-normal h-10 border-border/50 overflow-hidden">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal h-10 border-border/50 overflow-hidden"
+                      >
                         <span className="truncate">
-                          {getAllCurrencies().find(c => c.code === settings.currency)?.name 
+                          {getAllCurrencies().find(c => c.code === settings.currency)?.name
                             ? `${settings.currency} — ${getAllCurrencies().find(c => c.code === settings.currency)?.name}`
-                            : "Select currency"}
+                            : 'Select currency'}
                         </span>
                       </Button>
                     </PopoverTrigger>
@@ -508,36 +540,44 @@ export default function SettingsIndex() {
                         <Input
                           placeholder="Search currency..."
                           value={currencySearch}
-                          onChange={(e) => setCurrencySearch(e.target.value)}
+                          onChange={e => setCurrencySearch(e.target.value)}
                           className="h-8 w-full shadow-none focus-visible:ring-0"
                         />
                       </div>
                       <div className="max-h-[250px] overflow-y-auto p-1">
                         {getAllCurrencies()
-                          .filter(c => 
-                            c.name.toLowerCase().includes(currencySearch.toLowerCase()) || 
-                            c.code.toLowerCase().includes(currencySearch.toLowerCase())
+                          .filter(
+                            c =>
+                              c.name.toLowerCase().includes(currencySearch.toLowerCase()) ||
+                              c.code.toLowerCase().includes(currencySearch.toLowerCase())
                           )
                           .map(c => (
-                          <div
-                            key={c.code}
-                            className={cn(
-                              "px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm truncate",
-                              settings.currency === c.code && "bg-accent font-medium text-accent-foreground"
-                            )}
-                            title={`${c.code} — ${c.name}`}
-                            onClick={() => {
-                              updateSettings({ currency: c.code });
-                              setCurrencyOpen(false);
-                            }}
-                          >
-                            <span className="font-medium">{c.code}</span>
-                            <span className="mx-2 text-muted-foreground/50">—</span>
-                            <span className="text-xs text-muted-foreground">{c.name}</span>
+                            <div
+                              key={c.code}
+                              className={cn(
+                                'px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm truncate',
+                                settings.currency === c.code &&
+                                  'bg-accent font-medium text-accent-foreground'
+                              )}
+                              title={`${c.code} — ${c.name}`}
+                              onClick={() => {
+                                updateSettings({ currency: c.code });
+                                setCurrencyOpen(false);
+                              }}
+                            >
+                              <span className="font-medium">{c.code}</span>
+                              <span className="mx-2 text-muted-foreground/50">—</span>
+                              <span className="text-xs text-muted-foreground">{c.name}</span>
+                            </div>
+                          ))}
+                        {getAllCurrencies().filter(
+                          c =>
+                            c.name.toLowerCase().includes(currencySearch.toLowerCase()) ||
+                            c.code.toLowerCase().includes(currencySearch.toLowerCase())
+                        ).length === 0 && (
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            No currencies found.
                           </div>
-                        ))}
-                        {getAllCurrencies().filter(c => c.name.toLowerCase().includes(currencySearch.toLowerCase()) || c.code.toLowerCase().includes(currencySearch.toLowerCase())).length === 0 && (
-                          <div className="p-4 text-center text-sm text-muted-foreground">No currencies found.</div>
                         )}
                       </div>
                     </PopoverContent>
@@ -555,9 +595,13 @@ export default function SettingsIndex() {
                   </Label>
                   <Popover open={formatOpen} onOpenChange={setFormatOpen}>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start text-left font-normal h-10 border-border/50 overflow-hidden">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal h-10 border-border/50 overflow-hidden"
+                      >
                         <span className="truncate">
-                          {COMMON_LOCALES.find(l => l.code === settings.numberLocale)?.name || "Select format"}
+                          {COMMON_LOCALES.find(l => l.code === settings.numberLocale)?.name ||
+                            'Select format'}
                         </span>
                       </Button>
                     </PopoverTrigger>
@@ -566,17 +610,20 @@ export default function SettingsIndex() {
                         <Input
                           placeholder="Search format..."
                           value={formatSearch}
-                          onChange={(e) => setFormatSearch(e.target.value)}
+                          onChange={e => setFormatSearch(e.target.value)}
                           className="h-8 w-full shadow-none focus-visible:ring-0"
                         />
                       </div>
                       <div className="max-h-[250px] overflow-y-auto p-1">
-                        {COMMON_LOCALES.filter(l => l.name.toLowerCase().includes(formatSearch.toLowerCase())).map(l => (
+                        {COMMON_LOCALES.filter(l =>
+                          l.name.toLowerCase().includes(formatSearch.toLowerCase())
+                        ).map(l => (
                           <div
                             key={l.code}
                             className={cn(
-                              "px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm truncate",
-                              settings.numberLocale === l.code && "bg-accent font-medium text-accent-foreground"
+                              'px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm truncate',
+                              settings.numberLocale === l.code &&
+                                'bg-accent font-medium text-accent-foreground'
                             )}
                             title={l.name}
                             onClick={() => {
@@ -587,8 +634,12 @@ export default function SettingsIndex() {
                             {l.name}
                           </div>
                         ))}
-                        {COMMON_LOCALES.filter(l => l.name.toLowerCase().includes(formatSearch.toLowerCase())).length === 0 && (
-                          <div className="p-4 text-center text-sm text-muted-foreground">No formats found.</div>
+                        {COMMON_LOCALES.filter(l =>
+                          l.name.toLowerCase().includes(formatSearch.toLowerCase())
+                        ).length === 0 && (
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            No formats found.
+                          </div>
                         )}
                       </div>
                     </PopoverContent>
@@ -610,12 +661,7 @@ export default function SettingsIndex() {
                       <SelectValue placeholder="Select format" />
                     </SelectTrigger>
                     <SelectContent>
-                      {[
-                        'MMM d, yyyy',
-                        'dd/MM/yyyy',
-                        'MM/dd/yyyy',
-                        'yyyy-MM-dd'
-                      ].map(fmt => (
+                      {['MMM d, yyyy', 'dd/MM/yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd'].map(fmt => (
                         <SelectItem key={fmt} value={fmt}>
                           {format(new Date(), fmt)}
                         </SelectItem>
@@ -772,6 +818,20 @@ export default function SettingsIndex() {
                 onClick={confirmAndLogout}
               >
                 Sign Out Anyway
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
+        <DialogContent className="max-w-md p-6">
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-destructive">Hard Reset Failed</h3>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{errorMessage}</p>
+            <div className="flex justify-end pt-4">
+              <Button variant="secondary" onClick={() => setErrorDialogOpen(false)}>
+                Close
               </Button>
             </div>
           </div>

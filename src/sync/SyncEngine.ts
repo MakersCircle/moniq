@@ -798,7 +798,12 @@ export class SyncEngine {
   async performHardReset(): Promise<void> {
     this.setStatus('syncing');
     try {
-      // 1. Wipe remote sheets (Attempt but don't block if client missing)
+      // 1. Delete IndexedDB (Blocking attempt)
+      // We do this FIRST so if it's locked, we abort without touching the cloud data.
+      const { deleteMoniqDB } = await import('../lib/db');
+      await deleteMoniqDB();
+
+      // 2. Wipe remote sheets (Attempt but don't block if client missing)
       if (this.client || (await this.ensureClient())) {
         try {
           const { SHEET_NAMES } = await import('./types');
@@ -808,17 +813,11 @@ export class SyncEngine {
         }
       }
 
-      // 2. Clear persistence layer directly
+      // 3. Clear persistence layer directly
       // Note: We avoid calling state.resetData() here because it re-opens the DB
       // via clearStore() calls, which can deadlock the subsequent deletion.
       localStorage.clear();
       sessionStorage.clear();
-
-      // 3. Delete IndexedDB (Non-blocking attempt)
-      const { deleteMoniqDB } = await import('../lib/db');
-      await deleteMoniqDB().catch(err => {
-        console.error('Non-blocking DB deletion warning:', err);
-      });
 
       // 4. Reset internal engine state
       this.rowIndexes = {
