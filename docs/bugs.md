@@ -15,10 +15,6 @@
 
 ### ⚪ Low Priority
 
-- [ ] **#15 — Hard reset: IndexedDB deletion may fail silently**
-  `SyncEngine.ts` `performHardReset()` — `deleteMoniqDB()` uses `.catch(err => console.error(...))` which silently ignores failures. If the DB is not deleted, stale data re-uploads to the freshly wiped remote sheet on the next login.
-  **Fix:** Surface the deletion error to the user and consider blocking the page reload until confirmed deleted (or show a warning that a manual browser cache clear may be needed).
-
 - [ ] **#21 — Schema Version tracking**
   Future schema changes require a way to detect outdated remote schemas to perform data migrations before syncing.
   **Fix:** Add `schemaVersion: 1` to the Settings sheet tab so older versions can be properly detected during `initialize()`.
@@ -44,6 +40,8 @@
 ### 🔴 Critical
 
 - [x] **#13 — No user feedback during first-ever Drive workspace setup**
+- [x] **#15 — Hard reset: IndexedDB deletion may fail silently**
+- [x] **#26 — "Ghost" DB connections blocking reset**
 - [x] **#20 — Conflict Resolution clock drift gap**
 - [x] **#22 — API Rate limiting awareness**
   `App.tsx` / `api/google.ts` — Implemented `initPhase` state to provide accurate feedback (`"Setting up your personal Drive folder…"` and `"Initializing your Moniq database…"`) during first-run Google Drive setup instead of hanging on generic text. *(Fixed)*
@@ -128,4 +126,4 @@
 | 🟠 High remaining | 0 |
 | 🟡 Medium remaining | 2 (items 13, 20) |
 | ⚪ Low remaining | 5 (items 15, 21, 22, 23, 24) |
-| **Total open** | **7** |
+| **Total open** | **6** |
