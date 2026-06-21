@@ -3,11 +3,30 @@ import { ArrowRight } from 'lucide-react';
 import { useDataStore } from '../store/dataStore';
 import Grainient from '@/components/ui/Grainient';
 import { Link, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
 export default function Home() {
   const accessToken = useDataStore(s => s.accessToken);
   const setAccessToken = useDataStore(s => s.setAccessToken);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Handle redirect mode for mobile devices
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token=')) {
+      const params = new URLSearchParams(hash.substring(1));
+      const token = params.get('access_token');
+      const expiresIn = params.get('expires_in');
+
+      if (token) {
+        const expiresAt = Date.now() + (Number(expiresIn) || 3600) * 1000;
+        setAccessToken(token, expiresAt);
+        // Clear the hash from the URL
+        window.history.replaceState(null, '', window.location.pathname);
+        navigate('/dashboard');
+      }
+    }
+  }, [navigate, setAccessToken]);
 
   const login = useGoogleLogin({
     onSuccess: tokenResponse => {
