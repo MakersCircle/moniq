@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **API Rate Limiting** (`SheetClient.ts`): Implemented request throttling and exponential backoff to handle Google Sheets API 429 (Too Many Requests) errors gracefully.
+- **Transaction Prerequisites** (`AddTransactionModal.tsx`): Prevented the transaction modal from opening if the user has not yet created at least one Account, one Payment Method, and one Category, displaying a clear prerequisite error instead.
 - **Sync Clock Drift** (`ConflictResolver.ts`): Resolved a conflict resolution bug where minor clock drifts between local devices and the Google Sheets server caused false update collisions during bidirectional syncs.
 - **Phantom DB Locks & Hard Reset** (`db.ts`, `SyncEngine.ts`): Fixed a critical leak where `Promise.all` opened multiple overlapping database connections at startup, permanently blocking Hard Resets. Hard Resets are now fully atomic—safely deleting local data before touching the cloud—and use custom Shadcn error dialogs instead of native alerts.
 - **Background Backup Cycle** (`SyncEngine.ts`): Fixed an issue where the background backup verification cycle was being redundantly triggered after every single sync flush. It now properly uses a session-scoped flag to verify the backup folder at most once per browser session.

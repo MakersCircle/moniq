@@ -21,10 +21,6 @@
 
 
 
-- [ ] **#23 — Transaction modal openable without required prerequisites**
-  Users can open the "Create Transaction" modal even if they have no Accounts, Payment Methods, or Categories set up yet, leading to confusion or errors when they try to save.
-  **Fix:** Show a helper state, disabled button, or a tooltip advising the user to set up at least one Account, Method, and Category before adding transactions.
-
 - [ ] **#24 — "Initial Balance" field missing in Category UI**
   The `Categories` sheet contains an `Initial Balance` column intended for tracking starting balances of Investments, Loans, and Debts. However, the UI does not expose an input field for this value, even when creating or editing a category under the "Invest", "Lend", or "Borrow" groups.
   **Fix:** Add an `Initial Balance` number input to the Category creation/edit modal that conditionally appears when the selected Group is "Invest", "Lend", or "Borrow".
@@ -125,5 +121,5 @@
 | 🔴 Critical remaining | 0 |
 | 🟠 High remaining | 0 |
 | 🟡 Medium remaining | 2 (items 13, 20) |
-| ⚪ Low remaining | 5 (items 15, 21, 22, 23, 24) |
-| **Total open** | **6** |
+| ⚪ Low remaining | 4 (items 15, 21, 22, 24) |
+| **Total open** | **5** |
