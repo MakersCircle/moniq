@@ -3,7 +3,7 @@ import type { DataState, UserProfile } from '../types';
 import type { UserSettings, Account, Category, PaymentMethod } from '@/types';
 import { uuid, now, markDirty } from '../helpers';
 import { detectLocalSettings, getCurrencySymbol } from '@/constants/currencies';
-import { putMany, putSetting, setMeta, delMeta } from '@/lib/db';
+import { putMany, putSetting, delSetting, setMeta, delMeta } from '@/lib/db';
 
 const detected = detectLocalSettings();
 
@@ -140,7 +140,7 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
         accounts: [...state.accounts, ...newAccounts],
         categories: [...state.categories, ...newCategories],
         methods: [...state.methods, ...newMethods],
-        settings: { ...state.settings, hasCompletedOnboarding: true },
+        settings: { ...state.settings, hasCompletedOnboarding: true, tourStep: undefined },
       };
     });
 
@@ -149,7 +149,9 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
     putMany('categories', state.categories);
     putMany('methods', state.methods);
     putSetting('hasCompletedOnboarding', 'true');
+    delSetting('tourStep');
 
     markDirty('settings', 'hasCompletedOnboarding', 'update');
+    markDirty('settings', 'tourStep', 'delete');
   },
 });

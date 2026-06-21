@@ -17,13 +17,17 @@ interface LayoutShellProps {
 }
 
 export default function LayoutShell({ children, onNewTransaction }: LayoutShellProps) {
-  const { settings, accounts, isCloudInitialized, accessToken } = useDataStore();
-  const [sessionSkipped, setSessionSkipped] = useState(() => 
-    sessionStorage.getItem('skipOnboarding') === 'true'
+  const { settings, accounts, isCloudInitialized, accessToken, completeOnboarding } =
+    useDataStore();
+  const [sessionSkipped, setSessionSkipped] = useState(
+    () => sessionStorage.getItem('skipOnboarding') === 'true'
   );
 
   const showOnboarding =
-    isCloudInitialized && accounts.length === 0 && !settings.hasCompletedOnboarding && !sessionSkipped;
+    isCloudInitialized &&
+    accounts.length === 0 &&
+    !settings.hasCompletedOnboarding &&
+    !sessionSkipped;
   const isSessionExpired = !accessToken && isCloudInitialized;
 
   // Global Keyboard Shortcuts
@@ -60,27 +64,32 @@ export default function LayoutShell({ children, onNewTransaction }: LayoutShellP
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onNewTransaction]);
 
-
-
   return (
     <div className="h-screen bg-background text-foreground overflow-hidden">
-      {!settings.hasCompletedOnboarding && settings.tourStep && (
-        <TourDriver />
-      )}
-      
+      {!settings.hasCompletedOnboarding && settings.tourStep && <TourDriver />}
+
       {showOnboarding && (!settings.tourStep || settings.tourStep === 'welcome') && (
-        <WelcomeStep onSkip={() => {
-          sessionStorage.setItem('skipOnboarding', 'true');
-          setSessionSkipped(true);
-        }} />
+        <WelcomeStep
+          onSkip={() => {
+            sessionStorage.setItem('skipOnboarding', 'true');
+            setSessionSkipped(true);
+            completeOnboarding([], []);
+          }}
+        />
       )}
       {settings.tourStep === 'preferences' && <PreferencesStep />}
       {/* setup_accounts OR the legacy nav_accounts step (same modal) */}
-      {(settings.tourStep === 'setup_accounts' || settings.tourStep === 'nav_accounts') && <AccountsSetupStep />}
+      {(settings.tourStep === 'setup_accounts' || settings.tourStep === 'nav_accounts') && (
+        <AccountsSetupStep />
+      )}
       {/* setup_methods OR legacy nav_methods */}
-      {(settings.tourStep === 'setup_methods' || settings.tourStep === 'nav_methods') && <MethodsSetupStep />}
+      {(settings.tourStep === 'setup_methods' || settings.tourStep === 'nav_methods') && (
+        <MethodsSetupStep />
+      )}
       {/* setup_categories OR legacy nav_categories */}
-      {(settings.tourStep === 'setup_categories' || settings.tourStep === 'nav_categories') && <CategoriesSetupStep />}
+      {(settings.tourStep === 'setup_categories' || settings.tourStep === 'nav_categories') && (
+        <CategoriesSetupStep />
+      )}
 
       <Sidebar />
       <TopBar onNewTransaction={onNewTransaction} />

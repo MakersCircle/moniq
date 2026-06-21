@@ -247,6 +247,11 @@ export async function putSetting(key: string, value: string): Promise<void> {
   await db.put('settings', { key, value });
 }
 
+export async function delSetting(key: string): Promise<void> {
+  const db = await getDB();
+  await db.delete('settings', key);
+}
+
 export async function getAllSettings(): Promise<Record<string, string>> {
   const db = await getDB();
   const all = await db.getAll('settings');
