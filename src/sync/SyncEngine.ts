@@ -409,23 +409,55 @@ export class SyncEngine {
     try {
       this.setStatus('pulling');
 
-      // Ensure all sheet tabs exist
-      await this.client!.ensureSheetTabs(Object.values(SHEET_NAMES));
+      const sessionTabsKey = `moniq_tabs_verified_${spreadsheetId}`;
+      const tabsVerified = sessionStorage.getItem(sessionTabsKey) === 'true';
 
-      // Ensure headers exist on each sheet
-      for (const sheetName of Object.values(SHEET_NAMES)) {
-        await this.client!.ensureHeaders(sheetName);
+      let txRows: string[][],
+        accRows: string[][],
+        metRows: string[][],
+        catRows: string[][],
+        budRows: string[][],
+        setRows: string[][];
+
+      const fetchWithBatch = async () => {
+        return await this.client!.batchGetSheets([
+          'Transactions',
+          'Accounts',
+          'Methods',
+          'Categories',
+          'Budgets',
+          'Settings',
+        ]);
+      };
+
+      if (!tabsVerified) {
+        // Ensure all sheet tabs exist
+        await this.client!.ensureSheetTabs(Object.values(SHEET_NAMES));
+
+        // Ensure headers exist on each sheet
+        for (const sheetName of Object.values(SHEET_NAMES)) {
+          await this.client!.ensureHeaders(sheetName);
+        }
+
+        sessionStorage.setItem(sessionTabsKey, 'true');
+        [txRows, accRows, metRows, catRows, budRows, setRows] = await fetchWithBatch();
+      } else {
+        try {
+          [txRows, accRows, metRows, catRows, budRows, setRows] = await fetchWithBatch();
+        } catch (err) {
+          // If batchGet fails (e.g., a tab was manually deleted since last check),
+          // clear the session flag and fall back to the full audit path.
+          console.warn('[SyncEngine] Fast batchGet failed, falling back to full audit:', err);
+          sessionStorage.removeItem(sessionTabsKey);
+
+          await this.client!.ensureSheetTabs(Object.values(SHEET_NAMES));
+          for (const sheetName of Object.values(SHEET_NAMES)) {
+            await this.client!.ensureHeaders(sheetName);
+          }
+          sessionStorage.setItem(sessionTabsKey, 'true');
+          [txRows, accRows, metRows, catRows, budRows, setRows] = await fetchWithBatch();
+        }
       }
-
-      // Pull all data from sheets
-      const [txRows, accRows, metRows, catRows, budRows, setRows] = await Promise.all([
-        this.client!.readSheet('Transactions'),
-        this.client!.readSheet('Accounts'),
-        this.client!.readSheet('Methods'),
-        this.client!.readSheet('Categories'),
-        this.client!.readSheet('Budgets'),
-        this.client!.readSheet('Settings'),
-      ]);
 
       // Parse remote data (skip header rows)
       const txHeader = txRows[0] || [];

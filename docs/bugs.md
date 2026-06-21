@@ -10,10 +10,6 @@
 
 ### 🟡 Medium Priority
 
-- [ ] **#30 — `initialize()` makes 13 API requests per session (no batchGet)**
-  Every `initialize()` fires: 1× `GET /spreadsheets/{id}` + 6× `readSheet` inside `ensureHeaders` + 6× `readSheet` in `Promise.all` = **13 requests minimum**, against a 60 req/min API limit.
-  **Fix:** (1) Replace the 6 data `readSheet` calls with a single `values:batchGet`. (2) Cache the "tabs verified" flag in `sessionStorage` to skip `ensureSheetTabs` + `ensureHeaders` on subsequent inits within the same session.
-
 ### ⚪ Low Priority
 
 - [ ] **#21 — Schema Version tracking**
@@ -44,6 +40,7 @@
 - [x] **#27 — `pushReconciled` discards `appendRows` return value → duplicate rows on sheet**
 - [x] **#28 — Retry on network timeout re-appends entity → duplicate rows on sheet**
 - [x] **#29 — Backoff not exponential; `maxRetries` never enforced**
+- [x] **#30 — `initialize()` makes 13 API requests per session**
 - [x] **#20 — Conflict Resolution clock drift gap**
 - [x] **#22 — API Rate limiting awareness**
   `App.tsx` / `api/google.ts` — Implemented `initPhase` state to provide accurate feedback (`"Setting up your personal Drive folder…"` and `"Initializing your Moniq database…"`) during first-run Google Drive setup instead of hanging on generic text. *(Fixed)*
@@ -122,9 +119,9 @@
 
 | Status | Count |
 |---|---|
-| ✅ Fixed | 20 (items 1–12, 14, 16, 17, 18, 19, 23, 26, 27, 28, 29) |
+| ✅ Fixed | 21 (items 1–12, 14, 16, 17, 18, 19, 23, 26, 27, 28, 29, 30) |
 | 🔴 Critical remaining | 0 |
 | 🟠 High remaining | 0 |
-| 🟡 Medium remaining | 3 (items 13, 20, 30) |
+| 🟡 Medium remaining | 2 (items 13, 20) |
 | ⚪ Low remaining | 6 (items 15, 21, 24, 25, 31) |
-| **Total open** | **9** |
+| **Total open** | **8** |

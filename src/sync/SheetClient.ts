@@ -35,7 +35,9 @@ export class SheetClient {
       const oldest = SheetClient.requestTimestamps[0];
       const waitTime = 60000 - (now - oldest);
       if (waitTime > 0) {
-        console.warn(`[Moniq Sync] Approaching Google Sheets API rate limit. Pausing for ${Math.ceil(waitTime / 1000)} seconds...`);
+        console.warn(
+          `[Moniq Sync] Approaching Google Sheets API rate limit. Pausing for ${Math.ceil(waitTime / 1000)} seconds...`
+        );
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
       return this.rateLimit(); // Re-evaluate after sleeping
@@ -70,6 +72,32 @@ export class SheetClient {
 
     const data = await res.json();
     return data.values || [];
+  }
+
+  /**
+   * Fetch all listed sheets in a single `values:batchGet` request.
+   * Returns one `string[][]` per sheet, in the same order as `sheetNames`.
+   * Falls back to an empty array for any sheet that has no data yet.
+   *
+   * Using this instead of 6 parallel `readSheet` calls reduces the number of
+   * API requests from 6 to 1 on every `initialize()`.
+   */
+  async batchGetSheets(sheetNames: string[]): Promise<string[][][]> {
+    if (sheetNames.length === 0) return [];
+
+    const params = sheetNames.map(n => `ranges=${encodeURIComponent(n)}`).join('&');
+    const url = `/spreadsheets/${this.spreadsheetId}/values:batchGet?${params}`;
+    const res = await this.safeRequest(url);
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Failed to batch-get sheets: ${res.status} ${errorText}`);
+    }
+
+    const data: { valueRanges: { values?: string[][] }[] } = await res.json();
+
+    // valueRanges is returned in the same order as the requested ranges.
+    return (data.valueRanges || []).map(vr => vr.values || []);
   }
 
   /** Read a specific row by 1-based index. */
