@@ -10,10 +10,6 @@
 
 ### 🟡 Medium Priority
 
-- [ ] **#29 — Backoff is not exponential; `maxRetries` is never enforced**
-  `scheduleRetry()` always computes `Math.min(baseRetryDelayMs * 2, maxRetryDelayMs)` = a constant 2000ms. The `retryCount` field on `SyncOperation` is never incremented or read. `maxRetries: 8` is declared but never checked — retries continue indefinitely.
-  **Fix:** Track retry count per flush cycle; use `baseRetryDelayMs * 2^retryCount`; stop after `maxRetries` and surface a permanent error.
-
 - [ ] **#30 — `initialize()` makes 13 API requests per session (no batchGet)**
   Every `initialize()` fires: 1× `GET /spreadsheets/{id}` + 6× `readSheet` inside `ensureHeaders` + 6× `readSheet` in `Promise.all` = **13 requests minimum**, against a 60 req/min API limit.
   **Fix:** (1) Replace the 6 data `readSheet` calls with a single `values:batchGet`. (2) Cache the "tabs verified" flag in `sessionStorage` to skip `ensureSheetTabs` + `ensureHeaders` on subsequent inits within the same session.
@@ -47,6 +43,7 @@
 - [x] **#26 — "Ghost" DB connections blocking reset**
 - [x] **#27 — `pushReconciled` discards `appendRows` return value → duplicate rows on sheet**
 - [x] **#28 — Retry on network timeout re-appends entity → duplicate rows on sheet**
+- [x] **#29 — Backoff not exponential; `maxRetries` never enforced**
 - [x] **#20 — Conflict Resolution clock drift gap**
 - [x] **#22 — API Rate limiting awareness**
   `App.tsx` / `api/google.ts` — Implemented `initPhase` state to provide accurate feedback (`"Setting up your personal Drive folder…"` and `"Initializing your Moniq database…"`) during first-run Google Drive setup instead of hanging on generic text. *(Fixed)*
@@ -125,9 +122,9 @@
 
 | Status | Count |
 |---|---|
-| ✅ Fixed | 19 (items 1–12, 14, 16, 17, 18, 19, 23, 26, 27, 28) |
+| ✅ Fixed | 20 (items 1–12, 14, 16, 17, 18, 19, 23, 26, 27, 28, 29) |
 | 🔴 Critical remaining | 0 |
 | 🟠 High remaining | 0 |
-| 🟡 Medium remaining | 4 (items 13, 20, 29, 30) |
+| 🟡 Medium remaining | 3 (items 13, 20, 30) |
 | ⚪ Low remaining | 6 (items 15, 21, 24, 25, 31) |
-| **Total open** | **10** |
+| **Total open** | **9** |

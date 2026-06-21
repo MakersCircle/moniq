@@ -273,6 +273,8 @@ export class SyncEngine {
   private _lastError: string | undefined;
   private listeners: Set<SyncListener> = new Set();
   private isInitialized = false;
+  /** Tracks how many consecutive flush failures have occurred. Reset on success. */
+  private flushRetryCount = 0;
 
   private constructor(config?: Partial<SyncConfig>) {
     this.config = { ...DEFAULT_SYNC_CONFIG, ...config };
@@ -717,6 +719,7 @@ export class SyncEngine {
       await clearSyncQueue();
       await setMeta('lastSyncedAt', syncTime);
       await this.updatePendingCount();
+      this.flushRetryCount = 0; // reset backoff counter on success
       this.setStatus('idle');
 
       const { useDataStore } = await import('../store/dataStore');
@@ -882,6 +885,7 @@ export class SyncEngine {
         settings: new Map(),
       };
       this.pendingAppendIds.clear();
+      this.flushRetryCount = 0;
       this.client = null;
       this.isInitialized = false;
 
@@ -989,8 +993,26 @@ export class SyncEngine {
   private scheduleRetry() {
     if (this.retryTimer) clearTimeout(this.retryTimer);
 
-    // Simple exponential backoff based on pending queue
-    const delay = Math.min(this.config.baseRetryDelayMs * 2, this.config.maxRetryDelayMs);
+    this.flushRetryCount++;
+
+    if (this.flushRetryCount > this.config.maxRetries) {
+      // Retries exhausted — surface a permanent error and stop.
+      // The queue remains in IndexedDB; the next initialize() will recover it.
+      const message = `Sync failed after ${this.config.maxRetries} retries. Changes are queued locally and will be retried when you reload.`;
+      this.flushRetryCount = 0;
+      this.setStatus('error', message);
+      return;
+    }
+
+    // True exponential backoff: base * 2^attempt, capped at maxRetryDelayMs
+    const delay = Math.min(
+      this.config.baseRetryDelayMs * Math.pow(2, this.flushRetryCount - 1),
+      this.config.maxRetryDelayMs
+    );
+
+    console.warn(
+      `[SyncEngine] Retry ${this.flushRetryCount}/${this.config.maxRetries} in ${Math.round(delay / 1000)}s...`
+    );
 
     this.retryTimer = setTimeout(() => {
       this.flush();
@@ -1005,6 +1027,7 @@ export class SyncEngine {
     if (this.backupPollingTimer) clearInterval(this.backupPollingTimer);
     this.listeners.clear();
     this.pendingAppendIds.clear();
+    this.flushRetryCount = 0;
     this.client = null;
     this.isInitialized = false;
     SyncEngine.instance = null;
