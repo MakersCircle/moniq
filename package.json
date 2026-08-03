@@ -61,7 +61,7 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.47.0",
+    "@cloudflare/vite-plugin": "^1.49.0",
     "@eslint/js": "^9.39.5",
     "@tailwindcss/postcss": "^4.3.3",
     "@tailwindcss/vite": "^4.3.3",
@@ -73,7 +73,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.7.0",
+    "globals": "^17.8.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "prettier": "^3.9.6",
