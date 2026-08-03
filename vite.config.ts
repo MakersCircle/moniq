@@ -14,7 +14,7 @@ export default defineConfig({
   }), react(), tailwindcss(), cloudflare()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
 })
