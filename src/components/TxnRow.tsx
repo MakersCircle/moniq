@@ -23,7 +23,7 @@ export default function TxnRow({ txn, onClick }: TxnRowProps) {
     // Find target (category or second account)
     const targetEntry = txn.entries.find(e => e.accountId !== accEntry?.accountId);
 
-    let label = '';
+    let label: string;
     let sub = txn.note || acc?.name || '';
 
     if (isTransfer) {

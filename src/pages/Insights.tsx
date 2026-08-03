@@ -90,10 +90,16 @@ export default function Insights() {
                           borderRadius: '12px',
                           fontSize: '12px',
                         }}
-                        formatter={(val: number) => [
-                          formatCurrencyShort(val, settings.currencySymbol),
-                          'Spent',
-                        ]}
+                        formatter={val => {
+                          const numericVal = typeof val === 'number' ? val : Number(val);
+                          return [
+                            formatCurrencyShort(
+                              isNaN(numericVal) ? 0 : numericVal,
+                              settings.currencySymbol
+                            ),
+                            'Spent',
+                          ];
+                        }}
                       />
                     </PieChart>
                   </ResponsiveContainer>

@@ -28,7 +28,7 @@ export default function TransactionDetailPanel({
 
     const isTransfer = transaction.uiType === 'transfer';
 
-    let account = null;
+    let account;
     let toAccount = null;
     let category = null;
 

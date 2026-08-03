@@ -83,7 +83,7 @@ export function exportToCSV(
       );
       const targetEntry = t.entries.find(e => e.accountId !== accEntry?.accountId);
 
-      let targetLabel = '';
+      let targetLabel: string;
       if (isTransfer) {
         targetLabel = accMap[targetEntry?.accountId || ''] || 'Unknown';
       } else {
