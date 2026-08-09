@@ -17,12 +17,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="h-[48px] px-6 flex items-center">
         <NavLink to="/" className="flex items-center gap-2 group">
-          <img
-            src="/logo-gradient.svg"
-            alt="moniq logo"
-            className="h-6 w-6 object-contain group-hover:scale-110 transition-transform"
-          />
-          <span className="font-bold tracking-tight text-lg">moniq</span>
+          <img src="/moniq-wordmark.svg" alt="moniq logo" className="h-5 object-contain" />
           <BetaTag className="ml-1.5" />
         </NavLink>
       </div>
