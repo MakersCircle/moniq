@@ -37,3 +37,6 @@ scratch/
 .wrangler
 .dev.vars*
 !.dev.vars.example
+
+# Brand source assets (Figma exports — not needed in git)
+public/new-logos/

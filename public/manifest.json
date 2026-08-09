@@ -15,7 +15,7 @@
     },
     {
       "src": "favicon.svg",
-      "sizes": "512x512",
+      "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "maskable"
     }
