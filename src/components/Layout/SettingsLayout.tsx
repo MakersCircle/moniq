@@ -28,13 +28,13 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   };
 
   return (
-    <div className="flex gap-10 h-[calc(100vh-112px)] overflow-hidden -mt-2">
+    <div className="flex flex-col lg:flex-row gap-4 lg:gap-10 h-[calc(100vh-112px)] lg:h-[calc(100vh-112px)] h-full overflow-hidden -mt-2">
       {/* Settings Internal Sidebar */}
-      <aside className="w-[200px] shrink-0 overflow-y-auto custom-scrollbar pr-2 pb-6 pt-2">
-        <h2 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground mb-6 px-4">
+      <aside className="w-full lg:w-[200px] shrink-0 overflow-x-auto lg:overflow-y-auto custom-scrollbar lg:pr-2 pb-2 lg:pb-6 pt-2 border-b lg:border-b-0 border-border">
+        <h2 className="hidden lg:block text-sm font-black uppercase tracking-[0.2em] text-muted-foreground mb-6 px-4">
           Settings
         </h2>
-        <div className="space-y-1">
+        <div className="flex flex-row lg:flex-col space-x-2 lg:space-x-0 lg:space-y-1 pb-2 lg:pb-0 px-1 lg:px-0 w-max lg:w-full">
           {SETTINGS_NAV.map(item => {
             const count = getCount(item.label);
             return (
@@ -53,19 +53,19 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                 end={item.to === '/settings'}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center justify-between px-4 py-2 rounded-lg text-sm font-medium transition-all group',
+                    'flex items-center justify-between px-3 lg:px-4 py-2 rounded-lg text-sm font-medium transition-all group whitespace-nowrap',
                     isActive
                       ? 'bg-primary/10 text-primary shadow-sm'
                       : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                   )
                 }
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 lg:gap-3">
                   <item.icon className="h-4 w-4" />
                   <span>{item.label}</span>
                 </div>
                 {count !== null && (
-                  <span className="text-[10px] font-bold bg-accent/50 group-hover:bg-primary/20 px-1.5 py-0.5 rounded text-muted-foreground transition-colors">
+                  <span className="ml-2 lg:ml-0 text-[10px] font-bold bg-accent/50 group-hover:bg-primary/20 px-1.5 py-0.5 rounded text-muted-foreground transition-colors">
                     {count}
                   </span>
                 )}
@@ -76,7 +76,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
       </aside>
 
       {/* Settings Content Area Area */}
-      <div className="flex-1 min-w-0 max-w-[800px] overflow-y-auto custom-scrollbar pr-6 pb-6 relative z-10">
+      <div className="flex-1 min-w-0 max-w-full lg:max-w-[800px] overflow-y-auto custom-scrollbar lg:pr-6 pb-6 relative z-10 w-full px-1 lg:px-0">
         {children}
       </div>
     </div>

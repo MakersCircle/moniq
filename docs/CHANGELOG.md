@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Responsive Layout**: Overhauled application layout for full mobile responsiveness. The desktop sidebar now gracefully transforms into a native-app style bottom navigation bar on mobile devices (width < 1024px).
+- **Mobile Navigation**: Added a centered floating action button (FAB) for new transactions to the mobile bottom navigation bar.
+- **Top Bar**: Moved the application logo and settings icon to the Top Bar on mobile devices to optimize space.
+- **Table Layouts**: Added horizontal scrolling to data-heavy tables (Ledger, Budget) to prevent layout squishing on small screens.
+- **Settings UI**: Transformed the Settings sidebar into a horizontally scrollable tab bar on mobile devices.
+- **Search UI**: Replaced the mobile search bar with an intelligent expanding field that collapses into an icon only on extremely narrow screens (<400px).
+
 ## [0.8.1] - 2026-06-21
 
 ### Fixed

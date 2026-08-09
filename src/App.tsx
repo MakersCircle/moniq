@@ -324,7 +324,7 @@ export default function App() {
           open={modalState.isOpen}
           onOpenChange={open => setModalState(prev => ({ ...prev, isOpen: open }))}
         >
-          <DialogContent className="max-w-130 max-h-[90vh] h-auto flex flex-col p-0 overflow-hidden border-none shadow-2xl">
+          <DialogContent className="w-[95vw] sm:max-w-[520px] max-h-[90vh] h-auto flex flex-col p-0 overflow-hidden border-none shadow-2xl">
             <AddTransactionModal
               initialData={modalState.initialData}
               isDuplicate={modalState.isDuplicate}

@@ -91,9 +91,9 @@ export default function LayoutShell({ children, onNewTransaction }: LayoutShellP
         <CategoriesSetupStep />
       )}
 
-      <Sidebar />
+      <Sidebar onNewTransaction={onNewTransaction} />
       <TopBar onNewTransaction={onNewTransaction} />
-      <div className="pl-[220px] pt-[48px] h-screen">
+      <div className="lg:pl-[220px] pt-[48px] pb-[60px] lg:pb-0 h-[100dvh]">
         <main
           id="main-scroll-container"
           className="h-full w-full overflow-y-auto custom-scrollbar flex flex-col"
