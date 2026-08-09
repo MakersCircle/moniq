@@ -1,45 +1,11 @@
-import { useGoogleLogin } from '@react-oauth/google';
 import { ArrowRight } from 'lucide-react';
-import { useDataStore } from '../store/dataStore';
 import Grainient from '@/components/ui/Grainient';
-import { Link, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { MIcon, OIcon, NIcon, IIcon } from '../components/ui/LogoParts';
+import { useHomeAuth } from '../hooks/useHomeAuth';
 
 export default function Home() {
-  const accessToken = useDataStore(s => s.accessToken);
-  const setAccessToken = useDataStore(s => s.setAccessToken);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Handle redirect mode for mobile devices
-    const hash = window.location.hash;
-    if (hash && hash.includes('access_token=')) {
-      const params = new URLSearchParams(hash.substring(1));
-      const token = params.get('access_token');
-      const expiresIn = params.get('expires_in');
-
-      if (token) {
-        const expiresAt = Date.now() + (Number(expiresIn) || 3600) * 1000;
-        setAccessToken(token, expiresAt);
-        // Clear the hash from the URL
-        window.history.replaceState(null, '', window.location.pathname);
-        navigate('/dashboard');
-      }
-    }
-  }, [navigate, setAccessToken]);
-
-  const login = useGoogleLogin({
-    onSuccess: tokenResponse => {
-      console.log('Login Success:', tokenResponse);
-      const expiresAt = Date.now() + (Number(tokenResponse.expires_in) || 3600) * 1000;
-      setAccessToken(tokenResponse.access_token, expiresAt);
-      navigate('/dashboard');
-    },
-    onError: error => console.error('Login Failed:', error),
-    scope:
-      'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
-  });
+  const { isLoggedIn, login } = useHomeAuth();
 
   return (
     <div className="relative flex min-h-[100dvh] w-full bg-[#111111] overflow-hidden selection:bg-primary/30">
@@ -87,7 +53,7 @@ export default function Home() {
       >
         <div className="flex flex-col items-start gap-3 max-w-[calc(100vw-3rem)] md:max-w-none [@media(orientation:landscape)_and_(max-height:500px)]:max-w-xs">
           <div
-            onClick={() => (accessToken ? navigate('/dashboard') : login())}
+            onClick={() => login()}
             className="group flex w-max cursor-pointer items-center rounded-full border border-border/30 bg-card hover:bg-foreground hover:text-background p-3 text-foreground transition-all duration-700 ease-out"
           >
             <ArrowRight className="h-5 w-5 md:h-6 md:w-6 shrink-0 transition-transform duration-500 group-hover:-rotate-45" />
@@ -101,7 +67,7 @@ export default function Home() {
             >
               <div className="overflow-hidden">
                 <span className="whitespace-nowrap pl-3 pr-2 font-mono text-xs md:text-sm font-bold tracking-wide">
-                  {accessToken ? 'Go to Dashboard' : 'Sign in with Google'}
+                  {isLoggedIn ? 'Go to Dashboard' : 'Sign in with Google'}
                 </span>
               </div>
             </div>
