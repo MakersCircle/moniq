@@ -4,6 +4,7 @@ import { useDataStore } from '../store/dataStore';
 import Grainient from '@/components/ui/Grainient';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import { MIcon, OIcon, NIcon, IIcon } from '../components/ui/LogoParts';
 
 export default function Home() {
   const accessToken = useDataStore(s => s.accessToken);
@@ -70,81 +71,70 @@ export default function Home() {
         />
       </div>
 
-      {/* Main Content */}
-      <div className="absolute z-10 bottom-24 left-6 right-6 md:right-auto md:bottom-12 md:left-12 xl:bottom-16 xl:left-16 flex flex-col">
-        {/* Row 1: m, o, Content */}
-        <div className="flex flex-col md:flex-row items-start font-brand text-[15.5vw] sm:text-[14vw] md:text-[24vw] lg:text-[300px] leading-[0.7] tracking-[-0.05em] text-foreground font-black select-none gap-y-6 md:gap-y-0 md:gap-x-8">
-          <div className="flex items-center md:items-start gap-x-2 md:gap-x-6">
-            <div className="hover-primary-brand lowercase">m</div>
-            <div className="hover-primary-brand lowercase">o</div>
-            {/* Show n, ı, q and logo on mobile only in this row */}
-            <div className="flex md:hidden items-center gap-x-2">
-              <div className="hover-primary-brand lowercase">n</div>
-              <div className="hover-primary-brand lowercase">ı</div>
-              <div className="hover-primary-brand lowercase">q</div>
-              <div className="flex items-center justify-center pl-1">
-                <img
-                  src="/favicon.svg"
-                  alt="moniq logo"
-                  className="h-[0.63em] w-[0.63em] object-contain"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Content Box */}
+      {/* Main Content — anchored bottom-left */}
+      <div className="absolute z-10 bottom-16 left-6 md:bottom-10 md:left-12 xl:bottom-12 xl:left-16 flex flex-col gap-6">
+        {/* CTA + copy — sits above the wordmark */}
+        <div className="flex flex-col items-start gap-3">
           <div
-            className="relative flex flex-col items-start justify-start md:pt-4 gap-4 md:gap-4 order-last md:order-none"
-            style={{
-              fontSize: '1rem',
-              lineHeight: 'normal',
-              letterSpacing: 'normal',
-              textTransform: 'none',
-            }}
+            onClick={() => (accessToken ? navigate('/dashboard') : login())}
+            className="group flex w-max cursor-pointer items-center rounded-full border border-border/30 bg-card hover:bg-foreground hover:text-background p-3 text-foreground transition-all duration-700 ease-out"
           >
-            {/* Arrow Button */}
-            <div
-              onClick={() => (accessToken ? navigate('/dashboard') : login())}
-              className="group flex w-max cursor-pointer items-center rounded-full border border-border/30 bg-card hover:bg-foreground hover:text-background p-3 md:p-3 text-foreground transition-all duration-700 ease-out z-10"
-            >
-              <ArrowRight className="h-5 w-5 md:h-6 md:w-6 shrink-0 transition-transform duration-500 md:group-hover:-rotate-45" />
-              <div className="grid grid-cols-[1fr] md:grid-cols-[0fr] transition-[grid-template-columns] duration-700 ease-[cubic-bezier(0.19,1,0.22,1)] md:group-hover:grid-cols-[1fr]">
-                <div className="overflow-hidden">
-                  <span className="whitespace-nowrap pl-3 pr-2 md:pl-3 md:pr-2 font-mono text-xs md:text-sm font-bold tracking-wide">
-                    {accessToken ? 'Go to Dashboard' : 'Sign in with Google'}
-                  </span>
-                </div>
+            <ArrowRight className="h-5 w-5 md:h-6 md:w-6 shrink-0 transition-transform duration-500 group-hover:-rotate-45" />
+            <div className="grid grid-cols-[0fr] transition-[grid-template-columns] duration-700 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:grid-cols-[1fr]">
+              <div className="overflow-hidden">
+                <span className="whitespace-nowrap pl-3 pr-2 font-mono text-xs md:text-sm font-bold tracking-wide">
+                  {accessToken ? 'Go to Dashboard' : 'Sign in with Google'}
+                </span>
               </div>
             </div>
-
-            {/* Headline */}
-            <p className="font-sans text-xs md:text-xs lg:text-sm text-foreground/80 leading-snug font-medium max-w-[260px] md:max-w-[280px]">
-              Seamless personal finance tracking powered by your own Google Drive.
-            </p>
-
-            {/* Paragraph */}
-            <p className="font-mono text-[9px] md:text-[9px] text-muted-foreground/60 uppercase tracking-wider leading-relaxed max-w-[260px] md:max-w-[280px]">
-              Your data is yours. We don't even have a backend to store it. Your logs sync directly,
-              securely, and privately to a hidden spreadsheet inside your own Drive. We couldn't
-              look at your ledgers even if we tried.
-            </p>
           </div>
+
+          <p className="font-sans text-xs sm:text-sm text-foreground/80 leading-snug font-medium max-w-[280px] md:max-w-[320px]">
+            Seamless personal finance tracking powered by your own Google Drive.
+          </p>
+
+          <p className="font-mono text-[9px] text-muted-foreground/60 uppercase tracking-wider leading-relaxed max-w-[280px] md:max-w-[320px]">
+            Your data is yours. We don't even have a backend to store it. Your logs sync directly,
+            securely, and privately to a hidden spreadsheet inside your own Drive. We couldn't look
+            at your ledgers even if we tried.
+          </p>
         </div>
 
-        {/* Row 2: n, ı, q, Logo (Desktop Only) */}
-        <div className="hidden md:flex items-center font-brand md:text-[24vw] lg:text-[300px] leading-[0.7] tracking-[-0.05em] text-foreground font-black select-none gap-x-4 md:gap-x-8">
-          <div className="flex items-center gap-x-3 md:gap-x-6">
-            <div className="hover-primary-brand lowercase">n</div>
-            <div className="hover-primary-brand lowercase">ı</div>
-            <div className="hover-primary-brand lowercase">q</div>
+        {/* Wordmark — vertical layout (466×346 canvas proportions) */}
+        <div
+          className="relative w-[62vw] sm:w-[54vw] md:w-[42vw] lg:w-[420px] xl:w-[460px] select-none text-foreground"
+          style={{ aspectRatio: '466 / 346' }}
+        >
+          <div
+            className="hover-primary-brand absolute transition-colors duration-300"
+            style={{ left: '0%', top: '0.66%', width: '40.44%' }}
+          >
+            <MIcon className="w-full h-auto block" />
           </div>
-          <div className="flex items-center justify-center">
-            <img
-              src="/favicon.svg"
-              alt="moniq logo"
-              className="h-[0.63em] w-[0.63em] object-contain"
-            />
+          <div
+            className="hover-primary-brand absolute transition-colors duration-300"
+            style={{ left: '42.17%', top: '0%', width: '26.49%' }}
+          >
+            <OIcon className="w-full h-auto block" />
           </div>
+          <div
+            className="hover-primary-brand absolute transition-colors duration-300"
+            style={{ left: '0%', top: '41.84%', width: '28.82%' }}
+          >
+            <NIcon className="w-full h-auto block" />
+          </div>
+          <div
+            className="hover-primary-brand absolute transition-colors duration-300"
+            style={{ left: '31.33%', top: '41.83%', width: '29.39%' }}
+          >
+            <IIcon className="w-full h-auto block" />
+          </div>
+          <img
+            src="/logo-gradient.svg"
+            alt="moniq logo"
+            className="absolute z-0"
+            style={{ left: '56.48%', top: '36.71%', width: '41.42%', height: 'auto' }}
+          />
         </div>
       </div>
       {/* Footer Links */}

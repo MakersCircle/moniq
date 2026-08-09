@@ -18,7 +18,7 @@ export default function Sidebar() {
       <div className="h-[48px] px-6 flex items-center">
         <NavLink to="/" className="flex items-center gap-2 group">
           <img
-            src="/favicon.svg"
+            src="/logo-gradient.svg"
             alt="moniq logo"
             className="h-6 w-6 object-contain group-hover:scale-110 transition-transform"
           />
