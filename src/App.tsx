@@ -41,6 +41,7 @@ export default function App() {
   const setCloudInitialized = useDataStore(s => s.setCloudInitialized);
   const syncStatus = useDataStore(s => s.syncStatus);
   const initializeFromDB = useDataStore(s => s.initializeFromDB);
+  const isDemoMode = useDataStore(s => s.isDemoMode);
 
   const [initError, setInitError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -86,7 +87,7 @@ export default function App() {
 
   // 2. Proactive Token Refresh (checks every 5 minutes)
   useEffect(() => {
-    if (!accessToken) return;
+    if (!accessToken || isDemoMode) return;
 
     const check = () => {
       const fiveMinutes = 5 * 60 * 1000;
@@ -102,11 +103,11 @@ export default function App() {
     const interval = setInterval(check, 60 * 1000); // And then every minute
 
     return () => clearInterval(interval);
-  }, [accessToken, tokenExpiresAt]);
+  }, [accessToken, tokenExpiresAt, isDemoMode]);
 
   // 3. SyncEngine Subscription
   useEffect(() => {
-    if (!accessToken) return;
+    if (!accessToken || isDemoMode) return;
 
     const engine = SyncEngine.getInstance();
     const unsubscribe = engine.subscribe((status, pendingCount, error) => {
@@ -119,7 +120,7 @@ export default function App() {
         engine.destroy();
       }
     };
-  }, [accessToken, setSyncStatus]);
+  }, [accessToken, setSyncStatus, isDemoMode]);
 
   // Stable ref for hydrateFromSync so it doesn't cause initCloud to re-run on every settings update
   const hydrateFromSyncRef = useRef(hydrateFromSync);
@@ -129,7 +130,7 @@ export default function App() {
 
   // 4. Cloud initialization (Google Sheets)
   useEffect(() => {
-    if (!accessToken || !isHydrated) return;
+    if (!accessToken || !isHydrated || isDemoMode) return;
 
     async function initCloud() {
       setInitError(null);
@@ -210,14 +211,15 @@ export default function App() {
     setSpreadsheetId,
     setCloudInitialized,
     retryCount,
+    isDemoMode,
   ]);
   useEffect(() => {
-    if (accessToken) {
+    if (accessToken || isDemoMode) {
       window.openTransactionModal = { openNew, openEdit, openDuplicate };
     }
-  }, [accessToken, openNew, openEdit, openDuplicate]);
+  }, [accessToken, isDemoMode, openNew, openEdit, openDuplicate]);
 
-  if (!isHydrated || (accessToken && !isCloudInitialized)) {
+  if (!isHydrated || (!isDemoMode && accessToken && !isCloudInitialized)) {
     if (initError) {
       return (
         <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center">
@@ -272,7 +274,10 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* Landing/Home page - No Sidebar/TopBar */}
-        <Route path="/" element={accessToken ? <Navigate to="/dashboard" replace /> : <Home />} />
+        <Route
+          path="/"
+          element={accessToken || isDemoMode ? <Navigate to="/dashboard" replace /> : <Home />}
+        />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/docs" element={<Navigate to="/docs/user/getting-started" replace />} />
@@ -319,7 +324,7 @@ export default function App() {
         />
       </Routes>
 
-      {accessToken && (
+      {(accessToken || isDemoMode) && (
         <Dialog
           open={modalState.isOpen}
           onOpenChange={open => setModalState(prev => ({ ...prev, isOpen: open }))}

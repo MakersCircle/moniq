@@ -9,7 +9,13 @@ import { MIcon, OIcon, NIcon, IIcon } from '../components/ui/LogoParts';
 export default function Home() {
   const accessToken = useDataStore(s => s.accessToken);
   const setAccessToken = useDataStore(s => s.setAccessToken);
+  const startDemoMode = useDataStore(s => s.startDemoMode);
   const navigate = useNavigate();
+
+  const handleTryDemo = async () => {
+    await startDemoMode();
+    navigate('/dashboard');
+  };
 
   useEffect(() => {
     // Handle redirect mode for mobile devices
@@ -75,21 +81,35 @@ export default function Home() {
       <div className="absolute z-10 bottom-16 left-6 md:bottom-10 md:left-12 xl:bottom-12 xl:left-16 flex flex-col gap-6">
         {/* CTA + copy — sits above the wordmark */}
         <div className="flex flex-col items-start gap-3">
-          <div
-            onClick={() => (accessToken ? navigate('/dashboard') : login())}
-            className="group flex w-max cursor-pointer items-center rounded-full border border-border/30 bg-card hover:bg-foreground hover:text-background p-3 text-foreground transition-all duration-700 ease-out"
-          >
-            <ArrowRight className="h-5 w-5 md:h-6 md:w-6 shrink-0 transition-transform duration-500 group-hover:-rotate-45" />
-            <div className="grid grid-cols-[0fr] transition-[grid-template-columns] duration-700 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:grid-cols-[1fr]">
-              <div className="overflow-hidden">
-                <span className="whitespace-nowrap pl-3 pr-2 font-mono text-xs md:text-sm font-bold tracking-wide">
-                  {accessToken ? 'Go to Dashboard' : 'Sign in with Google'}
-                </span>
+          <div className="group flex flex-col items-start gap-1.5">
+            <div
+              onClick={() => (accessToken ? navigate('/dashboard') : login())}
+              className="flex w-max cursor-pointer items-center rounded-full border border-border/30 bg-card hover:bg-foreground hover:text-background p-3 text-foreground transition-all duration-700 ease-out group-hover:shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+            >
+              <ArrowRight className="h-5 w-5 md:h-6 md:w-6 shrink-0 transition-transform duration-500 group-hover:-rotate-45" />
+              <div className="grid grid-cols-[0fr] transition-[grid-template-columns] duration-700 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:grid-cols-[1fr]">
+                <div className="overflow-hidden">
+                  <span className="whitespace-nowrap pl-3 pr-2 font-mono text-xs md:text-sm font-bold tracking-wide">
+                    {accessToken ? 'Go to Dashboard' : 'Sign in with Google'}
+                  </span>
+                </div>
               </div>
             </div>
+
+            {/* Try Demo — fades in below on hover */}
+            {!accessToken && (
+              <button
+                onClick={handleTryDemo}
+                className="opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100
+                           font-mono text-[10px] text-muted-foreground/60 hover:text-foreground/90
+                           uppercase tracking-widest ml-4 cursor-pointer"
+              >
+                or try demo mode →
+              </button>
+            )}
           </div>
 
-          <p className="font-sans text-xs sm:text-sm text-foreground/80 leading-snug font-medium max-w-[280px] md:max-w-[320px]">
+          <p className="font-sans text-xs sm:text-sm text-foreground/80 leading-snug font-medium max-w-[280px] md:max-w-[320px] mt-2">
             Seamless personal finance tracking powered by your own Google Drive.
           </p>
 

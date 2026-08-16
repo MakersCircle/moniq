@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Demo Mode**: A full offline testing mode allowing users to try the app without a Google account. All data is saved strictly to local IndexedDB. Upon signing in, users can choose to upload their demo data to their Drive or start fresh.
 - **SEO & Social meta tags**: Added full OG/Twitter card tag set, OGImage, and canonical link to `index.html`. Rewrote title and description for search visibility.
 
 ## [0.8.1] - 2026-06-21
