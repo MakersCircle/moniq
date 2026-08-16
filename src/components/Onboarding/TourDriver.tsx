@@ -8,14 +8,21 @@ export default function TourDriver() {
   const tourStep = useDataStore(s => s.settings.tourStep);
   const setTourStep = useDataStore(s => s.setTourStep);
   const completeOnboarding = useDataStore(s => s.completeOnboarding);
+  const isDemoMode = useDataStore(s => s.isDemoMode);
   const navigate = useNavigate();
 
   const setTourStepRef = useRef(setTourStep);
   const completeOnboardingRef = useRef(completeOnboarding);
   const navigateRef = useRef(navigate);
-  useEffect(() => { setTourStepRef.current = setTourStep; }, [setTourStep]);
-  useEffect(() => { completeOnboardingRef.current = completeOnboarding; }, [completeOnboarding]);
-  useEffect(() => { navigateRef.current = navigate; }, [navigate]);
+  useEffect(() => {
+    setTourStepRef.current = setTourStep;
+  }, [setTourStep]);
+  useEffect(() => {
+    completeOnboardingRef.current = completeOnboarding;
+  }, [completeOnboarding]);
+  useEffect(() => {
+    navigateRef.current = navigate;
+  }, [navigate]);
 
   // Helper to reliably wait for an element to mount before highlighting
   const waitForElement = (selector: string, callback: () => void, maxWaitMs = 3000) => {
@@ -36,7 +43,14 @@ export default function TourDriver() {
   };
 
   useEffect(() => {
-    const overlaySteps = ['nav_settings', 'view_accounts', 'view_methods', 'view_categories', 'nav_new_tx', 'tour_sync_backup'];
+    const overlaySteps = [
+      'nav_settings',
+      'view_accounts',
+      'view_methods',
+      'view_categories',
+      'nav_new_tx',
+      'tour_sync_backup',
+    ];
     if (!tourStep || !overlaySteps.includes(tourStep)) return;
 
     let driverObj: ReturnType<typeof driver> | null = null;
@@ -44,19 +58,19 @@ export default function TourDriver() {
 
     const skipTour = () => completeOnboardingRef.current([], []);
 
-    const makeDriver = () => driver({
-      showProgress: false,
-      animate: true,
-      allowClose: true,
-      overlayOpacity: 0.5,
-      doneBtnText: 'Next →',
-      nextBtnText: 'Next →',
-      prevBtnText: '← Back',
-      onCloseClick: skipTour,
-    });
+    const makeDriver = () =>
+      driver({
+        showProgress: false,
+        animate: true,
+        allowClose: true,
+        overlayOpacity: 0.5,
+        doneBtnText: 'Next →',
+        nextBtnText: 'Next →',
+        prevBtnText: '← Back',
+        onCloseClick: skipTour,
+      });
 
     const timeout = setTimeout(() => {
-
       // ── Step: highlight Settings nav link ──────────────────────────
       if (tourStep === 'nav_settings') {
         driverObj = makeDriver();
@@ -67,11 +81,12 @@ export default function TourDriver() {
             element: '#tour-target-settings-nav',
             popover: {
               title: 'Step 1 — Open Settings',
-              description: 'Click the Settings link in the sidebar to start setting up your ledger.',
+              description:
+                'Click the Settings link in the sidebar to start setting up your ledger.',
               side: 'right',
               align: 'start',
               doneBtnText: 'Skip Tour',
-            }
+            },
           });
         } catch {
           // silently fail
@@ -208,6 +223,12 @@ export default function TourDriver() {
 
       // ── Step: Cloud sync info ──────────────────────────────────────
       else if (tourStep === 'tour_sync_backup') {
+        if (isDemoMode) {
+          completeOnboardingRef.current([], []);
+          setTourStepRef.current('completed');
+          return;
+        }
+
         navigateRef.current('/settings');
 
         cleanupClick = waitForElement('#tour-target-sync', () => {

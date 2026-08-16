@@ -1,11 +1,19 @@
 import { ArrowRight } from 'lucide-react';
 import Grainient from '@/components/ui/Grainient';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MIcon, OIcon, NIcon, IIcon } from '../components/ui/LogoParts';
 import { useHomeAuth } from '../hooks/useHomeAuth';
+import { useDataStore } from '../store/dataStore';
 
 export default function Home() {
   const { isLoggedIn, login } = useHomeAuth();
+  const startDemoMode = useDataStore(s => s.startDemoMode);
+  const navigate = useNavigate();
+
+  const handleTryDemo = async () => {
+    await startDemoMode();
+    navigate('/dashboard');
+  };
 
   return (
     <div className="relative flex min-h-[100dvh] w-full bg-[#111111] overflow-hidden selection:bg-primary/30">
@@ -52,28 +60,42 @@ export default function Home() {
         ].join(' ')}
       >
         <div className="flex flex-col items-start gap-3 max-w-[calc(100vw-3rem)] md:max-w-none [@media(orientation:landscape)_and_(max-height:500px)]:max-w-xs">
-          <div
-            onClick={() => login()}
-            className="group flex w-max cursor-pointer items-center rounded-full border border-border/30 bg-card hover:bg-foreground hover:text-background p-3 text-foreground transition-all duration-700 ease-out"
-          >
-            <ArrowRight className="h-5 w-5 md:h-6 md:w-6 shrink-0 transition-transform duration-500 group-hover:-rotate-45" />
+          <div className="group flex flex-col items-start gap-1.5">
             <div
-              className={[
-                'grid transition-[grid-template-columns] duration-700 ease-[cubic-bezier(0.19,1,0.22,1)]',
-                'grid-cols-[1fr]',
-                '[@media(hover:hover)]:grid-cols-[0fr]',
-                '[@media(hover:hover)]:group-hover:grid-cols-[1fr]',
-              ].join(' ')}
+              onClick={() => login()}
+              className="flex w-max cursor-pointer items-center rounded-full border border-border/30 bg-card hover:bg-foreground hover:text-background p-3 text-foreground transition-all duration-700 ease-out group-hover:shadow-[0_0_20px_rgba(255,255,255,0.1)]"
             >
-              <div className="overflow-hidden">
-                <span className="whitespace-nowrap pl-3 pr-2 font-mono text-xs md:text-sm font-bold tracking-wide">
-                  {isLoggedIn ? 'Go to Dashboard' : 'Sign in with Google'}
-                </span>
+              <ArrowRight className="h-5 w-5 md:h-6 md:w-6 shrink-0 transition-transform duration-500 group-hover:-rotate-45" />
+              <div
+                className={[
+                  'grid transition-[grid-template-columns] duration-700 ease-[cubic-bezier(0.19,1,0.22,1)]',
+                  'grid-cols-[1fr]',
+                  '[@media(hover:hover)]:grid-cols-[0fr]',
+                  '[@media(hover:hover)]:group-hover:grid-cols-[1fr]',
+                ].join(' ')}
+              >
+                <div className="overflow-hidden">
+                  <span className="whitespace-nowrap pl-3 pr-2 font-mono text-xs md:text-sm font-bold tracking-wide">
+                    {isLoggedIn ? 'Go to Dashboard' : 'Sign in with Google'}
+                  </span>
+                </div>
               </div>
             </div>
+
+            {/* Try Demo — fades in below on hover */}
+            {!isLoggedIn && (
+              <button
+                onClick={handleTryDemo}
+                className="opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100
+                           font-mono text-[10px] text-muted-foreground/60 hover:text-foreground/90
+                           uppercase tracking-widest ml-4 cursor-pointer"
+              >
+                or try demo mode →
+              </button>
+            )}
           </div>
 
-          <p className="font-sans text-xs sm:text-sm text-foreground/80 leading-snug font-medium max-w-[min(280px,calc(100vw-3rem))] md:max-w-[320px]">
+          <p className="font-sans text-xs sm:text-sm text-foreground/80 leading-snug font-medium max-w-[min(280px,calc(100vw-3rem))] md:max-w-[320px] mt-2">
             Seamless personal finance tracking powered by your own Google Drive.
           </p>
 
