@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **SEO & Social meta tags**: Added full OG/Twitter card tag set, OGImage, and canonical link to `index.html`. Rewrote title and description for search visibility.
+
 ## [0.8.1] - 2026-06-21
 
 ### Fixed
