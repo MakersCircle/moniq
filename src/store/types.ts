@@ -107,4 +107,9 @@ export interface DataState {
   initializeFromDB: () => Promise<void>;
   isHydrated: boolean;
   isCloudInitialized: boolean;
+
+  // Demo Mode
+  isDemoMode: boolean;
+  startDemoMode: () => Promise<void>;
+  exitDemoMode: () => void;
 }

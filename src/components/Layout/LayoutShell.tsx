@@ -10,6 +10,7 @@ import AccountsSetupStep from '@/components/Onboarding/Steps/AccountsSetupStep';
 import MethodsSetupStep from '@/components/Onboarding/Steps/MethodsSetupStep';
 import CategoriesSetupStep from '@/components/Onboarding/Steps/CategoriesSetupStep';
 import SessionExpiredBanner from './SessionExpiredBanner';
+import DemoBanner from './DemoBanner';
 
 interface LayoutShellProps {
   children: ReactNode;
@@ -17,7 +18,7 @@ interface LayoutShellProps {
 }
 
 export default function LayoutShell({ children, onNewTransaction }: LayoutShellProps) {
-  const { settings, accounts, isCloudInitialized, accessToken, completeOnboarding } =
+  const { settings, accounts, isCloudInitialized, accessToken, completeOnboarding, isDemoMode } =
     useDataStore();
   const [sessionSkipped, setSessionSkipped] = useState(
     () => sessionStorage.getItem('skipOnboarding') === 'true'
@@ -28,7 +29,7 @@ export default function LayoutShell({ children, onNewTransaction }: LayoutShellP
     accounts.length === 0 &&
     !settings.hasCompletedOnboarding &&
     !sessionSkipped;
-  const isSessionExpired = !accessToken && isCloudInitialized;
+  const isSessionExpired = !accessToken && isCloudInitialized && !isDemoMode;
 
   // Global Keyboard Shortcuts
   useEffect(() => {
@@ -98,6 +99,7 @@ export default function LayoutShell({ children, onNewTransaction }: LayoutShellP
           id="main-scroll-container"
           className="h-full w-full overflow-y-auto custom-scrollbar flex flex-col"
         >
+          {isDemoMode && <DemoBanner />}
           {isSessionExpired && <SessionExpiredBanner />}
           <div className="p-8 max-w-[1248px] mx-auto min-h-full flex flex-col w-full">
             {children}
