@@ -48,7 +48,7 @@
     "driver.js": "^1.8.0",
     "framer-motion": "^12.43.0",
     "idb": "^8.0.3",
-    "lucide-react": "^1.29.0",
+    "lucide-react": "^1.31.0",
     "ogl": "^1.0.11",
     "path-browserify": "^1.0.1",
     "react": "^19.2.8",
@@ -58,7 +58,7 @@
     "recharts": "^3.10.1",
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",
-    "zustand": "^5.0.2"
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.51.0",
