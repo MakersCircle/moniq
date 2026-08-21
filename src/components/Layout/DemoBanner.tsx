@@ -16,7 +16,10 @@ export default function DemoBanner() {
         <div className="flex items-center gap-2">
           <FlaskConical className="h-3.5 w-3.5 shrink-0" />
           <span className="tracking-wide">
-            Demo Mode — data is saved locally only. Nothing syncs to the cloud.
+            <span className="md:hidden">Demo Mode (Local)</span>
+            <span className="hidden md:inline">
+              Demo Mode — data is saved locally only. Nothing syncs to the cloud.
+            </span>
           </span>
         </div>
         <div className="flex items-center gap-3 shrink-0">

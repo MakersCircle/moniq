@@ -82,11 +82,12 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Try Demo — fades in below on hover */}
+            {/* Try Demo — fades in below on hover (or always visible on touch devices) */}
             {!isLoggedIn && (
               <button
                 onClick={handleTryDemo}
-                className="opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100
+                className="opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 
+                           transition-opacity duration-500 delay-100
                            font-mono text-[10px] text-muted-foreground/60 hover:text-foreground/90
                            uppercase tracking-widest ml-4 cursor-pointer"
               >
