@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PiggyBank } from 'lucide-react';
 import { useDataStore } from '../store/dataStore';
 import { useBudgetSummary } from '../hooks/useComputed';
 import { formatCurrency, formatCurrencyShort, toMonthKey } from '../utils/format';
@@ -7,8 +7,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { UserSettings } from '@/types';
-
-import { PieChartIcon } from 'lucide-react';
 
 export default function Budget() {
   const { settings, updateBudget, transactions } = useDataStore();
@@ -42,12 +40,12 @@ export default function Budget() {
 
   if (transactions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[70vh] text-center px-4">
-        <div className="h-24 w-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-          <PieChartIcon className="h-12 w-12 text-primary opacity-80" />
+      <div className="flex flex-col items-center justify-center min-h-[50dvh] lg:h-[70vh] py-12 text-center px-4">
+        <div className="h-16 w-16 lg:h-24 lg:w-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+          <PiggyBank className="h-8 w-8 lg:h-12 lg:w-12 text-primary opacity-80" />
         </div>
-        <h2 className="text-3xl font-bold tracking-tight mb-3">Nothing here yet</h2>
-        <p className="text-muted-foreground max-w-md mx-auto mb-8 text-base">
+        <h2 className="text-2xl lg:text-3xl font-bold tracking-tight mb-3">Nothing here yet</h2>
+        <p className="text-muted-foreground max-w-md mx-auto mb-8 text-sm lg:text-base">
           Add some transactions first to start allocating your budget.
         </p>
       </div>

@@ -42,12 +42,12 @@ export default function Insights() {
 
   if (transactions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[70vh] text-center px-4">
-        <div className="h-24 w-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-          <LineChart className="h-12 w-12 text-primary opacity-80" />
+      <div className="flex flex-col items-center justify-center min-h-[50dvh] lg:h-[70vh] py-12 text-center px-4">
+        <div className="h-16 w-16 lg:h-24 lg:w-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+          <LineChart className="h-8 w-8 lg:h-12 lg:w-12 text-primary opacity-80" />
         </div>
-        <h2 className="text-3xl font-bold tracking-tight mb-3">Nothing here yet</h2>
-        <p className="text-muted-foreground max-w-md mx-auto mb-8 text-base">
+        <h2 className="text-2xl lg:text-3xl font-bold tracking-tight mb-3">Nothing here yet</h2>
+        <p className="text-muted-foreground max-w-md mx-auto mb-8 text-sm lg:text-base">
           Log some transactions to see your financial trends and insights.
         </p>
       </div>
