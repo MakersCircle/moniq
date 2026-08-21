@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Table Layouts**: Added horizontal scrolling to data-heavy tables (Ledger, Budget) to prevent layout squishing on small screens.
 - **Settings UI**: Transformed the Settings sidebar into a horizontally scrollable tab bar on mobile devices.
 - **Search UI**: Replaced the mobile search bar with an intelligent expanding field that collapses into an icon only on extremely narrow screens (<400px).
+- **Onboarding UX**: Removed the 11-step forced onboarding wizard. Users now land directly on the Dashboard, reducing initial friction and allowing users to independently set up their accounts in Settings.
+
+### Removed
+- Removed all rigid setup modals (`AccountsSetupStep`, `MethodsSetupStep`, `CategoriesSetupStep`, etc.) and the `TourDriver` popover guidance system.
 
 
 ## [0.8.1] - 2026-06-21

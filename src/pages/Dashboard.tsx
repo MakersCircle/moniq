@@ -50,6 +50,22 @@ export default function Dashboard() {
 
   const monthLabel = now.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
+  if (transactions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh] text-center px-4">
+        <div className="h-24 w-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+          <PieChartIcon className="h-12 w-12 text-primary opacity-80" />
+        </div>
+        <h2 className="text-3xl font-bold tracking-tight mb-3">Welcome to Moniq</h2>
+        <p className="text-muted-foreground max-w-md mx-auto mb-8 text-base">
+          Your ledger is a blank canvas. Tap the + button or press{' '}
+          <kbd className="px-2 py-1 bg-accent rounded text-xs font-mono">Alt+N</kbd> to log your
+          first transaction.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-12 pb-10 px-1">
       {/* Page Header */}

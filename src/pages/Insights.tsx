@@ -17,6 +17,8 @@ import { useCategorySpend, useHistoricalData } from '../hooks/useComputed';
 import { formatCurrencyShort } from '../utils/format';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+import { LineChart } from 'lucide-react';
+
 const CATEGORY_COLORS = [
   '#863bff', // Primary
   '#10b981', // Emerald
@@ -28,7 +30,7 @@ const CATEGORY_COLORS = [
 ];
 
 export default function Insights() {
-  const { settings } = useDataStore();
+  const { settings, transactions } = useDataStore();
   const now = new Date();
   const categorySpend = useCategorySpend(now.getFullYear(), now.getMonth() + 1);
   const historicalData = useHistoricalData(6);
@@ -37,6 +39,20 @@ export default function Insights() {
     () => categorySpend.reduce((sum, c) => sum + c.amount, 0),
     [categorySpend]
   );
+
+  if (transactions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh] text-center px-4">
+        <div className="h-24 w-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+          <LineChart className="h-12 w-12 text-primary opacity-80" />
+        </div>
+        <h2 className="text-3xl font-bold tracking-tight mb-3">Nothing here yet</h2>
+        <p className="text-muted-foreground max-w-md mx-auto mb-8 text-base">
+          Log some transactions to see your financial trends and insights.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-10">

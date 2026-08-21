@@ -1,5 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { Download, Search, ChevronRight, MoreVertical, Pencil, Copy, Trash2 } from 'lucide-react';
+import {
+  Download,
+  Search,
+  ChevronRight,
+  MoreVertical,
+  Pencil,
+  Copy,
+  Trash2,
+  List,
+} from 'lucide-react';
 import { useDataStore } from '../store/dataStore';
 import { useFilteredTransactions } from '../hooks/useComputed';
 import { groupByDate, exportToCSV, toMonthKey, formatCurrency } from '../utils/format';
@@ -41,6 +50,20 @@ export default function Transactions() {
   const handleExport = () => {
     exportToCSV(txns, accounts, categories, methods, `moniq-${filter.month || 'all'}.csv`);
   };
+
+  if (transactions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh] text-center px-4">
+        <div className="h-24 w-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+          <List className="h-12 w-12 text-primary opacity-80" />
+        </div>
+        <h2 className="text-3xl font-bold tracking-tight mb-3">Nothing here yet</h2>
+        <p className="text-muted-foreground max-w-md mx-auto mb-8 text-base">
+          Your ledger is empty. Add a transaction to start seeing your history.
+        </p>
+      </div>
+    );
+  }
 
   const currentNet = txns.reduce((sum, t) => {
     if (t.uiType === 'income') return sum + t.amount;

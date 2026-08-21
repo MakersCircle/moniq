@@ -8,8 +8,10 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { UserSettings } from '@/types';
 
+import { PieChartIcon } from 'lucide-react';
+
 export default function Budget() {
-  const { settings, updateBudget } = useDataStore();
+  const { settings, updateBudget, transactions } = useDataStore();
   const [currentDate, setCurrentDate] = useState(new Date());
   const monthKey = toMonthKey(currentDate);
 
@@ -37,6 +39,20 @@ export default function Budget() {
     updateBudget(catId, monthKey, val);
     setEditingId(null);
   };
+
+  if (transactions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh] text-center px-4">
+        <div className="h-24 w-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+          <PieChartIcon className="h-12 w-12 text-primary opacity-80" />
+        </div>
+        <h2 className="text-3xl font-bold tracking-tight mb-3">Nothing here yet</h2>
+        <p className="text-muted-foreground max-w-md mx-auto mb-8 text-base">
+          Add some transactions first to start allocating your budget.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-10">
