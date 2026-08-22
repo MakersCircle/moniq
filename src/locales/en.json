@@ -1,0 +1,28 @@
+{
+  "account": {
+    "createDescription": "Create an account to track its balance and transactions (e.g., Main Checking, Cash Wallet).",
+    "editDescription": "Update the details for this account.",
+    "displayName": "Display Name",
+    "displayNamePlaceholder": "e.g., Bank Account, Cash Wallet, Credit Card",
+    "displayNameRequired": "Display Name is required.",
+    "class": "Class",
+    "asset": "Asset",
+    "liability": "Liability",
+    "assetTooltipPrefix": "Asset:",
+    "assetTooltipText": "Money you own (e.g., savings bank account).",
+    "liabilityTooltipPrefix": "Liability:",
+    "liabilityTooltipText": "Money you owe (e.g., credit card).",
+    "description": "Description",
+    "savingsAccount": "Savings Account",
+    "savingsAccountTooltip": "Balances from savings accounts are used to calculate your total savings and goals.",
+    "excludeFromNetWorth": "Exclude from Net Worth",
+    "excludeFromNetWorthTooltip": "If checked, this account's balance won't count toward your total net worth.",
+    "openingBalance": "Opening Balance",
+    "openingBalanceTooltip": "The initial amount of money in this account when you start tracking.",
+    "newAccount": "New Account",
+    "editAccount": "Edit Account",
+    "saveChanges": "Save Changes",
+    "createAccount": "Create Account",
+    "cancel": "Cancel"
+  }
+}
