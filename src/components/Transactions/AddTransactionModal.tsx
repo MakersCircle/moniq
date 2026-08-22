@@ -497,7 +497,7 @@ export default function AddTransactionModal({
                     <SelectSeparator />
                     <SelectItem value="NEW_METHOD" className="text-primary font-bold">
                       <Plus className="h-4 w-4 inline-block mr-2" />
-                      Create Payment Method
+                      Create Account & Method
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -537,7 +537,7 @@ export default function AddTransactionModal({
                     <SelectSeparator />
                     <SelectItem value="NEW_METHOD" className="text-primary font-bold">
                       <Plus className="h-4 w-4 inline-block mr-2" />
-                      Create Payment Method
+                      Create Account & Method
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -585,7 +585,7 @@ export default function AddTransactionModal({
                     <SelectSeparator />
                     <SelectItem value="NEW_METHOD" className="text-primary font-bold">
                       <Plus className="h-4 w-4 inline-block mr-2" />
-                      Create Payment Method
+                      Create Account & Method
                     </SelectItem>
                   </SelectContent>
                 </Select>

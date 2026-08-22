@@ -6,7 +6,10 @@ import { put } from '../../lib/db';
 
 export interface AccountSlice {
   accounts: Account[];
-  addAccount: (a: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => {
+  addAccount: (
+    a: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>,
+    methodName?: string
+  ) => {
     accountId: string;
     methodId: string;
   };
@@ -19,14 +22,17 @@ export interface AccountSlice {
 export const createAccountSlice: StateCreator<DataState, [], [], AccountSlice> = (set, get) => ({
   accounts: [],
 
-  addAccount: a => {
+  addAccount: (
+    a: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>,
+    methodName?: string
+  ) => {
     const id = uuid();
     const t = now();
     const methodId = uuid();
     const newAccount = { ...a, id, isDeleted: false, createdAt: t, updatedAt: t } as Account;
     const newMethod = {
       id: methodId,
-      name: a.name,
+      name: methodName || a.name,
       linkedAccountId: id,
       isActive: true,
       isDeleted: false,

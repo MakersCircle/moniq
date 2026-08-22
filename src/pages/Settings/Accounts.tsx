@@ -49,7 +49,7 @@ export default function Accounts() {
     if (editing) {
       updateAccount(editing.id, payload);
     } else {
-      addAccount(payload);
+      addAccount(payload, data.methodName);
     }
     setModalOpen(false);
   };
@@ -165,7 +165,7 @@ export default function Accounts() {
                           updateAccount(a.id, { isActive: true });
                         }}
                       >
-                        Restore
+                        {t('common.restore')}
                       </Button>
                       <Button
                         variant="ghost"
@@ -186,7 +186,7 @@ export default function Accounts() {
                             });
                         }}
                       >
-                        <Trash2 className="h-3 w-3 mr-1" /> Delete
+                        <Trash2 className="h-3 w-3 mr-1" /> {t('common.delete')}
                       </Button>
                     </div>
                   </div>

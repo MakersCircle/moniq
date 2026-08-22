@@ -116,7 +116,7 @@ export function CategoryForm({
             value={form.group}
             onValueChange={val => setForm({ ...form, group: val as CategoryGroup })}
           >
-            <SelectTrigger className="h-10 border-border/50 focus:border-primary/30">
+            <SelectTrigger className="h-10">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -145,7 +145,7 @@ export function CategoryForm({
               }}
               onFocus={() => setHeadDropdownOpen(true)}
               onBlur={() => setTimeout(() => setHeadDropdownOpen(false), 200)}
-              className="h-10 border-border/50 focus:border-primary/30"
+              className="h-10"
               autoFocus={!initialData?.head}
             />
             {headDropdownOpen && existingHeads.length > 0 && (
@@ -181,7 +181,7 @@ export function CategoryForm({
               setForm({ ...form, subHead: e.target.value });
               setError('');
             }}
-            className="h-10 border-border/50 focus:border-primary/30"
+            className="h-10"
           />
         </div>
 

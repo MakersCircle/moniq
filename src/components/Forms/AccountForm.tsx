@@ -20,6 +20,7 @@ const ACCOUNT_CLASSES: AccountType[] = ['Asset', 'Liability'];
 
 export interface AccountFormData {
   name: string;
+  methodName?: string;
   type: AccountType;
   description: string;
   initialBalance: number;
@@ -55,13 +56,16 @@ export function AccountForm({
     excludeFromNet: initialData?.excludeFromNet || false,
   });
 
+  const [methodName, setMethodName] = useState('');
+  const [isMethodNameEdited, setIsMethodNameEdited] = useState(false);
+
   const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!form.name.trim()) {
-      setError(t('account.displayNameRequired'));
+      setError(t('common.displayNameRequired'));
       return;
     }
 
@@ -70,6 +74,7 @@ export function AccountForm({
 
     onSave({
       name: form.name.trim(),
+      methodName: methodName.trim() || form.name.trim(),
       type: form.type,
       description: form.description.trim(),
       initialBalance: validInitial,
@@ -84,19 +89,41 @@ export function AccountForm({
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
         <div className="space-y-2">
           <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-            {t('account.displayName')}
+            {t('common.displayName')}
           </Label>
           <Input
             placeholder={t('account.displayNamePlaceholder')}
             value={form.name}
             onChange={e => {
-              setForm({ ...form, name: e.target.value });
+              const val = e.target.value;
+              setForm({ ...form, name: val });
+              if (!isMethodNameEdited) {
+                setMethodName(val);
+              }
               setError('');
             }}
-            className="h-10 border-border/50 focus:border-primary/30"
+            className="h-10"
             autoFocus={!initialData?.name}
           />
         </div>
+
+        {!initialData && (
+          <div className="space-y-2">
+            <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
+              Payment Method Name
+              <InfoTooltip text="An account can have multiple payment methods (e.g., Debit Card, Net Banking). We create one by default here. You can add more later in Settings." />
+            </Label>
+            <Input
+              placeholder={form.name || 'e.g., Visa ending in 1234'}
+              value={methodName}
+              onChange={e => {
+                setMethodName(e.target.value);
+                setIsMethodNameEdited(true);
+              }}
+              className="h-10 mt-2"
+            />
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
@@ -146,12 +173,12 @@ export function AccountForm({
 
         <div className="space-y-2">
           <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-            {t('account.description')}
+            {t('common.description')}
           </Label>
           <textarea
             value={form.description}
             onChange={e => setForm({ ...form, description: e.target.value })}
-            className="flex min-h-[80px] w-full rounded-md border border-border/50 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
+            className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
         </div>
 
@@ -219,7 +246,7 @@ export function AccountForm({
                 setError('');
               }}
               placeholder="0"
-              className="h-12 pl-8 border-border/50 focus:border-primary/30 text-lg font-bold mono"
+              className="h-12 pl-8 border-border/50 text-lg font-bold mono"
               inputMode="decimal"
               step="any"
             />

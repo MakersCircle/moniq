@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **SEO & Social meta tags**: Added full OG/Twitter card tag set, OGImage, and canonical link to `index.html`. Rewrote title and description for search visibility.
 
 ### Changed
+- **Payment Method UX**: Bridged the mental model gap by integrating Payment Method naming directly into the New Account drawer (with a seamless fallback to the account name), and updated transaction modal copy to explicitly state "Create Account & Method".
+- **i18n Unification**: Migrated the Payment Methods settings page to the centralized `useTranslation` architecture. Refactored globally shared strings (Restore, Archive, Delete, Display Name) into a single `common` namespace to drastically reduce translation redundancy across the app.
 - **Form Unification**: Decoupled UI components from business logic by extracting `AccountForm` and `CategoryForm`. This eliminates duplication between the dedicated Settings pages and inline creation drawers.
 - **Form Responsiveness**: Improved grid layouts for inline forms on mobile screens, allowing flexible width distribution and removing forced text truncation on checkboxes. Updated side drawers to use dynamic viewport height (`100dvh`) to flawlessly adapt to mobile soft keyboards.
 - **UI Animations**: Re-enabled `tailwindcss-animate` for Tailwind v4 compatibility. Upgraded all Shadcn UI interactive components (modals, drawers, popovers, dropdowns, selects) with premium `cubic-bezier(0.16,1,0.3,1)` ease-out spring curves for incredibly smooth and consistent motion physics across the app. Fixed layout unmount collapse in side drawers and diagonal animation bugs.

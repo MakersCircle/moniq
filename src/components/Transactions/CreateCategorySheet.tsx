@@ -44,15 +44,13 @@ export function CreateCategorySheet({ open, onOpenChange, onSuccess }: CreateCat
           <SheetDescription className="text-xs">{t('category.createDescription')}</SheetDescription>
         </SheetHeader>
 
-        {open && (
-          <div className="flex-1 overflow-hidden">
-            <CategoryForm
-              onSave={handleSave}
-              onCancel={() => onOpenChange(false)}
-              submitLabel={t('category.createCategory')}
-            />
-          </div>
-        )}
+        <div className="flex-1 overflow-hidden">
+          <CategoryForm
+            onSave={handleSave}
+            onCancel={() => onOpenChange(false)}
+            submitLabel={t('category.createCategory')}
+          />
+        </div>
       </SheetContent>
     </Sheet>
   );

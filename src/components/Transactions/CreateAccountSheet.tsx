@@ -20,15 +20,18 @@ export function CreateAccountSheet({ open, onOpenChange, onSuccess }: CreateAcco
   const { t } = useTranslation();
 
   const handleSave = (data: AccountFormData) => {
-    const { accountId, methodId } = addAccount({
-      name: data.name,
-      type: data.type,
-      description: data.description,
-      initialBalance: data.initialBalance,
-      isSavings: data.isSavings,
-      excludeFromNet: data.excludeFromNet,
-      isActive: data.isActive,
-    });
+    const { accountId, methodId } = addAccount(
+      {
+        name: data.name,
+        type: data.type,
+        description: data.description,
+        initialBalance: data.initialBalance,
+        isSavings: data.isSavings,
+        excludeFromNet: data.excludeFromNet,
+        isActive: data.isActive,
+      },
+      data.methodName
+    );
 
     onSuccess(accountId, methodId);
 
@@ -50,14 +53,13 @@ export function CreateAccountSheet({ open, onOpenChange, onSuccess }: CreateAcco
           <SheetTitle className="text-xl font-bold tracking-tight">New Account</SheetTitle>
           <SheetDescription className="text-xs">{t('account.createDescription')}</SheetDescription>
         </SheetHeader>
-
-        {open && (
+        <div className="flex-1 overflow-hidden">
           <AccountForm
             onSave={handleSave}
             onCancel={() => onOpenChange(false)}
-            submitLabel="Create Account"
+            submitLabel={t('account.createAccount')}
           />
-        )}
+        </div>
       </SheetContent>
     </Sheet>
   );

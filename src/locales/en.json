@@ -1,14 +1,18 @@
 {
   "common": {
     "saveChanges": "Save Changes",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "restore": "Restore",
+    "archive": "Archive",
+    "delete": "Delete",
+    "displayName": "Display Name",
+    "displayNameRequired": "Display Name is required.",
+    "description": "Description"
   },
   "account": {
-    "createDescription": "Create an account to track its balance and transactions (e.g., Main Checking, Cash Wallet).",
+    "createDescription": "Create an account to track its balance and transactions. You can add more payment methods or edit details later in Settings.",
     "editDescription": "Update the details for this account.",
-    "displayName": "Display Name",
     "displayNamePlaceholder": "e.g., Bank Account, Cash Wallet, Credit Card",
-    "displayNameRequired": "Display Name is required.",
     "class": "Class",
     "asset": "Asset",
     "liability": "Liability",
@@ -16,7 +20,6 @@
     "assetTooltipText": "Money you own (e.g., savings bank account).",
     "liabilityTooltipPrefix": "Liability:",
     "liabilityTooltipText": "Money you owe (e.g., credit card).",
-    "description": "Description",
     "savingsAccount": "Savings Account",
     "savingsAccountTooltip": "Balances from savings accounts are used to calculate your total savings and goals.",
     "excludeFromNetWorth": "Exclude from Net Worth",
@@ -28,7 +31,7 @@
     "createAccount": "Create Account"
   },
   "category": {
-    "createDescription": "Create a category to group your transactions and track your spending habits.",
+    "createDescription": "Create a category to group your transactions. You can manage and edit categories later in Settings.",
     "editDescription": "Update the details for this category.",
     "headRequired": "Head is required.",
     "alreadyExists": "This category already exists.",
@@ -54,5 +57,23 @@
     "newCategory": "New Category",
     "editCategory": "Edit Category",
     "createCategory": "Create Category"
+  },
+  "method": {
+    "title": "Payment Methods",
+    "tooltip": "Payment Methods represent how you pay — like UPI, Credit Card, or Cash. When you add a transaction, selecting a method auto-fills the linked account. A default method is created automatically for every new account. Drag to reorder.",
+    "activeMethods": "Active Methods",
+    "archivedMethods": "Archived Methods",
+    "addMethod": "Add Method",
+    "newMethod": "New Pay Method",
+    "editMethod": "Edit Pay Method",
+    "displayNamePlaceholder": "e.g., HDFC Debit Card",
+    "linkedAccount": "Linked Account",
+    "linkedAccountRequired": "A linked account is required.",
+    "linkedAccountPlaceholder": "Select account",
+    "archiveTooltip": "Archive to hide this method from new transactions without losing history.",
+    "deleteConfirmTitle": "Delete Payment Method",
+    "deleteConfirmDesc": "Are you sure you want to permanently delete this payment method? This cannot be undone.",
+    "noActive": "No active payment methods",
+    "noArchived": "No archived payment methods"
   }
 }
