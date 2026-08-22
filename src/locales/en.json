@@ -1,4 +1,8 @@
 {
+  "common": {
+    "saveChanges": "Save Changes",
+    "cancel": "Cancel"
+  },
   "account": {
     "createDescription": "Create an account to track its balance and transactions (e.g., Main Checking, Cash Wallet).",
     "editDescription": "Update the details for this account.",
@@ -21,8 +25,34 @@
     "openingBalanceTooltip": "The initial amount of money in this account when you start tracking.",
     "newAccount": "New Account",
     "editAccount": "Edit Account",
-    "saveChanges": "Save Changes",
-    "createAccount": "Create Account",
-    "cancel": "Cancel"
+    "createAccount": "Create Account"
+  },
+  "category": {
+    "createDescription": "Create a category to group your transactions and track your spending habits.",
+    "editDescription": "Update the details for this category.",
+    "headRequired": "Head is required.",
+    "alreadyExists": "This category already exists.",
+    "group": "Group",
+    "groupTooltipIncome": "Money you earn.",
+    "groupTooltipNeeds": "Essential living expenses.",
+    "groupTooltipWants": "Discretionary spending.",
+    "groupTooltipInvest": "Money saved for the future.",
+    "groupTooltipLend": "Money you loaned to others.",
+    "groupTooltipBorrow": "Money you borrowed from others.",
+    "head": "Head (Main Category)",
+    "headTooltip": "e.g. Food, Housing, Transportation.",
+    "headPlaceholder": "e.g., Food, Housing, Transportation",
+    "subHead": "Sub-head (Optional)",
+    "subHeadTooltip": "e.g. Groceries, Eating Out, Rent.",
+    "subHeadPlaceholder": "e.g., Groceries, Eating Out, Rent",
+    "income": "Income",
+    "needs": "Needs",
+    "wants": "Wants",
+    "invest": "Invest",
+    "lend": "Lend",
+    "borrow": "Borrow",
+    "newCategory": "New Category",
+    "editCategory": "Edit Category",
+    "createCategory": "Create Category"
   }
 }

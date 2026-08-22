@@ -236,7 +236,7 @@ export function AccountForm({
           onClick={onCancel}
           className="h-10 px-6 font-bold uppercase text-[10px] tracking-widest w-full sm:w-auto"
         >
-          {t('account.cancel')}
+          {t('common.cancel')}
         </Button>
         <Button
           type="submit"

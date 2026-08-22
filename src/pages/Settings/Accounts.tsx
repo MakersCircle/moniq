@@ -230,7 +230,7 @@ export default function Accounts() {
               }
               onSave={handleSave}
               onCancel={() => setModalOpen(false)}
-              submitLabel={editing ? 'Save Changes' : 'Create Account'}
+              submitLabel={editing ? t('common.saveChanges') : t('account.createAccount')}
             />
           )}
         </DialogContent>

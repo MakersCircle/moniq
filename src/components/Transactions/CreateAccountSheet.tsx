@@ -44,7 +44,7 @@ export function CreateAccountSheet({ open, onOpenChange, onSuccess }: CreateAcco
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-md flex flex-col p-0 top-12 sm:top-0 h-[calc(100%-3rem)] sm:h-full rounded-t-2xl sm:rounded-none border-t sm:border-t-0 shadow-2xl overflow-hidden"
+        className="w-full sm:max-w-md flex flex-col p-0 top-auto bottom-0 h-auto max-h-[calc(100dvh-3rem)] sm:top-0 sm:bottom-0 sm:h-full sm:max-h-none rounded-t-2xl sm:rounded-none border-t sm:border-t-0 shadow-2xl overflow-hidden"
       >
         <SheetHeader className="px-6 py-4 border-b border-border/50 shrink-0 space-y-1">
           <SheetTitle className="text-xl font-bold tracking-tight">New Account</SheetTitle>

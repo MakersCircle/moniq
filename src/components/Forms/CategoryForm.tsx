@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 import { useDataStore } from '@/store/dataStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { CategoryGroup } from '@/types';
 
 const GROUPS: CategoryGroup[] = ['Income', 'Needs', 'Wants', 'Invest', 'Lend', 'Borrow'];
@@ -35,9 +36,9 @@ export function CategoryForm({
   onSave,
   onCancel,
   submitLabel = 'Save',
-  cancelLabel = 'Cancel',
 }: CategoryFormProps) {
   const { categories } = useDataStore();
+  const { t } = useTranslation();
 
   const [form, setForm] = useState({
     group: initialData?.group || 'Needs',
@@ -61,7 +62,7 @@ export function CategoryForm({
     e.preventDefault();
 
     if (!form.head.trim()) {
-      setError('Head is required.');
+      setError(t('category.headRequired'));
       return;
     }
 
@@ -78,7 +79,7 @@ export function CategoryForm({
         (initialData?.subHead || '').toLowerCase() === form.subHead.trim().toLowerCase()
       )
     ) {
-      setError('This category already exists.');
+      setError(t('category.alreadyExists'));
       return;
     }
 
@@ -94,9 +95,22 @@ export function CategoryForm({
     <form onSubmit={handleSubmit} className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
         <div className="space-y-2">
-          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-            Group
-            <InfoTooltip text="Needs: Essential. Wants: Discretionary. Savings: Future." />
+          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+            {t('category.group')}
+            <InfoTooltip
+              text={
+                <div className="space-y-1">
+                  {GROUPS.map(g => (
+                    <p key={g}>
+                      <span className="font-bold text-foreground">
+                        {t(`category.${g.toLowerCase()}`)}:
+                      </span>{' '}
+                      {t(`category.groupTooltip${g}`)}
+                    </p>
+                  ))}
+                </div>
+              }
+            />
           </Label>
           <Select
             value={form.group}
@@ -108,7 +122,7 @@ export function CategoryForm({
             <SelectContent>
               {GROUPS.map(g => (
                 <SelectItem key={g} value={g}>
-                  {g}
+                  {t(`category.${g.toLowerCase()}`)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -116,13 +130,13 @@ export function CategoryForm({
         </div>
 
         <div className="space-y-2">
-          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-            Head (Main Category)
-            <InfoTooltip text="e.g. Housing, Food, Transportation." />
+          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+            {t('category.head')}
+            <InfoTooltip text={t('category.headTooltip')} />
           </Label>
           <div className="relative">
             <Input
-              placeholder="e.g., Housing, Food, Utilities"
+              placeholder={t('category.headPlaceholder')}
               value={form.head}
               onChange={e => {
                 setForm({ ...form, head: e.target.value });
@@ -156,12 +170,12 @@ export function CategoryForm({
         </div>
 
         <div className="space-y-2">
-          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-            Sub-head (Optional)
-            <InfoTooltip text="e.g. Rent, Groceries, Gas." />
+          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+            {t('category.subHead')}
+            <InfoTooltip text={t('category.subHeadTooltip')} />
           </Label>
           <Input
-            placeholder="e.g., Rent, Groceries, Internet"
+            placeholder={t('category.subHeadPlaceholder')}
             value={form.subHead}
             onChange={e => {
               setForm({ ...form, subHead: e.target.value });
@@ -181,7 +195,7 @@ export function CategoryForm({
           onClick={onCancel}
           className="h-10 px-6 font-bold uppercase text-[10px] tracking-widest w-full sm:w-auto"
         >
-          {cancelLabel}
+          {t('common.cancel')}
         </Button>
         <Button
           type="submit"

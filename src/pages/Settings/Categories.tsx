@@ -6,10 +6,17 @@ import { CategoryForm, type CategoryFormData } from '@/components/Forms/Category
 import type { Category, CategoryGroup } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const GROUPS: CategoryGroup[] = ['Income', 'Needs', 'Wants', 'Invest', 'Lend', 'Borrow'];
 
@@ -31,6 +38,7 @@ export default function Categories() {
     deleteCategory,
     reorderCategories,
   } = useDataStore();
+  const { t } = useTranslation();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [deleteError, setDeleteError] = useState<Record<string, string>>({});
@@ -69,11 +77,6 @@ export default function Categories() {
   }, {});
 
   const handleReorder = (group: string, newOrder: Category[]) => {
-    // We need to maintain the global order relative to other groups if we want to be strict,
-    // but usually reordering within a group is enough.
-    // The store's reorderCategories takes a list of IDs and assigns 0..N.
-    // To maintain relative order across groups, we'd need to reconstruct the full list.
-
     const otherCats = active.filter(c => c.group !== group);
     const fullNewOrder = [...otherCats, ...newOrder];
     reorderCategories(fullNewOrder.map(c => c.id));
@@ -152,7 +155,7 @@ export default function Categories() {
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mr-2">
+                          <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity mr-2">
                             <Button
                               variant="ghost"
                               size="icon"
@@ -250,8 +253,11 @@ export default function Categories() {
         <DialogContent className="max-w-md p-0 overflow-hidden">
           <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
             <DialogTitle className="text-xl font-bold tracking-tight">
-              {editing ? 'Edit Category' : 'New Category'}
+              {editing ? t('category.editCategory') : t('category.newCategory')}
             </DialogTitle>
+            <DialogDescription className="text-xs">
+              {editing ? t('category.editDescription') : t('category.createDescription')}
+            </DialogDescription>
           </DialogHeader>
 
           {modalOpen && (
@@ -268,7 +274,7 @@ export default function Categories() {
               }
               onSave={handleSave}
               onCancel={() => setModalOpen(false)}
-              submitLabel={editing ? 'Save Changes' : 'Create Category'}
+              submitLabel={editing ? t('common.saveChanges') : t('category.createCategory')}
             />
           )}
         </DialogContent>
