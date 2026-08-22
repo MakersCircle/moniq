@@ -10,12 +10,12 @@ import { InfoTooltip } from '@/components/ui/info-tooltip';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 
 export default function Accounts() {
@@ -199,16 +199,19 @@ export default function Accounts() {
         )}
       </div>
 
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-md p-0">
-          <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0 space-y-1">
-            <DialogTitle className="text-xl font-bold tracking-tight">
+      <Sheet open={modalOpen} onOpenChange={setModalOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-md flex flex-col p-0 top-auto bottom-0 h-auto max-h-[calc(100dvh-3rem)] sm:top-0 sm:bottom-0 sm:h-full sm:max-h-none rounded-t-2xl sm:rounded-none border-t sm:border-t-0 shadow-2xl overflow-hidden"
+        >
+          <SheetHeader className="px-6 py-4 border-b border-border/50 shrink-0 space-y-1">
+            <SheetTitle className="text-xl font-bold tracking-tight">
               {editing ? t('account.editAccount') : t('account.newAccount')}
-            </DialogTitle>
-            <DialogDescription className="text-xs">
+            </SheetTitle>
+            <SheetDescription className="text-xs">
               {editing ? t('account.editDescription') : t('account.createDescription')}
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
 
           {modalOpen && (
             <AccountForm
@@ -230,8 +233,8 @@ export default function Accounts() {
               submitLabel={editing ? t('common.saveChanges') : t('account.createAccount')}
             />
           )}
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </SettingsLayout>
   );
 }

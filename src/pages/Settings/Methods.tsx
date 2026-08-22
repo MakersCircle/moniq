@@ -9,13 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
 import {
   Select,
   SelectContent,
@@ -228,15 +222,18 @@ export default function Methods() {
         )}
       </div>
 
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold tracking-tight">
+      <Sheet open={modalOpen} onOpenChange={setModalOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-md flex flex-col p-0 top-auto bottom-0 h-auto max-h-[calc(100dvh-3rem)] sm:top-0 sm:bottom-0 sm:h-full sm:max-h-none rounded-t-2xl sm:rounded-none border-t sm:border-t-0 shadow-2xl overflow-hidden"
+        >
+          <SheetHeader className="px-6 py-4 border-b border-border/50 shrink-0">
+            <SheetTitle className="text-xl font-bold tracking-tight">
               {editing ? t('method.editMethod') : t('method.newMethod')}
-            </DialogTitle>
-          </DialogHeader>
+            </SheetTitle>
+          </SheetHeader>
 
-          <div className="space-y-6 py-4">
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 custom-scrollbar min-h-0 sm:min-h-[300px]">
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
                 {t('common.displayName')}
@@ -283,23 +280,23 @@ export default function Methods() {
             {error && <p className="text-sm font-medium text-destructive">{error}</p>}
           </div>
 
-          <DialogFooter className="pt-4">
+          <SheetFooter className="px-6 py-4 border-t border-border/50 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 shrink-0">
             <Button
               variant="ghost"
               onClick={() => setModalOpen(false)}
-              className="h-10 px-6 font-bold uppercase text-[10px] tracking-widest"
+              className="h-10 px-6 font-bold uppercase text-[10px] tracking-widest w-full sm:w-auto"
             >
               {t('common.cancel')}
             </Button>
             <Button
               onClick={handleSave}
-              className="h-10 px-8 font-bold uppercase text-[10px] tracking-widest"
+              className="h-10 px-8 font-bold uppercase text-[10px] tracking-widest w-full sm:w-auto"
             >
               {t('common.saveChanges')}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </SettingsLayout>
   );
 }
