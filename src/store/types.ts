@@ -46,7 +46,10 @@ export interface DataState {
   setCloudInitialized: (initialized: boolean) => void;
 
   // Accounts
-  addAccount: (a: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => {
+  addAccount: (
+    a: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>,
+    methodName?: string
+  ) => {
     accountId: string;
     methodId: string;
   };

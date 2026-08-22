@@ -28,9 +28,21 @@
     "openingBalanceTooltip": "The initial amount of money in this account when you start tracking.",
     "newAccount": "New Account",
     "editAccount": "Edit Account",
-    "createAccount": "Create Account"
+    "createAccount": "Create Account",
+    "title": "Accounts",
+    "tooltip": "Accounts are the core of Moniq. They represent places where your money lives (like Bank Accounts or Wallets) or money you owe (like Credit Cards or Loans). Every transaction requires an account. You should create an account for each place where your money lives or where you owe money like individual bank accounts, individual credit cards etc.",
+    "activeAccounts": "Financial Entities",
+    "addAccount": "Add Account",
+    "savingsBadge": "Savings",
+    "openingBalanceBadge": "Opening",
+    "archivedAccounts": "Archived Accounts"
   },
   "category": {
+    "title": "Categories",
+    "tooltip": "Categories organize your income and expenses into a hierarchy. Drag to reorder within groups.",
+    "subtitle": "Expense & Income Classification",
+    "addCategory": "Add Category",
+    "archivedCategories": "Archived Categories",
     "createDescription": "Create a category to group your transactions. You can manage and edit categories later in Settings.",
     "editDescription": "Update the details for this category.",
     "headRequired": "Head is required.",

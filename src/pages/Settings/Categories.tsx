@@ -3,6 +3,7 @@ import { Reorder } from 'framer-motion';
 import { Plus, Pencil, Archive, Trash2, Tag, GripVertical } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
 import { CategoryForm, type CategoryFormData } from '@/components/Forms/CategoryForm';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { Category, CategoryGroup } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,7 +17,6 @@ import {
 import { cn } from '@/lib/utils';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
-import { useTranslation } from '@/hooks/useTranslation';
 
 const GROUPS: CategoryGroup[] = ['Income', 'Needs', 'Wants', 'Invest', 'Lend', 'Borrow'];
 
@@ -89,18 +89,15 @@ export default function Categories() {
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold tracking-tight">Categories</h2>
-                <InfoTooltip
-                  position="bottom"
-                  text="Categories organize your income and expenses into a hierarchy. Drag to reorder within groups."
-                />
+                <h2 className="text-xl font-bold tracking-tight">{t('category.title')}</h2>
+                <InfoTooltip position="bottom" text={t('category.tooltip')} />
               </div>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                Expense & Income Classification
+                {t('category.subtitle')}
               </p>
             </div>
             <Button size="sm" onClick={openAdd} className="h-9 gap-2">
-              <Plus className="h-4 w-4" /> Add Category
+              <Plus className="h-4 w-4" /> {t('category.addCategory')}
             </Button>
           </div>
         </div>
@@ -189,7 +186,7 @@ export default function Categories() {
         {archived.length > 0 && (
           <div className="pt-8 space-y-4">
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 px-1">
-              Archived Categories
+              {t('category.archivedCategories')}
             </h4>
             <div className="grid grid-cols-1 gap-2">
               {archived.map(c => (

@@ -64,18 +64,15 @@ export default function Accounts() {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold tracking-tight">Accounts</h2>
-                <InfoTooltip
-                  position="bottom"
-                  text="Accounts are the core of Moniq. They represent places where your money lives (like Bank Accounts or Wallets) or money you owe (like Credit Cards or Loans). Every transaction requires an account. You shoudl create an account for each place where your money lives or where you owe money like individual bank accounts, individual credit cards etc."
-                />
+                <h2 className="text-xl font-bold tracking-tight">{t('account.title')}</h2>
+                <InfoTooltip position="bottom" text={t('account.tooltip')} />
               </div>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                Financial Entities ({activeAccounts.length})
+                {t('account.activeAccounts')} ({activeAccounts.length})
               </p>
             </div>
             <Button size="sm" onClick={openAdd} className="h-9 gap-2">
-              <Plus className="h-4 w-4" /> Add Account
+              <Plus className="h-4 w-4" /> {t('account.addAccount')}
             </Button>
           </div>
         </div>
@@ -98,7 +95,7 @@ export default function Accounts() {
                         <p className="font-bold text-sm tracking-tight">{a.name}</p>
                         {a.isSavings && (
                           <span className="text-[8px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black uppercase tracking-widest">
-                            Savings
+                            {t('account.savingsBadge')}
                           </span>
                         )}
                       </div>
@@ -113,7 +110,7 @@ export default function Accounts() {
                         {a.initialBalance.toLocaleString()}
                       </p>
                       <p className="text-[9px] text-muted-foreground font-medium uppercase">
-                        Opening
+                        {t('account.openingBalanceBadge')}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 opacity-10 group-hover:opacity-100 transition-opacity">
@@ -144,7 +141,7 @@ export default function Accounts() {
         {archivedAccounts.length > 0 && (
           <div className="pt-8 space-y-4">
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 px-1">
-              Archived Accounts
+              {t('account.archivedAccounts')}
             </h4>
             <div className="grid grid-cols-1 gap-2">
               {archivedAccounts.map(a => (
@@ -206,7 +203,7 @@ export default function Accounts() {
         <DialogContent className="max-w-md p-0">
           <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0 space-y-1">
             <DialogTitle className="text-xl font-bold tracking-tight">
-              {editing ? 'Edit Account' : 'New Account'}
+              {editing ? t('account.editAccount') : t('account.newAccount')}
             </DialogTitle>
             <DialogDescription className="text-xs">
               {editing ? t('account.editDescription') : t('account.createDescription')}
