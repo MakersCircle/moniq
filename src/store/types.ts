@@ -46,7 +46,10 @@ export interface DataState {
   setCloudInitialized: (initialized: boolean) => void;
 
   // Accounts
-  addAccount: (a: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => void;
+  addAccount: (a: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => {
+    accountId: string;
+    methodId: string;
+  };
   updateAccount: (id: string, patch: Partial<Account>) => void;
   archiveAccount: (id: string) => void;
   restoreAccount: (id: string) => void;
@@ -60,7 +63,9 @@ export interface DataState {
   reorderMethods: (ids: string[]) => void;
 
   // Categories
-  addCategory: (c: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => void;
+  addCategory: (c: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => {
+    id: string;
+  };
   updateCategory: (id: string, patch: Partial<Category>) => void;
   archiveCategory: (id: string) => void;
   deleteCategory: (id: string) => { success: boolean; reason?: string };

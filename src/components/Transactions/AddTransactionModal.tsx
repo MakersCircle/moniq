@@ -17,6 +17,9 @@ import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/utils/format';
 import { DatePicker } from './DatePicker';
 import { LedgerEngine } from '@/lib/ledger';
+import { CreateAccountSheet } from './CreateAccountSheet';
+import { CreateCategorySheet } from './CreateCategorySheet';
+import { SelectSeparator } from '@/components/ui/select';
 
 interface SplitLine {
   categoryId: string;
@@ -127,6 +130,9 @@ export default function AddTransactionModal({
     initialData?.methodId || lastTransaction?.methodId || activeMethods[0]?.id || ''
   );
   const [note, setNote] = useState(initialData?.note || '');
+
+  const [showAccountSheet, setShowAccountSheet] = useState(false);
+  const [showCategorySheet, setShowCategorySheet] = useState(false);
 
   const amountRef = useRef<HTMLInputElement>(null);
 
@@ -348,21 +354,6 @@ export default function AddTransactionModal({
 
   const inputClasses = 'h-9 bg-muted/40 border-transparent focus:border-primary/30 transition-all';
 
-  if (activeAccounts.length === 0 || activeMethods.length === 0 || activeCategories.length === 0) {
-    return (
-      <div className="p-8 text-center space-y-4 bg-background rounded-lg border border-border/50">
-        <h3 className="text-lg font-bold text-destructive">Prerequisites Missing</h3>
-        <p className="text-sm text-muted-foreground pb-4">
-          You must create at least one <strong>Account</strong>, one <strong>Payment Method</strong>
-          , and one <strong>Category</strong> before adding a transaction.
-        </p>
-        <Button onClick={onClose} variant="secondary" className="w-full">
-          Close
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <form
       onSubmit={e => handleSubmit(e)}
@@ -482,6 +473,10 @@ export default function AddTransactionModal({
                 <Select
                   value={fromMethodId || undefined}
                   onValueChange={val => {
+                    if (val === 'NEW_METHOD') {
+                      setShowAccountSheet(true);
+                      return;
+                    }
                     setFromMethodId(val);
                     if (val === toMethodId) setToMethodId('');
                   }}
@@ -499,6 +494,11 @@ export default function AddTransactionModal({
                         </SelectItem>
                       );
                     })}
+                    <SelectSeparator />
+                    <SelectItem value="NEW_METHOD" className="text-primary font-bold">
+                      <Plus className="h-4 w-4 inline-block mr-2" />
+                      Create Payment Method
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 {fromAccountId && (
@@ -511,7 +511,16 @@ export default function AddTransactionModal({
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
                   To
                 </Label>
-                <Select value={toMethodId || undefined} onValueChange={setToMethodId}>
+                <Select
+                  value={toMethodId || undefined}
+                  onValueChange={val => {
+                    if (val === 'NEW_METHOD') {
+                      setShowAccountSheet(true);
+                      return;
+                    }
+                    setToMethodId(val);
+                  }}
+                >
                   <SelectTrigger className={inputClasses} tabIndex={4}>
                     <SelectValue placeholder="Select method" />
                   </SelectTrigger>
@@ -525,6 +534,11 @@ export default function AddTransactionModal({
                         </SelectItem>
                       );
                     })}
+                    <SelectSeparator />
+                    <SelectItem value="NEW_METHOD" className="text-primary font-bold">
+                      <Plus className="h-4 w-4 inline-block mr-2" />
+                      Create Payment Method
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 {toAccountId && (
@@ -549,7 +563,16 @@ export default function AddTransactionModal({
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
                   Payment Method
                 </Label>
-                <Select value={methodId} onValueChange={setMethodId}>
+                <Select
+                  value={methodId}
+                  onValueChange={val => {
+                    if (val === 'NEW_METHOD') {
+                      setShowAccountSheet(true);
+                      return;
+                    }
+                    setMethodId(val);
+                  }}
+                >
                   <SelectTrigger className={inputClasses} tabIndex={3}>
                     <SelectValue placeholder="Select Method" />
                   </SelectTrigger>
@@ -559,6 +582,11 @@ export default function AddTransactionModal({
                         {m.name}
                       </SelectItem>
                     ))}
+                    <SelectSeparator />
+                    <SelectItem value="NEW_METHOD" className="text-primary font-bold">
+                      <Plus className="h-4 w-4 inline-block mr-2" />
+                      Create Payment Method
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 {derivedAccountId && (
@@ -579,6 +607,10 @@ export default function AddTransactionModal({
                   <Select
                     value={selectedHead || undefined}
                     onValueChange={val => {
+                      if (val === 'NEW_CATEGORY') {
+                        setShowCategorySheet(true);
+                        return;
+                      }
                       setSelectedHead(val);
                       const subs = activeCategories.filter(c => c.head === val);
                       setTargetId(subs.length === 1 ? subs[0].id : '');
@@ -593,6 +625,11 @@ export default function AddTransactionModal({
                           {h}
                         </SelectItem>
                       ))}
+                      <SelectSeparator />
+                      <SelectItem value="NEW_CATEGORY" className="text-primary font-bold">
+                        <Plus className="h-4 w-4 inline-block mr-2" />
+                        Create Category
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -767,6 +804,33 @@ export default function AddTransactionModal({
           Save {type}
         </Button>
       </div>
+
+      <CreateAccountSheet
+        open={showAccountSheet}
+        onOpenChange={setShowAccountSheet}
+        onSuccess={(acctId, methId) => {
+          setShowAccountSheet(false);
+          // Set the new method ID for wherever they were
+          if (type === 'transfer') {
+            if (!fromMethodId) setFromMethodId(methId);
+            else setToMethodId(methId);
+          } else {
+            setMethodId(methId);
+          }
+        }}
+      />
+      <CreateCategorySheet
+        open={showCategorySheet}
+        onOpenChange={setShowCategorySheet}
+        onSuccess={catId => {
+          setShowCategorySheet(false);
+          const newCat = useDataStore.getState().categories.find(c => c.id === catId);
+          if (newCat) {
+            setSelectedHead(newCat.head);
+            setTargetId(catId);
+          }
+        }}
+      />
     </form>
   );
 }

@@ -10,10 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **i18n Infrastructure**: Introduced a custom `useTranslation` hook and `src/locales/en.json` to begin centralizing UI text for future internationalization, starting with Account forms.
 - **Demo Mode**: A full offline testing mode allowing users to try the app without a Google account. All data is saved strictly to local IndexedDB. Upon signing in, users can choose to upload their demo data to their Drive or start fresh.
 - **SEO & Social meta tags**: Added full OG/Twitter card tag set, OGImage, and canonical link to `index.html`. Rewrote title and description for search visibility.
 
 ### Changed
+- **Form Unification**: Decoupled UI components from business logic by extracting `AccountForm` and `CategoryForm`. This eliminates duplication between the dedicated Settings pages and inline creation drawers.
+- **Form Responsiveness**: Improved grid layouts for inline forms on mobile screens, allowing flexible width distribution and removing forced text truncation on checkboxes.
 - **Responsive Layout**: Overhauled application layout for full mobile responsiveness. The desktop sidebar now gracefully transforms into a native-app style bottom navigation bar on mobile devices (width < 1024px).
 - **Mobile Navigation**: Added a centered floating action button (FAB) for new transactions to the mobile bottom navigation bar.
 - **Top Bar**: Moved the application logo and settings icon to the Top Bar on mobile devices to optimize space.

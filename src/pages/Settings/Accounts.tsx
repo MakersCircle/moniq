@@ -1,100 +1,55 @@
 import { useState } from 'react';
 import { Plus, Pencil, Archive, Trash2, Landmark, CreditCard } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
-import type { Account, AccountType } from '@/types';
+import { AccountForm, type AccountFormData } from '@/components/Forms/AccountForm';
+import type { Account } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
-
-const ACCOUNT_CLASSES: AccountType[] = ['Asset', 'Liability'];
-
-interface AccountForm {
-  name: string;
-  type: AccountType;
-  description: string;
-  initialBalance: string;
-  isSavings: boolean;
-  excludeFromNet: boolean;
-}
-
-const emptyForm: AccountForm = {
-  name: '',
-  type: 'Asset',
-  description: '',
-  initialBalance: '',
-  isSavings: false,
-  excludeFromNet: false,
-};
 
 export default function Accounts() {
   const { accounts, settings, addAccount, updateAccount, archiveAccount, deleteAccount } =
     useDataStore();
+  const { t } = useTranslation();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Account | null>(null);
-  const [form, setForm] = useState<AccountForm>(emptyForm);
-  const [error, setError] = useState('');
   const [deleteError, setDeleteError] = useState<Record<string, string>>({});
 
   const openAdd = () => {
     setEditing(null);
-    setForm(emptyForm);
-    setError('');
     setModalOpen(true);
   };
 
   const openEdit = (a: Account) => {
     setEditing(a);
-    setForm({
-      name: a.name,
-      type: a.type,
-      description: a.description || '',
-      initialBalance: String(a.initialBalance),
-      isSavings: a.isSavings,
-      excludeFromNet: !!a.excludeFromNet,
-    });
-    setError('');
     setModalOpen(true);
   };
 
-  const handleSave = () => {
-    if (!form.name.trim()) {
-      setError('Display Name is required.');
-      return;
-    }
-    setError('');
-    const data = {
-      name: form.name.trim(),
-      type: form.type,
-      description: form.description.trim() || undefined,
-      initialBalance: parseFloat(form.initialBalance) || 0,
-      isSavings: form.isSavings,
-      excludeFromNet: form.excludeFromNet,
+  const handleSave = (data: AccountFormData) => {
+    const payload = {
+      name: data.name,
+      type: data.type,
+      description: data.description || undefined,
+      initialBalance: data.initialBalance,
+      isSavings: data.isSavings,
+      excludeFromNet: data.excludeFromNet,
       isActive: true,
     };
     if (editing) {
-      updateAccount(editing.id, data);
+      updateAccount(editing.id, payload);
     } else {
-      addAccount(data);
+      addAccount(payload);
     }
     setModalOpen(false);
   };
@@ -248,147 +203,36 @@ export default function Accounts() {
       </div>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
+        <DialogContent className="max-w-md p-0">
+          <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0 space-y-1">
             <DialogTitle className="text-xl font-bold tracking-tight">
               {editing ? 'Edit Account' : 'New Account'}
             </DialogTitle>
+            <DialogDescription className="text-xs">
+              {editing ? t('account.editDescription') : t('account.createDescription')}
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-                Display Name
-                <InfoTooltip text="The name of your account (e.g., Main Checking, Cash Wallet). Used to identify it in transactions." />
-              </Label>
-              <Input
-                placeholder="e.g., Bank Account, Cash Wallet, Credit Card"
-                value={form.name}
-                onChange={e => {
-                  setForm({ ...form, name: e.target.value });
-                  setError('');
-                }}
-                className="h-10 border-border/50 focus:border-primary/30"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-                Class
-                <InfoTooltip text="Asset: Money you own. Liability: Money you owe." />
-              </Label>
-              <Select
-                value={form.type}
-                onValueChange={val => setForm({ ...form, type: val as AccountType })}
-              >
-                <SelectTrigger className="h-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ACCOUNT_CLASSES.map(t => (
-                    <SelectItem key={t} value={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-                Description
-                <InfoTooltip text="An optional note. Used only for your own identification. Not used for any calculation." />
-              </Label>
-              <textarea
-                value={form.description}
-                onChange={e => setForm({ ...form, description: e.target.value })}
-                className="flex min-h-[80px] w-full rounded-md border border-border/50 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-start space-x-2 border rounded-lg p-3 border-border/50">
-                <Checkbox
-                  id="isSavings"
-                  checked={form.isSavings}
-                  onCheckedChange={(val: boolean | 'indeterminate') =>
-                    setForm({ ...form, isSavings: !!val })
-                  }
-                  className="mt-0.5"
-                />
-                <div className="flex flex-col">
-                  <label
-                    htmlFor="isSavings"
-                    className="text-xs font-bold cursor-pointer flex items-center"
-                  >
-                    Savings Account
-                    <InfoTooltip text="Mark this if this is your dedicated savings account." />
-                  </label>
-                </div>
-              </div>
-              <div className="flex items-start space-x-2 border rounded-lg p-3 border-border/50">
-                <Checkbox
-                  id="excludeFromNet"
-                  checked={form.excludeFromNet}
-                  onCheckedChange={(val: boolean | 'indeterminate') =>
-                    setForm({ ...form, excludeFromNet: !!val })
-                  }
-                  className="mt-0.5"
-                />
-                <div className="flex flex-col">
-                  <label
-                    htmlFor="excludeFromNet"
-                    className="text-xs font-bold cursor-pointer text-muted-foreground flex items-center whitespace-nowrap"
-                  >
-                    Exclude Net Worth
-                    <InfoTooltip text="Exclude this balance from your total Net Worth calculation." />
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-                Opening Balance
-                <InfoTooltip text="The balance this account had when you started tracking in Moniq." />
-              </Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
-                  {settings.currencySymbol}
-                </span>
-                <Input
-                  type="number"
-                  value={form.initialBalance}
-                  onChange={e => {
-                    setForm({ ...form, initialBalance: e.target.value });
-                    setError('');
-                  }}
-                  placeholder="0"
-                  className="h-12 pl-8 border-border/50 focus:border-primary/30 text-lg font-bold mono"
-                  inputMode="decimal"
-                  step="any"
-                />
-              </div>
-            </div>
-
-            {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-          </div>
-
-          <DialogFooter className="pt-4">
-            <Button
-              variant="ghost"
-              onClick={() => setModalOpen(false)}
-              className="h-10 px-6 font-bold uppercase text-[10px] tracking-widest"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              className="h-10 px-8 font-bold uppercase text-[10px] tracking-widest"
-            >
-              {editing ? 'Update Account' : 'Create Account'}
-            </Button>
-          </DialogFooter>
+          {modalOpen && (
+            <AccountForm
+              initialData={
+                editing
+                  ? {
+                      name: editing.name,
+                      type: editing.type,
+                      description: editing.description,
+                      initialBalance: editing.initialBalance,
+                      isSavings: editing.isSavings,
+                      excludeFromNet: editing.excludeFromNet,
+                      isActive: editing.isActive,
+                    }
+                  : undefined
+              }
+              onSave={handleSave}
+              onCancel={() => setModalOpen(false)}
+              submitLabel={editing ? 'Save Changes' : 'Create Account'}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </SettingsLayout>

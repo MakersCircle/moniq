@@ -6,7 +6,10 @@ import { put } from '../../lib/db';
 
 export interface AccountSlice {
   accounts: Account[];
-  addAccount: (a: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => void;
+  addAccount: (a: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => {
+    accountId: string;
+    methodId: string;
+  };
   updateAccount: (id: string, patch: Partial<Account>) => void;
   archiveAccount: (id: string) => void;
   restoreAccount: (id: string) => void;
@@ -40,6 +43,7 @@ export const createAccountSlice: StateCreator<DataState, [], [], AccountSlice> =
     put('methods', newMethod);
     markDirty('account', id, 'create');
     markDirty('method', methodId, 'create');
+    return { accountId: id, methodId };
   },
 
   updateAccount: (id, patch) => {
