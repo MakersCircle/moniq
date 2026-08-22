@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Form Unification**: Decoupled UI components from business logic by extracting `AccountForm` and `CategoryForm`. This eliminates duplication between the dedicated Settings pages and inline creation drawers.
 - **Form Responsiveness**: Improved grid layouts for inline forms on mobile screens, allowing flexible width distribution and removing forced text truncation on checkboxes. Updated side drawers to use dynamic viewport height (`100dvh`) to flawlessly adapt to mobile soft keyboards.
+- **UI Animations**: Re-enabled `tailwindcss-animate` for Tailwind v4 compatibility. Upgraded all Shadcn UI interactive components (modals, drawers, popovers, dropdowns, selects) with premium `cubic-bezier(0.16,1,0.3,1)` ease-out spring curves for incredibly smooth and consistent motion physics across the app. Fixed layout unmount collapse in side drawers and diagonal animation bugs.
 - **Category UX**: Structured tooltips to provide comprehensive guidance for category grouping and hierarchies. Fixed a UI bug where edit/archive action buttons were hidden on mobile devices due to hover dependencies.
 - **Responsive Layout**: Overhauled application layout for full mobile responsiveness. The desktop sidebar now gracefully transforms into a native-app style bottom navigation bar on mobile devices (width < 1024px).
 - **Mobile Navigation**: Added a centered floating action button (FAB) for new transactions to the mobile bottom navigation bar.
