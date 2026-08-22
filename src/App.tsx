@@ -329,7 +329,7 @@ export default function App() {
           open={modalState.isOpen}
           onOpenChange={open => setModalState(prev => ({ ...prev, isOpen: open }))}
         >
-          <DialogContent className="w-[95vw] sm:max-w-[520px] max-h-[90vh] h-auto flex flex-col p-0 overflow-hidden border-none shadow-2xl">
+          <DialogContent className="w-full max-w-none sm:w-[95vw] sm:max-w-[520px] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-t-2xl sm:rounded-2xl top-auto bottom-0 left-0 right-0 translate-x-0 translate-y-0 sm:top-[50%] sm:left-[50%] sm:bottom-auto sm:right-auto sm:translate-x-[-50%] sm:translate-y-[-50%] h-auto max-h-[calc(100dvh-2rem)] sm:max-h-[90vh]">
             <AddTransactionModal
               initialData={modalState.initialData}
               isDuplicate={modalState.isDuplicate}

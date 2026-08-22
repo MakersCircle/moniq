@@ -136,6 +136,22 @@ export default function AddTransactionModal({
 
   const amountRef = useRef<HTMLInputElement>(null);
 
+  const displayAmount = useMemo(() => {
+    if (!amount) return '';
+    const parts = amount.split('.');
+    const integer = parts[0];
+    const decimal = parts.length > 1 ? '.' + parts[1] : '';
+    if (!integer) return decimal;
+    try {
+      const formattedInteger = new Intl.NumberFormat(settings.numberLocale || 'en-IN').format(
+        BigInt(integer)
+      );
+      return formattedInteger + decimal;
+    } catch {
+      return amount;
+    }
+  }, [amount, settings.numberLocale]);
+
   // Category head/sub split state
   const initialCategoryHead = useMemo(() => {
     if (!initialData || initialData.uiType === 'transfer') return '';
@@ -358,11 +374,11 @@ export default function AddTransactionModal({
     <form
       onSubmit={e => handleSubmit(e)}
       onKeyDown={handleKeyDown}
-      className="flex flex-col max-h-full overflow-hidden bg-background"
+      className="flex flex-col flex-1 min-h-0 overflow-hidden bg-background w-full"
     >
       {/* Header Area */}
-      <div className="px-6 py-4 border-b border-border bg-accent/5">
-        <div className="flex items-center justify-between mb-4 pr-10">
+      <div className="shrink-0 px-6 py-4 border-b border-border bg-accent/5">
+        <div className="flex flex-wrap items-center justify-between mb-4 pr-10 gap-y-4">
           <h2 className="text-lg font-bold tracking-tight">
             {initialData && !isDuplicate ? 'Edit' : 'New'} Transaction
           </h2>
@@ -396,32 +412,42 @@ export default function AddTransactionModal({
         </div>
 
         {/* Amount Input */}
-        <div className="flex flex-col items-center py-2">
-          <div className="relative group flex items-center justify-center">
-            <span className="text-3xl font-black text-muted-foreground/40 mr-2 group-focus-within:text-primary transition-colors">
+        <div className="shrink-0 flex flex-col items-center py-2 px-6 w-full max-w-full overflow-hidden">
+          <div className="relative group flex items-center justify-center max-w-full">
+            <span className="text-5xl font-black text-muted-foreground/40 mr-2 shrink-0 group-focus-within:text-primary transition-colors">
               {settings.currencySymbol}
             </span>
             <input
               ref={amountRef}
-              type="number"
-              min="0"
+              type="text"
               autoFocus
               tabIndex={1}
               className={cn(
-                'bg-transparent text-5xl font-black outline-none text-center w-full max-w-[240px] mono tracking-tighter transition-colors',
+                'bg-transparent text-5xl font-black outline-none text-center max-w-full min-w-0 mono tracking-tighter transition-colors',
                 type === 'income'
                   ? 'text-income'
                   : type === 'expense'
                     ? 'text-expense'
                     : 'text-foreground'
               )}
+              style={
+                {
+                  width: displayAmount ? `${displayAmount.length + 0.5}ch` : '4.5ch',
+                  fieldSizing: 'content',
+                } as React.CSSProperties
+              }
               placeholder="0.00"
-              value={amount}
+              value={displayAmount}
               onChange={e => {
                 const val = e.target.value;
                 // Strip everything except numbers and decimal point
                 const sanitized = val.replace(/[^0-9.]/g, '');
-                setAmount(sanitized);
+
+                // ensure only one decimal point
+                const parts = sanitized.split('.');
+                const finalVal = parts[0] + (parts.length > 1 ? '.' + parts.slice(1).join('') : '');
+
+                setAmount(finalVal);
               }}
               onKeyDown={e => {
                 // Prevent 'e', '+', '-' from being entered
@@ -451,7 +477,7 @@ export default function AddTransactionModal({
       </div>
 
       {/* Form Content Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 custom-scrollbar min-h-[400px]">
+      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 custom-scrollbar min-h-0 sm:min-h-[400px]">
         {type === 'transfer' ? (
           <>
             {/* Transfer: Date */}
@@ -465,7 +491,7 @@ export default function AddTransactionModal({
             </div>
 
             {/* Transfer: From / To using payment methods */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
                   From
@@ -552,7 +578,7 @@ export default function AddTransactionModal({
         ) : (
           <>
             {/* Income/Expense: Date + Payment Method */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
                   Date
@@ -599,7 +625,7 @@ export default function AddTransactionModal({
 
             {/* Category: Head + Sub-head as separate dropdowns */}
             {!isSplit && (
-              <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-right-2 duration-300">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-right-2 duration-300">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
                     Category
@@ -781,7 +807,7 @@ export default function AddTransactionModal({
         </div>
       </div>
 
-      <div className="px-6 py-5 border-t border-border bg-accent/5 flex items-center justify-between gap-4">
+      <div className="shrink-0 px-6 py-5 border-t border-border bg-accent/5 flex items-center justify-between gap-4">
         {isSaved && (
           <div className="flex items-center gap-2 text-income animate-in fade-in slide-in-from-left-2">
             <div className="w-1.5 h-1.5 rounded-full bg-income animate-pulse" />
