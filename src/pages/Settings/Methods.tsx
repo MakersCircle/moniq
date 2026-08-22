@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
+import { ResponsiveModal } from '@/components/ui/responsive-modal';
 import {
   Select,
   SelectContent,
@@ -222,65 +222,12 @@ export default function Methods() {
         )}
       </div>
 
-      <Sheet open={modalOpen} onOpenChange={setModalOpen}>
-        <SheetContent
-          side="right"
-          className="w-full sm:max-w-md flex flex-col p-0 top-auto bottom-0 h-auto max-h-[calc(100dvh-3rem)] sm:top-0 sm:bottom-0 sm:h-full sm:max-h-none rounded-t-2xl sm:rounded-none border-t sm:border-t-0 shadow-2xl overflow-hidden"
-        >
-          <SheetHeader className="px-6 py-4 border-b border-border/50 shrink-0">
-            <SheetTitle className="text-xl font-bold tracking-tight">
-              {editing ? t('method.editMethod') : t('method.newMethod')}
-            </SheetTitle>
-          </SheetHeader>
-
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 custom-scrollbar min-h-0 sm:min-h-[300px]">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-                {t('common.displayName')}
-                <InfoTooltip text="A recognizable name for this payment method (e.g., UPI, HDFC Debit Card). Used to identify it when adding transactions." />
-              </Label>
-              <Input
-                placeholder={t('method.displayNamePlaceholder')}
-                value={form.name}
-                onChange={e => {
-                  setForm({ ...form, name: e.target.value });
-                  setError('');
-                }}
-                className="h-10"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-                {t('method.linkedAccount')}
-                <InfoTooltip text="Link this method to an account. When you select this method during a transaction, the linked account will be auto-filled, saving you a step." />
-              </Label>
-              <Select
-                value={form.linkedAccountId || undefined}
-                onValueChange={val => {
-                  setForm({ ...form, linkedAccountId: val });
-                  setError('');
-                }}
-              >
-                <SelectTrigger className="h-10">
-                  <SelectValue placeholder={t('method.linkedAccountPlaceholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts
-                    .filter(s => s.isActive && !s.isDeleted)
-                    .map(s => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-          </div>
-
-          <SheetFooter className="px-6 py-4 border-t border-border/50 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 shrink-0">
+      <ResponsiveModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        title={editing ? t('method.editMethod') : t('method.newMethod')}
+        footer={
+          <>
             <Button
               variant="ghost"
               onClick={() => setModalOpen(false)}
@@ -294,9 +241,56 @@ export default function Methods() {
             >
               {t('common.saveChanges')}
             </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+          </>
+        }
+      >
+        <div className="px-6 py-4 space-y-6">
+          <div className="space-y-2">
+            <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
+              {t('common.displayName')}
+              <InfoTooltip text="A recognizable name for this payment method (e.g., UPI, HDFC Debit Card). Used to identify it when adding transactions." />
+            </Label>
+            <Input
+              placeholder={t('method.displayNamePlaceholder')}
+              value={form.name}
+              onChange={e => {
+                setForm({ ...form, name: e.target.value });
+                setError('');
+              }}
+              className="h-10"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
+              {t('method.linkedAccount')}
+              <InfoTooltip text="Link this method to an account. When you select this method during a transaction, the linked account will be auto-filled, saving you a step." />
+            </Label>
+            <Select
+              value={form.linkedAccountId || undefined}
+              onValueChange={val => {
+                setForm({ ...form, linkedAccountId: val });
+                setError('');
+              }}
+            >
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder={t('method.linkedAccountPlaceholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts
+                  .filter(s => s.isActive && !s.isDeleted)
+                  .map(s => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+        </div>
+      </ResponsiveModal>
     </SettingsLayout>
   );
 }

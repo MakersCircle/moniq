@@ -9,13 +9,7 @@ import { InfoTooltip } from '@/components/ui/info-tooltip';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet';
+import { ResponsiveModal } from '@/components/ui/responsive-modal';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 
 export default function Accounts() {
@@ -199,42 +193,33 @@ export default function Accounts() {
         )}
       </div>
 
-      <Sheet open={modalOpen} onOpenChange={setModalOpen}>
-        <SheetContent
-          side="right"
-          className="w-full sm:max-w-md flex flex-col p-0 top-auto bottom-0 h-auto max-h-[calc(100dvh-3rem)] sm:top-0 sm:bottom-0 sm:h-full sm:max-h-none rounded-t-2xl sm:rounded-none border-t sm:border-t-0 shadow-2xl overflow-hidden"
-        >
-          <SheetHeader className="px-6 py-4 border-b border-border/50 shrink-0 space-y-1">
-            <SheetTitle className="text-xl font-bold tracking-tight">
-              {editing ? t('account.editAccount') : t('account.newAccount')}
-            </SheetTitle>
-            <SheetDescription className="text-xs">
-              {editing ? t('account.editDescription') : t('account.createDescription')}
-            </SheetDescription>
-          </SheetHeader>
-
-          {modalOpen && (
-            <AccountForm
-              initialData={
-                editing
-                  ? {
-                      name: editing.name,
-                      type: editing.type,
-                      description: editing.description,
-                      initialBalance: editing.initialBalance,
-                      isSavings: editing.isSavings,
-                      excludeFromNet: editing.excludeFromNet,
-                      isActive: editing.isActive,
-                    }
-                  : undefined
-              }
-              onSave={handleSave}
-              onCancel={() => setModalOpen(false)}
-              submitLabel={editing ? t('common.saveChanges') : t('account.createAccount')}
-            />
-          )}
-        </SheetContent>
-      </Sheet>
+      <ResponsiveModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        title={editing ? t('account.editAccount') : t('account.newAccount')}
+        description={editing ? t('account.editDescription') : t('account.createDescription')}
+      >
+        {modalOpen && (
+          <AccountForm
+            initialData={
+              editing
+                ? {
+                    name: editing.name,
+                    type: editing.type,
+                    description: editing.description,
+                    initialBalance: editing.initialBalance,
+                    isSavings: editing.isSavings,
+                    excludeFromNet: editing.excludeFromNet,
+                    isActive: editing.isActive,
+                  }
+                : undefined
+            }
+            onSave={handleSave}
+            onCancel={() => setModalOpen(false)}
+            submitLabel={editing ? t('common.saveChanges') : t('account.createAccount')}
+          />
+        )}
+      </ResponsiveModal>
     </SettingsLayout>
   );
 }
