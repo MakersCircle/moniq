@@ -10,29 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **i18n Infrastructure**: Introduced a custom `useTranslation` hook and `src/locales/en.json` to begin centralizing UI text for future internationalization, starting with Account and Category forms.
-- **Demo Mode**: A full offline testing mode allowing users to try the app without a Google account. All data is saved strictly to local IndexedDB. Upon signing in, users can choose to upload their demo data to their Drive or start fresh.
-- **SEO & Social meta tags**: Added full OG/Twitter card tag set, OGImage, and canonical link to `index.html`. Rewrote title and description for search visibility.
+- **Demo Mode**: Offline testing mode using local IndexedDB without requiring a Google account. Data can be synced to Drive upon sign-in.
+- **i18n Infrastructure**: Added `useTranslation` hook and centralized globally shared UI strings into a common namespace for internationalization.
+- **SEO**: Added Open Graph/Twitter meta tags, OG image, and canonical links to improve search visibility.
 
 ### Changed
-- **Payment Method UX**: Bridged the mental model gap by integrating Payment Method naming directly into the New Account drawer (with a seamless fallback to the account name), and updated transaction modal copy to explicitly state "Create Account & Method".
-- **i18n Unification**: Migrated the Payment Methods settings page to the centralized `useTranslation` architecture. Refactored globally shared strings (Restore, Archive, Delete, Display Name) into a single `common` namespace to drastically reduce translation redundancy across the app.
-- **Form Unification**: Decoupled UI components from business logic by extracting `AccountForm` and `CategoryForm`. This eliminates duplication between the dedicated Settings pages and inline creation drawers.
-- **Settings Drawers**: Migrated all Settings forms (Accounts, Categories, Payment Methods) from centered pop-ups to responsive `Sheet` components. They now intelligently act as space-maximizing side-drawers on desktop, and native content-hugging bottom-sheets on mobile.
-- **Amount Input Formatting**: Re-engineered the Add Transaction amount input to support real-time locale formatting. As the user types, the input uses `inputMode="decimal"` and `Intl.NumberFormat` to visually display properly localized thousands separators (e.g. `1,00,000` vs `100,000`) without polluting the raw mathematical state.
-- **Form Responsiveness**: Improved grid layouts for inline forms on mobile screens, allowing flexible width distribution and removing forced text truncation on checkboxes. Updated side drawers to use dynamic viewport height (`100dvh`) to flawlessly adapt to mobile soft keyboards.
-- **UI Animations**: Re-enabled `tailwindcss-animate` for Tailwind v4 compatibility. Upgraded all Shadcn UI interactive components (modals, drawers, popovers, dropdowns, selects) with premium `cubic-bezier(0.16,1,0.3,1)` ease-out spring curves for incredibly smooth and consistent motion physics across the app. Fixed layout unmount collapse in side drawers and diagonal animation bugs.
-- **Category UX**: Structured tooltips to provide comprehensive guidance for category grouping and hierarchies. Fixed a UI bug where edit/archive action buttons were hidden on mobile devices due to hover dependencies.
-- **Responsive Layout**: Overhauled application layout for full mobile responsiveness. The desktop sidebar now gracefully transforms into a native-app style bottom navigation bar on mobile devices (width < 1024px).
-- **Mobile Navigation**: Added a centered floating action button (FAB) for new transactions to the mobile bottom navigation bar.
-- **Top Bar**: Moved the application logo and settings icon to the Top Bar on mobile devices to optimize space.
-- **Table Layouts**: Added horizontal scrolling to data-heavy tables (Ledger, Budget) to prevent layout squishing on small screens.
-- **Settings UI**: Transformed the Settings sidebar into a horizontally scrollable tab bar on mobile devices.
-- **Search UI**: Replaced the mobile search bar with an intelligent expanding field that collapses into an icon only on extremely narrow screens (<400px).
-- **Onboarding UX**: Removed the 11-step forced onboarding wizard. Users now land directly on the Dashboard, reducing initial friction and allowing users to independently set up their accounts in Settings.
+- **Mobile Experience**: Overhauled the mobile interface with a bottom navigation bar, floating action button, responsive forms, and a collapsible search field.
+- **Settings UI**: Replaced pop-up modals for Accounts, Categories, and Payment Methods with responsive side-drawers and bottom-sheets.
+- **Transaction Entry**: The amount input now formats numbers in real-time with locale-aware thousands separators.
+- **General UX Improvements**: 
+  - Streamlined account creation by integrating Payment Method naming into the New Account drawer.
+  - Added guidance tooltips for category hierarchies.
+  - Upgraded interactive components (modals, drawers, dropdowns) with smoother animations.
 
 ### Removed
-- Removed all rigid setup modals (`AccountsSetupStep`, `MethodsSetupStep`, `CategoriesSetupStep`, etc.) and the `TourDriver` popover guidance system.
+- **Onboarding / Tour System**: Removed the 11-step forced onboarding wizard, rigid setup modals, and the `TourDriver` popover guidance system in favor of landing directly on the Dashboard.
 
 
 ## [0.8.1] - 2026-06-21
