@@ -497,7 +497,7 @@ export default function AddTransactionModal({
                   From
                 </Label>
                 <Select
-                  value={fromMethodId || undefined}
+                  value={fromMethodId}
                   onValueChange={val => {
                     if (val === 'NEW_METHOD') {
                       setShowAccountSheet(true);
@@ -538,7 +538,7 @@ export default function AddTransactionModal({
                   To
                 </Label>
                 <Select
-                  value={toMethodId || undefined}
+                  value={toMethodId}
                   onValueChange={val => {
                     if (val === 'NEW_METHOD') {
                       setShowAccountSheet(true);
@@ -631,7 +631,7 @@ export default function AddTransactionModal({
                     Category
                   </Label>
                   <Select
-                    value={selectedHead || undefined}
+                    value={selectedHead}
                     onValueChange={val => {
                       if (val === 'NEW_CATEGORY') {
                         setShowCategorySheet(true);
@@ -682,7 +682,7 @@ export default function AddTransactionModal({
                       )}
                     </div>
                   ) : (
-                    <Select value={targetId || undefined} onValueChange={setTargetId}>
+                    <Select value={targetId} onValueChange={setTargetId}>
                       <SelectTrigger className={inputClasses} tabIndex={5}>
                         <SelectValue placeholder="Select sub-category" />
                       </SelectTrigger>

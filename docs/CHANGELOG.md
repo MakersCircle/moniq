@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.1] - 2026-08-24
+
+### Fixed
+- **Mobile Modals**: Fixed layout clipping in "Add Account" and "Add Category" sheets on mobile screens.
+- **Select State**: Fixed "+ Create" options getting stuck as selected when closing modal dialogs.
+
+---
+
 ## [0.9.0] - 2026-08-24
 
 ### Added

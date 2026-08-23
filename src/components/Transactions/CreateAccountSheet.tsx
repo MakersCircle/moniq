@@ -1,13 +1,7 @@
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet';
 import { useDataStore } from '@/store/dataStore';
 import { AccountForm, type AccountFormData } from '@/components/Forms/AccountForm';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ResponsiveModal } from '@/components/ui/responsive-modal';
 
 interface CreateAccountSheetProps {
   open: boolean;
@@ -44,23 +38,17 @@ export function CreateAccountSheet({ open, onOpenChange, onSuccess }: CreateAcco
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="w-full sm:max-w-md flex flex-col p-0 top-auto bottom-0 h-auto max-h-[calc(100dvh-3rem)] sm:top-0 sm:bottom-0 sm:h-full sm:max-h-none rounded-t-2xl sm:rounded-none border-t sm:border-t-0 shadow-2xl overflow-hidden"
-      >
-        <SheetHeader className="px-6 py-4 border-b border-border/50 shrink-0 space-y-1">
-          <SheetTitle className="text-xl font-bold tracking-tight">New Account</SheetTitle>
-          <SheetDescription className="text-xs">{t('account.createDescription')}</SheetDescription>
-        </SheetHeader>
-        <div className="flex-1 overflow-hidden">
-          <AccountForm
-            onSave={handleSave}
-            onCancel={() => onOpenChange(false)}
-            submitLabel={t('account.createAccount')}
-          />
-        </div>
-      </SheetContent>
-    </Sheet>
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title="New Account"
+      description={t('account.createDescription')}
+    >
+      <AccountForm
+        onSave={handleSave}
+        onCancel={() => onOpenChange(false)}
+        submitLabel={t('account.createAccount')}
+      />
+    </ResponsiveModal>
   );
 }
