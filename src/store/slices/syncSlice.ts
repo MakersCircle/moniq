@@ -271,7 +271,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         userProfile,
         pendingCount: syncQueue ? syncQueue.length : 0,
         isHydrated: true,
-        isCloudInitialized: !!lastSyncedAt,
+        isCloudInitialized: !!(lastSyncedAt && accessToken),
         isDemoMode: false,
       });
     } catch (err) {
