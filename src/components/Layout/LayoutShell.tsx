@@ -12,9 +12,9 @@ interface LayoutShellProps {
 }
 
 export default function LayoutShell({ children, onNewTransaction }: LayoutShellProps) {
-  const { isCloudInitialized, accessToken, isDemoMode } = useDataStore();
+  const { isCloudInitialized, accessToken, isDemoMode, lastSyncedAt } = useDataStore();
 
-  const isSessionExpired = !accessToken && isCloudInitialized && !isDemoMode;
+  const isSessionExpired = !accessToken && isCloudInitialized && !isDemoMode && !!lastSyncedAt;
 
   // Global Keyboard Shortcuts
   useEffect(() => {

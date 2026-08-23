@@ -302,7 +302,7 @@ export default function App() {
         <Route
           path="*"
           element={
-            accessToken || isCloudInitialized ? (
+            accessToken || isCloudInitialized || isDemoMode ? (
               <LayoutShell onNewTransaction={openNew}>
                 <Routes>
                   <Route path="dashboard" element={<Dashboard />} />
