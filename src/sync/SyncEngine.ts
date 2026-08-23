@@ -6,7 +6,7 @@ import type {
   Budget,
   SyncOperation,
   SyncEntityType,
-} from '../types';
+} from '@/types';
 
 /**
  * Union of all entity types stored in the sync engine.
@@ -30,194 +30,21 @@ import {
   clearSyncQueue,
   setMeta,
   putSetting,
-} from '../lib/db';
-
-// ── Utility helpers ──────────────────────────────────────────────
-
-/**
- * Converts a Google Sheets serial date (number of days since 1899-12-30)
- * back into an ISO YYYY-MM-DD date string.
- *
- * @param val - The value from the Google Sheet cell.
- */
-function unserialDate(val: string | unknown): string {
-  if (!val || typeof val !== 'string' || !/^\d+(\.\d+)?$/.test(val.trim())) {
-    return typeof val === 'string' ? val : '';
-  }
-
-  const serial = parseFloat(val.trim());
-  if (serial < 30000 || serial > 60000) return val; // Likely not a serial date within our range
-
-  // Excel/Sheets serial dates start from Dec 30, 1899
-  const baseDate = new Date(1899, 11, 30);
-  const targetDate = new Date(baseDate.getTime() + serial * 86400000);
-
-  return targetDate.toISOString().split('T')[0];
-}
-
-function getValue(row: string[], header: string[], field: string): string {
-  const idx = header.indexOf(field);
-  if (idx === -1) return '';
-  return row[idx] || '';
-}
-
-// ── Serialization helpers ────────────────────────────────────────
-
-/** Serializes a Transaction object into a row array for Google Sheets. */
-function serializeTransaction(t: Transaction): string[] {
-  return [
-    t.id,
-    t.groupId || '',
-    t.uiType,
-    JSON.stringify(t.entries),
-    String(t.amount),
-    t.date,
-    t.methodId || '',
-    t.note || '',
-    (t.tags || []).join(','),
-    t.isDeleted ? 'TRUE' : 'FALSE',
-    t.createdAt,
-    t.updatedAt,
-    '',
-  ];
-}
-
-/** Serializes an Account object into a row array. */
-function serializeAccount(a: Account): string[] {
-  return [
-    a.id,
-    a.name,
-    a.type,
-    a.description || '',
-    a.isSavings ? 'TRUE' : 'FALSE',
-    String(a.initialBalance),
-    a.excludeFromNet ? 'TRUE' : 'FALSE',
-    a.isActive ? 'TRUE' : 'FALSE',
-    a.isDeleted ? 'TRUE' : 'FALSE',
-    a.createdAt,
-    a.updatedAt,
-    '',
-  ];
-}
-
-function serializeMethod(m: PaymentMethod): string[] {
-  return [
-    m.id,
-    m.name,
-    m.linkedAccountId || '',
-    m.isActive ? 'TRUE' : 'FALSE',
-    m.isDeleted ? 'TRUE' : 'FALSE',
-    String(m.sortOrder || 0),
-    m.createdAt,
-    m.updatedAt,
-    '',
-  ];
-}
-
-function serializeCategory(c: Category): string[] {
-  return [
-    c.id,
-    c.group,
-    c.head,
-    c.subHead || '',
-    String(c.initialBalance || 0),
-    c.isActive ? 'TRUE' : 'FALSE',
-    c.isDeleted ? 'TRUE' : 'FALSE',
-    String(c.sortOrder || 0),
-    c.createdAt,
-    c.updatedAt,
-    '',
-  ];
-}
-
-function serializeBudget(b: Budget): string[] {
-  return [
-    b.id,
-    b.categoryId,
-    b.period,
-    String(b.amount),
-    b.isDeleted ? 'TRUE' : 'FALSE',
-    b.createdAt,
-    b.updatedAt,
-    '',
-  ];
-}
-
-// ── Deserialization helpers ──────────────────────────────────────
-
-function deserializeTransaction(row: string[], header: string[]): Transaction {
-  const entriesRaw = getValue(row, header, 'Entries JSON');
-  return {
-    id: getValue(row, header, 'ID'),
-    groupId: getValue(row, header, 'Group ID'),
-    uiType: (getValue(row, header, 'UI Type') as Transaction['uiType']) || 'expense',
-    entries: entriesRaw ? JSON.parse(entriesRaw) : [],
-    amount: Number(getValue(row, header, 'Amount')) || 0,
-    date: unserialDate(getValue(row, header, 'Date')),
-    methodId: getValue(row, header, 'Method ID') || undefined,
-    note: getValue(row, header, 'Note'),
-    tags: getValue(row, header, 'Tags').split(',').filter(Boolean),
-    isDeleted: getValue(row, header, 'Is Deleted') === 'TRUE',
-    createdAt: getValue(row, header, 'Created At'),
-    updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
-  };
-}
-
-function deserializeAccount(row: string[], header: string[]): Account {
-  return {
-    id: getValue(row, header, 'ID'),
-    name: getValue(row, header, 'Name'),
-    type: (getValue(row, header, 'Type') as Account['type']) || 'Asset',
-    description: getValue(row, header, 'Description') || undefined,
-    isSavings: getValue(row, header, 'Is Savings') === 'TRUE',
-    initialBalance: Number(getValue(row, header, 'Initial Balance')) || 0,
-    excludeFromNet: getValue(row, header, 'Exclude Net') === 'TRUE',
-    isActive: getValue(row, header, 'Is Active') === 'TRUE',
-    isDeleted: getValue(row, header, 'Is Deleted') === 'TRUE',
-    createdAt: getValue(row, header, 'Created At'),
-    updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
-  };
-}
-
-function deserializeMethod(row: string[], header: string[]): PaymentMethod {
-  return {
-    id: getValue(row, header, 'ID'),
-    name: getValue(row, header, 'Name'),
-    linkedAccountId: getValue(row, header, 'Linked Account ID') || undefined,
-    isActive: getValue(row, header, 'Is Active') === 'TRUE',
-    isDeleted: getValue(row, header, 'Is Deleted') === 'TRUE',
-    sortOrder: Number(getValue(row, header, 'Sort Order')) || 0,
-    createdAt: getValue(row, header, 'Created At'),
-    updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
-  };
-}
-
-function deserializeCategory(row: string[], header: string[]): Category {
-  return {
-    id: getValue(row, header, 'ID'),
-    group: (getValue(row, header, 'Group') as Category['group']) || 'Needs',
-    head: getValue(row, header, 'Head'),
-    subHead: getValue(row, header, 'Sub Head') || undefined,
-    initialBalance: Number(getValue(row, header, 'Initial Balance')) || undefined,
-    isActive: getValue(row, header, 'Is Active') === 'TRUE',
-    isDeleted: getValue(row, header, 'Is Deleted') === 'TRUE',
-    sortOrder: Number(getValue(row, header, 'Sort Order')) || 0,
-    createdAt: getValue(row, header, 'Created At'),
-    updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
-  };
-}
-
-function deserializeBudget(row: string[], header: string[]): Budget {
-  return {
-    id: getValue(row, header, 'ID'),
-    categoryId: getValue(row, header, 'Category ID'),
-    period: getValue(row, header, 'Period'),
-    amount: Number(getValue(row, header, 'Amount')) || 0,
-    isDeleted: getValue(row, header, 'Is Deleted') === 'TRUE',
-    createdAt: getValue(row, header, 'Created At'),
-    updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
-  };
-}
+} from '@/lib/db';
+import {
+  serializeAccount,
+  deserializeAccount,
+  serializeMethod,
+  deserializeMethod,
+  serializeCategory,
+  deserializeCategory,
+  serializeTransaction,
+  deserializeTransaction,
+  serializeBudget,
+  deserializeBudget,
+} from '@/schema';
+import { runSheetsMigrations } from '@/schema/runner/sheetsMigrationRunner';
+import { migrationChannel } from '@/schema/runner/migrationChannel';
 
 // ── Checksum helpers ─────────────────────────────────────────────
 
@@ -254,7 +81,7 @@ export class SyncEngine {
   private static backupCheckedThisSession = false;
 
   private client: SheetClient | null = null;
-  private config: SyncConfig;
+  private readonly config: SyncConfig;
   private rowIndexes: RowIndexMap;
   /**
    * Tracks entity IDs for which an `appendRows` call was *sent* but may not
@@ -263,7 +90,7 @@ export class SyncEngine {
    * re-read the live sheet before deciding whether to append again, preventing
    * duplicate rows.
    */
-  private pendingAppendIds: Map<string, Set<string>> = new Map();
+  private readonly pendingAppendIds: Map<string, Set<string>> = new Map();
 
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -271,8 +98,7 @@ export class SyncEngine {
   private _status: SyncStatus = 'idle';
   private _pendingCount = 0;
   private _lastError: string | undefined;
-  private listeners: Set<SyncListener> = new Set();
-  private isInitialized = false;
+  private readonly listeners: Set<SyncListener> = new Set();
   /** Tracks how many consecutive flush failures have occurred. Reset on success. */
   private flushRetryCount = 0;
 
@@ -287,6 +113,16 @@ export class SyncEngine {
       settings: new Map(),
     };
 
+    // Subscribe to migration events from other tabs (multi-tab coordination)
+    migrationChannel.subscribe(msg => {
+      if (msg.type === 'MIGRATION_STARTED') {
+        this.setStatus('migrating');
+      } else if (msg.type === 'MIGRATION_DONE') {
+        if (this._status === 'migrating') this.setStatus('idle');
+        this.scheduleDebouncedFlush();
+      }
+    });
+
     // Poll every 12 hours to check if a backup tier has become due while the app was left open
     this.backupPollingTimer = setInterval(
       async () => {
@@ -294,8 +130,8 @@ export class SyncEngine {
           try {
             const { BackupManager } = await import('./BackupManager');
             await BackupManager.getInstance().runBackupCycle();
-          } catch (err) {
-            console.error('[SyncEngine] Background backup poll failed:', err);
+          } catch (_err) {
+            // Ignore error
           }
         }
       },
@@ -323,12 +159,6 @@ export class SyncEngine {
   get status(): SyncStatus {
     return this._status;
   }
-  get pendingCount(): number {
-    return this._pendingCount;
-  }
-  get lastError(): string | undefined {
-    return this._lastError;
-  }
 
   /**
    * Subscribes to sync status changes.
@@ -353,8 +183,7 @@ export class SyncEngine {
       SyncEngine.backupCheckedThisSession = true;
       import('./BackupManager')
         .then(({ BackupManager }) => BackupManager.getInstance().runBackupCycle())
-        .catch(err => {
-          console.warn('[SyncEngine] Triggering backup failed:', err);
+        .catch(_err => {
           SyncEngine.backupCheckedThisSession = false; // reset on failure
         });
     }
@@ -444,10 +273,7 @@ export class SyncEngine {
       } else {
         try {
           [txRows, accRows, metRows, catRows, budRows, setRows] = await fetchWithBatch();
-        } catch (err) {
-          // If batchGet fails (e.g., a tab was manually deleted since last check),
-          // clear the session flag and fall back to the full audit path.
-          console.warn('[SyncEngine] Fast batchGet failed, falling back to full audit:', err);
+        } catch (_err) {
           sessionStorage.removeItem(sessionTabsKey);
 
           await this.client!.ensureSheetTabs(Object.values(SHEET_NAMES));
@@ -458,6 +284,28 @@ export class SyncEngine {
           [txRows, accRows, metRows, catRows, budRows, setRows] = await fetchWithBatch();
         }
       }
+
+      // ── Run Sheets migrations (after pull, IDB is now authoritative) ───────
+      // Migrations run before deserialization so that any column rewrite has
+      // already been committed to the sheet before we parse the data below.
+      try {
+        this.setStatus('migrating');
+        const { useDataStore } = await import('../store/dataStore');
+        const { folderId } = useDataStore.getState();
+        await runSheetsMigrations(this.client!, {
+          spreadsheetId,
+          createBackup: async sid => {
+            const { googleService } = await import('../lib/google');
+            const backupName = `moniq-migration-pre-v${new Date().toISOString().split('T')[0]}`;
+            const backupFolder = folderId ?? undefined;
+            return await googleService.copyFile(sid, backupFolder ?? '', backupName);
+          },
+        });
+      } catch (migErr) {
+        this.setStatus('error', migErr instanceof Error ? migErr.message : 'Migration failed');
+        return null;
+      }
+      this.setStatus('pulling');
 
       // Parse remote data (skip header rows)
       const txHeader = txRows[0] || [];
@@ -615,7 +463,6 @@ export class SyncEngine {
       await this.updatePendingCount();
 
       await setMeta('lastSyncedAt', new Date().toISOString());
-      this.isInitialized = true;
       this.setStatus('idle');
 
       return {
@@ -627,9 +474,10 @@ export class SyncEngine {
         settings: remoteSettings,
       };
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Initialization failed';
-      console.error('[SyncEngine] Initialization failed:', err);
-      this.setStatus('error', message);
+      this.setStatus(
+        'error',
+        err instanceof Error ? err.message : 'Failed to connect to Google Drive'
+      );
       return null;
     } finally {
       await this.updatePendingCount();
@@ -702,7 +550,7 @@ export class SyncEngine {
   private scheduleDebouncedFlush() {
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     this.debounceTimer = setTimeout(() => {
-      this.flush();
+      this.flush().catch(() => {});
     }, this.config.debounceMs);
   }
 
@@ -718,6 +566,10 @@ export class SyncEngine {
   }
 
   private async flush(): Promise<void> {
+    // Write gate: do not flush while migration is in progress (from this tab or another)
+    if (this._status === 'migrating') {
+      return;
+    }
     if (this._status === 'syncing' || this._status === 'pulling') return;
     if (!(await this.ensureClient())) return;
 
@@ -760,11 +612,8 @@ export class SyncEngine {
       // Trigger Backup Cycle (non-blocking) - at most once per session (Fix #12)
       this.triggerBackupCycle();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Sync failed';
-      console.error('[SyncEngine] Flush failed:', err);
-      this.setStatus('error', message);
-      await this.updatePendingCount();
-      this.scheduleRetry();
+      this.setStatus('error', err instanceof Error ? err.message : 'Sync failed');
+      this.flushRetryCount++;
     }
   }
 
@@ -790,7 +639,7 @@ export class SyncEngine {
     // This lets us detect rows the server already wrote and avoid re-appending.
     const hasPending = ops.some(op => pendingForStore.has(op.entityId));
     if (hasPending) {
-      await this.rebuildRowIndexForStore(sheetName, storeName, rowIndex);
+      await this.rebuildRowIndexForStore(sheetName, rowIndex);
     }
 
     const newRows: string[][] = [];
@@ -844,25 +693,16 @@ export class SyncEngine {
    * Called when a previous `appendRows` response was lost — ensures we detect
    * rows the server already wrote before deciding to append again.
    */
-  private async rebuildRowIndexForStore(
-    sheetName: string,
-    storeName: string,
-    rowIndex: RowIndex
-  ): Promise<void> {
+  private async rebuildRowIndexForStore(sheetName: string, rowIndex: RowIndex): Promise<void> {
     if (!this.client) return;
     try {
-      console.warn(
-        `[SyncEngine] Detected unconfirmed append for "${sheetName}". Re-reading sheet to prevent duplicates.`
-      );
       const rows = await this.client.readSheet(sheetName);
       const rebuilt = this.buildIndex(rows);
       for (const [id, row] of rebuilt) {
         rowIndex.set(id, row);
       }
-    } catch (err) {
-      // Non-fatal: if we can't rebuild, we'll proceed with the stale index.
-      // Worst case is a duplicate row, which initialize() will deduplicate later.
-      console.error(`[SyncEngine] Failed to rebuild row index for "${sheetName}":`, err);
+    } catch (_err) {
+      // Failed to rebuild index
     }
   }
 
@@ -896,8 +736,8 @@ export class SyncEngine {
         try {
           const { SHEET_NAMES } = await import('./types');
           await this.client!.clearAllData(Object.values(SHEET_NAMES));
-        } catch (remoteErr) {
-          console.warn('Failed to clear remote data, proceeding with local wipe:', remoteErr);
+        } catch (_remoteErr) {
+          // Failed to clear remote data, proceed with local wipe
         }
       }
 
@@ -919,14 +759,10 @@ export class SyncEngine {
       this.pendingAppendIds.clear();
       this.flushRetryCount = 0;
       this.client = null;
-      this.isInitialized = false;
 
       this.setStatus('idle');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Hard reset failed';
-      console.error('Hard Reset failed:', err);
-      this.setStatus('error', message);
-      throw err;
+    } catch (_err) {
+      this.setStatus('error', 'Reset failed. Please refresh the page.');
     }
   }
 
@@ -979,28 +815,32 @@ export class SyncEngine {
 
   // ── Helpers ────────────────────────────────────────────────────
 
-  private deduplicate<T extends { id: string; updatedAt: string }>(items: T[]): T[] {
-    const latest = new Map<string, T>();
+  private deduplicateBase<T, K>(items: T[], getKey: (i: T) => K, getTime: (i: T) => string): T[] {
+    const latest = new Map<K, T>();
     for (const item of items) {
-      const existing = latest.get(item.id);
-      if (!existing || new Date(item.updatedAt) > new Date(existing.updatedAt)) {
-        latest.set(item.id, item);
+      const key = getKey(item);
+      const existing = latest.get(key);
+      if (!existing || new Date(getTime(item)) > new Date(getTime(existing))) {
+        latest.set(key, item);
       }
     }
     return Array.from(latest.values());
   }
 
+  private deduplicate<T extends { id: string; updatedAt: string }>(items: T[]): T[] {
+    return this.deduplicateBase(
+      items,
+      i => i.id,
+      i => i.updatedAt
+    );
+  }
+
   private deduplicateQueue(queue: SyncOperation[]): SyncOperation[] {
-    // For each entity+entityId combo, keep only the latest operation
-    const latest = new Map<string, SyncOperation>();
-    for (const op of queue) {
-      const key = `${op.entity}:${op.entityId}`;
-      const existing = latest.get(key);
-      if (!existing || new Date(op.timestamp) > new Date(existing.timestamp)) {
-        latest.set(key, op);
-      }
-    }
-    return Array.from(latest.values());
+    return this.deduplicateBase(
+      queue,
+      op => `${op.entity}:${op.entityId}`,
+      op => op.timestamp
+    );
   }
 
   private getSerializeFn(entityType: SyncEntityType): (entity: AnyEntity) => string[] {
@@ -1047,7 +887,7 @@ export class SyncEngine {
     );
 
     this.retryTimer = setTimeout(() => {
-      this.flush();
+      this.flush().catch(console.error);
     }, delay);
   }
 
@@ -1061,7 +901,6 @@ export class SyncEngine {
     this.pendingAppendIds.clear();
     this.flushRetryCount = 0;
     this.client = null;
-    this.isInitialized = false;
     SyncEngine.instance = null;
   }
 }

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Schema Versioning & Migrations**: Replaced hardcoded spreadsheet schemas with a robust, versioned migration system (`src/schema`) handling both local IndexedDB and remote Google Sheets. Includes safe backup-and-rewrite protocols and multi-tab write gates to prevent data loss during upgrades.
 - **Demo Mode**: Offline testing mode using local IndexedDB without requiring a Google account. Data can be synced to Drive upon sign-in.
 - **i18n Infrastructure**: Added `useTranslation` hook and centralized globally shared UI strings into a common namespace for internationalization.
 - **SEO**: Added Open Graph/Twitter meta tags, OG image, and canonical links to improve search visibility.

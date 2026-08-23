@@ -1,4 +1,4 @@
-import { openDB, type DBSchema, type IDBPDatabase, type StoreNames } from 'idb';
+import { type DBSchema, type IDBPDatabase, type StoreNames } from 'idb';
 import type {
   Account,
   PaymentMethod,
@@ -7,6 +7,11 @@ import type {
   Budget,
   SyncOperation,
 } from '../types';
+import {
+  openMoniqDB as _openMoniqDB,
+  closeDB as _closeDB,
+  setDbDeleting,
+} from '../schema/runner/idbMigrationRunner';
 
 // ── IDB Schema ─────────────────────────────────────────────────
 
@@ -39,88 +44,22 @@ interface MoniqDB extends DBSchema {
   meta: { key: string; value: { key: string; value: string } };
 }
 
+export type { MoniqDB };
+
 const DB_NAME = 'moniq-db';
-const DB_VERSION = 1;
 
 let dbPromise: Promise<IDBPDatabase<MoniqDB>> | null = null;
 let isDeleting = false;
 
 export async function closeDB(): Promise<void> {
-  if (dbPromise) {
-    const db = await dbPromise.catch(() => null);
-    if (db) db.close();
-    dbPromise = null;
-  }
+  await _closeDB();
+  dbPromise = null;
 }
 
 export async function getDB(): Promise<IDBPDatabase<MoniqDB>> {
   if (isDeleting) throw new Error('Database is currently being deleted.');
   if (dbPromise) return dbPromise;
-
-  dbPromise = new Promise<IDBPDatabase<MoniqDB>>((resolve, reject) => {
-    openDB<MoniqDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        // Accounts
-        const accountStore = db.createObjectStore('accounts', { keyPath: 'id' });
-        accountStore.createIndex('by-updatedAt', 'updatedAt');
-
-        // Methods
-        const methodStore = db.createObjectStore('methods', { keyPath: 'id' });
-        methodStore.createIndex('by-updatedAt', 'updatedAt');
-        methodStore.createIndex('by-linkedAccountId', 'linkedAccountId');
-
-        // Categories
-        const categoryStore = db.createObjectStore('categories', { keyPath: 'id' });
-        categoryStore.createIndex('by-updatedAt', 'updatedAt');
-
-        // Transactions
-        const txStore = db.createObjectStore('transactions', { keyPath: 'id' });
-        txStore.createIndex('by-updatedAt', 'updatedAt');
-        txStore.createIndex('by-date', 'date');
-        txStore.createIndex('by-accountId', 'accountId');
-        txStore.createIndex('by-categoryId', 'categoryId');
-
-        // Budgets
-        const budgetStore = db.createObjectStore('budgets', { keyPath: 'id' });
-        budgetStore.createIndex('by-updatedAt', 'updatedAt');
-
-        // Sync Queue
-        const syncQueueStore = db.createObjectStore('sync_queue', {
-          keyPath: 'id',
-        });
-        syncQueueStore.createIndex('by-timestamp', 'timestamp');
-
-        // Remote Snapshot
-        const snapshotStore = db.createObjectStore('remote_snapshot', { keyPath: 'id' });
-        snapshotStore.createIndex('by-store', 'store');
-
-        // Settings (Local only)
-        db.createObjectStore('settings', { keyPath: 'key' });
-
-        // Meta (lastSyncedAt, spreadsheetId, etc.)
-        db.createObjectStore('meta', { keyPath: 'key' });
-      },
-      blocked(currentVersion, blockedVersion, event) {
-        console.warn('IndexedDB open blocked by another tab.', event);
-        reject(new Error('Database open blocked by another tab. Please close other Moniq tabs.'));
-      },
-      blocking() {
-        // Another tab wants to delete or upgrade the DB.
-        // We MUST close our connection to let them proceed without throwing them into 'blocked' purgatory.
-        console.warn('Another tab requested IndexedDB access. Closing connection to unblock them.');
-        if (dbPromise) {
-          dbPromise.then(db => db.close()).catch(() => {});
-          dbPromise = null;
-        }
-      },
-    })
-      .then(resolve)
-      .catch(err => {
-        dbPromise = null;
-        reject(err);
-      });
-  });
-
+  dbPromise = _openMoniqDB() as Promise<IDBPDatabase<MoniqDB>>;
   return dbPromise;
 }
 
@@ -264,6 +203,7 @@ export async function getAllSettings(): Promise<Record<string, string>> {
 
 export async function deleteMoniqDB(): Promise<void> {
   isDeleting = true;
+  setDbDeleting(true);
   await closeDB();
 
   // Give the browser a moment to fully release file handles
@@ -273,6 +213,7 @@ export async function deleteMoniqDB(): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     const timeoutId = setTimeout(() => {
       isDeleting = false;
+      setDbDeleting(false);
       reject(
         new Error(
           'Database deletion timed out. It may be locked by another tab. Please close other Moniq tabs and try again.'
@@ -284,17 +225,20 @@ export async function deleteMoniqDB(): Promise<void> {
       blocked() {
         clearTimeout(timeoutId);
         isDeleting = false;
+        setDbDeleting(false);
         reject(new Error('Database is locked. Please close all other Moniq tabs and try again.'));
       },
     })
       .then(() => {
         clearTimeout(timeoutId);
         isDeleting = false;
+        setDbDeleting(false);
         resolve();
       })
       .catch(err => {
         clearTimeout(timeoutId);
         isDeleting = false;
+        setDbDeleting(false);
         reject(err);
       });
   });
