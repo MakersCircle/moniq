@@ -10,8 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Demo Mode**: A full offline testing mode allowing users to try the app without a Google account. All data is saved strictly to local IndexedDB. Upon signing in, users can choose to upload their demo data to their Drive or start fresh.
-- **SEO & Social meta tags**: Added full OG/Twitter card tag set, OGImage, and canonical link to `index.html`. Rewrote title and description for search visibility.
+- **Demo Mode**: Offline testing mode using local IndexedDB without requiring a Google account. Data can be synced to Drive upon sign-in.
+- **i18n Infrastructure**: Added `useTranslation` hook and centralized globally shared UI strings into a common namespace for internationalization.
+- **SEO**: Added Open Graph/Twitter meta tags, OG image, and canonical links to improve search visibility.
+
+### Changed
+- **Mobile Experience**: Overhauled the mobile interface with a bottom navigation bar, floating action button, responsive forms, and a collapsible search field.
+- **Settings UI**: Replaced pop-up modals for Accounts, Categories, and Payment Methods with responsive side-drawers and bottom-sheets.
+- **Transaction Entry**: The amount input now formats numbers in real-time with locale-aware thousands separators.
+- **General UX Improvements**: 
+  - Streamlined account creation by integrating Payment Method naming into the New Account drawer.
+  - Added guidance tooltips for category hierarchies.
+  - Upgraded interactive components (modals, drawers, dropdowns) with smoother animations.
+
+### Removed
+- **Onboarding / Tour System**: Removed the 11-step forced onboarding wizard, rigid setup modals, and the `TourDriver` popover guidance system in favor of landing directly on the Dashboard.
+
 
 ## [0.8.1] - 2026-06-21
 

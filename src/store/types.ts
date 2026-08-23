@@ -46,7 +46,13 @@ export interface DataState {
   setCloudInitialized: (initialized: boolean) => void;
 
   // Accounts
-  addAccount: (a: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => void;
+  addAccount: (
+    a: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>,
+    methodName?: string
+  ) => {
+    accountId: string;
+    methodId: string;
+  };
   updateAccount: (id: string, patch: Partial<Account>) => void;
   archiveAccount: (id: string) => void;
   restoreAccount: (id: string) => void;
@@ -60,7 +66,9 @@ export interface DataState {
   reorderMethods: (ids: string[]) => void;
 
   // Categories
-  addCategory: (c: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => void;
+  addCategory: (c: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => {
+    id: string;
+  };
   updateCategory: (id: string, patch: Partial<Category>) => void;
   archiveCategory: (id: string) => void;
   deleteCategory: (id: string) => { success: boolean; reason?: string };
@@ -86,12 +94,7 @@ export interface DataState {
 
   // Settings
   updateSettings: (patch: Partial<UserSettings>) => void;
-  setTourStep: (step: string) => void;
   setAccessToken: (token: string | null, expiresAt?: number | null) => void;
-  completeOnboarding: (
-    accounts?: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>[],
-    categories?: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>[]
-  ) => void;
 
   // Sync Engine
   hydrateFromSync: (data: {

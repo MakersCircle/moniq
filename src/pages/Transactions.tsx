@@ -1,5 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { Download, Search, ChevronRight, MoreVertical, Pencil, Copy, Trash2 } from 'lucide-react';
+import {
+  Download,
+  Search,
+  ChevronRight,
+  MoreVertical,
+  Pencil,
+  Copy,
+  Trash2,
+  List,
+} from 'lucide-react';
 import { useDataStore } from '../store/dataStore';
 import { useFilteredTransactions } from '../hooks/useComputed';
 import { groupByDate, exportToCSV, toMonthKey, formatCurrency } from '../utils/format';
@@ -42,6 +51,20 @@ export default function Transactions() {
     exportToCSV(txns, accounts, categories, methods, `moniq-${filter.month || 'all'}.csv`);
   };
 
+  if (transactions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50dvh] lg:h-[70vh] py-12 text-center px-4">
+        <div className="h-16 w-16 lg:h-24 lg:w-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+          <List className="h-8 w-8 lg:h-12 lg:w-12 text-primary opacity-80" />
+        </div>
+        <h2 className="text-2xl lg:text-3xl font-bold tracking-tight mb-3">Nothing here yet</h2>
+        <p className="text-muted-foreground max-w-md mx-auto mb-8 text-sm lg:text-base">
+          Your ledger is empty. Add a transaction to start seeing your history.
+        </p>
+      </div>
+    );
+  }
+
   const currentNet = txns.reduce((sum, t) => {
     if (t.uiType === 'income') return sum + t.amount;
     if (t.uiType === 'expense') return sum - t.amount;
@@ -82,12 +105,12 @@ export default function Transactions() {
       <div
         className={cn(
           'flex-1 flex flex-col transition-all duration-300',
-          selectedTxnId ? 'pr-[400px]' : ''
+          selectedTxnId ? 'md:pr-[400px]' : ''
         )}
       >
         {/* Sticky Header with Filters */}
         <div className="sticky top-0 bg-background/80 backdrop-blur-md z-20 border-b border-border p-8 pb-4 space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Ledger</h1>
               <p className="text-sm text-muted-foreground">
@@ -103,10 +126,11 @@ export default function Transactions() {
                 </span>
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-start md:self-auto">
               <Button variant="outline" size="sm" onClick={handleExport} className="h-9 gap-2">
                 <Download className="h-4 w-4" />
-                Export CSV
+                <span className="hidden md:inline">Export CSV</span>
+                <span className="md:hidden">Export</span>
               </Button>
             </div>
           </div>
@@ -183,7 +207,7 @@ export default function Transactions() {
         </div>
 
         {/* Results Table */}
-        <div className="flex-1 overflow-auto p-8 pt-4">
+        <div className="flex-1 overflow-auto p-4 md:p-8 pt-4">
           {grouped.length === 0 ? (
             <div className="py-20 text-center border-2 border-dashed border-border rounded-2xl bg-accent/5">
               <p className="text-muted-foreground font-medium">
@@ -191,8 +215,8 @@ export default function Transactions() {
               </p>
             </div>
           ) : (
-            <div className="rounded-xl border border-border overflow-hidden bg-card shadow-sm">
-              <table className="w-full text-sm text-left border-collapse">
+            <div className="rounded-xl border border-border bg-card shadow-sm w-full overflow-x-auto">
+              <table className="w-full min-w-[800px] text-sm text-left border-collapse">
                 <thead className="bg-accent/30 text-muted-foreground uppercase text-[10px] font-bold tracking-wider sticky top-0 z-10">
                   <tr>
                     <th className="px-5 py-3 border-b border-border">Date</th>

@@ -7,7 +7,9 @@ import { put } from '../../lib/db';
 export interface CategorySlice {
   categories: Category[];
   methods: PaymentMethod[];
-  addCategory: (c: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => void;
+  addCategory: (c: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => {
+    id: string;
+  };
   updateCategory: (id: string, patch: Partial<Category>) => void;
   archiveCategory: (id: string) => void;
   deleteCategory: (id: string) => { success: boolean; reason?: string };
@@ -31,6 +33,7 @@ export const createCategorySlice: StateCreator<DataState, [], [], CategorySlice>
     set(state => ({ categories: [...state.categories, next] }));
     put('categories', next);
     markDirty('category', id, 'create');
+    return { id };
   },
 
   updateCategory: (id, patch) => {

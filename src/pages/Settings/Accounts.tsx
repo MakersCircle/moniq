@@ -1,100 +1,49 @@
 import { useState } from 'react';
 import { Plus, Pencil, Archive, Trash2, Landmark, CreditCard } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
-import type { Account, AccountType } from '@/types';
+import { AccountForm, type AccountFormData } from '@/components/Forms/AccountForm';
+import type { Account } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { ResponsiveModal } from '@/components/ui/responsive-modal';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
-
-const ACCOUNT_CLASSES: AccountType[] = ['Asset', 'Liability'];
-
-interface AccountForm {
-  name: string;
-  type: AccountType;
-  description: string;
-  initialBalance: string;
-  isSavings: boolean;
-  excludeFromNet: boolean;
-}
-
-const emptyForm: AccountForm = {
-  name: '',
-  type: 'Asset',
-  description: '',
-  initialBalance: '',
-  isSavings: false,
-  excludeFromNet: false,
-};
 
 export default function Accounts() {
   const { accounts, settings, addAccount, updateAccount, archiveAccount, deleteAccount } =
     useDataStore();
+  const { t } = useTranslation();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Account | null>(null);
-  const [form, setForm] = useState<AccountForm>(emptyForm);
-  const [error, setError] = useState('');
   const [deleteError, setDeleteError] = useState<Record<string, string>>({});
 
   const openAdd = () => {
     setEditing(null);
-    setForm(emptyForm);
-    setError('');
     setModalOpen(true);
   };
 
   const openEdit = (a: Account) => {
     setEditing(a);
-    setForm({
-      name: a.name,
-      type: a.type,
-      description: a.description || '',
-      initialBalance: String(a.initialBalance),
-      isSavings: a.isSavings,
-      excludeFromNet: !!a.excludeFromNet,
-    });
-    setError('');
     setModalOpen(true);
   };
 
-  const handleSave = () => {
-    if (!form.name.trim()) {
-      setError('Display Name is required.');
-      return;
-    }
-    setError('');
-    const data = {
-      name: form.name.trim(),
-      type: form.type,
-      description: form.description.trim() || undefined,
-      initialBalance: parseFloat(form.initialBalance) || 0,
-      isSavings: form.isSavings,
-      excludeFromNet: form.excludeFromNet,
+  const handleSave = (data: AccountFormData) => {
+    const payload = {
+      name: data.name,
+      type: data.type,
+      description: data.description || undefined,
+      initialBalance: data.initialBalance,
+      isSavings: data.isSavings,
+      excludeFromNet: data.excludeFromNet,
       isActive: true,
     };
     if (editing) {
-      updateAccount(editing.id, data);
+      updateAccount(editing.id, payload);
     } else {
-      addAccount(data);
+      addAccount(payload, data.methodName);
     }
     setModalOpen(false);
   };
@@ -109,18 +58,15 @@ export default function Accounts() {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold tracking-tight">Accounts</h2>
-                <InfoTooltip
-                  position="bottom"
-                  text="Accounts are the core of Moniq. They represent places where your money lives (like Bank Accounts or Wallets) or money you owe (like Credit Cards or Loans). Every transaction requires an account. You shoudl create an account for each place where your money lives or where you owe money like individual bank accounts, individual credit cards etc."
-                />
+                <h2 className="text-xl font-bold tracking-tight">{t('account.title')}</h2>
+                <InfoTooltip position="bottom" text={t('account.tooltip')} />
               </div>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                Financial Entities ({activeAccounts.length})
+                {t('account.activeAccounts')} ({activeAccounts.length})
               </p>
             </div>
             <Button size="sm" onClick={openAdd} className="h-9 gap-2">
-              <Plus className="h-4 w-4" /> Add Account
+              <Plus className="h-4 w-4" /> {t('account.addAccount')}
             </Button>
           </div>
         </div>
@@ -143,7 +89,7 @@ export default function Accounts() {
                         <p className="font-bold text-sm tracking-tight">{a.name}</p>
                         {a.isSavings && (
                           <span className="text-[8px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black uppercase tracking-widest">
-                            Savings
+                            {t('account.savingsBadge')}
                           </span>
                         )}
                       </div>
@@ -158,7 +104,7 @@ export default function Accounts() {
                         {a.initialBalance.toLocaleString()}
                       </p>
                       <p className="text-[9px] text-muted-foreground font-medium uppercase">
-                        Opening
+                        {t('account.openingBalanceBadge')}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 opacity-10 group-hover:opacity-100 transition-opacity">
@@ -189,7 +135,7 @@ export default function Accounts() {
         {archivedAccounts.length > 0 && (
           <div className="pt-8 space-y-4">
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 px-1">
-              Archived Accounts
+              {t('account.archivedAccounts')}
             </h4>
             <div className="grid grid-cols-1 gap-2">
               {archivedAccounts.map(a => (
@@ -210,7 +156,7 @@ export default function Accounts() {
                           updateAccount(a.id, { isActive: true });
                         }}
                       >
-                        Restore
+                        {t('common.restore')}
                       </Button>
                       <Button
                         variant="ghost"
@@ -231,7 +177,7 @@ export default function Accounts() {
                             });
                         }}
                       >
-                        <Trash2 className="h-3 w-3 mr-1" /> Delete
+                        <Trash2 className="h-3 w-3 mr-1" /> {t('common.delete')}
                       </Button>
                     </div>
                   </div>
@@ -247,150 +193,33 @@ export default function Accounts() {
         )}
       </div>
 
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold tracking-tight">
-              {editing ? 'Edit Account' : 'New Account'}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-                Display Name
-                <InfoTooltip text="The name of your account (e.g., Main Checking, Cash Wallet). Used to identify it in transactions." />
-              </Label>
-              <Input
-                placeholder="e.g., Bank Account, Cash Wallet, Credit Card"
-                value={form.name}
-                onChange={e => {
-                  setForm({ ...form, name: e.target.value });
-                  setError('');
-                }}
-                className="h-10 border-border/50 focus:border-primary/30"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-                Class
-                <InfoTooltip text="Asset: Money you own. Liability: Money you owe." />
-              </Label>
-              <Select
-                value={form.type}
-                onValueChange={val => setForm({ ...form, type: val as AccountType })}
-              >
-                <SelectTrigger className="h-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ACCOUNT_CLASSES.map(t => (
-                    <SelectItem key={t} value={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-                Description
-                <InfoTooltip text="An optional note. Used only for your own identification. Not used for any calculation." />
-              </Label>
-              <textarea
-                value={form.description}
-                onChange={e => setForm({ ...form, description: e.target.value })}
-                className="flex min-h-[80px] w-full rounded-md border border-border/50 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-start space-x-2 border rounded-lg p-3 border-border/50">
-                <Checkbox
-                  id="isSavings"
-                  checked={form.isSavings}
-                  onCheckedChange={(val: boolean | 'indeterminate') =>
-                    setForm({ ...form, isSavings: !!val })
+      <ResponsiveModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        title={editing ? t('account.editAccount') : t('account.newAccount')}
+        description={editing ? t('account.editDescription') : t('account.createDescription')}
+      >
+        {modalOpen && (
+          <AccountForm
+            initialData={
+              editing
+                ? {
+                    name: editing.name,
+                    type: editing.type,
+                    description: editing.description,
+                    initialBalance: editing.initialBalance,
+                    isSavings: editing.isSavings,
+                    excludeFromNet: editing.excludeFromNet,
+                    isActive: editing.isActive,
                   }
-                  className="mt-0.5"
-                />
-                <div className="flex flex-col">
-                  <label
-                    htmlFor="isSavings"
-                    className="text-xs font-bold cursor-pointer flex items-center"
-                  >
-                    Savings Account
-                    <InfoTooltip text="Mark this if this is your dedicated savings account." />
-                  </label>
-                </div>
-              </div>
-              <div className="flex items-start space-x-2 border rounded-lg p-3 border-border/50">
-                <Checkbox
-                  id="excludeFromNet"
-                  checked={form.excludeFromNet}
-                  onCheckedChange={(val: boolean | 'indeterminate') =>
-                    setForm({ ...form, excludeFromNet: !!val })
-                  }
-                  className="mt-0.5"
-                />
-                <div className="flex flex-col">
-                  <label
-                    htmlFor="excludeFromNet"
-                    className="text-xs font-bold cursor-pointer text-muted-foreground flex items-center whitespace-nowrap"
-                  >
-                    Exclude Net Worth
-                    <InfoTooltip text="Exclude this balance from your total Net Worth calculation." />
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-                Opening Balance
-                <InfoTooltip text="The balance this account had when you started tracking in Moniq." />
-              </Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
-                  {settings.currencySymbol}
-                </span>
-                <Input
-                  type="number"
-                  value={form.initialBalance}
-                  onChange={e => {
-                    setForm({ ...form, initialBalance: e.target.value });
-                    setError('');
-                  }}
-                  placeholder="0"
-                  className="h-12 pl-8 border-border/50 focus:border-primary/30 text-lg font-bold mono"
-                  inputMode="decimal"
-                  step="any"
-                />
-              </div>
-            </div>
-
-            {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-          </div>
-
-          <DialogFooter className="pt-4">
-            <Button
-              variant="ghost"
-              onClick={() => setModalOpen(false)}
-              className="h-10 px-6 font-bold uppercase text-[10px] tracking-widest"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              className="h-10 px-8 font-bold uppercase text-[10px] tracking-widest"
-            >
-              {editing ? 'Update Account' : 'Create Account'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                : undefined
+            }
+            onSave={handleSave}
+            onCancel={() => setModalOpen(false)}
+            submitLabel={editing ? t('common.saveChanges') : t('account.createAccount')}
+          />
+        )}
+      </ResponsiveModal>
     </SettingsLayout>
   );
 }

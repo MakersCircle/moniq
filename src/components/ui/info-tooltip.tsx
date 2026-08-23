@@ -1,5 +1,6 @@
 import { Info } from 'lucide-react';
 import React from 'react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface InfoTooltipProps {
   text: React.ReactNode;
@@ -8,17 +9,23 @@ interface InfoTooltipProps {
 
 export function InfoTooltip({ text, position = 'top' }: InfoTooltipProps) {
   return (
-    <div className="group relative inline-flex items-center justify-center">
-      <Info className="h-3.5 w-3.5 text-muted-foreground ml-1.5 flex-shrink-0 cursor-help transition-colors hover:text-foreground" />
-      <div
-        className={`pointer-events-none absolute left-1/2 z-50 w-64 -translate-x-1/2 opacity-0 transition-opacity group-hover:opacity-100 ${
-          position === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
-        }`}
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex items-center justify-center text-muted-foreground ml-1.5 hover:text-foreground transition-colors cursor-help outline-none"
+        >
+          <Info className="h-3.5 w-3.5" />
+          <span className="sr-only">Info</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        side={position}
+        sideOffset={6}
+        className="w-64 p-3 text-xs font-medium leading-tight shadow-md"
       >
-        <div className="rounded-md bg-popover px-3 py-2 text-[10px] font-medium leading-tight text-popover-foreground shadow-md border border-border">
-          {text}
-        </div>
-      </div>
-    </div>
+        {text}
+      </PopoverContent>
+    </Popover>
   );
 }

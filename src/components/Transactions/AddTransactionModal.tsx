@@ -17,6 +17,9 @@ import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/utils/format';
 import { DatePicker } from './DatePicker';
 import { LedgerEngine } from '@/lib/ledger';
+import { CreateAccountSheet } from './CreateAccountSheet';
+import { CreateCategorySheet } from './CreateCategorySheet';
+import { SelectSeparator } from '@/components/ui/select';
 
 interface SplitLine {
   categoryId: string;
@@ -128,7 +131,26 @@ export default function AddTransactionModal({
   );
   const [note, setNote] = useState(initialData?.note || '');
 
+  const [showAccountSheet, setShowAccountSheet] = useState(false);
+  const [showCategorySheet, setShowCategorySheet] = useState(false);
+
   const amountRef = useRef<HTMLInputElement>(null);
+
+  const displayAmount = useMemo(() => {
+    if (!amount) return '';
+    const parts = amount.split('.');
+    const integer = parts[0];
+    const decimal = parts.length > 1 ? '.' + parts[1] : '';
+    if (!integer) return decimal;
+    try {
+      const formattedInteger = new Intl.NumberFormat(settings.numberLocale || 'en-IN').format(
+        BigInt(integer)
+      );
+      return formattedInteger + decimal;
+    } catch {
+      return amount;
+    }
+  }, [amount, settings.numberLocale]);
 
   // Category head/sub split state
   const initialCategoryHead = useMemo(() => {
@@ -348,30 +370,15 @@ export default function AddTransactionModal({
 
   const inputClasses = 'h-9 bg-muted/40 border-transparent focus:border-primary/30 transition-all';
 
-  if (activeAccounts.length === 0 || activeMethods.length === 0 || activeCategories.length === 0) {
-    return (
-      <div className="p-8 text-center space-y-4 bg-background rounded-lg border border-border/50">
-        <h3 className="text-lg font-bold text-destructive">Prerequisites Missing</h3>
-        <p className="text-sm text-muted-foreground pb-4">
-          You must create at least one <strong>Account</strong>, one <strong>Payment Method</strong>
-          , and one <strong>Category</strong> before adding a transaction.
-        </p>
-        <Button onClick={onClose} variant="secondary" className="w-full">
-          Close
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <form
       onSubmit={e => handleSubmit(e)}
       onKeyDown={handleKeyDown}
-      className="flex flex-col max-h-full overflow-hidden bg-background"
+      className="flex flex-col flex-1 min-h-0 overflow-hidden bg-background w-full"
     >
       {/* Header Area */}
-      <div className="px-6 py-4 border-b border-border bg-accent/5">
-        <div className="flex items-center justify-between mb-4 pr-10">
+      <div className="shrink-0 px-6 py-4 border-b border-border bg-accent/5">
+        <div className="flex flex-wrap items-center justify-between mb-4 pr-10 gap-y-4">
           <h2 className="text-lg font-bold tracking-tight">
             {initialData && !isDuplicate ? 'Edit' : 'New'} Transaction
           </h2>
@@ -405,32 +412,42 @@ export default function AddTransactionModal({
         </div>
 
         {/* Amount Input */}
-        <div className="flex flex-col items-center py-2">
-          <div className="relative group flex items-center justify-center">
-            <span className="text-3xl font-black text-muted-foreground/40 mr-2 group-focus-within:text-primary transition-colors">
+        <div className="shrink-0 flex flex-col items-center py-2 px-6 w-full max-w-full overflow-hidden">
+          <div className="relative group flex items-center justify-center max-w-full">
+            <span className="text-5xl font-black text-muted-foreground/40 mr-2 shrink-0 group-focus-within:text-primary transition-colors">
               {settings.currencySymbol}
             </span>
             <input
               ref={amountRef}
-              type="number"
-              min="0"
+              type="text"
               autoFocus
               tabIndex={1}
               className={cn(
-                'bg-transparent text-5xl font-black outline-none text-center w-full max-w-[240px] mono tracking-tighter transition-colors',
+                'bg-transparent text-5xl font-black outline-none text-center max-w-full min-w-0 mono tracking-tighter transition-colors',
                 type === 'income'
                   ? 'text-income'
                   : type === 'expense'
                     ? 'text-expense'
                     : 'text-foreground'
               )}
+              style={
+                {
+                  width: displayAmount ? `${displayAmount.length + 0.5}ch` : '4.5ch',
+                  fieldSizing: 'content',
+                } as React.CSSProperties
+              }
               placeholder="0.00"
-              value={amount}
+              value={displayAmount}
               onChange={e => {
                 const val = e.target.value;
                 // Strip everything except numbers and decimal point
                 const sanitized = val.replace(/[^0-9.]/g, '');
-                setAmount(sanitized);
+
+                // ensure only one decimal point
+                const parts = sanitized.split('.');
+                const finalVal = parts[0] + (parts.length > 1 ? '.' + parts.slice(1).join('') : '');
+
+                setAmount(finalVal);
               }}
               onKeyDown={e => {
                 // Prevent 'e', '+', '-' from being entered
@@ -460,7 +477,7 @@ export default function AddTransactionModal({
       </div>
 
       {/* Form Content Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 custom-scrollbar min-h-[400px]">
+      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 custom-scrollbar min-h-0 sm:min-h-[400px]">
         {type === 'transfer' ? (
           <>
             {/* Transfer: Date */}
@@ -474,7 +491,7 @@ export default function AddTransactionModal({
             </div>
 
             {/* Transfer: From / To using payment methods */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
                   From
@@ -482,6 +499,10 @@ export default function AddTransactionModal({
                 <Select
                   value={fromMethodId || undefined}
                   onValueChange={val => {
+                    if (val === 'NEW_METHOD') {
+                      setShowAccountSheet(true);
+                      return;
+                    }
                     setFromMethodId(val);
                     if (val === toMethodId) setToMethodId('');
                   }}
@@ -499,6 +520,11 @@ export default function AddTransactionModal({
                         </SelectItem>
                       );
                     })}
+                    <SelectSeparator />
+                    <SelectItem value="NEW_METHOD" className="text-primary font-bold">
+                      <Plus className="h-4 w-4 inline-block mr-2" />
+                      Create Account & Method
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 {fromAccountId && (
@@ -511,7 +537,16 @@ export default function AddTransactionModal({
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
                   To
                 </Label>
-                <Select value={toMethodId || undefined} onValueChange={setToMethodId}>
+                <Select
+                  value={toMethodId || undefined}
+                  onValueChange={val => {
+                    if (val === 'NEW_METHOD') {
+                      setShowAccountSheet(true);
+                      return;
+                    }
+                    setToMethodId(val);
+                  }}
+                >
                   <SelectTrigger className={inputClasses} tabIndex={4}>
                     <SelectValue placeholder="Select method" />
                   </SelectTrigger>
@@ -525,6 +560,11 @@ export default function AddTransactionModal({
                         </SelectItem>
                       );
                     })}
+                    <SelectSeparator />
+                    <SelectItem value="NEW_METHOD" className="text-primary font-bold">
+                      <Plus className="h-4 w-4 inline-block mr-2" />
+                      Create Account & Method
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 {toAccountId && (
@@ -538,7 +578,7 @@ export default function AddTransactionModal({
         ) : (
           <>
             {/* Income/Expense: Date + Payment Method */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
                   Date
@@ -549,7 +589,16 @@ export default function AddTransactionModal({
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
                   Payment Method
                 </Label>
-                <Select value={methodId} onValueChange={setMethodId}>
+                <Select
+                  value={methodId}
+                  onValueChange={val => {
+                    if (val === 'NEW_METHOD') {
+                      setShowAccountSheet(true);
+                      return;
+                    }
+                    setMethodId(val);
+                  }}
+                >
                   <SelectTrigger className={inputClasses} tabIndex={3}>
                     <SelectValue placeholder="Select Method" />
                   </SelectTrigger>
@@ -559,6 +608,11 @@ export default function AddTransactionModal({
                         {m.name}
                       </SelectItem>
                     ))}
+                    <SelectSeparator />
+                    <SelectItem value="NEW_METHOD" className="text-primary font-bold">
+                      <Plus className="h-4 w-4 inline-block mr-2" />
+                      Create Account & Method
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 {derivedAccountId && (
@@ -571,7 +625,7 @@ export default function AddTransactionModal({
 
             {/* Category: Head + Sub-head as separate dropdowns */}
             {!isSplit && (
-              <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-right-2 duration-300">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-right-2 duration-300">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
                     Category
@@ -579,6 +633,10 @@ export default function AddTransactionModal({
                   <Select
                     value={selectedHead || undefined}
                     onValueChange={val => {
+                      if (val === 'NEW_CATEGORY') {
+                        setShowCategorySheet(true);
+                        return;
+                      }
                       setSelectedHead(val);
                       const subs = activeCategories.filter(c => c.head === val);
                       setTargetId(subs.length === 1 ? subs[0].id : '');
@@ -593,6 +651,11 @@ export default function AddTransactionModal({
                           {h}
                         </SelectItem>
                       ))}
+                      <SelectSeparator />
+                      <SelectItem value="NEW_CATEGORY" className="text-primary font-bold">
+                        <Plus className="h-4 w-4 inline-block mr-2" />
+                        Create Category
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -744,7 +807,7 @@ export default function AddTransactionModal({
         </div>
       </div>
 
-      <div className="px-6 py-5 border-t border-border bg-accent/5 flex items-center justify-between gap-4">
+      <div className="shrink-0 px-6 py-5 border-t border-border bg-accent/5 flex items-center justify-between gap-4">
         {isSaved && (
           <div className="flex items-center gap-2 text-income animate-in fade-in slide-in-from-left-2">
             <div className="w-1.5 h-1.5 rounded-full bg-income animate-pulse" />
@@ -767,6 +830,33 @@ export default function AddTransactionModal({
           Save {type}
         </Button>
       </div>
+
+      <CreateAccountSheet
+        open={showAccountSheet}
+        onOpenChange={setShowAccountSheet}
+        onSuccess={(acctId, methId) => {
+          setShowAccountSheet(false);
+          // Set the new method ID for wherever they were
+          if (type === 'transfer') {
+            if (!fromMethodId) setFromMethodId(methId);
+            else setToMethodId(methId);
+          } else {
+            setMethodId(methId);
+          }
+        }}
+      />
+      <CreateCategorySheet
+        open={showCategorySheet}
+        onOpenChange={setShowCategorySheet}
+        onSuccess={catId => {
+          setShowCategorySheet(false);
+          const newCat = useDataStore.getState().categories.find(c => c.id === catId);
+          if (newCat) {
+            setSelectedHead(newCat.head);
+            setTargetId(catId);
+          }
+        }}
+      />
     </form>
   );
 }

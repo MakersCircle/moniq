@@ -92,9 +92,6 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
           else if (key === 'numberLocale') current.numberLocale = value;
           else if (key === 'fiscalYearStartMonth') current.fiscalYearStartMonth = Number(value);
           else if (key === 'dateFormat') current.dateFormat = value;
-          else if (key === 'tourStep') current.tourStep = value;
-          else if (key === 'hasCompletedOnboarding')
-            current.hasCompletedOnboarding = String(value).toLowerCase() === 'true';
         }
         nextState.settings = current;
       }
@@ -128,7 +125,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
       pendingCount: 0,
       syncStatus: 'idle',
       lastSyncError: undefined,
-      settings: { ...defaultSettings, hasCompletedOnboarding: false },
+      settings: defaultSettings,
     });
   },
 
@@ -256,11 +253,6 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         if (settings.fiscalYearStartMonth)
           userSettings.fiscalYearStartMonth = Number(settings.fiscalYearStartMonth);
         if (settings.dateFormat) userSettings.dateFormat = settings.dateFormat;
-        if (settings.tourStep) userSettings.tourStep = settings.tourStep;
-        if (settings.hasCompletedOnboarding !== undefined) {
-          userSettings.hasCompletedOnboarding =
-            String(settings.hasCompletedOnboarding).toLowerCase() === 'true';
-        }
       }
 
       set({

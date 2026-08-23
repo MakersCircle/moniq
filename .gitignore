@@ -40,3 +40,8 @@ scratch/
 
 # Brand source assets (Figma exports — not needed in git)
 public/new-logos/
+
+# Playwright Test Results
+test-results/
+playwright-report/
+playwright/.cache/

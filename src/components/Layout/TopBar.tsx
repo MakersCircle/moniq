@@ -1,7 +1,9 @@
-import { Search, Plus, RefreshCw } from 'lucide-react';
+import { Search, Plus, RefreshCw, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDataStore } from '@/store/dataStore';
 import { useEffect, useRef } from 'react';
+import { NavLink } from 'react-router-dom';
+import { BetaTag } from '../ui/BetaTag';
 
 interface TopBarProps {
   onNewTransaction: () => void;
@@ -10,7 +12,7 @@ interface TopBarProps {
 export default function TopBar({ onNewTransaction }: TopBarProps) {
   const { syncStatus } = useDataStore();
   const searchRef = useRef<HTMLInputElement>(null);
-  
+
   const isSyncing = syncStatus === 'syncing' || syncStatus === 'pulling';
 
   useEffect(() => {
@@ -29,43 +31,72 @@ export default function TopBar({ onNewTransaction }: TopBarProps) {
   }, []);
 
   return (
-    <header className="h-[48px] fixed top-0 right-0 left-[220px] bg-background/80 backdrop-blur-md border-b border-border z-40 flex items-center px-6 justify-between">
+    <header className="h-[48px] fixed top-0 right-0 left-0 lg:left-[220px] bg-background/80 backdrop-blur-md border-b border-border z-40 flex items-center px-4 lg:px-6 justify-between">
+      {/* Mobile Logo */}
+      <div className="flex lg:hidden items-center mr-4">
+        <NavLink to="/" className="flex items-center gap-1.5 group">
+          <img src="/moniq-wordmark.svg" alt="moniq logo" className="h-5 object-contain" />
+          <BetaTag className="ml-0.5 scale-75 origin-left" />
+        </NavLink>
+      </div>
+
       {/* Search area - center aligned in the available space */}
-      <div className="flex-1 flex justify-center">
-        <div className="relative w-full max-w-[400px] h-8 group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+      <div className="flex-1 flex justify-end min-[400px]:justify-center px-2 lg:px-0">
+        <div className="relative w-8 min-[400px]:w-full min-[400px]:max-w-[200px] lg:max-w-[400px] h-8 group transition-all duration-300">
+          <Search
+            className="absolute left-2 min-[400px]:left-2.5 lg:left-3 top-1/2 -translate-y-1/2 h-4 w-4 min-[400px]:h-3.5 min-[400px]:w-3.5 text-muted-foreground group-focus-within:text-primary transition-colors cursor-pointer z-10"
+            onClick={() => searchRef.current?.focus()}
+          />
           <input
             ref={searchRef}
             type="text"
-            placeholder="Search transactions, sources... (/)"
-            className="w-full h-full bg-accent/30 hover:bg-accent/50 focus:bg-accent/50 border border-transparent focus:border-primary/30 rounded-lg pl-9 pr-3 text-xs outline-none transition-all"
+            placeholder="Search... (/)"
+            className="w-full h-full bg-transparent min-[400px]:bg-accent/30 focus:bg-accent/50 border border-transparent focus:border-primary/30 rounded-lg pl-8 lg:pl-9 pr-3 text-xs outline-none transition-all cursor-pointer min-[400px]:cursor-text opacity-0 min-[400px]:opacity-100 focus:opacity-100 absolute min-[400px]:relative right-0 focus:w-[200px] lg:focus:w-full z-20 focus:cursor-text focus:bg-background min-[400px]:focus:bg-accent/50"
             onClick={() => {
               /* TODO: Global search palette */
             }}
           />
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-border bg-background text-[10px] text-muted-foreground font-mono pointer-events-none">
+          <div className="hidden lg:block absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-border bg-background text-[10px] text-muted-foreground font-mono pointer-events-none z-10">
             /
           </div>
         </div>
       </div>
 
       {/* Right actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 lg:gap-3">
         {isSyncing && (
           <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-accent/30 border border-border/50 text-muted-foreground animate-pulse">
             <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-            <span className="text-[10px] font-medium tracking-wide uppercase">Syncing</span>
+            <span className="hidden lg:inline text-[10px] font-medium tracking-wide uppercase">
+              Syncing
+            </span>
           </div>
         )}
+
+        {/* Desktop New Transaction */}
         <Button
           id="tour-target-new-tx"
           size="sm"
-          className="h-8 gap-1.5 text-xs px-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all active:scale-95"
+          className="hidden lg:flex h-8 gap-1.5 text-xs px-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all active:scale-95"
           onClick={() => onNewTransaction()}
         >
           <Plus className="h-3.5 w-3.5" />
           <span>New Transaction</span>
         </Button>
+
+        {/* Mobile Settings Icon */}
+        <NavLink
+          to="/settings"
+          className={({ isActive }) =>
+            `lg:hidden flex h-8 w-8 items-center justify-center rounded-md ${
+              isActive
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            }`
+          }
+        >
+          <Settings className="h-4 w-4" />
+        </NavLink>
       </div>
     </header>
   );

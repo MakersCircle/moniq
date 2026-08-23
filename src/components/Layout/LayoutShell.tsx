@@ -1,14 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { type TransactionType } from '@/types';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import { useDataStore } from '@/store/dataStore';
-import TourDriver from '@/components/Onboarding/TourDriver';
-import WelcomeStep from '@/components/Onboarding/Steps/WelcomeStep';
-import PreferencesStep from '@/components/Onboarding/Steps/PreferencesStep';
-import AccountsSetupStep from '@/components/Onboarding/Steps/AccountsSetupStep';
-import MethodsSetupStep from '@/components/Onboarding/Steps/MethodsSetupStep';
-import CategoriesSetupStep from '@/components/Onboarding/Steps/CategoriesSetupStep';
 import SessionExpiredBanner from './SessionExpiredBanner';
 import DemoBanner from './DemoBanner';
 
@@ -18,17 +12,8 @@ interface LayoutShellProps {
 }
 
 export default function LayoutShell({ children, onNewTransaction }: LayoutShellProps) {
-  const { settings, accounts, isCloudInitialized, accessToken, completeOnboarding, isDemoMode } =
-    useDataStore();
-  const [sessionSkipped, setSessionSkipped] = useState(
-    () => sessionStorage.getItem('skipOnboarding') === 'true'
-  );
+  const { isCloudInitialized, accessToken, isDemoMode } = useDataStore();
 
-  const showOnboarding =
-    isCloudInitialized &&
-    accounts.length === 0 &&
-    !settings.hasCompletedOnboarding &&
-    !sessionSkipped;
   const isSessionExpired = !accessToken && isCloudInitialized && !isDemoMode;
 
   // Global Keyboard Shortcuts
@@ -67,34 +52,9 @@ export default function LayoutShell({ children, onNewTransaction }: LayoutShellP
 
   return (
     <div className="h-screen bg-background text-foreground overflow-hidden">
-      {!settings.hasCompletedOnboarding && settings.tourStep && <TourDriver />}
-
-      {showOnboarding && (!settings.tourStep || settings.tourStep === 'welcome') && (
-        <WelcomeStep
-          onSkip={() => {
-            sessionStorage.setItem('skipOnboarding', 'true');
-            setSessionSkipped(true);
-            completeOnboarding([], []);
-          }}
-        />
-      )}
-      {settings.tourStep === 'preferences' && <PreferencesStep />}
-      {/* setup_accounts OR the legacy nav_accounts step (same modal) */}
-      {(settings.tourStep === 'setup_accounts' || settings.tourStep === 'nav_accounts') && (
-        <AccountsSetupStep />
-      )}
-      {/* setup_methods OR legacy nav_methods */}
-      {(settings.tourStep === 'setup_methods' || settings.tourStep === 'nav_methods') && (
-        <MethodsSetupStep />
-      )}
-      {/* setup_categories OR legacy nav_categories */}
-      {(settings.tourStep === 'setup_categories' || settings.tourStep === 'nav_categories') && (
-        <CategoriesSetupStep />
-      )}
-
-      <Sidebar />
-      <TopBar onNewTransaction={onNewTransaction} />
-      <div className="pl-[220px] pt-[48px] h-screen">
+      <Sidebar onNewTransaction={() => onNewTransaction()} />
+      <TopBar onNewTransaction={() => onNewTransaction()} />
+      <div className="lg:pl-[220px] pt-[48px] pb-[60px] lg:pb-0 h-[100dvh]">
         <main
           id="main-scroll-container"
           className="h-full w-full overflow-y-auto custom-scrollbar flex flex-col"

@@ -1,9 +1,9 @@
 import type { StateCreator } from 'zustand';
 import type { DataState, UserProfile } from '../types';
-import type { UserSettings, Account, Category, PaymentMethod } from '@/types';
-import { uuid, now, markDirty } from '../helpers';
+import type { UserSettings } from '@/types';
+import { markDirty } from '../helpers';
 import { detectLocalSettings, getCurrencySymbol } from '@/constants/currencies';
-import { putMany, putSetting, delSetting, setMeta, delMeta } from '@/lib/db';
+import { putSetting, setMeta, delMeta } from '@/lib/db';
 
 const detected = detectLocalSettings();
 
@@ -13,7 +13,6 @@ export const defaultSettings: UserSettings = {
   numberLocale: detected.locale,
   fiscalYearStartMonth: detected.currency === 'INR' ? 4 : 1,
   dateFormat: detected.currency === 'INR' ? 'dd/MM/yyyy' : 'MM/dd/yyyy',
-  hasCompletedOnboarding: false,
 };
 
 export interface SettingsSlice {
@@ -23,16 +22,11 @@ export interface SettingsSlice {
   userProfile: UserProfile | null;
 
   updateSettings: (patch: Partial<UserSettings>) => void;
-  setTourStep: (step: string) => void;
   setAccessToken: (token: string | null, expiresAt?: number | null) => void;
   setUserProfile: (profile: UserProfile | null) => void;
-  completeOnboarding: (
-    accounts?: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>[],
-    categories?: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>[]
-  ) => void;
 }
 
-export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice> = (set, get) => ({
+export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice> = set => ({
   settings: defaultSettings,
   accessToken: null,
   tokenExpiresAt: null,
@@ -62,15 +56,6 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
     markDirty('settings', 'settings', 'update');
   },
 
-  setTourStep: (step: string) => {
-    set(state => {
-      const newSettings = { ...state.settings, tourStep: step };
-      putSetting('tourStep', step);
-      return { settings: newSettings };
-    });
-    markDirty('settings', 'tourStep', 'update');
-  },
-
   setAccessToken: (token, expiresAt) => {
     set(() => ({
       accessToken: token,
@@ -92,66 +77,5 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
     set({ userProfile: profile });
     if (profile) setMeta('userProfile', JSON.stringify(profile));
     else delMeta('userProfile');
-  },
-
-  completeOnboarding: (accs, cats) => {
-    set(state => {
-      const t = now();
-      const newAccounts = (accs || []).map(
-        a =>
-          ({
-            ...a,
-            id: uuid(),
-            isActive: true,
-            isDeleted: false,
-            createdAt: t,
-            updatedAt: t,
-          }) as Account
-      );
-      const newCategories = (cats || []).map(
-        c =>
-          ({
-            ...c,
-            id: uuid(),
-            isActive: true,
-            isDeleted: false,
-            createdAt: t,
-            updatedAt: t,
-          }) as Category
-      );
-      const newMethods = newAccounts.map(
-        a =>
-          ({
-            id: uuid(),
-            name: `${a.name}`,
-            linkedAccountId: a.id,
-            isActive: true,
-            isDeleted: false,
-            createdAt: t,
-            updatedAt: t,
-          }) as PaymentMethod
-      );
-
-      for (const a of newAccounts) markDirty('account', a.id, 'create');
-      for (const c of newCategories) markDirty('category', c.id, 'create');
-      for (const m of newMethods) markDirty('method', m.id, 'create');
-
-      return {
-        accounts: [...state.accounts, ...newAccounts],
-        categories: [...state.categories, ...newCategories],
-        methods: [...state.methods, ...newMethods],
-        settings: { ...state.settings, hasCompletedOnboarding: true, tourStep: undefined },
-      };
-    });
-
-    const state = get();
-    putMany('accounts', state.accounts);
-    putMany('categories', state.categories);
-    putMany('methods', state.methods);
-    putSetting('hasCompletedOnboarding', 'true');
-    delSetting('tourStep');
-
-    markDirty('settings', 'hasCompletedOnboarding', 'update');
-    markDirty('settings', 'tourStep', 'delete');
   },
 });
