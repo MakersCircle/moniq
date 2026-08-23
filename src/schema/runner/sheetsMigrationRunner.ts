@@ -37,7 +37,7 @@ async function readSheetsVersion(client: SheetClient): Promise<number> {
 async function writeSheetsVersion(client: SheetClient, version: number): Promise<void> {
   const rows = await client.readSheet('_meta').catch(() => [] as string[][]);
   const idx = rows.findIndex(r => r[0] === 'schema_version');
-  if (idx === -1 || idx === 0) {
+  if (idx === -1) {
     // Append new row
     await client.appendRows('_meta', [['schema_version', String(version)]]);
   } else {
@@ -65,12 +65,17 @@ async function safeRewrite(
   rows: string[][]
 ): Promise<void> {
   // Capture temp buffer before touching the sheet
+  console.log(
+    `[SheetsMigrationRunner] Capturing temporary buffer for sheet "${sheetName}" rollback...`
+  );
   const tempBuffer = await client.readSheet(sheetName).catch(() => [] as string[][]);
 
   // Clear + write new headers + push new data
+  console.log(`[SheetsMigrationRunner] Overwriting sheet "${sheetName}" with new schema...`);
   await client.overwriteSheet(sheetName, rows);
 
   // Verify: sheet should have header + all data rows
+  console.log(`[SheetsMigrationRunner] Verifying row count for data integrity...`);
   const afterRows = await client.readSheet(sheetName);
   const expectedCount = rows.length + 1; // +1 for header
   if (afterRows.length !== expectedCount) {
@@ -87,6 +92,9 @@ async function safeRewrite(
     );
   }
 
+  console.log(
+    `[SheetsMigrationRunner] Verification passed. Sheet "${sheetName}" rewrite successful.`
+  );
   void newHeaders; // reserved for future column validation
 }
 
@@ -126,10 +134,12 @@ export async function runSheetsMigrations(
   if (pending.length === 0) return;
 
   // ── Broadcast to other tabs ──────────────────────────────────
+  console.log('[SheetsMigrationRunner] Broadcasting MIGRATION_STARTED to other tabs...');
   migrationChannel.broadcast({ type: 'MIGRATION_STARTED', version: CURRENT_SCHEMA_VERSION });
 
   // ── Create Drive backup before any mutation ──────────────────
   if (opts?.createBackup && opts.spreadsheetId) {
+    console.log('[SheetsMigrationRunner] Creating Drive backup of current spreadsheet...');
     try {
       const backupId = await opts.createBackup(opts.spreadsheetId);
       await setMeta(MIGRATION_BACKUP_ID_KEY, backupId);
@@ -143,6 +153,7 @@ export async function runSheetsMigrations(
     console.log(`[SheetsMigrationRunner] Running Sheets migration v${migration.version}…`);
 
     // Set the migration lock BEFORE touching any sheet
+    console.log(`[SheetsMigrationRunner] Acquiring migration lock (status: running)...`);
     await setMeta(MIGRATION_STATUS_KEY, 'running');
     await setMeta(MIGRATION_TARGET_VERSION_KEY, String(migration.version));
 
@@ -150,10 +161,13 @@ export async function runSheetsMigrations(
       await migration.up(client);
 
       // Write version to both IDB meta and the _meta sheet
+      console.log(`[SheetsMigrationRunner] Updating local IDB meta version...`);
       await setMeta(SHEETS_VERSION_KEY, String(migration.version));
+      console.log(`[SheetsMigrationRunner] Updating remote Google Sheets _meta tab...`);
       await writeSheetsVersion(client, migration.version);
 
       // Clear the lock on successful completion of this migration
+      console.log(`[SheetsMigrationRunner] Releasing migration lock (status: done)...`);
       await setMeta(MIGRATION_STATUS_KEY, 'done');
 
       console.log(`[SheetsMigrationRunner] Migration v${migration.version} complete.`);
