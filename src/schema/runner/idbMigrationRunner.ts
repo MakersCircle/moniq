@@ -43,14 +43,10 @@ export function openMoniqDB(): Promise<IDBPDatabase<MoniqDB>> {
           }
         }
       },
-      blocked(currentVersion, blockedVersion, event) {
-        console.warn('[Moniq IDB] Open blocked by another tab.', event);
+      blocked(_currentVersion, _blockedVersion, _event) {
         reject(new Error('Database open blocked by another tab. Please close other Moniq tabs.'));
       },
       blocking() {
-        console.warn(
-          '[Moniq IDB] Another tab requested access. Closing connection to unblock them.'
-        );
         if (dbPromise) {
           dbPromise.then(db => db.close()).catch(() => {});
           dbPromise = null;

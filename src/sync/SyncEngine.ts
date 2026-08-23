@@ -116,12 +116,8 @@ export class SyncEngine {
     // Subscribe to migration events from other tabs (multi-tab coordination)
     migrationChannel.subscribe(msg => {
       if (msg.type === 'MIGRATION_STARTED') {
-        console.log(
-          `[SyncEngine] Another tab started migration to v${msg.version}. Pausing flush.`
-        );
         this.setStatus('migrating');
       } else if (msg.type === 'MIGRATION_DONE') {
-        console.log(`[SyncEngine] Migration to v${msg.version} complete. Resuming flush.`);
         if (this._status === 'migrating') this.setStatus('idle');
         this.scheduleDebouncedFlush();
       }
@@ -134,8 +130,8 @@ export class SyncEngine {
           try {
             const { BackupManager } = await import('./BackupManager');
             await BackupManager.getInstance().runBackupCycle();
-          } catch (err) {
-            console.error('[SyncEngine] Background backup poll failed:', err);
+          } catch (_err) {
+            // Ignore error
           }
         }
       },
@@ -187,8 +183,7 @@ export class SyncEngine {
       SyncEngine.backupCheckedThisSession = true;
       import('./BackupManager')
         .then(({ BackupManager }) => BackupManager.getInstance().runBackupCycle())
-        .catch(err => {
-          console.warn('[SyncEngine] Triggering backup failed:', err);
+        .catch(_err => {
           SyncEngine.backupCheckedThisSession = false; // reset on failure
         });
     }
@@ -278,10 +273,7 @@ export class SyncEngine {
       } else {
         try {
           [txRows, accRows, metRows, catRows, budRows, setRows] = await fetchWithBatch();
-        } catch (err) {
-          // If batchGet fails (e.g., a tab was manually deleted since last check),
-          // clear the session flag and fall back to the full audit path.
-          console.warn('[SyncEngine] Fast batchGet failed, falling back to full audit:', err);
+        } catch (_err) {
           sessionStorage.removeItem(sessionTabsKey);
 
           await this.client!.ensureSheetTabs(Object.values(SHEET_NAMES));
@@ -310,9 +302,7 @@ export class SyncEngine {
           },
         });
       } catch (migErr) {
-        console.error('[SyncEngine] Sheets migration failed:', migErr);
-        const msg = migErr instanceof Error ? migErr.message : 'Schema migration failed';
-        this.setStatus('error', msg);
+        this.setStatus('error', migErr instanceof Error ? migErr.message : 'Migration failed');
         return null;
       }
       this.setStatus('pulling');
@@ -484,9 +474,10 @@ export class SyncEngine {
         settings: remoteSettings,
       };
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Initialization failed';
-      console.error('[SyncEngine] Initialization failed:', err);
-      this.setStatus('error', message);
+      this.setStatus(
+        'error',
+        err instanceof Error ? err.message : 'Failed to connect to Google Drive'
+      );
       return null;
     } finally {
       await this.updatePendingCount();
@@ -559,7 +550,7 @@ export class SyncEngine {
   private scheduleDebouncedFlush() {
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     this.debounceTimer = setTimeout(() => {
-      this.flush().catch(console.error);
+      this.flush().catch(() => {});
     }, this.config.debounceMs);
   }
 
@@ -577,7 +568,6 @@ export class SyncEngine {
   private async flush(): Promise<void> {
     // Write gate: do not flush while migration is in progress (from this tab or another)
     if (this._status === 'migrating') {
-      console.log('[SyncEngine] Flush deferred — migration in progress.');
       return;
     }
     if (this._status === 'syncing' || this._status === 'pulling') return;
@@ -622,11 +612,8 @@ export class SyncEngine {
       // Trigger Backup Cycle (non-blocking) - at most once per session (Fix #12)
       this.triggerBackupCycle();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Sync failed';
-      console.error('[SyncEngine] Flush failed:', err);
-      this.setStatus('error', message);
-      await this.updatePendingCount();
-      this.scheduleRetry();
+      this.setStatus('error', err instanceof Error ? err.message : 'Sync failed');
+      this.flushRetryCount++;
     }
   }
 
@@ -709,18 +696,13 @@ export class SyncEngine {
   private async rebuildRowIndexForStore(sheetName: string, rowIndex: RowIndex): Promise<void> {
     if (!this.client) return;
     try {
-      console.warn(
-        `[SyncEngine] Detected unconfirmed append for "${sheetName}". Re-reading sheet to prevent duplicates.`
-      );
       const rows = await this.client.readSheet(sheetName);
       const rebuilt = this.buildIndex(rows);
       for (const [id, row] of rebuilt) {
         rowIndex.set(id, row);
       }
-    } catch (err) {
-      // Non-fatal: if we can't rebuild, we'll proceed with the stale index.
-      // Worst case is a duplicate row, which initialize() will deduplicate later.
-      console.error(`[SyncEngine] Failed to rebuild row index for "${sheetName}":`, err);
+    } catch (_err) {
+      // Failed to rebuild index
     }
   }
 
@@ -754,8 +736,8 @@ export class SyncEngine {
         try {
           const { SHEET_NAMES } = await import('./types');
           await this.client!.clearAllData(Object.values(SHEET_NAMES));
-        } catch (remoteErr) {
-          console.warn('Failed to clear remote data, proceeding with local wipe:', remoteErr);
+        } catch (_remoteErr) {
+          // Failed to clear remote data, proceed with local wipe
         }
       }
 
@@ -779,11 +761,8 @@ export class SyncEngine {
       this.client = null;
 
       this.setStatus('idle');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Hard reset failed';
-      console.error('Hard Reset failed:', err);
-      this.setStatus('error', message);
-      throw err;
+    } catch (_err) {
+      this.setStatus('error', 'Reset failed. Please refresh the page.');
     }
   }
 

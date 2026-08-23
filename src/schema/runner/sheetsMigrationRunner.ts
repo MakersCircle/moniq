@@ -65,13 +65,9 @@ async function safeRewrite(
   rows: string[][]
 ): Promise<void> {
   // Capture temp buffer before touching the sheet
-  console.log(
-    `[SheetsMigrationRunner] Capturing temporary buffer for sheet "${sheetName}" rollback...`
-  );
   const tempBuffer = await client.readSheet(sheetName).catch(() => [] as string[][]);
 
   // Clear + write new headers + push new data
-  console.log(`[SheetsMigrationRunner] Overwriting sheet "${sheetName}" with new schema...`);
   await client.overwriteSheet(sheetName, rows);
 
   // Verify: sheet should have header + all data rows
@@ -79,10 +75,6 @@ async function safeRewrite(
   const afterRows = await client.readSheet(sheetName);
   const expectedCount = rows.length + 1; // +1 for header
   if (afterRows.length !== expectedCount) {
-    console.error(
-      `[SheetsMigrationRunner] Row count mismatch on ${sheetName}: ` +
-        `expected ${expectedCount}, got ${afterRows.length}. Rolling back.`
-    );
     // Rollback: re-write the pre-clear buffer
     if (tempBuffer.length > 0) {
       await client.overwriteSheet(sheetName, tempBuffer.slice(1)); // skip old header
@@ -92,9 +84,6 @@ async function safeRewrite(
     );
   }
 
-  console.log(
-    `[SheetsMigrationRunner] Verification passed. Sheet "${sheetName}" rewrite successful.`
-  );
   void newHeaders; // reserved for future column validation
 }
 
@@ -124,9 +113,6 @@ export async function runSheetsMigrations(
   // Check for an interrupted migration from a previous session
   const interruptedStatus = await getMeta(MIGRATION_STATUS_KEY);
   if (interruptedStatus === 'running') {
-    console.warn(
-      '[SheetsMigrationRunner] Detected interrupted migration from previous session. Resuming.'
-    );
     // The stored version reflects the last *committed* migration, so we resume from there.
   }
 
@@ -134,26 +120,20 @@ export async function runSheetsMigrations(
   if (pending.length === 0) return;
 
   // ── Broadcast to other tabs ──────────────────────────────────
-  console.log('[SheetsMigrationRunner] Broadcasting MIGRATION_STARTED to other tabs...');
   migrationChannel.broadcast({ type: 'MIGRATION_STARTED', version: CURRENT_SCHEMA_VERSION });
 
   // ── Create Drive backup before any mutation ──────────────────
   if (opts?.createBackup && opts.spreadsheetId) {
-    console.log('[SheetsMigrationRunner] Creating Drive backup of current spreadsheet...');
     try {
       const backupId = await opts.createBackup(opts.spreadsheetId);
       await setMeta(MIGRATION_BACKUP_ID_KEY, backupId);
-      console.log(`[SheetsMigrationRunner] Pre-migration backup created: ${backupId}`);
-    } catch (err) {
-      console.warn('[SheetsMigrationRunner] Backup failed, proceeding without backup:', err);
+    } catch (_err) {
+      // Proceed without backup
     }
   }
 
   for (const migration of pending) {
-    console.log(`[SheetsMigrationRunner] Running Sheets migration v${migration.version}…`);
-
     // Set the migration lock BEFORE touching any sheet
-    console.log(`[SheetsMigrationRunner] Acquiring migration lock (status: running)...`);
     await setMeta(MIGRATION_STATUS_KEY, 'running');
     await setMeta(MIGRATION_TARGET_VERSION_KEY, String(migration.version));
 
@@ -161,18 +141,12 @@ export async function runSheetsMigrations(
       await migration.up(client);
 
       // Write version to both IDB meta and the _meta sheet
-      console.log(`[SheetsMigrationRunner] Updating local IDB meta version...`);
       await setMeta(SHEETS_VERSION_KEY, String(migration.version));
-      console.log(`[SheetsMigrationRunner] Updating remote Google Sheets _meta tab...`);
       await writeSheetsVersion(client, migration.version);
 
       // Clear the lock on successful completion of this migration
-      console.log(`[SheetsMigrationRunner] Releasing migration lock (status: done)...`);
       await setMeta(MIGRATION_STATUS_KEY, 'done');
-
-      console.log(`[SheetsMigrationRunner] Migration v${migration.version} complete.`);
     } catch (err) {
-      console.error(`[SheetsMigrationRunner] Migration v${migration.version} failed:`, err);
       await setMeta(MIGRATION_STATUS_KEY, 'failed');
       // Do NOT proceed to next migration — re-throw so SyncEngine can handle the error
       throw err;
