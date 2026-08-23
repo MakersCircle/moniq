@@ -1,6 +1,7 @@
 import { ArrowRight } from 'lucide-react';
 import Grainient from '@/components/ui/Grainient';
 import { Link, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { MIcon, OIcon, NIcon, IIcon } from '../components/ui/LogoParts';
 import { useHomeAuth } from '../hooks/useHomeAuth';
 import { useDataStore } from '../store/dataStore';
@@ -10,10 +11,30 @@ export default function Home() {
   const startDemoMode = useDataStore(s => s.startDemoMode);
   const navigate = useNavigate();
 
+  const setAccessToken = useDataStore(s => s.setAccessToken);
+
   const handleTryDemo = async () => {
     await startDemoMode();
     navigate('/dashboard');
   };
+
+  useEffect(() => {
+    // Handle redirect mode for mobile devices
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token=')) {
+      const params = new URLSearchParams(hash.substring(1));
+      const token = params.get('access_token');
+      const expiresIn = params.get('expires_in');
+
+      if (token) {
+        const expiresAt = Date.now() + (Number(expiresIn) || 3600) * 1000;
+        setAccessToken(token, expiresAt);
+        // Clear the hash from the URL
+        window.history.replaceState(null, '', window.location.pathname);
+        navigate('/dashboard');
+      }
+    }
+  }, [navigate, setAccessToken]);
 
   return (
     <div className="relative flex min-h-[100dvh] w-full bg-[#111111] overflow-hidden selection:bg-primary/30">
@@ -149,7 +170,6 @@ export default function Home() {
           />
         </div>
       </div>
-
       {/* Footer */}
       <div
         className={[
