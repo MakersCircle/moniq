@@ -26,7 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - **Onboarding / Tour System**: Removed the 11-step forced onboarding wizard, rigid setup modals, and the `TourDriver` popover guidance system in favor of landing directly on the Dashboard.
 
-
 ## [0.8.1] - 2026-06-21
 
 ### Fixed
@@ -167,6 +166,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Smart Date Entry**: Added support for shorthand date entry (`ddmm` for current year) and flexible formatting (`ddmmyyyy`, `dd-mm-yyyy`, etc.).
 
 ---
+
 
 ## [0.4.0] - 2026-05-02
 
