@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.9.0] - 2026-08-24
+
+### Added
+- **Schema Versioning & Migrations**: Replaced hardcoded spreadsheet schemas with a robust, versioned migration system (`src/schema`) handling both local IndexedDB and remote Google Sheets. Includes safe backup-and-rewrite protocols and multi-tab write gates to prevent data loss during upgrades.
+- **Demo Mode**: Offline testing mode using local IndexedDB without requiring a Google account. Data can be synced to Drive upon sign-in.
+- **i18n Infrastructure**: Added `useTranslation` hook and centralized globally shared UI strings into a common namespace for internationalization.
+- **SEO**: Added Open Graph/Twitter meta tags, OG image, and canonical links to improve search visibility.
+
+### Changed
+- **Mobile Experience**: Overhauled the mobile interface with a bottom navigation bar, floating action button, responsive forms, and a collapsible search field.
+- **Settings UI**: Replaced pop-up modals for Accounts, Categories, and Payment Methods with responsive side-drawers and bottom-sheets.
+- **Transaction Entry**: The amount input now formats numbers in real-time with locale-aware thousands separators.
+- **General UX Improvements**:
+  - Streamlined account creation by integrating Payment Method naming into the New Account drawer.
+  - Added guidance tooltips for category hierarchies.
+  - Upgraded interactive components (modals, drawers, dropdowns) with smoother animations.
+
+### Removed
+- **Onboarding / Tour System**: Removed the 11-step forced onboarding wizard, rigid setup modals, and the `TourDriver` popover guidance system in favor of landing directly on the Dashboard.
+
 ## [0.8.1] - 2026-06-21
 
 ### Fixed

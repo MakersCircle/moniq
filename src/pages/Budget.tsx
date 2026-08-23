@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PiggyBank } from 'lucide-react';
 import { useDataStore } from '../store/dataStore';
 import { useBudgetSummary } from '../hooks/useComputed';
 import { formatCurrency, formatCurrencyShort, toMonthKey } from '../utils/format';
@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import type { UserSettings } from '@/types';
 
 export default function Budget() {
-  const { settings, updateBudget } = useDataStore();
+  const { settings, updateBudget, transactions } = useDataStore();
   const [currentDate, setCurrentDate] = useState(new Date());
   const monthKey = toMonthKey(currentDate);
 
@@ -37,6 +37,20 @@ export default function Budget() {
     updateBudget(catId, monthKey, val);
     setEditingId(null);
   };
+
+  if (transactions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50dvh] lg:h-[70vh] py-12 text-center px-4">
+        <div className="h-16 w-16 lg:h-24 lg:w-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+          <PiggyBank className="h-8 w-8 lg:h-12 lg:w-12 text-primary opacity-80" />
+        </div>
+        <h2 className="text-2xl lg:text-3xl font-bold tracking-tight mb-3">Nothing here yet</h2>
+        <p className="text-muted-foreground max-w-md mx-auto mb-8 text-sm lg:text-base">
+          Add some transactions first to start allocating your budget.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-10">
@@ -87,90 +101,94 @@ export default function Budget() {
       </div>
 
       {/* Budget Grid */}
-      <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
-        <div className="grid grid-cols-12 bg-accent/30 px-6 py-3 border-b border-border text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          <div className="col-span-5">Category</div>
-          <div className="col-span-2 text-right">Budgeted</div>
-          <div className="col-span-2 text-right">Spent</div>
-          <div className="col-span-3 text-right">Remaining</div>
-        </div>
+      <div className="rounded-2xl border border-border bg-card overflow-x-auto shadow-sm w-full">
+        <div className="min-w-[600px]">
+          <div className="grid grid-cols-12 bg-accent/30 px-6 py-3 border-b border-border text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            <div className="col-span-5">Category</div>
+            <div className="col-span-2 text-right">Budgeted</div>
+            <div className="col-span-2 text-right">Spent</div>
+            <div className="col-span-3 text-right">Remaining</div>
+          </div>
 
-        <div className="divide-y divide-border">
-          {categoryGroups.map(group => (
-            <div key={group.name} className="divide-y divide-border/50">
-              <div className="px-6 py-2 bg-accent/5">
-                <span className="text-[10px] font-black uppercase text-muted-foreground/60">
-                  {group.name}
-                </span>
-              </div>
-              {group.categories.map(cat => (
-                <div
-                  key={cat.id}
-                  className="grid grid-cols-12 px-6 py-4 items-center group hover:bg-accent/10 transition-colors"
-                >
-                  <div className="col-span-5 space-y-1.5 pr-8">
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="font-semibold text-foreground">
-                        {cat.head} {cat.subHead ? `· ${cat.subHead}` : ''}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground font-bold">
-                        {cat.percent.toFixed(0)}%
-                      </span>
-                    </div>
-                    <div className="h-1.5 w-full bg-accent/30 rounded-full overflow-hidden">
-                      <div
-                        className={cn(
-                          'h-full transition-all duration-500',
-                          cat.percent > 100 ? 'bg-expense' : 'bg-primary/70'
-                        )}
-                        style={{ width: `${Math.min(cat.percent, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="col-span-2 text-right pr-4">
-                    {editingId === cat.id ? (
-                      <div className="flex items-center justify-end gap-1">
-                        <input
-                          autoFocus
-                          className="w-20 bg-background border border-primary h-7 px-2 text-xs font-bold mono text-right outline-none rounded"
-                          value={editValue}
-                          onChange={e => setEditValue(e.target.value)}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') handleSaveEdit(cat.id);
-                            if (e.key === 'Escape') setEditingId(null);
-                          }}
+          <div className="divide-y divide-border">
+            {categoryGroups.map(group => (
+              <div key={group.name} className="divide-y divide-border/50">
+                <div className="px-6 py-2 bg-accent/5">
+                  <span className="text-[10px] font-black uppercase text-muted-foreground/60">
+                    {group.name}
+                  </span>
+                </div>
+                {group.categories.map(cat => (
+                  <div
+                    key={cat.id}
+                    className="grid grid-cols-12 px-6 py-4 items-center group hover:bg-accent/10 transition-colors"
+                  >
+                    <div className="col-span-5 space-y-1.5 pr-8">
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="font-semibold text-foreground">
+                          {cat.head} {cat.subHead ? `· ${cat.subHead}` : ''}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-bold">
+                          {cat.percent.toFixed(0)}%
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full bg-accent/30 rounded-full overflow-hidden">
+                        <div
+                          className={cn(
+                            'h-full transition-all duration-500',
+                            cat.percent > 100 ? 'bg-expense' : 'bg-primary/70'
+                          )}
+                          style={{ width: `${Math.min(cat.percent, 100)}%` }}
                         />
                       </div>
-                    ) : (
-                      <button
-                        onClick={() => handleStartEdit(cat.id, cat.budgeted)}
-                        className="w-full text-right font-bold mono group-hover:bg-accent/30 rounded px-1 -mr-1 transition-colors py-1"
-                      >
-                        {formatCurrencyShort(cat.budgeted, settings.currencySymbol)}
-                      </button>
-                    )}
-                  </div>
+                    </div>
 
-                  <div className="col-span-2 text-right text-muted-foreground text-xs mono pr-4">
-                    {formatCurrencyShort(cat.spent, settings.currencySymbol)}
-                  </div>
-
-                  <div className="col-span-3 text-right">
-                    <span
-                      className={cn(
-                        'text-xs font-bold mono px-2 py-0.5 rounded',
-                        cat.remaining >= 0 ? 'text-income bg-income/5' : 'text-expense bg-expense/5'
+                    <div className="col-span-2 text-right pr-4">
+                      {editingId === cat.id ? (
+                        <div className="flex items-center justify-end gap-1">
+                          <input
+                            autoFocus
+                            className="w-20 bg-background border border-primary h-7 px-2 text-xs font-bold mono text-right outline-none rounded"
+                            value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') handleSaveEdit(cat.id);
+                              if (e.key === 'Escape') setEditingId(null);
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleStartEdit(cat.id, cat.budgeted)}
+                          className="w-full text-right font-bold mono group-hover:bg-accent/30 rounded px-1 -mr-1 transition-colors py-1"
+                        >
+                          {formatCurrencyShort(cat.budgeted, settings.currencySymbol)}
+                        </button>
                       )}
-                    >
-                      {cat.remaining < 0 ? '−' : ''}
-                      {formatCurrencyShort(Math.abs(cat.remaining), settings.currencySymbol)}
-                    </span>
+                    </div>
+
+                    <div className="col-span-2 text-right text-muted-foreground text-xs mono pr-4">
+                      {formatCurrencyShort(cat.spent, settings.currencySymbol)}
+                    </div>
+
+                    <div className="col-span-3 text-right">
+                      <span
+                        className={cn(
+                          'text-xs font-bold mono px-2 py-0.5 rounded',
+                          cat.remaining >= 0
+                            ? 'text-income bg-income/5'
+                            : 'text-expense bg-expense/5'
+                        )}
+                      >
+                        {cat.remaining < 0 ? '−' : ''}
+                        {formatCurrencyShort(Math.abs(cat.remaining), settings.currencySymbol)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ))}
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

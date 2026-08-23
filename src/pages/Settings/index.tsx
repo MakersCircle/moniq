@@ -36,6 +36,7 @@ import { InfoTooltip } from '@/components/ui/info-tooltip';
 import { getAllCurrencies, COMMON_LOCALES } from '@/constants/currencies';
 import { formatCurrency } from '@/utils/format';
 import { format } from 'date-fns';
+import DemoExitDialog from '@/components/Layout/DemoExitDialog';
 
 export default function SettingsIndex() {
   const {
@@ -54,6 +55,7 @@ export default function SettingsIndex() {
     methods,
     categories,
     budgets,
+    isDemoMode,
   } = useDataStore();
 
   const [resetModalOpen, setResetModalOpen] = useState(false);
@@ -74,6 +76,7 @@ export default function SettingsIndex() {
   const [formatSearch, setFormatSearch] = useState('');
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [currencySearch, setCurrencySearch] = useState('');
+  const [showDemoDialog, setShowDemoDialog] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -188,325 +191,375 @@ export default function SettingsIndex() {
             Preferences & Sync
           </p>
         </div>
-        {/* Profile */}
-        <section className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
-            Profile
-          </h3>
-          <Card className="border-border shadow-sm overflow-hidden">
-            <CardContent className="p-4 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <img
-                  src={userProfile?.picture}
-                  alt="Profile"
-                  className="h-14 w-14 rounded-xl ring-2 ring-primary/10 object-cover border border-border"
-                />
-                <div>
-                  <p className="text-base font-bold tracking-tight">{userProfile?.name}</p>
-                  <p className="text-xs text-muted-foreground">{userProfile?.email}</p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-                className="text-destructive hover:bg-destructive/10 border-destructive/20 h-9 gap-2"
-              >
-                {isLoggingOut ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <LogOut className="h-4 w-4" />
-                )}
-                {isLoggingOut ? 'Signing out...' : 'Sign out'}
-              </Button>
-            </CardContent>
-          </Card>
-        </section>
 
-        {/* Cloud Persistence */}
-        <section id="tour-target-sync" className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
-            Cloud Sync
-          </h3>
-          <Card className="border-border shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={cn(
-                      'h-10 w-10 rounded-full flex items-center justify-center',
-                      syncStatus === 'idle' && 'bg-emerald-500/10 text-emerald-500',
-                      syncStatus === 'syncing' && 'bg-blue-500/10 text-blue-500',
-                      syncStatus === 'pulling' && 'bg-blue-500/10 text-blue-500',
-                      syncStatus === 'error' && 'bg-red-500/10 text-red-500',
-                      syncStatus === 'offline' && 'bg-zinc-500/10 text-zinc-500'
-                    )}
-                  >
-                    {syncStatus === 'error' ? (
-                      <AlertCircle className="h-5 w-5" />
-                    ) : syncStatus === 'offline' ? (
-                      <CloudOff className="h-5 w-5" />
-                    ) : (
-                      <RefreshCw
-                        className={cn(
-                          'h-5 w-5',
-                          (syncStatus === 'syncing' || syncStatus === 'pulling') && 'animate-spin'
-                        )}
-                      />
-                    )}
+        {isDemoMode ? (
+          <section className="space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
+              Account & Sync
+            </h3>
+            <Card className="border-border shadow-sm overflow-hidden bg-amber-500/5 border-amber-500/20">
+              <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-6 justify-between">
+                <div className="flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+                    <CloudOff className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold tracking-tight">Google Sheets Database</p>
-                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                      {syncStatus === 'syncing'
-                        ? 'Syncing changes…'
-                        : syncStatus === 'pulling'
-                          ? 'Pulling from sheets…'
-                          : syncStatus === 'error'
-                            ? 'Sync error'
-                            : syncStatus === 'offline'
-                              ? 'Offline'
-                              : lastSyncedAt
-                                ? `Last synced ${new Date(lastSyncedAt).toLocaleString()}`
-                                : 'No sync recorded'}
+                    <h4 className="text-sm font-bold tracking-tight text-amber-500">
+                      Currently in Demo Mode
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-[400px] leading-relaxed">
+                      You are using Moniq locally. Sign in with Google to enable cloud sync across
+                      devices and automated backups to your Google Drive.
                     </p>
-                    {pendingCount > 0 && (
-                      <div className="flex items-center mt-0.5">
-                        <p className="text-[10px] text-amber-500 font-medium">
-                          {pendingCount} change{pendingCount > 1 ? 's' : ''} pending
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setShowDemoDialog(true)}
+                  className="shrink-0 bg-amber-500 hover:bg-amber-600 text-amber-950 font-bold tracking-wide mt-4 sm:mt-0"
+                >
+                  Sign in to Sync
+                </Button>
+              </CardContent>
+            </Card>
+            {showDemoDialog && <DemoExitDialog onClose={() => setShowDemoDialog(false)} />}
+          </section>
+        ) : (
+          <>
+            {/* Profile */}
+            <section className="space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
+                Profile
+              </h3>
+              <Card className="border-border shadow-sm overflow-hidden">
+                <CardContent className="p-4 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={userProfile?.picture}
+                      alt="Profile"
+                      className="h-14 w-14 rounded-xl ring-2 ring-primary/10 object-cover border border-border"
+                    />
+                    <div>
+                      <p className="text-base font-bold tracking-tight">{userProfile?.name}</p>
+                      <p className="text-xs text-muted-foreground">{userProfile?.email}</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="text-destructive hover:bg-destructive/10 border-destructive/20 h-9 gap-2"
+                  >
+                    {isLoggingOut ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <LogOut className="h-4 w-4" />
+                    )}
+                    {isLoggingOut ? 'Signing out...' : 'Sign out'}
+                  </Button>
+                </CardContent>
+              </Card>
+            </section>
+
+            {/* Cloud Persistence */}
+            <section id="tour-target-sync" className="space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
+                Cloud Sync
+              </h3>
+              <Card className="border-border shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={cn(
+                          'h-10 w-10 rounded-full flex items-center justify-center',
+                          syncStatus === 'idle' && 'bg-emerald-500/10 text-emerald-500',
+                          syncStatus === 'syncing' && 'bg-blue-500/10 text-blue-500',
+                          syncStatus === 'pulling' && 'bg-blue-500/10 text-blue-500',
+                          syncStatus === 'error' && 'bg-red-500/10 text-red-500',
+                          syncStatus === 'offline' && 'bg-zinc-500/10 text-zinc-500'
+                        )}
+                      >
+                        {syncStatus === 'error' ? (
+                          <AlertCircle className="h-5 w-5" />
+                        ) : syncStatus === 'offline' ? (
+                          <CloudOff className="h-5 w-5" />
+                        ) : (
+                          <RefreshCw
+                            className={cn(
+                              'h-5 w-5',
+                              (syncStatus === 'syncing' || syncStatus === 'pulling') &&
+                                'animate-spin'
+                            )}
+                          />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold tracking-tight">Google Sheets Database</p>
+                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                          {syncStatus === 'syncing'
+                            ? 'Syncing changes…'
+                            : syncStatus === 'pulling'
+                              ? 'Pulling from sheets…'
+                              : syncStatus === 'error'
+                                ? 'Sync error'
+                                : syncStatus === 'offline'
+                                  ? 'Offline'
+                                  : lastSyncedAt
+                                    ? `Last synced ${new Date(lastSyncedAt).toLocaleString()}`
+                                    : 'No sync recorded'}
                         </p>
-                        <InfoTooltip
-                          position="bottom"
-                          text={
-                            <ul className="space-y-1 text-left list-disc list-inside">
-                              {pendingOps.map(op => {
-                                let details = op.entityId;
-                                if (op.entity === 'settings') details = 'App Settings';
-                                else if (op.action === 'delete') details = 'Deleted item';
-                                else {
-                                  if (op.entity === 'transaction') {
-                                    const t = transactions.find(x => x.id === op.entityId);
-                                    if (t) {
-                                      let name = t.note;
-                                      if (!name) {
-                                        if (t.uiType === 'transfer') name = 'Transfer';
-                                        else {
-                                          const catEntry = t.entries.find(e =>
-                                            categories.some(c => c.id === e.accountId)
-                                          );
-                                          if (catEntry) {
-                                            const cat = categories.find(
-                                              c => c.id === catEntry.accountId
-                                            );
-                                            name = cat
-                                              ? cat.subHead
-                                                ? `${cat.head} - ${cat.subHead}`
-                                                : cat.head
-                                              : 'Transaction';
-                                          } else {
-                                            name = 'Transaction';
+                        {pendingCount > 0 && (
+                          <div className="flex items-center mt-0.5">
+                            <p className="text-[10px] text-amber-500 font-medium">
+                              {pendingCount} change{pendingCount > 1 ? 's' : ''} pending
+                            </p>
+                            <InfoTooltip
+                              position="bottom"
+                              text={
+                                <ul className="space-y-1 text-left list-disc list-inside">
+                                  {pendingOps.map(op => {
+                                    let details = op.entityId;
+                                    if (op.entity === 'settings') details = 'App Settings';
+                                    else if (op.action === 'delete') details = 'Deleted item';
+                                    else {
+                                      if (op.entity === 'transaction') {
+                                        const t = transactions.find(x => x.id === op.entityId);
+                                        if (t) {
+                                          let name = t.note;
+                                          if (!name) {
+                                            if (t.uiType === 'transfer') name = 'Transfer';
+                                            else {
+                                              const catEntry = t.entries.find(e =>
+                                                categories.some(c => c.id === e.accountId)
+                                              );
+                                              if (catEntry) {
+                                                const cat = categories.find(
+                                                  c => c.id === catEntry.accountId
+                                                );
+                                                name = cat
+                                                  ? cat.subHead
+                                                    ? `${cat.head} - ${cat.subHead}`
+                                                    : cat.head
+                                                  : 'Transaction';
+                                              } else {
+                                                name = 'Transaction';
+                                              }
+                                            }
                                           }
+                                          details = `${name} (${formatCurrency(t.amount, settings)})`;
+                                        }
+                                      } else if (op.entity === 'account') {
+                                        const a = accounts.find(x => x.id === op.entityId);
+                                        if (a) details = a.name;
+                                      } else if (op.entity === 'method') {
+                                        const m = methods.find(x => x.id === op.entityId);
+                                        if (m) details = m.name;
+                                      } else if (op.entity === 'category') {
+                                        const c = categories.find(x => x.id === op.entityId);
+                                        if (c)
+                                          details = c.subHead ? `${c.head} - ${c.subHead}` : c.head;
+                                      } else if (op.entity === 'budget') {
+                                        const b = budgets.find(x => x.id === op.entityId);
+                                        if (b) {
+                                          const c = categories.find(x => x.id === b.categoryId);
+                                          details = c
+                                            ? `${c.subHead ? `${c.head} - ${c.subHead}` : c.head} Budget`
+                                            : 'Budget';
                                         }
                                       }
-                                      details = `${name} (${formatCurrency(t.amount, settings)})`;
                                     }
-                                  } else if (op.entity === 'account') {
-                                    const a = accounts.find(x => x.id === op.entityId);
-                                    if (a) details = a.name;
-                                  } else if (op.entity === 'method') {
-                                    const m = methods.find(x => x.id === op.entityId);
-                                    if (m) details = m.name;
-                                  } else if (op.entity === 'category') {
-                                    const c = categories.find(x => x.id === op.entityId);
-                                    if (c)
-                                      details = c.subHead ? `${c.head} - ${c.subHead}` : c.head;
-                                  } else if (op.entity === 'budget') {
-                                    const b = budgets.find(x => x.id === op.entityId);
-                                    if (b) {
-                                      const c = categories.find(x => x.id === b.categoryId);
-                                      details = c
-                                        ? `${c.subHead ? `${c.head} - ${c.subHead}` : c.head} Budget`
-                                        : 'Budget';
-                                    }
-                                  }
-                                }
 
-                                return (
-                                  <li key={op.id} className="whitespace-nowrap">
-                                    <span className="font-semibold text-[9px] text-muted-foreground">
-                                      {op.action.toUpperCase()} {op.entity.toUpperCase()}
-                                    </span>
-                                    <br />
-                                    <span className="font-medium text-popover-foreground">
-                                      {details}
-                                    </span>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          }
-                        />
+                                    return (
+                                      <li key={op.id} className="whitespace-nowrap">
+                                        <span className="font-semibold text-[9px] text-muted-foreground">
+                                          {op.action.toUpperCase()} {op.entity.toUpperCase()}
+                                        </span>
+                                        <br />
+                                        <span className="font-medium text-popover-foreground">
+                                          {details}
+                                        </span>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              }
+                            />
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
+                    <Button
+                      onClick={handleManualSync}
+                      disabled={syncStatus === 'syncing' || syncStatus === 'pulling'}
+                      size="sm"
+                      className="h-9 px-6 font-bold uppercase text-[10px] tracking-widest"
+                    >
+                      Sync Now
+                    </Button>
                   </div>
-                </div>
-                <Button
-                  onClick={handleManualSync}
-                  disabled={syncStatus === 'syncing' || syncStatus === 'pulling'}
-                  size="sm"
-                  className="h-9 px-6 font-bold uppercase text-[10px] tracking-widest"
-                >
-                  Sync Now
-                </Button>
-              </div>
-              {lastSyncError && syncStatus === 'error' && (
-                <div className="p-3 bg-red-500/5 rounded-lg border border-red-500/20 mb-4">
-                  <p className="text-[10px] text-red-400 leading-relaxed font-medium">
-                    {lastSyncError}
-                  </p>
-                </div>
-              )}
-              <div className="p-3 bg-accent/30 rounded-lg border border-border/50">
-                <p className="text-[10px] text-muted-foreground leading-relaxed">
-                  Your financial data is 100% private. Moniq does not have a central database;
-                  instead, all your transactions and settings are securely backed up to a dedicated
-                  spreadsheet inside your personal Google Drive.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* Backups */}
-        <section className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
-            Automated Backups
-          </h3>
-          <Card className="border-border shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                    <ShieldCheck className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold tracking-tight">Tiered Retention System</p>
-                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                      Snapshots stored in "Moniq Backups" folder
+                  {lastSyncError && syncStatus === 'error' && (
+                    <div className="p-3 bg-red-500/5 rounded-lg border border-red-500/20 mb-4">
+                      <p className="text-[10px] text-red-400 leading-relaxed font-medium">
+                        {lastSyncError}
+                      </p>
+                    </div>
+                  )}
+                  <div className="p-3 bg-accent/30 rounded-lg border border-border/50">
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">
+                      Your financial data is 100% private. Moniq does not have a central database;
+                      instead, all your transactions and settings are securely backed up to a
+                      dedicated spreadsheet inside your personal Google Drive.
                     </p>
                   </div>
-                </div>
-                <Button
-                  onClick={async () => {
-                    setIsBackingUp(true);
-                    try {
-                      const { BackupManager } = await import('@/sync/BackupManager');
-                      await BackupManager.getInstance().runBackupCycle(true);
-                    } finally {
-                      setIsBackingUp(false);
-                    }
-                  }}
-                  disabled={isBackingUp}
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-4 font-bold uppercase text-[9px] tracking-widest min-w-25"
-                >
-                  {isBackingUp ? <RefreshCw className="h-3 w-3 animate-spin mr-2" /> : null}
-                  {isBackingUp ? 'Backing up...' : 'Backup Now'}
-                </Button>
-              </div>
+                </CardContent>
+              </Card>
+            </section>
 
-              <div className="p-3 bg-accent/30 rounded-lg border border-border/50 mb-6">
-                <p className="text-[10px] text-muted-foreground leading-relaxed">
-                  Moniq automatically creates snapshots of your data at specific intervals. Clicking{' '}
-                  <strong>Backup Now</strong> immediately creates a new manual snapshot (up to 5 are
-                  retained). Each backup is saved as a new copy in the &quot;Moniq Backups&quot;
-                  folder in your Google Drive — existing backups are never overwritten.
-                </p>
-              </div>
-
-              <div className="border border-border/50 rounded-xl overflow-hidden bg-accent/10">
-                <button
-                  onClick={() => {
-                    setShowSnapshots(s => !s);
-                    if (!showSnapshots && !latestBackups) {
-                      import('@/sync/BackupManager').then(m => {
-                        m.BackupManager.getInstance().getLatestBackups().then(setLatestBackups);
-                      });
-                    }
-                  }}
-                  className="w-full flex items-center justify-between p-4 bg-accent/20 hover:bg-accent/40 transition-colors"
-                >
-                  <div className="flex items-center gap-2 text-sm font-bold tracking-tight">
-                    <History className="h-4 w-4 text-muted-foreground" />
-                    View Latest Snapshots
+            {/* Backups */}
+            <section className="space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
+                Automated Backups
+              </h3>
+              <Card className="border-border shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                        <ShieldCheck className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold tracking-tight">Tiered Retention System</p>
+                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                          Snapshots stored in "Moniq Backups" folder
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={async () => {
+                        setIsBackingUp(true);
+                        try {
+                          const { BackupManager } = await import('@/sync/BackupManager');
+                          await BackupManager.getInstance().runBackupCycle(true);
+                        } finally {
+                          setIsBackingUp(false);
+                        }
+                      }}
+                      disabled={isBackingUp}
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-4 font-bold uppercase text-[9px] tracking-widest min-w-25"
+                    >
+                      {isBackingUp ? <RefreshCw className="h-3 w-3 animate-spin mr-2" /> : null}
+                      {isBackingUp ? 'Backing up...' : 'Backup Now'}
+                    </Button>
                   </div>
-                  <ChevronDown
-                    className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${showSnapshots ? 'rotate-180' : ''}`}
-                  />
-                </button>
 
-                {showSnapshots && (
-                  <div className="p-4 border-t border-border/50 space-y-3">
-                    {!latestBackups ? (
-                      <p className="text-xs text-muted-foreground animate-pulse flex items-center gap-2">
-                        <RefreshCw className="h-3 w-3 animate-spin" /> Fetching from Google Drive...
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                        {[
-                          { id: 'manual', label: 'Manual Backup', limit: 'Retains last 5' },
-                          { id: 'daily', label: 'Daily Backup', limit: 'Retains last 7 days' },
-                          { id: 'weekly', label: 'Weekly Backup', limit: 'Retains last 5 weeks' },
-                          {
-                            id: 'monthly',
-                            label: 'Monthly Backup',
-                            limit: 'Retains last 12 months',
-                          },
-                          { id: 'yearly', label: 'Yearly Backup', limit: 'Retained indefinitely' },
-                        ].map(tier => {
-                          const snapshot = latestBackups[tier.id];
-                          return (
-                            <div
-                              key={tier.id}
-                              className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-background border border-border/50 gap-2"
-                            >
-                              <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-0.5">
-                                  {tier.label}
-                                </p>
-                                <p className="text-xs text-muted-foreground tracking-tight">
-                                  {tier.limit}
-                                </p>
-                              </div>
-                              <div className="text-left sm:text-right">
-                                {snapshot ? (
-                                  <>
-                                    <p className="text-xs font-bold">
-                                      {format(new Date(snapshot.timestamp), 'MMM d, yyyy • h:mm a')}
+                  <div className="p-3 bg-accent/30 rounded-lg border border-border/50 mb-6">
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">
+                      Moniq automatically creates snapshots of your data at specific intervals.
+                      Clicking <strong>Backup Now</strong> immediately creates a new manual snapshot
+                      (up to 5 are retained). Each backup is saved as a new copy in the &quot;Moniq
+                      Backups&quot; folder in your Google Drive — existing backups are never
+                      overwritten.
+                    </p>
+                  </div>
+
+                  <div className="border border-border/50 rounded-xl overflow-hidden bg-accent/10">
+                    <button
+                      onClick={() => {
+                        setShowSnapshots(s => !s);
+                        if (!showSnapshots && !latestBackups) {
+                          import('@/sync/BackupManager').then(m => {
+                            m.BackupManager.getInstance().getLatestBackups().then(setLatestBackups);
+                          });
+                        }
+                      }}
+                      className="w-full flex items-center justify-between p-4 bg-accent/20 hover:bg-accent/40 transition-colors"
+                    >
+                      <div className="flex items-center gap-2 text-sm font-bold tracking-tight">
+                        <History className="h-4 w-4 text-muted-foreground" />
+                        View Latest Snapshots
+                      </div>
+                      <ChevronDown
+                        className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${showSnapshots ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+
+                    {showSnapshots && (
+                      <div className="p-4 border-t border-border/50 space-y-3">
+                        {!latestBackups ? (
+                          <p className="text-xs text-muted-foreground animate-pulse flex items-center gap-2">
+                            <RefreshCw className="h-3 w-3 animate-spin" /> Fetching from Google
+                            Drive...
+                          </p>
+                        ) : (
+                          <div className="space-y-3">
+                            {[
+                              { id: 'manual', label: 'Manual Backup', limit: 'Retains last 5' },
+                              { id: 'daily', label: 'Daily Backup', limit: 'Retains last 7 days' },
+                              {
+                                id: 'weekly',
+                                label: 'Weekly Backup',
+                                limit: 'Retains last 5 weeks',
+                              },
+                              {
+                                id: 'monthly',
+                                label: 'Monthly Backup',
+                                limit: 'Retains last 12 months',
+                              },
+                              {
+                                id: 'yearly',
+                                label: 'Yearly Backup',
+                                limit: 'Retained indefinitely',
+                              },
+                            ].map(tier => {
+                              const snapshot = latestBackups[tier.id];
+                              return (
+                                <div
+                                  key={tier.id}
+                                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-background border border-border/50 gap-2"
+                                >
+                                  <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-0.5">
+                                      {tier.label}
                                     </p>
-                                    <p className="text-[9px] text-muted-foreground mt-0.5 truncate max-w-50">
-                                      {snapshot.name}
+                                    <p className="text-xs text-muted-foreground tracking-tight">
+                                      {tier.limit}
                                     </p>
-                                  </>
-                                ) : (
-                                  <p className="text-xs font-bold text-muted-foreground/50">
-                                    No snapshot yet
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
+                                  </div>
+                                  <div className="text-left sm:text-right">
+                                    {snapshot ? (
+                                      <>
+                                        <p className="text-xs font-bold">
+                                          {format(
+                                            new Date(snapshot.timestamp),
+                                            'MMM d, yyyy • h:mm a'
+                                          )}
+                                        </p>
+                                        <p className="text-[9px] text-muted-foreground mt-0.5 truncate max-w-50">
+                                          {snapshot.name}
+                                        </p>
+                                      </>
+                                    ) : (
+                                      <p className="text-xs font-bold text-muted-foreground/50">
+                                        No snapshot yet
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </section>
+                </CardContent>
+              </Card>
+            </section>
+          </>
+        )}
 
         {/* Regional Preferences */}
         <section className="space-y-4">

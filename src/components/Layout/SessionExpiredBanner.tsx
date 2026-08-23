@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 
 export default function SessionExpiredBanner() {
   const setAccessToken = useDataStore(s => s.setAccessToken);
+  const setCloudInitialized = useDataStore(s => s.setCloudInitialized);
 
   const login = useGoogleLogin({
     onSuccess: tokenResponse => {
       const expiresAt = Date.now() + (Number(tokenResponse.expires_in) || 3600) * 1000;
+      setCloudInitialized(false);
       setAccessToken(tokenResponse.access_token, expiresAt);
     },
     onError: error => console.error('Re-auth Failed:', error),

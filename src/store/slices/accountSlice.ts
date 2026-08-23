@@ -6,7 +6,13 @@ import { put } from '../../lib/db';
 
 export interface AccountSlice {
   accounts: Account[];
-  addAccount: (a: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>) => void;
+  addAccount: (
+    a: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>,
+    methodName?: string
+  ) => {
+    accountId: string;
+    methodId: string;
+  };
   updateAccount: (id: string, patch: Partial<Account>) => void;
   archiveAccount: (id: string) => void;
   restoreAccount: (id: string) => void;
@@ -16,14 +22,17 @@ export interface AccountSlice {
 export const createAccountSlice: StateCreator<DataState, [], [], AccountSlice> = (set, get) => ({
   accounts: [],
 
-  addAccount: a => {
+  addAccount: (
+    a: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>,
+    methodName?: string
+  ) => {
     const id = uuid();
     const t = now();
     const methodId = uuid();
     const newAccount = { ...a, id, isDeleted: false, createdAt: t, updatedAt: t } as Account;
     const newMethod = {
       id: methodId,
-      name: a.name,
+      name: methodName || a.name,
       linkedAccountId: id,
       isActive: true,
       isDeleted: false,
@@ -40,6 +49,7 @@ export const createAccountSlice: StateCreator<DataState, [], [], AccountSlice> =
     put('methods', newMethod);
     markDirty('account', id, 'create');
     markDirty('method', methodId, 'create');
+    return { accountId: id, methodId };
   },
 
   updateAccount: (id, patch) => {

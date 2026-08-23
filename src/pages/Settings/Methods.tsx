@@ -3,18 +3,13 @@ import { Reorder } from 'framer-motion';
 import { Plus, Pencil, Archive, Trash2, CreditCard, ArrowRight, GripVertical } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
 import type { PaymentMethod } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { ResponsiveModal } from '@/components/ui/responsive-modal';
 import {
   Select,
   SelectContent,
@@ -35,6 +30,7 @@ export default function Methods() {
     deleteMethod,
     reorderMethods,
   } = useDataStore();
+  const { t } = useTranslation();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<PaymentMethod | null>(null);
   const [form, setForm] = useState({ name: '', linkedAccountId: '' });
@@ -56,11 +52,11 @@ export default function Methods() {
 
   const handleSave = () => {
     if (!form.name.trim()) {
-      setError('Display Name is required.');
+      setError(t('common.displayNameRequired'));
       return;
     }
     if (!form.linkedAccountId) {
-      setError('A linked account is required.');
+      setError(t('method.linkedAccountRequired'));
       return;
     }
     setError('');
@@ -86,18 +82,15 @@ export default function Methods() {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold tracking-tight">Payment Methods</h2>
-                <InfoTooltip
-                  position="bottom"
-                  text="Payment Methods represent how you pay — like UPI, Credit Card, or Cash. When you add a transaction, selecting a method auto-fills the linked account. A default method is created automatically for every new account. Drag to reorder."
-                />
+                <h2 className="text-xl font-bold tracking-tight">{t('method.title')}</h2>
+                <InfoTooltip position="bottom" text={t('method.tooltip')} />
               </div>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                Active Methods ({active.length})
+                {t('method.activeMethods')} ({active.length})
               </p>
             </div>
             <Button size="sm" onClick={openAdd} className="h-9 gap-2">
-              <Plus className="h-4 w-4" /> Add Method
+              <Plus className="h-4 w-4" /> {t('method.addMethod')}
             </Button>
           </div>
         </div>
@@ -171,7 +164,7 @@ export default function Methods() {
         {archived.length > 0 && (
           <div className="pt-8 space-y-4">
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 px-1">
-              Archived Methods
+              {t('method.archivedMethods')}
             </h4>
             <div className="grid grid-cols-1 gap-2">
               {archived.map(m => (
@@ -192,7 +185,7 @@ export default function Methods() {
                           updateMethod(m.id, { isActive: true });
                         }}
                       >
-                        Restore
+                        {t('common.restore')}
                       </Button>
                       <Button
                         variant="ghost"
@@ -213,7 +206,7 @@ export default function Methods() {
                             });
                         }}
                       >
-                        <Trash2 className="h-3 w-3 mr-1" /> Delete
+                        <Trash2 className="h-3 w-3 mr-1" /> {t('common.delete')}
                       </Button>
                     </div>
                   </div>
@@ -229,78 +222,75 @@ export default function Methods() {
         )}
       </div>
 
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold tracking-tight">
-              {editing ? 'Edit Method' : 'New Method'}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-                Display Name
-                <InfoTooltip text="A recognizable name for this payment method (e.g., UPI, HDFC Debit Card). Used to identify it when adding transactions." />
-              </Label>
-              <Input
-                placeholder="e.g., UPI, HDFC Card"
-                value={form.name}
-                onChange={e => {
-                  setForm({ ...form, name: e.target.value });
-                  setError('');
-                }}
-                className="h-10 border-border/50 focus:border-primary/30"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-                Linked Account
-                <InfoTooltip text="Link this method to an account. When you select this method during a transaction, the linked account will be auto-filled, saving you a step." />
-              </Label>
-              <Select
-                value={form.linkedAccountId || undefined}
-                onValueChange={val => {
-                  setForm({ ...form, linkedAccountId: val });
-                  setError('');
-                }}
-              >
-                <SelectTrigger className="h-10">
-                  <SelectValue placeholder="Select account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts
-                    .filter(s => s.isActive && !s.isDeleted)
-                    .map(s => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-          </div>
-
-          <DialogFooter className="pt-4">
+      <ResponsiveModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        title={editing ? t('method.editMethod') : t('method.newMethod')}
+        footer={
+          <>
             <Button
               variant="ghost"
               onClick={() => setModalOpen(false)}
-              className="h-10 px-6 font-bold uppercase text-[10px] tracking-widest"
+              className="h-10 px-6 font-bold uppercase text-[10px] tracking-widest w-full sm:w-auto"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleSave}
-              className="h-10 px-8 font-bold uppercase text-[10px] tracking-widest"
+              className="h-10 px-8 font-bold uppercase text-[10px] tracking-widest w-full sm:w-auto"
             >
-              {editing ? 'Update Method' : 'Create Method'}
+              {t('common.saveChanges')}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        }
+      >
+        <div className="px-6 py-4 space-y-6">
+          <div className="space-y-2">
+            <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
+              {t('common.displayName')}
+              <InfoTooltip text="A recognizable name for this payment method (e.g., UPI, HDFC Debit Card). Used to identify it when adding transactions." />
+            </Label>
+            <Input
+              placeholder={t('method.displayNamePlaceholder')}
+              value={form.name}
+              onChange={e => {
+                setForm({ ...form, name: e.target.value });
+                setError('');
+              }}
+              className="h-10"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
+              {t('method.linkedAccount')}
+              <InfoTooltip text="Link this method to an account. When you select this method during a transaction, the linked account will be auto-filled, saving you a step." />
+            </Label>
+            <Select
+              value={form.linkedAccountId || undefined}
+              onValueChange={val => {
+                setForm({ ...form, linkedAccountId: val });
+                setError('');
+              }}
+            >
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder={t('method.linkedAccountPlaceholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts
+                  .filter(s => s.isActive && !s.isDeleted)
+                  .map(s => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+        </div>
+      </ResponsiveModal>
     </SettingsLayout>
   );
 }

@@ -1,30 +1,16 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Reorder } from 'framer-motion';
-import { Plus, Pencil, Archive, Trash2, Tag, ChevronDown, Check, GripVertical } from 'lucide-react';
+import { Plus, Pencil, Archive, Trash2, Tag, GripVertical } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
+import { CategoryForm, type CategoryFormData } from '@/components/Forms/CategoryForm';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { Category, CategoryGroup } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { ResponsiveModal } from '@/components/ui/responsive-modal';
 import { cn } from '@/lib/utils';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
-import { Popover, PopoverContent, PopoverAnchor } from '@/components/ui/popover';
 
 const GROUPS: CategoryGroup[] = ['Income', 'Needs', 'Wants', 'Invest', 'Lend', 'Borrow'];
 
@@ -46,38 +32,29 @@ export default function Categories() {
     deleteCategory,
     reorderCategories,
   } = useDataStore();
+  const { t } = useTranslation();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
-  const [form, setForm] = useState({ group: 'Needs' as CategoryGroup, head: '', subHead: '' });
   const [deleteError, setDeleteError] = useState<Record<string, string>>({});
-  const [headDropdownOpen, setHeadDropdownOpen] = useState(false);
-
-  const existingHeads = useMemo(
-    () => Array.from(new Set(categories.filter(c => c.isActive).map(c => c.head))).sort(),
-    [categories]
-  );
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ group: 'Needs', head: '', subHead: '' });
     setModalOpen(true);
   };
   const openEdit = (c: Category) => {
     setEditing(c);
-    setForm({ group: c.group, head: c.head, subHead: c.subHead || '' });
     setModalOpen(true);
   };
 
-  const handleSave = () => {
-    if (!form.head.trim()) return;
-    const data = {
-      group: form.group,
-      head: form.head.trim(),
-      subHead: form.subHead.trim() || undefined,
-      isActive: true,
+  const handleSave = (data: CategoryFormData) => {
+    const payload = {
+      group: data.group,
+      head: data.head,
+      subHead: data.subHead || undefined,
+      isActive: data.isActive,
     };
-    if (editing) updateCategory(editing.id, data);
-    else addCategory(data);
+    if (editing) updateCategory(editing.id, payload);
+    else addCategory(payload);
     setModalOpen(false);
   };
 
@@ -94,11 +71,6 @@ export default function Categories() {
   }, {});
 
   const handleReorder = (group: string, newOrder: Category[]) => {
-    // We need to maintain the global order relative to other groups if we want to be strict,
-    // but usually reordering within a group is enough.
-    // The store's reorderCategories takes a list of IDs and assigns 0..N.
-    // To maintain relative order across groups, we'd need to reconstruct the full list.
-
     const otherCats = active.filter(c => c.group !== group);
     const fullNewOrder = [...otherCats, ...newOrder];
     reorderCategories(fullNewOrder.map(c => c.id));
@@ -111,18 +83,15 @@ export default function Categories() {
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold tracking-tight">Categories</h2>
-                <InfoTooltip
-                  position="bottom"
-                  text="Categories organize your income and expenses into a hierarchy. Drag to reorder within groups."
-                />
+                <h2 className="text-xl font-bold tracking-tight">{t('category.title')}</h2>
+                <InfoTooltip position="bottom" text={t('category.tooltip')} />
               </div>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                Expense & Income Classification
+                {t('category.subtitle')}
               </p>
             </div>
             <Button size="sm" onClick={openAdd} className="h-9 gap-2">
-              <Plus className="h-4 w-4" /> Add Category
+              <Plus className="h-4 w-4" /> {t('category.addCategory')}
             </Button>
           </div>
         </div>
@@ -177,7 +146,7 @@ export default function Categories() {
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mr-2">
+                          <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity mr-2">
                             <Button
                               variant="ghost"
                               size="icon"
@@ -211,7 +180,7 @@ export default function Categories() {
         {archived.length > 0 && (
           <div className="pt-8 space-y-4">
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 px-1">
-              Archived Categories
+              {t('category.archivedCategories')}
             </h4>
             <div className="grid grid-cols-1 gap-2">
               {archived.map(c => (
@@ -234,7 +203,7 @@ export default function Categories() {
                           updateCategory(c.id, { isActive: true });
                         }}
                       >
-                        Restore
+                        {t('common.restore')}
                       </Button>
                       <Button
                         variant="ghost"
@@ -255,7 +224,7 @@ export default function Categories() {
                             });
                         }}
                       >
-                        <Trash2 className="h-3 w-3 mr-1" /> Delete
+                        <Trash2 className="h-3 w-3 mr-1" /> {t('common.delete')}
                       </Button>
                     </div>
                   </div>
@@ -271,147 +240,29 @@ export default function Categories() {
         )}
       </div>
 
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold tracking-tight">
-              {editing ? 'Edit Category' : 'New Category'}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-                Category Group
-                <InfoTooltip text="Income: Earnings. Needs: Essential spending. Wants: Lifestyle/Hobbies. Invest: Future-building. Lend: Money given to others. Borrow: Money you owe back." />
-              </Label>
-              <Select
-                value={form.group}
-                onValueChange={val => setForm({ ...form, group: val as CategoryGroup })}
-              >
-                <SelectTrigger className="h-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {GROUPS.map(g => (
-                    <SelectItem key={g} value={g}>
-                      {g}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Main Head
-                </Label>
-                <Popover open={headDropdownOpen} onOpenChange={setHeadDropdownOpen}>
-                  <PopoverAnchor asChild>
-                    <div className="relative group cursor-text head-popover-anchor">
-                      <Input
-                        placeholder="e.g., Food"
-                        value={form.head}
-                        onChange={e => {
-                          setForm({ ...form, head: e.target.value });
-                          if (!headDropdownOpen) setHeadDropdownOpen(true);
-                        }}
-                        onFocus={() => setHeadDropdownOpen(true)}
-                        className="h-10 border-border/50 focus:border-primary/30 font-bold pr-10"
-                      />
-                      <button
-                        type="button"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors"
-                        onClick={() => setHeadDropdownOpen(!headDropdownOpen)}
-                      >
-                        <ChevronDown className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </PopoverAnchor>
-                  <PopoverContent
-                    className="p-1 w-[var(--radix-popover-trigger-width)]"
-                    align="start"
-                    sideOffset={5}
-                    onOpenAutoFocus={e => e.preventDefault()}
-                    onInteractOutside={e => {
-                      if (e.target instanceof Element && e.target.closest('.head-popover-anchor')) {
-                        e.preventDefault();
-                      }
-                    }}
-                  >
-                    <div className="max-h-60 overflow-y-auto custom-scrollbar">
-                      {existingHeads.length === 0 ? (
-                        <div className="px-2 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 text-center">
-                          No existing heads
-                        </div>
-                      ) : (
-                        <div className="space-y-0.5">
-                          {existingHeads
-                            .filter(h => h.toLowerCase().includes(form.head.toLowerCase()))
-                            .map(h => (
-                              <button
-                                key={h}
-                                className={cn(
-                                  'flex w-full items-center justify-between rounded-sm px-3 py-2 text-xs font-bold transition-colors text-left',
-                                  form.head === h
-                                    ? 'bg-primary/10 text-primary'
-                                    : 'hover:bg-accent text-muted-foreground hover:text-foreground'
-                                )}
-                                onClick={() => {
-                                  setForm({ ...form, head: h });
-                                  setHeadDropdownOpen(false);
-                                }}
-                              >
-                                <span className="truncate">{h}</span>
-                                {form.head === h && <Check className="h-3.5 w-3.5" />}
-                              </button>
-                            ))}
-                          {existingHeads.filter(h =>
-                            h.toLowerCase().includes(form.head.toLowerCase())
-                          ).length === 0 && (
-                            <div className="px-2 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 text-center">
-                              No matches found
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
-                  Sub Head
-                  <InfoTooltip text="Optional details to break down a main category (e.g., Groceries under Food, or Petrol under Transport)." />
-                </Label>
-                <Input
-                  placeholder="e.g., Groceries"
-                  value={form.subHead}
-                  onChange={e => setForm({ ...form, subHead: e.target.value })}
-                  className="h-10 border-border/50 focus:border-primary/30"
-                />
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="pt-4">
-            <Button
-              variant="ghost"
-              onClick={() => setModalOpen(false)}
-              className="h-10 px-6 font-bold uppercase text-[10px] tracking-widest"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              className="h-10 px-8 font-bold uppercase text-[10px] tracking-widest"
-            >
-              {editing ? 'Update Category' : 'Create Category'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ResponsiveModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        title={editing ? t('category.editCategory') : t('category.newCategory')}
+      >
+        {modalOpen && (
+          <CategoryForm
+            initialData={
+              editing
+                ? {
+                    group: editing.group,
+                    head: editing.head,
+                    subHead: editing.subHead,
+                    isActive: editing.isActive,
+                  }
+                : undefined
+            }
+            onSave={handleSave}
+            onCancel={() => setModalOpen(false)}
+            submitLabel={editing ? t('common.saveChanges') : t('category.createCategory')}
+          />
+        )}
+      </ResponsiveModal>
     </SettingsLayout>
   );
 }

@@ -18,6 +18,11 @@ export interface SyncSlice {
   isHydrated: boolean;
   isCloudInitialized: boolean;
 
+  // Demo Mode
+  isDemoMode: boolean;
+  startDemoMode: () => Promise<void>;
+  exitDemoMode: () => void;
+
   setSpreadsheetId: (id: string | null) => void;
   setFolderId: (id: string | null) => void;
   setBackupFolderId: (id: string | null) => void;
@@ -48,6 +53,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
   lastSyncError: undefined,
   isHydrated: false,
   isCloudInitialized: false,
+  isDemoMode: false,
 
   setSpreadsheetId: id => {
     set({ spreadsheetId: id });
@@ -86,9 +92,6 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
           else if (key === 'numberLocale') current.numberLocale = value;
           else if (key === 'fiscalYearStartMonth') current.fiscalYearStartMonth = Number(value);
           else if (key === 'dateFormat') current.dateFormat = value;
-          else if (key === 'tourStep') current.tourStep = value;
-          else if (key === 'hasCompletedOnboarding')
-            current.hasCompletedOnboarding = String(value).toLowerCase() === 'true';
         }
         nextState.settings = current;
       }
@@ -97,6 +100,38 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
       nextState.isCloudInitialized = true;
       return nextState;
     });
+  },
+
+  startDemoMode: async () => {
+    const { clearLocalData } = await import('../../lib/db');
+    await clearLocalData();
+    await setMeta('isDemoMode', 'true');
+
+    set({
+      isDemoMode: true,
+      isCloudInitialized: true,
+      isHydrated: true,
+      accessToken: null,
+      tokenExpiresAt: null,
+      spreadsheetId: null,
+      folderId: null,
+      backupFolderId: null,
+      userProfile: null,
+      accounts: [],
+      methods: [],
+      categories: [],
+      transactions: [],
+      budgets: [],
+      pendingCount: 0,
+      syncStatus: 'idle',
+      lastSyncError: undefined,
+      settings: defaultSettings,
+    });
+  },
+
+  exitDemoMode: () => {
+    delMeta('isDemoMode');
+    set({ isDemoMode: false });
   },
 
   resetData: () => {
@@ -122,6 +157,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
       userProfile: null,
       tokenExpiresAt: null,
       isCloudInitialized: false,
+      isDemoMode: false,
     }));
   },
 
@@ -158,6 +194,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         folderId,
         backupFolderId,
         syncQueue,
+        isDemoModeMeta,
       ] = await Promise.all([
         getAll<Account>('accounts'),
         getAll<PaymentMethod>('methods'),
@@ -173,7 +210,24 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         getMeta('folderId'),
         getMeta('backupFolderId'),
         getAllSyncQueue(),
+        getMeta('isDemoMode'),
       ]);
+
+      // If demo mode was active before reload, restore it immediately without
+      // touching any Google APIs — just mark hydrated and let the router in.
+      if (isDemoModeMeta === 'true') {
+        set({
+          isDemoMode: true,
+          isHydrated: true,
+          isCloudInitialized: true,
+          accounts,
+          methods,
+          categories,
+          transactions,
+          budgets: budgets as Budget[],
+        });
+        return;
+      }
 
       let userProfile = null;
       try {
@@ -199,11 +253,6 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         if (settings.fiscalYearStartMonth)
           userSettings.fiscalYearStartMonth = Number(settings.fiscalYearStartMonth);
         if (settings.dateFormat) userSettings.dateFormat = settings.dateFormat;
-        if (settings.tourStep) userSettings.tourStep = settings.tourStep;
-        if (settings.hasCompletedOnboarding !== undefined) {
-          userSettings.hasCompletedOnboarding =
-            String(settings.hasCompletedOnboarding).toLowerCase() === 'true';
-        }
       }
 
       set({
@@ -222,7 +271,8 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         userProfile,
         pendingCount: syncQueue ? syncQueue.length : 0,
         isHydrated: true,
-        isCloudInitialized: !!lastSyncedAt,
+        isCloudInitialized: !!(lastSyncedAt && accessToken),
+        isDemoMode: false,
       });
     } catch (err) {
       console.error('Failed to initialize from DB:', err);

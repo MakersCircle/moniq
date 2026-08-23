@@ -180,27 +180,18 @@ export interface UserSettings {
   fiscalYearStartMonth: number;
   /** Preferred date display format */
   dateFormat: string;
-  /** The current step of the interactive onboarding tour */
-  tourStep?: string;
-  /** Whether the user has completed the first-run onboarding */
-  hasCompletedOnboarding?: boolean;
 }
 
 /**
  * Current state of the synchronization engine.
  */
-export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline' | 'pulling';
+export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline' | 'pulling' | 'migrating';
 
 /**
  * List of entities that can be synchronized.
  */
 export type SyncEntityType =
-  | 'transaction'
-  | 'account'
-  | 'method'
-  | 'category'
-  | 'budget'
-  | 'settings';
+  'transaction' | 'account' | 'method' | 'category' | 'budget' | 'settings';
 
 /**
  * Represents a single modification that needs to be synced to Google Sheets.
