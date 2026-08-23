@@ -9,9 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.9.1] - 2026-08-24
+
 ### Fixed
-- **Mobile Modals**: Fixed an issue where the "Add Account" and "Add Category" sheets overflowing the screen and clipping the content on mobile devices. They now use the `ResponsiveModal` component for a consistent bottom-sheet experience.
-- **Select State**: Fixed an issue where creating an account or category from the transaction modal would leave the "+ Create" option selected after the modal was closed due to an uncontrolled state bug in the Radix UI Select component.
+- **Mobile Modals**: Fixed layout clipping in "Add Account" and "Add Category" sheets on mobile screens.
+- **Select State**: Fixed "+ Create" options getting stuck as selected when closing modal dialogs.
 
 ---
 
