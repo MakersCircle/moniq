@@ -256,11 +256,9 @@ export default function App() {
         ? 'Setting up your personal Drive folder...'
         : initPhase === 'creating-sheet'
           ? 'Initializing your Moniq database...'
-          : syncStatus === 'migrating'
-            ? 'Upgrading database schema...'
-            : syncStatus === 'pulling'
-              ? 'Pulling your data from Google Drive...'
-              : 'Connecting to Google Drive...';
+          : syncStatus === 'pulling'
+            ? 'Pulling your data from Google Drive...'
+            : 'Connecting to Google Drive...';
 
     return (
       <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center">
