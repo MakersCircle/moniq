@@ -185,7 +185,7 @@ export interface UserSettings {
 /**
  * Current state of the synchronization engine.
  */
-export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline' | 'pulling';
+export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline' | 'pulling' | 'migrating';
 
 /**
  * List of entities that can be synchronized.

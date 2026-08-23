@@ -31,193 +31,20 @@ import {
   setMeta,
   putSetting,
 } from '../lib/db';
-
-// ── Utility helpers ──────────────────────────────────────────────
-
-/**
- * Converts a Google Sheets serial date (number of days since 1899-12-30)
- * back into an ISO YYYY-MM-DD date string.
- *
- * @param val - The value from the Google Sheet cell.
- */
-function unserialDate(val: string | unknown): string {
-  if (!val || typeof val !== 'string' || !/^\d+(\.\d+)?$/.test(val.trim())) {
-    return typeof val === 'string' ? val : '';
-  }
-
-  const serial = parseFloat(val.trim());
-  if (serial < 30000 || serial > 60000) return val; // Likely not a serial date within our range
-
-  // Excel/Sheets serial dates start from Dec 30, 1899
-  const baseDate = new Date(1899, 11, 30);
-  const targetDate = new Date(baseDate.getTime() + serial * 86400000);
-
-  return targetDate.toISOString().split('T')[0];
-}
-
-function getValue(row: string[], header: string[], field: string): string {
-  const idx = header.indexOf(field);
-  if (idx === -1) return '';
-  return row[idx] || '';
-}
-
-// ── Serialization helpers ────────────────────────────────────────
-
-/** Serializes a Transaction object into a row array for Google Sheets. */
-function serializeTransaction(t: Transaction): string[] {
-  return [
-    t.id,
-    t.groupId || '',
-    t.uiType,
-    JSON.stringify(t.entries),
-    String(t.amount),
-    t.date,
-    t.methodId || '',
-    t.note || '',
-    (t.tags || []).join(','),
-    t.isDeleted ? 'TRUE' : 'FALSE',
-    t.createdAt,
-    t.updatedAt,
-    '',
-  ];
-}
-
-/** Serializes an Account object into a row array. */
-function serializeAccount(a: Account): string[] {
-  return [
-    a.id,
-    a.name,
-    a.type,
-    a.description || '',
-    a.isSavings ? 'TRUE' : 'FALSE',
-    String(a.initialBalance),
-    a.excludeFromNet ? 'TRUE' : 'FALSE',
-    a.isActive ? 'TRUE' : 'FALSE',
-    a.isDeleted ? 'TRUE' : 'FALSE',
-    a.createdAt,
-    a.updatedAt,
-    '',
-  ];
-}
-
-function serializeMethod(m: PaymentMethod): string[] {
-  return [
-    m.id,
-    m.name,
-    m.linkedAccountId || '',
-    m.isActive ? 'TRUE' : 'FALSE',
-    m.isDeleted ? 'TRUE' : 'FALSE',
-    String(m.sortOrder || 0),
-    m.createdAt,
-    m.updatedAt,
-    '',
-  ];
-}
-
-function serializeCategory(c: Category): string[] {
-  return [
-    c.id,
-    c.group,
-    c.head,
-    c.subHead || '',
-    String(c.initialBalance || 0),
-    c.isActive ? 'TRUE' : 'FALSE',
-    c.isDeleted ? 'TRUE' : 'FALSE',
-    String(c.sortOrder || 0),
-    c.createdAt,
-    c.updatedAt,
-    '',
-  ];
-}
-
-function serializeBudget(b: Budget): string[] {
-  return [
-    b.id,
-    b.categoryId,
-    b.period,
-    String(b.amount),
-    b.isDeleted ? 'TRUE' : 'FALSE',
-    b.createdAt,
-    b.updatedAt,
-    '',
-  ];
-}
-
-// ── Deserialization helpers ──────────────────────────────────────
-
-function deserializeTransaction(row: string[], header: string[]): Transaction {
-  const entriesRaw = getValue(row, header, 'Entries JSON');
-  return {
-    id: getValue(row, header, 'ID'),
-    groupId: getValue(row, header, 'Group ID'),
-    uiType: (getValue(row, header, 'UI Type') as Transaction['uiType']) || 'expense',
-    entries: entriesRaw ? JSON.parse(entriesRaw) : [],
-    amount: Number(getValue(row, header, 'Amount')) || 0,
-    date: unserialDate(getValue(row, header, 'Date')),
-    methodId: getValue(row, header, 'Method ID') || undefined,
-    note: getValue(row, header, 'Note'),
-    tags: getValue(row, header, 'Tags').split(',').filter(Boolean),
-    isDeleted: getValue(row, header, 'Is Deleted') === 'TRUE',
-    createdAt: getValue(row, header, 'Created At'),
-    updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
-  };
-}
-
-function deserializeAccount(row: string[], header: string[]): Account {
-  return {
-    id: getValue(row, header, 'ID'),
-    name: getValue(row, header, 'Name'),
-    type: (getValue(row, header, 'Type') as Account['type']) || 'Asset',
-    description: getValue(row, header, 'Description') || undefined,
-    isSavings: getValue(row, header, 'Is Savings') === 'TRUE',
-    initialBalance: Number(getValue(row, header, 'Initial Balance')) || 0,
-    excludeFromNet: getValue(row, header, 'Exclude Net') === 'TRUE',
-    isActive: getValue(row, header, 'Is Active') === 'TRUE',
-    isDeleted: getValue(row, header, 'Is Deleted') === 'TRUE',
-    createdAt: getValue(row, header, 'Created At'),
-    updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
-  };
-}
-
-function deserializeMethod(row: string[], header: string[]): PaymentMethod {
-  return {
-    id: getValue(row, header, 'ID'),
-    name: getValue(row, header, 'Name'),
-    linkedAccountId: getValue(row, header, 'Linked Account ID') || undefined,
-    isActive: getValue(row, header, 'Is Active') === 'TRUE',
-    isDeleted: getValue(row, header, 'Is Deleted') === 'TRUE',
-    sortOrder: Number(getValue(row, header, 'Sort Order')) || 0,
-    createdAt: getValue(row, header, 'Created At'),
-    updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
-  };
-}
-
-function deserializeCategory(row: string[], header: string[]): Category {
-  return {
-    id: getValue(row, header, 'ID'),
-    group: (getValue(row, header, 'Group') as Category['group']) || 'Needs',
-    head: getValue(row, header, 'Head'),
-    subHead: getValue(row, header, 'Sub Head') || undefined,
-    initialBalance: Number(getValue(row, header, 'Initial Balance')) || undefined,
-    isActive: getValue(row, header, 'Is Active') === 'TRUE',
-    isDeleted: getValue(row, header, 'Is Deleted') === 'TRUE',
-    sortOrder: Number(getValue(row, header, 'Sort Order')) || 0,
-    createdAt: getValue(row, header, 'Created At'),
-    updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
-  };
-}
-
-function deserializeBudget(row: string[], header: string[]): Budget {
-  return {
-    id: getValue(row, header, 'ID'),
-    categoryId: getValue(row, header, 'Category ID'),
-    period: getValue(row, header, 'Period'),
-    amount: Number(getValue(row, header, 'Amount')) || 0,
-    isDeleted: getValue(row, header, 'Is Deleted') === 'TRUE',
-    createdAt: getValue(row, header, 'Created At'),
-    updatedAt: getValue(row, header, 'Updated At') || getValue(row, header, 'Created At'),
-  };
-}
+import {
+  serializeAccount,
+  deserializeAccount,
+  serializeMethod,
+  deserializeMethod,
+  serializeCategory,
+  deserializeCategory,
+  serializeTransaction,
+  deserializeTransaction,
+  serializeBudget,
+  deserializeBudget,
+} from '../schema';
+import { runSheetsMigrations } from '../schema/runner/sheetsMigrationRunner';
+import { migrationChannel } from '../schema/runner/migrationChannel';
 
 // ── Checksum helpers ─────────────────────────────────────────────
 
@@ -286,6 +113,20 @@ export class SyncEngine {
       budgets: new Map(),
       settings: new Map(),
     };
+
+    // Subscribe to migration events from other tabs (multi-tab coordination)
+    migrationChannel.subscribe(msg => {
+      if (msg.type === 'MIGRATION_STARTED') {
+        console.log(
+          `[SyncEngine] Another tab started migration to v${msg.version}. Pausing flush.`
+        );
+        this.setStatus('migrating');
+      } else if (msg.type === 'MIGRATION_DONE') {
+        console.log(`[SyncEngine] Migration to v${msg.version} complete. Resuming flush.`);
+        if (this._status === 'migrating') this.setStatus('idle');
+        this.scheduleDebouncedFlush();
+      }
+    });
 
     // Poll every 12 hours to check if a backup tier has become due while the app was left open
     this.backupPollingTimer = setInterval(
@@ -458,6 +299,31 @@ export class SyncEngine {
           [txRows, accRows, metRows, catRows, budRows, setRows] = await fetchWithBatch();
         }
       }
+
+      // ── Run Sheets migrations (after pull, IDB is now authoritative) ───────
+      // Migrations run before deserialization so that any column rewrite has
+      // already been committed to the sheet before we parse the data below.
+      try {
+        this.setStatus('migrating');
+        const { useDataStore } = await import('../store/dataStore');
+        const { folderId } = useDataStore.getState();
+        await runSheetsMigrations(this.client!, {
+          spreadsheetId,
+          createBackup: async sid => {
+            const { googleService } = await import('../lib/google');
+            const backupName = `moniq-migration-pre-v${new Date().toISOString().split('T')[0]}`;
+            const backupFolder = folderId ?? undefined;
+            const result = await googleService.copyFile(sid, backupFolder ?? '', backupName);
+            return result;
+          },
+        });
+      } catch (migErr) {
+        console.error('[SyncEngine] Sheets migration failed:', migErr);
+        const msg = migErr instanceof Error ? migErr.message : 'Schema migration failed';
+        this.setStatus('error', msg);
+        return null;
+      }
+      this.setStatus('pulling');
 
       // Parse remote data (skip header rows)
       const txHeader = txRows[0] || [];
@@ -718,6 +584,11 @@ export class SyncEngine {
   }
 
   private async flush(): Promise<void> {
+    // Write gate: do not flush while migration is in progress (from this tab or another)
+    if (this._status === 'migrating') {
+      console.log('[SyncEngine] Flush deferred — migration in progress.');
+      return;
+    }
     if (this._status === 'syncing' || this._status === 'pulling') return;
     if (!(await this.ensureClient())) return;
 
