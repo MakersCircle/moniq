@@ -1,10 +1,10 @@
-import type { SheetClient } from '../../../sync/SheetClient';
-import { ACCOUNT_COLUMNS } from '../../entities/account.schema';
-import { METHOD_COLUMNS } from '../../entities/method.schema';
-import { CATEGORY_COLUMNS } from '../../entities/category.schema';
-import { TRANSACTION_COLUMNS } from '../../entities/transaction.schema';
-import { BUDGET_COLUMNS } from '../../entities/budget.schema';
-import { SETTINGS_COLUMNS } from '../../entities/settings.schema';
+import type { SheetClient } from '@/sync/SheetClient';
+import { ACCOUNT_COLUMNS } from '@/schema/entities/account.schema';
+import { METHOD_COLUMNS } from '@/schema/entities/method.schema';
+import { CATEGORY_COLUMNS } from '@/schema/entities/category.schema';
+import { TRANSACTION_COLUMNS } from '@/schema/entities/transaction.schema';
+import { BUDGET_COLUMNS } from '@/schema/entities/budget.schema';
+import { SETTINGS_COLUMNS } from '@/schema/entities/settings.schema';
 
 /** All sheet tab names required by v1 */
 const REQUIRED_TABS = ['Accounts', 'Methods', 'Categories', 'Transactions', 'Budgets', 'Settings'];

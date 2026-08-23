@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import type { Transaction, LedgerEntry } from '../../../types';
+import type { Transaction, LedgerEntry } from '@/types';
 import {
   TRANSACTION_COLUMNS,
   TRANSACTION_DEFAULTS,
   serializeTransaction,
   deserializeTransaction,
-} from '../transaction.schema';
+} from '@/schema/entities/transaction.schema';
 
 // ── Fixtures ─────────────────────────────────────────────────────
 

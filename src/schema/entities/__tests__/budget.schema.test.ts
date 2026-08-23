@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import type { Budget } from '../../../types';
+import type { Budget } from '@/types';
 import {
   BUDGET_COLUMNS,
   BUDGET_DEFAULTS,
   serializeBudget,
   deserializeBudget,
-} from '../budget.schema';
+} from '@/schema/entities/budget.schema';
 
 // ── Fixtures ─────────────────────────────────────────────────────
 

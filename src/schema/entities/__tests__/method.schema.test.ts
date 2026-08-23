@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import type { PaymentMethod } from '../../../types';
+import type { PaymentMethod } from '@/types';
 import {
   METHOD_COLUMNS,
   METHOD_DEFAULTS,
   serializeMethod,
   deserializeMethod,
-} from '../method.schema';
+} from '@/schema/entities/method.schema';
 
 // ── Fixtures ─────────────────────────────────────────────────────
 

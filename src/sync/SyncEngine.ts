@@ -6,7 +6,7 @@ import type {
   Budget,
   SyncOperation,
   SyncEntityType,
-} from '../types';
+} from '@/types';
 
 /**
  * Union of all entity types stored in the sync engine.
@@ -30,7 +30,7 @@ import {
   clearSyncQueue,
   setMeta,
   putSetting,
-} from '../lib/db';
+} from '@/lib/db';
 import {
   serializeAccount,
   deserializeAccount,
@@ -42,9 +42,9 @@ import {
   deserializeTransaction,
   serializeBudget,
   deserializeBudget,
-} from '../schema';
-import { runSheetsMigrations } from '../schema/runner/sheetsMigrationRunner';
-import { migrationChannel } from '../schema/runner/migrationChannel';
+} from '@/schema';
+import { runSheetsMigrations } from '@/schema/runner/sheetsMigrationRunner';
+import { migrationChannel } from '@/schema/runner/migrationChannel';
 
 // ── Checksum helpers ─────────────────────────────────────────────
 
@@ -81,7 +81,7 @@ export class SyncEngine {
   private static backupCheckedThisSession = false;
 
   private client: SheetClient | null = null;
-  private config: SyncConfig;
+  private readonly config: SyncConfig;
   private rowIndexes: RowIndexMap;
   /**
    * Tracks entity IDs for which an `appendRows` call was *sent* but may not
@@ -90,7 +90,7 @@ export class SyncEngine {
    * re-read the live sheet before deciding whether to append again, preventing
    * duplicate rows.
    */
-  private pendingAppendIds: Map<string, Set<string>> = new Map();
+  private readonly pendingAppendIds: Map<string, Set<string>> = new Map();
 
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -98,8 +98,7 @@ export class SyncEngine {
   private _status: SyncStatus = 'idle';
   private _pendingCount = 0;
   private _lastError: string | undefined;
-  private listeners: Set<SyncListener> = new Set();
-  private isInitialized = false;
+  private readonly listeners: Set<SyncListener> = new Set();
   /** Tracks how many consecutive flush failures have occurred. Reset on success. */
   private flushRetryCount = 0;
 
@@ -163,12 +162,6 @@ export class SyncEngine {
 
   get status(): SyncStatus {
     return this._status;
-  }
-  get pendingCount(): number {
-    return this._pendingCount;
-  }
-  get lastError(): string | undefined {
-    return this._lastError;
   }
 
   /**
@@ -313,8 +306,7 @@ export class SyncEngine {
             const { googleService } = await import('../lib/google');
             const backupName = `moniq-migration-pre-v${new Date().toISOString().split('T')[0]}`;
             const backupFolder = folderId ?? undefined;
-            const result = await googleService.copyFile(sid, backupFolder ?? '', backupName);
-            return result;
+            return await googleService.copyFile(sid, backupFolder ?? '', backupName);
           },
         });
       } catch (migErr) {
@@ -481,7 +473,6 @@ export class SyncEngine {
       await this.updatePendingCount();
 
       await setMeta('lastSyncedAt', new Date().toISOString());
-      this.isInitialized = true;
       this.setStatus('idle');
 
       return {
@@ -568,7 +559,7 @@ export class SyncEngine {
   private scheduleDebouncedFlush() {
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     this.debounceTimer = setTimeout(() => {
-      this.flush();
+      this.flush().catch(console.error);
     }, this.config.debounceMs);
   }
 
@@ -661,7 +652,7 @@ export class SyncEngine {
     // This lets us detect rows the server already wrote and avoid re-appending.
     const hasPending = ops.some(op => pendingForStore.has(op.entityId));
     if (hasPending) {
-      await this.rebuildRowIndexForStore(sheetName, storeName, rowIndex);
+      await this.rebuildRowIndexForStore(sheetName, rowIndex);
     }
 
     const newRows: string[][] = [];
@@ -715,11 +706,7 @@ export class SyncEngine {
    * Called when a previous `appendRows` response was lost — ensures we detect
    * rows the server already wrote before deciding to append again.
    */
-  private async rebuildRowIndexForStore(
-    sheetName: string,
-    storeName: string,
-    rowIndex: RowIndex
-  ): Promise<void> {
+  private async rebuildRowIndexForStore(sheetName: string, rowIndex: RowIndex): Promise<void> {
     if (!this.client) return;
     try {
       console.warn(
@@ -790,7 +777,6 @@ export class SyncEngine {
       this.pendingAppendIds.clear();
       this.flushRetryCount = 0;
       this.client = null;
-      this.isInitialized = false;
 
       this.setStatus('idle');
     } catch (err) {
@@ -850,28 +836,32 @@ export class SyncEngine {
 
   // ── Helpers ────────────────────────────────────────────────────
 
-  private deduplicate<T extends { id: string; updatedAt: string }>(items: T[]): T[] {
-    const latest = new Map<string, T>();
+  private deduplicateBase<T, K>(items: T[], getKey: (i: T) => K, getTime: (i: T) => string): T[] {
+    const latest = new Map<K, T>();
     for (const item of items) {
-      const existing = latest.get(item.id);
-      if (!existing || new Date(item.updatedAt) > new Date(existing.updatedAt)) {
-        latest.set(item.id, item);
+      const key = getKey(item);
+      const existing = latest.get(key);
+      if (!existing || new Date(getTime(item)) > new Date(getTime(existing))) {
+        latest.set(key, item);
       }
     }
     return Array.from(latest.values());
   }
 
+  private deduplicate<T extends { id: string; updatedAt: string }>(items: T[]): T[] {
+    return this.deduplicateBase(
+      items,
+      i => i.id,
+      i => i.updatedAt
+    );
+  }
+
   private deduplicateQueue(queue: SyncOperation[]): SyncOperation[] {
-    // For each entity+entityId combo, keep only the latest operation
-    const latest = new Map<string, SyncOperation>();
-    for (const op of queue) {
-      const key = `${op.entity}:${op.entityId}`;
-      const existing = latest.get(key);
-      if (!existing || new Date(op.timestamp) > new Date(existing.timestamp)) {
-        latest.set(key, op);
-      }
-    }
-    return Array.from(latest.values());
+    return this.deduplicateBase(
+      queue,
+      op => `${op.entity}:${op.entityId}`,
+      op => op.timestamp
+    );
   }
 
   private getSerializeFn(entityType: SyncEntityType): (entity: AnyEntity) => string[] {
@@ -918,7 +908,7 @@ export class SyncEngine {
     );
 
     this.retryTimer = setTimeout(() => {
-      this.flush();
+      this.flush().catch(console.error);
     }, delay);
   }
 
@@ -932,7 +922,6 @@ export class SyncEngine {
     this.pendingAppendIds.clear();
     this.flushRetryCount = 0;
     this.client = null;
-    this.isInitialized = false;
     SyncEngine.instance = null;
   }
 }

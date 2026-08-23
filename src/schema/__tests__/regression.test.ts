@@ -1,19 +1,31 @@
 import { describe, it, expect } from 'vitest';
-import { computeChecksum } from '../../sync/ConflictResolver';
-import { serializeAccount, deserializeAccount, ACCOUNT_COLUMNS } from '../entities/account.schema';
+import { computeChecksum } from '@/sync/ConflictResolver';
+import {
+  serializeAccount,
+  deserializeAccount,
+  ACCOUNT_COLUMNS,
+} from '@/schema/entities/account.schema';
 import {
   serializeCategory,
   deserializeCategory,
   CATEGORY_COLUMNS,
-} from '../entities/category.schema';
+} from '@/schema/entities/category.schema';
 import {
   serializeTransaction,
   deserializeTransaction,
   TRANSACTION_COLUMNS,
-} from '../entities/transaction.schema';
-import { serializeMethod, deserializeMethod, METHOD_COLUMNS } from '../entities/method.schema';
-import { serializeBudget, deserializeBudget, BUDGET_COLUMNS } from '../entities/budget.schema';
-import type { Account, Category, Transaction, PaymentMethod, Budget } from '../../types';
+} from '@/schema/entities/transaction.schema';
+import {
+  serializeMethod,
+  deserializeMethod,
+  METHOD_COLUMNS,
+} from '@/schema/entities/method.schema';
+import {
+  serializeBudget,
+  deserializeBudget,
+  BUDGET_COLUMNS,
+} from '@/schema/entities/budget.schema';
+import type { Account, Category, Transaction, PaymentMethod, Budget } from '@/types';
 
 describe('Regression Tests — Existing serialization unchanged', () => {
   // These are golden snapshot tests. The expected values should be captured

@@ -1,5 +1,5 @@
 import type { IDBPDatabase } from 'idb';
-import type { MoniqDB } from '../../../lib/db';
+import type { MoniqDB } from '@/lib/db';
 
 /**
  * IDB Migration 001 — Initial Schema

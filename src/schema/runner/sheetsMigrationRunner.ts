@@ -1,7 +1,7 @@
-import type { SheetClient } from '../../sync/SheetClient';
-import { sheetsMigrations } from '../migrations';
-import { CURRENT_SCHEMA_VERSION } from '../version';
-import { getMeta, setMeta, getAll } from '../../lib/db';
+import type { SheetClient } from '@/sync/SheetClient';
+import { sheetsMigrations } from '@/schema/migrations';
+import { CURRENT_SCHEMA_VERSION } from '@/schema/version';
+import { getMeta, setMeta, getAll } from '@/lib/db';
 import { migrationChannel } from './migrationChannel';
 
 /** IDB meta key for the committed Sheets schema version. */

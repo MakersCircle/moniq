@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import type { Account } from '../../../types';
+import type { Account } from '@/types';
 import {
   ACCOUNT_COLUMNS,
   ACCOUNT_DEFAULTS,
   serializeAccount,
   deserializeAccount,
-} from '../account.schema';
+} from '@/schema/entities/account.schema';
 
 // ── Fixtures ─────────────────────────────────────────────────────
 

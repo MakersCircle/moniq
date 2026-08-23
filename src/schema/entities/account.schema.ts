@@ -1,4 +1,4 @@
-import type { Account } from '../../types';
+import type { Account } from '@/types';
 
 // ── Column Definition ────────────────────────────────────────────
 // IMPORTANT: Never reorder existing columns. Only append new ones to the end

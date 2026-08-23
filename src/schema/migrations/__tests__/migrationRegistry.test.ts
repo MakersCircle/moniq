@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect } from 'vitest';
-import { idbMigrations, sheetsMigrations } from '../../migrations';
-import { CURRENT_SCHEMA_VERSION } from '../../version';
+import { idbMigrations, sheetsMigrations } from '@/schema/migrations';
+import { CURRENT_SCHEMA_VERSION } from '@/schema/version';
 
 describe('migrationRegistry', () => {
   describe('IDB Migration Registry', () => {

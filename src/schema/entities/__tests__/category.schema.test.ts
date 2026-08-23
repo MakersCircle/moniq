@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import type { Category } from '../../../types';
+import type { Category } from '@/types';
 import {
   CATEGORY_COLUMNS,
   CATEGORY_DEFAULTS,
   serializeCategory,
   deserializeCategory,
-} from '../category.schema';
+} from '@/schema/entities/category.schema';
 
 // ── Fixtures ─────────────────────────────────────────────────────
 

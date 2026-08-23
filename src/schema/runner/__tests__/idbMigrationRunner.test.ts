@@ -1,8 +1,8 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { openMoniqDB, closeDB } from '../../runner/idbMigrationRunner';
-import { idbMigrations } from '../../migrations';
-import { CURRENT_SCHEMA_VERSION } from '../../version';
+import { openMoniqDB, closeDB } from '@/schema/runner/idbMigrationRunner';
+import { idbMigrations } from '@/schema/migrations';
+import { CURRENT_SCHEMA_VERSION } from '@/schema/version';
 
 // Reset IDB between tests
 beforeEach(async () => {

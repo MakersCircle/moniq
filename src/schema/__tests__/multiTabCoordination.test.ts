@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { MigrationMessage } from '../runner/migrationChannel';
+import type { MigrationMessage } from '@/schema/runner/migrationChannel';
 
 describe('migrationChannel (MigrationChannel)', () => {
   beforeEach(() => {

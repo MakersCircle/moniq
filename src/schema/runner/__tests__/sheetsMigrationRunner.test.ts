@@ -7,9 +7,9 @@ vi.mock('../../../lib/db', () => ({
   getAll: vi.fn().mockResolvedValue([]),
 }));
 
-import { getMeta, setMeta } from '../../../lib/db';
-import { runSheetsMigrations } from '../../runner/sheetsMigrationRunner';
-import { CURRENT_SCHEMA_VERSION } from '../../version';
+import { getMeta, setMeta } from '@/lib/db';
+import { runSheetsMigrations } from '@/schema/runner/sheetsMigrationRunner';
+import { CURRENT_SCHEMA_VERSION } from '@/schema/version';
 
 /** Minimal SheetClient mock */
 function makeClient(overrides: Record<string, unknown> = {}) {

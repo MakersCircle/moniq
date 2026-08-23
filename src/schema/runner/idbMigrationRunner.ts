@@ -1,7 +1,7 @@
 import { openDB, type IDBPDatabase } from 'idb';
-import type { MoniqDB } from '../../lib/db';
-import { idbMigrations } from '../migrations';
-import { CURRENT_SCHEMA_VERSION } from '../version';
+import type { MoniqDB } from '@/lib/db';
+import { idbMigrations } from '@/schema/migrations';
+import { CURRENT_SCHEMA_VERSION } from '@/schema/version';
 
 const DB_NAME = 'moniq-db';
 

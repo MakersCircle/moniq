@@ -1,4 +1,4 @@
-import type { Budget } from '../../types';
+import type { Budget } from '@/types';
 
 // ── Column Definition ────────────────────────────────────────────
 
