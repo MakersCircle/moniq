@@ -11,6 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.2] - 2026-08-26
+
+### Added
+- **PWA Integration**: App is now fully installable on mobile and desktop. Added `vite-plugin-pwa` for service worker generation and offline caching.
+- **App Icons**: Automatically generated properly padded icons with custom background colors for iOS (`apple-touch-icon`) and Android (`maskable`).
+
+### Fixed
+- **Mobile Viewport Zoom**: Disabled auto-zooming on inputs in iOS Safari.
+- **Select State Bug**: Fixed uncontrolled component warnings in Radix UI Select when adding transactions.
+- **Cleaned Up Assets**: Removed redundant SVGs like `logo-gradient.svg` and `apple-touch-icon.svg`.
+
+---
+
 ## [0.9.1] - 2026-08-24
 
 ### Fixed

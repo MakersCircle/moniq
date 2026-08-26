@@ -163,7 +163,7 @@ export default function Home() {
             <IIcon className="w-full h-auto block" />
           </div>
           <img
-            src="/logo-gradient.svg"
+            src="/favicon.svg"
             alt="moniq logo"
             className="absolute z-0"
             style={{ left: '56.48%', top: '36.71%', width: '41.42%', height: 'auto' }}
