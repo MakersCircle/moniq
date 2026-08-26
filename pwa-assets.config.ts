@@ -10,7 +10,7 @@ export default defineConfig({
     },
     maskable: {
       ...preset.maskable,
-      padding: 0.20,
+      padding: 0.30,
       resizeOptions: { background: '#011627', fit: 'contain' },
     },
     transparent: {
