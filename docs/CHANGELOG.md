@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.3] - 2026-08-26
+
+### Fixed
+- **PWA iOS Icon**: Restored the `apple-touch-icon` meta tag so iOS Safari correctly uses the high-quality padded app icon instead of falling back to a transparent icon.
+- **PWA Android Icon**: Increased the padding on the maskable Android app icon to 30% to prevent the logo from getting clipped on devices with extreme icon shapes.
+
+---
+
 ## [0.9.2] - 2026-08-26
 
 ### Added
