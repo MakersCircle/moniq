@@ -11,6 +11,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { googleLogout } from '@react-oauth/google';
 import { useDataStore } from '@/store/dataStore';
 import { SyncEngine } from '@/sync/SyncEngine';
@@ -114,8 +115,8 @@ export default function SettingsIndex() {
         await engine.forceSync();
       }
       confirmAndLogout();
-    } catch (err) {
-      console.error('Failed to sync before logout', err);
+    } catch (_err) {
+      toast.error('Failed to sync. Please try again.');
       setLogoutPendingCount(pendingCount);
       setLogoutConfirmOpen(true);
     }
@@ -137,8 +138,8 @@ export default function SettingsIndex() {
           hydrateFromSync(reconciledData);
         }
       }
-    } catch (err) {
-      console.error('Manual sync failed:', err);
+    } catch (_err) {
+      toast.error('Manual sync failed');
     }
   };
 
@@ -155,7 +156,7 @@ export default function SettingsIndex() {
       // Force a full page reload to ensure all memory state is cleared
       window.location.href = '/';
     } catch (err) {
-      console.error('Hard reset failed:', err);
+      toast.error('Hard reset failed');
       setErrorMessage(
         `Your database is locked by another tab. Please close all other Moniq tabs, manually clear your browser site data if necessary, and try again.\n\nError: ${
           err instanceof Error ? err.message : err

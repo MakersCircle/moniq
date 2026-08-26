@@ -54,7 +54,7 @@ export default function LayoutShell({ children, onNewTransaction }: LayoutShellP
     <div className="h-screen bg-background text-foreground overflow-hidden">
       <Sidebar onNewTransaction={() => onNewTransaction()} />
       <TopBar onNewTransaction={() => onNewTransaction()} />
-      <div className="lg:pl-[220px] pt-[48px] pb-[60px] lg:pb-0 h-[100dvh]">
+      <div className="lg:pl-[220px] pt-14 lg:pt-16 pb-[60px] lg:pb-0 h-[100dvh]">
         <main
           id="main-scroll-container"
           className="h-full w-full overflow-y-auto custom-scrollbar flex flex-col"

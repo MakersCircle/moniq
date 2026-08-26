@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useGoogleLogin } from '@react-oauth/google';
 import { CloudUpload, Trash2 } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
@@ -30,7 +31,7 @@ export default function DemoExitDialog({ onClose }: DemoExitDialogProps) {
       navigate('/dashboard');
       close();
     },
-    onError: err => console.error('Login Failed:', err),
+    onError: () => toast.error('Login Failed'),
     scope:
       'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
   });
@@ -43,7 +44,7 @@ export default function DemoExitDialog({ onClose }: DemoExitDialogProps) {
       navigate('/dashboard');
       close();
     },
-    onError: err => console.error('Login Failed:', err),
+    onError: () => toast.error('Login Failed'),
     scope:
       'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
   });

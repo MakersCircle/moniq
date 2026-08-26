@@ -250,3 +250,31 @@ html:hover {
 .driver-popover-arrow-side-bottom.driver-popover-arrow {
   border-top-color: #3f3f46 !important;
 }
+
+/* ── Sonner Toast Overrides ────────────────────────────────────── */
+[data-sonner-toast][data-type="success"] {
+  background-color: color-mix(in srgb, var(--color-income) 12%, var(--color-background)) !important;
+  border-color: color-mix(in srgb, var(--color-income) 30%, var(--color-background)) !important;
+  color: var(--color-income) !important;
+}
+[data-sonner-toast][data-type="success"] svg {
+  color: var(--color-income) !important;
+}
+
+[data-sonner-toast][data-type="error"] {
+  background-color: color-mix(in srgb, var(--color-destructive) 12%, var(--color-background)) !important;
+  border-color: color-mix(in srgb, var(--color-destructive) 30%, var(--color-background)) !important;
+  color: var(--color-destructive) !important;
+}
+[data-sonner-toast][data-type="error"] svg {
+  color: var(--color-destructive) !important;
+}
+
+[data-sonner-toast][data-type="info"] {
+  background-color: color-mix(in srgb, var(--color-primary) 12%, var(--color-background)) !important;
+  border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-background)) !important;
+  color: var(--color-primary) !important;
+}
+[data-sonner-toast][data-type="info"] svg {
+  color: var(--color-primary) !important;
+}

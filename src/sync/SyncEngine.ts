@@ -882,10 +882,6 @@ export class SyncEngine {
       this.config.maxRetryDelayMs
     );
 
-    console.warn(
-      `[SyncEngine] Retry ${this.flushRetryCount}/${this.config.maxRetries} in ${Math.round(delay / 1000)}s...`
-    );
-
     this.retryTimer = setTimeout(() => {
       this.flush().catch(console.error);
     }, delay);

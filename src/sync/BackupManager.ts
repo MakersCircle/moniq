@@ -39,7 +39,6 @@ export class BackupManager {
    */
   async runBackupCycle(force: boolean = false): Promise<void> {
     if (this.isRunning) {
-      console.log('[BackupManager] Cycle already in progress — skipping concurrent call.');
       return;
     }
 
@@ -47,9 +46,7 @@ export class BackupManager {
     const { spreadsheetId, settings } = state;
     if (!spreadsheetId) return;
 
-    const requiredTiers = force
-      ? ['manual']
-      : await this.getRequiredTiers(settings);
+    const requiredTiers = force ? ['manual'] : await this.getRequiredTiers(settings);
 
     if (requiredTiers.length === 0) return;
 
@@ -86,7 +83,6 @@ export class BackupManager {
         if (!verifyData.trashed) return storedId;
       }
       // Stale – fall through to re-create.
-      console.warn('[BackupManager] Backup folder ID stale, searching for existing...');
       setBackupFolderId(null);
     }
 
@@ -95,13 +91,14 @@ export class BackupManager {
       const q = encodeURIComponent(
         `name='${BACKUP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and '${folderId}' in parents and trashed=false`
       );
-      const searchRes = await googleService.driveRequest(`/files?q=${q}&fields=files(id)&pageSize=1`);
+      const searchRes = await googleService.driveRequest(
+        `/files?q=${q}&fields=files(id)&pageSize=1`
+      );
       if (searchRes.ok) {
         const searchData = await searchRes.json();
         if (searchData.files?.length > 0) {
           const foundId = searchData.files[0].id;
           await setBackupFolderId(foundId);
-          console.log('[BackupManager] Found existing backup folder via search:', foundId);
           return foundId;
         }
       }
@@ -124,7 +121,6 @@ export class BackupManager {
 
     const newId: string = (await createRes.json()).id;
     await setBackupFolderId(newId);
-    console.log('[BackupManager] Created new backup folder:', newId);
     return newId;
   }
 
@@ -133,9 +129,10 @@ export class BackupManager {
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
     const tiers: string[] = [];
-    
+
     const latestBackups = await this.getLatestBackups();
-    const getTimestamp = (tier: string) => latestBackups[tier] ? new Date(latestBackups[tier]!.timestamp) : new Date(0);
+    const getTimestamp = (tier: string) =>
+      latestBackups[tier] ? new Date(latestBackups[tier]!.timestamp) : new Date(0);
 
     // 1. Daily: If no backup from today
     const lastDaily = getTimestamp('daily');
@@ -155,7 +152,8 @@ export class BackupManager {
     // 3. Monthly: If no backup from current month
     const currentMonthStr = todayStr.substring(0, 7); // YYYY-MM
     const lastMonthly = getTimestamp('monthly');
-    const lastMonthlyStr = lastMonthly.getTime() === 0 ? '' : lastMonthly.toISOString().substring(0, 7);
+    const lastMonthlyStr =
+      lastMonthly.getTime() === 0 ? '' : lastMonthly.toISOString().substring(0, 7);
     if (lastMonthlyStr !== currentMonthStr) {
       tiers.push('monthly');
     }
@@ -163,7 +161,10 @@ export class BackupManager {
     // 4. Yearly: If no backup from current fiscal year
     const currentFY = this.getFiscalYearString(now, settings.fiscalYearStartMonth);
     const lastYearly = getTimestamp('yearly');
-    const lastYearlyStr = lastYearly.getTime() === 0 ? '' : this.getFiscalYearString(lastYearly, settings.fiscalYearStartMonth);
+    const lastYearlyStr =
+      lastYearly.getTime() === 0
+        ? ''
+        : this.getFiscalYearString(lastYearly, settings.fiscalYearStartMonth);
     if (lastYearlyStr !== currentFY) {
       tiers.push('yearly');
     }
@@ -178,7 +179,7 @@ export class BackupManager {
     folderId: string
   ): Promise<void> {
     const now = new Date();
-    
+
     // Always include the full timestamp to avoid any collisions and track exact time
     const suffix = now.toISOString().replace(/[:.]/g, '-');
     const newName = `moniq-backup-${tier}-${suffix}`;
@@ -196,7 +197,6 @@ export class BackupManager {
     if (files.length > limit) {
       const toDelete = files.slice(limit);
       for (const file of toDelete) {
-        // console.log(`[BackupManager] Deleting old ${tier} backup: ${file.name}`);
         await googleService.deleteFile(file.id);
       }
     }
@@ -231,7 +231,7 @@ export class BackupManager {
     // Get all files with 'moniq-backup-' prefix
     // listFiles sorts by createdTime desc, so the first match per tier is the latest.
     const files = await googleService.listFiles(folderId, 'moniq-backup-');
-    
+
     const results: Record<string, BackupSnapshot | null> = {
       manual: null,
       daily: null,
@@ -251,12 +251,12 @@ export class BackupManager {
             name: file.name,
             date: dateSuffix,
             timestamp: file.createdTime || new Date().toISOString(),
-            tier
+            tier,
           };
         }
       }
     }
-    
+
     return results;
   }
 }

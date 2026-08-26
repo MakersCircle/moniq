@@ -23,7 +23,9 @@ const FOLDER_NAME = 'moniq';
  *    this app previously created for the same user + OAuth client ID)
  * 3. Create a new folder (true first-run only)
  */
-async function getOrCreateFolder(onPhaseChange?: (phase: 'connecting' | 'creating-folder' | 'creating-sheet') => void): Promise<string> {
+async function getOrCreateFolder(
+  onPhaseChange?: (phase: 'connecting' | 'creating-folder' | 'creating-sheet') => void
+): Promise<string> {
   const { folderId: storedId, setFolderId } = useDataStore.getState();
 
   // ── Tier 1: Persisted ID ──────────────────────────────────────────
@@ -51,13 +53,11 @@ async function getOrCreateFolder(onPhaseChange?: (phase: 'connecting' | 'creatin
     if (searchData.files?.length > 0) {
       const foundId: string = searchData.files[0].id;
       setFolderId(foundId);
-      console.log('[initializeDatabase] Found existing folder via search:', foundId);
       return foundId;
     }
   }
 
   // ── Tier 3: Create (true first-run) ──────────────────────────────
-  console.log('[initializeDatabase] Creating new moniq folder...');
   onPhaseChange?.('creating-folder');
   const createRes = await googleService.driveRequest('/files', {
     method: 'POST',
@@ -82,7 +82,9 @@ async function getOrCreateFolder(onPhaseChange?: (phase: 'connecting' | 'creatin
  *
  * @returns The spreadsheet ID, guaranteed to be alive and inside the moniq folder.
  */
-export async function initializeDatabase(onPhaseChange?: (phase: 'connecting' | 'creating-folder' | 'creating-sheet') => void): Promise<string> {
+export async function initializeDatabase(
+  onPhaseChange?: (phase: 'connecting' | 'creating-folder' | 'creating-sheet') => void
+): Promise<string> {
   const { spreadsheetId: storedId, setSpreadsheetId } = useDataStore.getState();
 
   // ── Tier 1: Persisted ID ──────────────────────────────────────────
@@ -91,7 +93,6 @@ export async function initializeDatabase(onPhaseChange?: (phase: 'connecting' | 
     if (res.ok) {
       const data = await res.json();
       if (!data.trashed) {
-        console.log('[initializeDatabase] Reusing persisted spreadsheet:', storedId);
         return storedId;
       }
     }
@@ -111,7 +112,6 @@ export async function initializeDatabase(onPhaseChange?: (phase: 'connecting' | 
     if (searchData.files?.length > 0) {
       const foundId: string = searchData.files[0].id;
       setSpreadsheetId(foundId);
-      console.log('[initializeDatabase] Found existing spreadsheet via search:', foundId);
       return foundId;
     }
   }
@@ -119,7 +119,6 @@ export async function initializeDatabase(onPhaseChange?: (phase: 'connecting' | 
   // ── Tier 3: Create (true first-run) ──────────────────────────────
   // Use drive.files.create (Drive API) with mimeType=spreadsheet — this is
   // fully compatible with drive.file scope, unlike sheetsRequest('/spreadsheets').
-  console.log('[initializeDatabase] Creating new spreadsheet in folder:', folderId);
   onPhaseChange?.('creating-sheet');
   const createRes = await googleService.driveRequest('/files', {
     method: 'POST',
@@ -133,6 +132,5 @@ export async function initializeDatabase(onPhaseChange?: (phase: 'connecting' | 
 
   const newId: string = (await createRes.json()).id;
   await setSpreadsheetId(newId);
-  console.log('[initializeDatabase] New spreadsheet created:', newId);
   return newId;
 }
