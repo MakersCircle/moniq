@@ -1,0 +1,65 @@
+name: Sync master to develop
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  sync-master-to-develop:
+    # Only run when the PR was actually merged,
+    # and skip normal develop -> master releases.
+    if: >
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.ref != 'develop'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check for existing sync PR
+        id: check_pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          EXISTING_PR=$(gh pr list \
+            --repo "${{ github.repository }}" \
+            --base develop \
+            --head master \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+
+          echo "existing_pr=$EXISTING_PR" >> "$GITHUB_OUTPUT"
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "Existing master -> develop PR found: #$EXISTING_PR"
+          else
+            echo "No existing master -> develop PR found."
+          fi
+
+      - name: Create sync PR
+        if: steps.check_pr.outputs.existing_pr == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr create \
+            --repo "${{ github.repository }}" \
+            --base develop \
+            --head master \
+            --title "chore: sync master into develop" \
+            --body "$(cat <<'EOF'
+          This PR was automatically created after a PR was merged into `master`.
+
+          Merged PR: #${{ github.event.pull_request.number }}
+          Source branch: `${{ github.event.pull_request.head.ref }}`
+
+          This keeps `develop` synchronized with production changes.
+
+          Do not close this PR unless the changes have been manually synchronized.
+          EOF
+          )" || echo "PR creation skipped: It is likely that master and develop are already identical."
