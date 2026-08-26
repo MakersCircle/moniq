@@ -862,7 +862,7 @@ export default function AddTransactionModal({
             onChange={e => setNote(e.target.value)}
             tabIndex={6}
           />
-          <div className="flex justify-end px-0.5">
+          <div className="hidden sm:flex justify-end px-0.5">
             <span className="text-[9px] text-muted-foreground/50 italic font-medium">
               Shift + Enter for new line • Enter to save
             </span>

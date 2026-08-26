@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Transaction Entry**: Display expected account balance dynamically in the Add Transaction modal based on the selected payment method and input amount.
 
 ### Changed
+- **Mobile UI**: Hidden the keyboard shortcut hints in the Add Transaction modal when viewing on mobile devices to save screen space.
 - **Mobile UI**: Increased the size of TopBar elements (logo, search bar, settings icon) and adjusted the header height for better touch targets and readability on mobile devices.
 - **UI/Errors**: Converted action errors (Sync, Hard Reset, Demo Login, Session Expiry) from silent console errors to `sonner` UI toasts.
 - **Cleanup**: Removed noisy background diagnostic `console.log` statements from Google Drive API interactions and the sync engine for a cleaner production console.
