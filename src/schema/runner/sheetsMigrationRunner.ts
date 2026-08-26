@@ -71,7 +71,6 @@ async function safeRewrite(
   await client.overwriteSheet(sheetName, rows);
 
   // Verify: sheet should have header + all data rows
-  console.log(`[SheetsMigrationRunner] Verifying row count for data integrity...`);
   const afterRows = await client.readSheet(sheetName);
   const expectedCount = rows.length + 1; // +1 for header
   if (afterRows.length !== expectedCount) {
@@ -176,7 +175,6 @@ export async function migrateSheet<T extends { id: string }>(
   const records = await getAll<T>(opts.idbStoreName);
 
   if (records.length === 0) {
-    console.log(`[migrateSheet] No records in IDB for ${opts.idbStoreName}, skipping rewrite.`);
     return;
   }
 

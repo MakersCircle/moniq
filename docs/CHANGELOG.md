@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- **UI**: Refactored alerts to a modular `AppAlert` component and fixed mobile positioning.
+- **UI/Errors**: Converted action errors (Sync, Hard Reset, Demo Login, Session Expiry) from silent console errors to `sonner` UI toasts.
+- **Cleanup**: Removed noisy background diagnostic `console.log` statements from Google Drive API interactions and the sync engine for a cleaner production console.
 ---
 
 ## [0.9.3] - 2026-08-26

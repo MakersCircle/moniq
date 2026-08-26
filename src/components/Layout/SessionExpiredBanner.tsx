@@ -1,4 +1,5 @@
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useDataStore } from '@/store/dataStore';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ export default function SessionExpiredBanner() {
       setCloudInitialized(false);
       setAccessToken(tokenResponse.access_token, expiresAt);
     },
-    onError: error => console.error('Re-auth Failed:', error),
+    onError: () => toast.error('Re-auth Failed'),
     scope:
       'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
   });

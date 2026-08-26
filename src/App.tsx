@@ -22,7 +22,8 @@ import { getMeta, setMeta } from './lib/db';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
-import { AppAlert } from './components/ui/app-alert';
+import { Toaster } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 import { googleLogout } from '@react-oauth/google';
 
 import AddTransactionModal from './components/Transactions/AddTransactionModal';
@@ -45,7 +46,6 @@ export default function App() {
 
   const [initError, setInitError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  const [showSyncToast, setShowSyncToast] = useState(false);
 
   const handleDisconnect = useCallback(() => {
     googleLogout();
@@ -94,7 +94,6 @@ export default function App() {
       const isAboutToExpire = tokenExpiresAt && Date.now() > tokenExpiresAt - fiveMinutes;
 
       if (isAboutToExpire) {
-        console.log('[App] Token about to expire, triggering proactive refresh...');
         googleService.silentRefresh();
       }
     };
@@ -137,20 +136,12 @@ export default function App() {
       try {
         // If token is expired or near expiry, try silent refresh first
         if (tokenExpiresAt && Date.now() > tokenExpiresAt - 300000) {
-          console.log('[App] Token expired or near expiry, refreshing...');
           const newToken = await googleService.silentRefresh();
           if (!newToken) {
             const isFullyExpired = Date.now() > tokenExpiresAt;
             if (isFullyExpired) {
-              console.warn(
-                '[App] Silent refresh failed and token is fully expired. Unblocking spinner.'
-              );
               useDataStore.getState().setAccessToken(null);
               return;
-            } else {
-              console.warn(
-                '[App] Silent refresh failed, but token is still valid. Proceeding with init...'
-              );
             }
           }
         }
@@ -163,9 +154,6 @@ export default function App() {
         // previous user's spreadsheet.
         const storedEmail = await getMeta('userEmail');
         if (storedEmail && storedEmail !== profile.email) {
-          console.log(
-            '[App] Different Google account detected — wiping local data to prevent cross-contamination.'
-          );
           const { clearLocalData } = await import('./lib/db');
           await clearLocalData();
 
@@ -186,8 +174,7 @@ export default function App() {
           const wasAlreadyInitialized = useDataStore.getState().isCloudInitialized;
           hydrateFromSyncRef.current(reconciledData);
           if (wasAlreadyInitialized) {
-            setShowSyncToast(true);
-            setTimeout(() => setShowSyncToast(false), 3500);
+            toast.success('Data synced from cloud');
           }
 
           // Trigger the backup check after a successful initial load
@@ -340,11 +327,7 @@ export default function App() {
         </Dialog>
       )}
 
-      {showSyncToast && (
-        <div className="fixed top-6 left-4 right-4 sm:left-auto sm:right-6 z-[100] sm:w-72 animate-in fade-in slide-in-from-top-4 pointer-events-none">
-          <AppAlert type="success" message="Data synced from cloud" />
-        </div>
-      )}
+      <Toaster />
     </BrowserRouter>
   );
 }

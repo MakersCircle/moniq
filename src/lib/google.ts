@@ -76,13 +76,11 @@ export class GoogleService {
       const { VITE_GOOGLE_CLIENT_ID } = import.meta.env;
 
       if (!window.google?.accounts?.oauth2) {
-        console.error('[GoogleService] GSI library not loaded');
         this.isRefreshing = false;
         return resolve(null);
       }
 
       const timeoutId = setTimeout(() => {
-        console.warn('[GoogleService] silentRefresh timed out after 10s');
         this.isRefreshing = false;
         resolve(null);
       }, 10000);
@@ -100,7 +98,6 @@ export class GoogleService {
             useDataStore.getState().setAccessToken(response.access_token!, expiresAt);
             resolve(response.access_token);
           } else {
-            console.warn('[GoogleService] Silent refresh failed:', response.error);
             // If it's a "user_logged_out" or similar, we should clear the session
             if (
               response.error &&
@@ -139,9 +136,8 @@ export class GoogleService {
     let currentToken = token;
 
     if (!currentToken || isAboutToExpire) {
-      if (isAboutToExpire) console.log('[GoogleService] Token about to expire, refreshing...');
       const newToken = await this.silentRefresh();
-      
+
       if (newToken) {
         currentToken = newToken;
       } else {
@@ -149,8 +145,6 @@ export class GoogleService {
         if (!currentToken || isFullyExpired) {
           useDataStore.getState().setAccessToken(null);
           throw new Error('Unauthenticated: Session expired');
-        } else {
-          console.warn('[GoogleService] Proactive refresh failed, but token is still valid. Proceeding...');
         }
       }
     }
@@ -166,12 +160,10 @@ export class GoogleService {
 
     // Handle 401 Unauthorized (fallback reactive refresh)
     if (response.status === 401) {
-      console.warn('[GoogleService] 401 detected, attempting silent refresh...');
       const newToken = await this.silentRefresh();
 
       if (newToken) {
         // Retry the request once with the new token
-        console.log('[GoogleService] Retrying request with new token');
         response = await fetch(url, {
           ...options,
           headers: {
