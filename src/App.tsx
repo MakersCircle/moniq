@@ -21,8 +21,8 @@ import { googleService } from './lib/google';
 import { getMeta, setMeta } from './lib/db';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
-import { Alert, AlertDescription } from './components/ui/alert';
+import { AlertCircle } from 'lucide-react';
+import { AppAlert } from './components/ui/app-alert';
 import { googleLogout } from '@react-oauth/google';
 
 import AddTransactionModal from './components/Transactions/AddTransactionModal';
@@ -341,16 +341,8 @@ export default function App() {
       )}
 
       {showSyncToast && (
-        <div className="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-6 z-[100] sm:w-72 animate-in fade-in slide-in-from-bottom-4 pointer-events-none">
-          <Alert
-            variant="success"
-            className="py-3 px-4 flex items-center shadow-lg bg-emerald-500/10 border-emerald-500/20 text-emerald-500 backdrop-blur-md"
-          >
-            <CheckCircle2 className="h-5 w-5 mr-3" />
-            <AlertDescription className="font-medium text-sm pt-0.5">
-              Data synced from cloud
-            </AlertDescription>
-          </Alert>
+        <div className="fixed top-6 left-4 right-4 sm:left-auto sm:right-6 z-[100] sm:w-72 animate-in fade-in slide-in-from-top-4 pointer-events-none">
+          <AppAlert type="success" message="Data synced from cloud" />
         </div>
       )}
     </BrowserRouter>

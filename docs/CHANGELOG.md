@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **UI**: Refactored alerts to a modular `AppAlert` component and fixed mobile positioning.
 ---
 
 ## [0.9.3] - 2026-08-26
