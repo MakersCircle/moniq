@@ -53,7 +53,7 @@ export default function TransactionDetailPanel({
   return (
     <div
       className={cn(
-        'fixed top-[48px] right-0 bottom-0 w-full md:w-[400px] bg-background md:border-l border-border z-[60] shadow-2xl transition-transform duration-300 ease-in-out flex flex-col',
+        'fixed top-14 lg:top-16 right-0 bottom-0 w-full md:w-[400px] bg-background md:border-l border-border z-[60] shadow-2xl transition-transform duration-300 ease-in-out flex flex-col',
         transaction ? 'translate-x-0' : 'translate-x-full'
       )}
     >
