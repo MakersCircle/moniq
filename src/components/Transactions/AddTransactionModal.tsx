@@ -27,7 +27,8 @@ interface SplitLine {
   note: string;
 }
 
-const today = new Date().toISOString().slice(0, 10);
+const now = new Date();
+const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
 interface AddTransactionModalProps {
   onClose: () => void;
@@ -228,6 +229,28 @@ export default function AddTransactionModal({
   }, [type, targetId, toAccountId]);
 
   const parsedAmount = parseFloat(amount) || 0;
+
+  const balances = useMemo(() => {
+    const map = new Map<string, number>();
+    const activeTxns = transactions.filter(
+      t => !t.isDeleted && (!initialData || isDuplicate || t.id !== initialData.id)
+    );
+    [derivedAccountId, fromAccountId, toAccountId].forEach(id => {
+      if (id && !map.has(id)) {
+        map.set(id, LedgerEngine.getNormalBalance(id, activeTxns, accounts, categories));
+      }
+    });
+    return map;
+  }, [
+    derivedAccountId,
+    fromAccountId,
+    toAccountId,
+    transactions,
+    accounts,
+    categories,
+    initialData,
+    isDuplicate,
+  ]);
   const totalSplitAmount = splits.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
   const remainingForSplits = parsedAmount - totalSplitAmount;
   const isFullyAllocated = Math.abs(remainingForSplits) < 0.01;
@@ -527,11 +550,24 @@ export default function AddTransactionModal({
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                {fromAccountId && (
-                  <p className="text-[9px] text-muted-foreground px-0.5">
-                    Account: {activeAccounts.find(a => a.id === fromAccountId)?.name}
-                  </p>
-                )}
+                {fromAccountId &&
+                  (() => {
+                    const account = activeAccounts.find(a => a.id === fromAccountId);
+                    if (!account) return null;
+                    const currentBalance = balances.get(fromAccountId) || 0;
+                    const expectedBalance = currentBalance - parsedAmount;
+                    return (
+                      <div className="flex justify-between items-center px-0.5 mt-1">
+                        <p className="text-[9px] text-muted-foreground">Account: {account.name}</p>
+                        <p className="text-[9px] text-muted-foreground">
+                          Expected Balance:{' '}
+                          <span className={expectedBalance < 0 ? 'text-expense' : ''}>
+                            {formatCurrency(expectedBalance, settings)}
+                          </span>
+                        </p>
+                      </div>
+                    );
+                  })()}
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
@@ -567,11 +603,24 @@ export default function AddTransactionModal({
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                {toAccountId && (
-                  <p className="text-[9px] text-muted-foreground px-0.5">
-                    Account: {activeAccounts.find(a => a.id === toAccountId)?.name}
-                  </p>
-                )}
+                {toAccountId &&
+                  (() => {
+                    const account = activeAccounts.find(a => a.id === toAccountId);
+                    if (!account) return null;
+                    const currentBalance = balances.get(toAccountId) || 0;
+                    const expectedBalance = currentBalance + parsedAmount;
+                    return (
+                      <div className="flex justify-between items-center px-0.5 mt-1">
+                        <p className="text-[9px] text-muted-foreground">Account: {account.name}</p>
+                        <p className="text-[9px] text-muted-foreground">
+                          Expected Balance:{' '}
+                          <span className={expectedBalance < 0 ? 'text-expense' : ''}>
+                            {formatCurrency(expectedBalance, settings)}
+                          </span>
+                        </p>
+                      </div>
+                    );
+                  })()}
               </div>
             </div>
           </>
@@ -615,11 +664,25 @@ export default function AddTransactionModal({
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                {derivedAccountId && (
-                  <p className="text-[9px] text-muted-foreground px-0.5">
-                    Account: {activeAccounts.find(a => a.id === derivedAccountId)?.name}
-                  </p>
-                )}
+                {derivedAccountId &&
+                  (() => {
+                    const account = activeAccounts.find(a => a.id === derivedAccountId);
+                    if (!account) return null;
+                    const currentBalance = balances.get(derivedAccountId) || 0;
+                    const expectedBalance =
+                      currentBalance + (type === 'income' ? parsedAmount : -parsedAmount);
+                    return (
+                      <div className="flex justify-between items-center px-0.5 mt-1">
+                        <p className="text-[9px] text-muted-foreground">Account: {account.name}</p>
+                        <p className="text-[9px] text-muted-foreground">
+                          Expected Balance:{' '}
+                          <span className={expectedBalance < 0 ? 'text-expense' : ''}>
+                            {formatCurrency(expectedBalance, settings)}
+                          </span>
+                        </p>
+                      </div>
+                    );
+                  })()}
               </div>
             </div>
 
