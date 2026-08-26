@@ -341,7 +341,7 @@ export default function App() {
       )}
 
       {showSyncToast && (
-        <div className="fixed bottom-6 right-6 z-[100] w-72 animate-in fade-in slide-in-from-bottom-4 pointer-events-none">
+        <div className="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-6 z-[100] sm:w-72 animate-in fade-in slide-in-from-bottom-4 pointer-events-none">
           <Alert
             variant="success"
             className="py-3 px-4 flex items-center shadow-lg bg-emerald-500/10 border-emerald-500/20 text-emerald-500 backdrop-blur-md"
