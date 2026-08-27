@@ -62,8 +62,9 @@ Visit `http://localhost:5173`. Log in with your Google account, and `moniq` will
 For detailed insights into how this software was designed:
 - [Product Vision](docs/product_vision.md)
 - [Design System](docs/design_system.md)
-- [Future Roadmap](docs/roadmap.md)
-- [Code Quality](docs/code_quality.md)
+- [Changelog](docs/CHANGELOG.md)
+
+Planned work and bugs are tracked as [GitHub Issues](../../issues).
 
 ## 🤝 Contributing
 Contributions, issues, and feature requests are welcome! See our [Contributing Guide](CONTRIBUTING.md) to get started.

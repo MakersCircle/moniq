@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Docs cleanup**: Removed stale planning-era docs (`layout.md`, `flow_diagram.md`, `todo.md`, `bugs.md`, `roadmap.md`) that no longer matched shipped behavior; merged `code_quality.md` into `CONTRIBUTING.md`; planned work now lives as GitHub Issues. Rewrote `product_vision.md` and `design_system.md` to match current app behavior.
+
 ---
 
 ## [0.9.4] - 2026-08-26
