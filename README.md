@@ -1,74 +1,61 @@
-# moniq
+<div align="center">
 
-A **privacy-first, manual-entry personal finance tracker** that lives entirely in your browser and syncs securely to your own Google Drive. No centralized database, no bank API scraping, and absolute control over your financial data.
+<h1 style="border-bottom: none;">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/moniq-wordmark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="public/moniq-wordmark-dark.svg">
+    <img src="public/moniq-wordmark.svg" alt="moniq" width="360">
+  </picture>
+</h1>
 
-## 🌟 Why moniq?
+**A free, privacy-first personal finance tracker with manual transaction entry and a double-entry ledger — your data syncs only to your own Google Drive, never to a third-party server.**
 
-Traditional finance apps try to do too much: they scrape your bank credentials, attempt to auto-categorize your spending (and usually fail), and lock your data into their proprietary, centralized databases.
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/MakersCircle/moniq?style=social)](https://github.com/MakersCircle/moniq)
 
-Moniq is different:
-- **Zero Lock-in**: Your data acts as your backend. Moniq creates a clean Google Sheet inside a `moniq` folder in your private Google Drive and securely syncs your JSON ledger there.
-- **Manual > Automated**: Build financial awareness by manually logging income, expenses, and transfers exactly how you want.
-- **Limitless Customization**: No hardcoded banks. Create your ultimate taxonomy of custom Accounts, Payment Methods, and Categories.
-- **Blazing Fast**: Because logic runs locally via `zustand` and `indexedDB`, the app is instantaneous. It silently writes to Google Sheets in the background using a delta-sync engine.
+**[Try moniq →](https://moniq.donsabu.com)**
 
-## ✨ Core Features
+</div>
 
-- **Double-Entry Ledger**: Professional accounting engine hidden behind a simple, intuitive UI.
-- **Speed Entry Workflow**: Optimized for bulk data entry with keyboard shortcuts (`Cmd/Ctrl + Enter`), continuous context, and smart field focusing.
-- **Advanced Sync Engine**: Robust delta-syncing with conflict resolution, automatic header repair, and support for Google Sheets serial dates.
-- **Automated Tiered Backups**: Intelligent backup system that maintains daily, weekly, monthly, and yearly snapshots in your Google Drive.
-- **Soft-Delete & Trash**: Safe deletion architecture with a centralized workspace to restore transactions, accounts, or categories.
-- **Custom Ordering**: Drag-and-drop reordering for Payment Methods and Categories to keep your most-used items on top.
-- **Net Worth Breakdown**: Real-time tracking of Liquidity vs. Long-term Savings.
+---
 
-## 🚀 Getting Started
+Most personal finance apps ask you to hand your bank credentials to a stranger's server, then guess (often wrong) at how to categorize your spending. moniq does neither. It's a web-based expense and budget tracker that writes straight to a spreadsheet inside *your own* Google Drive — no bank-account linking, no centralized database, no subscription. You enter transactions by hand, and a real double-entry accounting ledger runs quietly underneath a simple, fast UI.
 
-To run `moniq` locally on your machine:
+## Why moniq
 
-### Prerequisites
-1. Node.js (v18+)
-2. A Google Cloud Platform account (to generate an OAuth Client ID).
+- **Your Drive is the database.** moniq provisions one spreadsheet inside a `moniq/` folder in your Google Drive and syncs to it. Uninstall the app and your transaction history is still just a spreadsheet you own — nothing to export, nothing held hostage.
+- **Manual entry, on purpose.** No auto-categorization silently miscategorizing a purchase. You decide what each expense or income entry means, which is what actually builds financial awareness.
+- **A real ledger, not a glorified list.** Every entry is balanced double-entry bookkeeping — debits and credits — while the UI just asks "income, expense, or transfer?"
+- **Fully custom taxonomy.** No preset "banking app" categories. Define your own accounts, payment methods, and budget categories from scratch.
+- **Local-first and fast.** Data lives in IndexedDB first; sync to Google Sheets happens quietly in the background. Installable as a PWA, works offline.
 
-### 1. Google OAuth Setup
-1. Go to your [Google Cloud Console](https://console.cloud.google.com).
-2. Create a project and enable the **Google Sheets API** and **Google Drive API**.
-3. Under **Credentials**, create an **OAuth 2.0 Web Application Client ID**.
-4. Set the Authorized JavaScript Origins to `http://localhost:5173` (or your deployment URL).
-5. Copy the Client ID.
+## Quickstart
 
-### 2. Local Installation
 ```bash
-git clone https://github.com/YOUR_USERNAME/moniq.git
+git clone https://github.com/MakersCircle/moniq.git
 cd moniq
 npm install
-```
-
-### 3. Environment Variables
-Copy the example environment file and insert your Google Client ID:
-```bash
-cp .env.example .env
-```
-Open `.env` and set `VITE_GOOGLE_CLIENT_ID=your-client-id`.
-
-### 4. Run the App
-```bash
+cp .env.example .env   # add your own Google OAuth Client ID
 npm run dev
 ```
 
-Visit `http://localhost:5173`. Log in with your Google account, and `moniq` will automatically provision your database inside your Google Drive!
+New to the project? See [CONTRIBUTING.md](CONTRIBUTING.md) for the full Google Cloud Console setup and coding standards.
 
-## 📚 Documentation
-For detailed insights into how this software was designed:
-- [Product Vision](docs/product_vision.md)
-- [Design System](docs/design_system.md)
-- [Changelog](docs/CHANGELOG.md)
+Just want to see it working? **[moniq.donsabu.com](https://moniq.donsabu.com)** has a "try demo mode" option — no Google sign-in required.
 
-Planned work and bugs are tracked as [GitHub Issues](../../issues).
+## Learn more
 
-## 🤝 Contributing
-Contributions, issues, and feature requests are welcome! See our [Contributing Guide](CONTRIBUTING.md) to get started.
+| | |
+|---|---|
+| [Product Vision](docs/product_vision.md) | The philosophy behind manual entry, privacy, and customization |
+| [Design System](docs/design_system.md) | Colors, typography, and component conventions |
+| [Changelog](docs/CHANGELOG.md) | What's shipped, version by version |
+| [Open Issues](../../issues) | What's planned, broken, or up for grabs |
 
-## 📄 License
-This codebase is MIT Licensed. See [LICENSE](LICENSE) for details.
+## Contributing
 
+Bug reports, feature ideas, and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) to get set up.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

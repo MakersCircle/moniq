@@ -8,10 +8,25 @@ First off, thank you for considering contributing to `moniq`! We want this proje
 Please read our [Product Vision](docs/product_vision.md) before proposing structural changes, and the [Design System](docs/design_system.md) before proposing visual/UX changes.
 
 ## Development Setup
+
 1. Fork and clone the repository.
-2. Run `npm install`
-3. Copy `.env.example` to `.env` and add your Google OAuth Client ID.
+2. Run `npm install`.
+3. Create a Google OAuth Client ID (see below) and add it to `.env`.
 4. Run `npm run dev` to start the local development server.
+
+### Google OAuth Client ID
+
+moniq needs its own OAuth Client ID to talk to Google Drive/Sheets on your behalf:
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com).
+2. Create a project (or reuse one) and enable the **Google Sheets API** and **Google Drive API**.
+3. Under **Credentials**, create an **OAuth 2.0 Web Application** Client ID.
+4. Set **Authorized JavaScript origins** to `http://localhost:5173` (or wherever you're running/deploying it).
+5. Copy the Client ID, then:
+   ```bash
+   cp .env.example .env
+   ```
+   and set `VITE_GOOGLE_CLIENT_ID=your-client-id` in `.env`.
 
 ## Coding Standards
 
