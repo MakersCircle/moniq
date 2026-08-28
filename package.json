@@ -7,8 +7,9 @@
   },
   "type": "module",
   "scripts": {
+    "predev": "npm run docs:generate",
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run docs:generate && tsc -b && vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write 'src/**/*.{ts,tsx}'",

@@ -10,7 +10,7 @@ To prioritize privacy and simplicity, it leverages the user's personal Google Dr
 - **Frontend:** Single Page Application (React / Vite). Mobile-first, Progressive Web App (PWA) ready.
 - **Backend:** Serverless, driven by direct Google Sheets API calls over HTTP.
 - **Authentication:** Google Sign-In (OAuth 2.0).
-- **Database:** Google Sheets API. Each user will have their own `moniq` spreadsheet created in their Drive on first login.
+- **Database:** Google Sheets API. Each user gets a "moniq" folder created in their Drive on first login, containing a "Moniq Database" spreadsheet.
 
 ---
 
@@ -65,4 +65,15 @@ The core event log based on a **Double-Entry Ledger System**.
 - **SyncEngine:**
   - **Pull:** Reconciles local vs remote using `updatedAt` timestamps.
   - **Push:** Groups dirty operations by entity type. Uses `append` for new rows and `batchUpdate` for existing rows.
-  - **Conflict resolution:** Sheet is source of truth. Newer `updatedAt` wins.
+  - **Conflict resolution:** If a row's checksum doesn't match what Moniq last wrote (i.e. someone manually edited the sheet), the remote row unconditionally wins. Otherwise, whichever side has the newer `updatedAt` wins; on an exact tie, remote wins.
+
+---
+
+## 🗂 Schema Versioning & Migrations
+
+Moniq tracks a schema version (`CURRENT_SCHEMA_VERSION` in `src/schema/version.ts`) for both IndexedDB and the Google Sheets database, so the on-disk/on-sheet shape can evolve safely across app versions.
+
+- **Migration runners:** separate runners for IndexedDB (`src/schema/runner/idbMigrationRunner.ts`) and Sheets (`src/schema/runner/sheetsMigrationRunner.ts`), each applying versioned migration steps in order.
+- **Safety backup:** before running a Sheets migration, the engine takes a dated backup copy of the spreadsheet first, so a failed or buggy migration can be recovered from.
+- **Sync status:** while a migration is running, `SyncEngine` reports a `'migrating'` status and gates all writes — no data is flushed to the sheet mid-migration.
+- **Multi-tab coordination:** `src/schema/runner/migrationChannel.ts` broadcasts migration start/end across open tabs (via `BroadcastChannel`), so only one tab runs a migration at a time and others wait rather than racing.
