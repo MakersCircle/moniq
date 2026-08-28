@@ -16,40 +16,40 @@ To prioritize privacy and simplicity, it leverages the user's personal Google Dr
 
 ## 🗄 Database Schema (Google Sheets Outline)
 
-Instead of a traditional SQL/NoSQL database, `moniq` uses Tabs in a Google Sheet.
+Instead of a traditional SQL/NoSQL database, `moniq` uses Tabs in a Google Sheet — six data tabs plus one internal metadata tab (`SHEET_NAMES` in `src/sync/types.ts`; column lists in `src/schema/entities/*.schema.ts`). Every data sheet ends with `Is Deleted`, `Created At`, `Updated At`, and `Checksum` columns (soft-delete, timestamps for conflict resolution, and a row-integrity hash), omitted below for brevity.
 
 ### 1. `Accounts` Sheet
 Stores all custom accounts, wallets, etc. These are the source of truth for money.
-- `id` (UUID)
-- `name` (String: e.g., "SBI Savings")
-- `type` (String: "Asset", "Liability")
-- `initialBalance` (Number)
-- `isSavings` (Boolean)
-- `isActive` (Boolean)
-- `isDeleted` (Boolean)
+- `ID`, `Name`, `Type` ("Asset" | "Liability"), `Description`
+- `Is Savings` (Boolean), `Initial Balance` (Number), `Exclude Net` (Boolean — excludes this account from Net Worth calculations)
+- `Is Active` (Boolean)
 
 ### 2. `Methods` Sheet
 Stores payment channels (abstractions over accounts).
-- `id` (UUID)
-- `name` (String: e.g., "UPI", "Net Banking")
-- `linkedAccountId` (UUID of Account)
-- `isActive` (Boolean)
+- `ID`, `Name`, `Linked Account ID` (UUID of Account)
+- `Is Active` (Boolean), `Sort Order` (Number — user-controlled drag-to-reorder position)
 
 ### 3. `Categories` Sheet
 Holds headers and subheaders for tracking.
-- `id` (UUID)
-- `group` (String: "Income", "Needs", "Wants", "Invest", "Lend", "Borrow")
-- `head` (String: e.g., "Food")
-- `subHead` (String: e.g., "Groceries")
+- `ID`, `Group` ("Income" | "Needs" | "Wants" | "Invest" | "Lend" | "Borrow"), `Head` (e.g. "Food"), `Sub Head` (e.g. "Groceries")
+- `Initial Balance` (Number — opening balance for Invest/Lend/Borrow-style categories), `Is Active` (Boolean), `Sort Order` (Number)
 
 ### 4. `Transactions` Sheet
-The core event log based on a **Double-Entry Ledger System**. 
-- `id` (UUID)
-- `groupId` (UUID, used to bind related entries)
-- `date` (ISO Date string)
-- `amount` (Number)
-- `entries` (JSON String: Balanced LedgerEntry objects `[{ accountId, type, amount }]`)
-- `uiType` (String: "income", "expense", "transfer")
+The core event log based on a **Double-Entry Ledger System**.
+- `ID`, `Group ID` (UUID — note: each transaction, including each line of a split, gets its own independent Group ID; they are not linked into one shared group), `UI Type` ("income" | "expense" | "transfer")
+- `Entries JSON` (Balanced `LedgerEntry[]`: `[{ accountId, type, amount }]`), `Amount` (Number), `Date` (ISO date string)
+- `Method ID`, `Note`, `Tags` (comma-separated string)
+
+### 5. `Budgets` Sheet
+Per-category monthly allocations.
+- `ID`, `Category ID` (UUID of Category), `Period` (String, `"YYYY-MM"`), `Amount` (Number)
+
+### 6. `Settings` Sheet
+A simple key/value store for user preferences (currency, locale, date format, fiscal year start month, etc.).
+- `Key`, `Value`
+
+### `_meta` Tab (internal)
+Not a data sheet — holds the schema version (`schema_version` key) used by the migration system (see below), separate from user-facing Settings.
 
 ---
 
