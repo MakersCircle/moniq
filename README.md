@@ -10,6 +10,7 @@
 
 **A free, privacy-first personal finance tracker with manual transaction entry and a double-entry ledger — your data syncs only to your own Google Drive, never to a third-party server.**
 
+[![CI](https://github.com/MakersCircle/moniq/actions/workflows/ci.yml/badge.svg)](https://github.com/MakersCircle/moniq/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/MakersCircle/moniq?style=social)](https://github.com/MakersCircle/moniq)
 
@@ -50,7 +51,6 @@ Just want to see it working? **[moniq.donsabu.com](https://moniq.donsabu.com)** 
 | [Product Vision](docs/product_vision.md) | The philosophy behind manual entry, privacy, and customization |
 | [Design System](docs/design_system.md) | Colors, typography, and component conventions |
 | [Changelog](docs/CHANGELOG.md) | What's shipped, version by version |
-| [Open Issues](../../issues) | What's planned, broken, or up for grabs |
 
 ## Contributing
 
