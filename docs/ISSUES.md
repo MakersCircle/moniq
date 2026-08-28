@@ -531,6 +531,54 @@ This is related to, and should be fixed alongside, issue #2 in this backlog (`da
 
 ---
 
+## 26. Extract business logic out of `AddTransactionModal.tsx` into testable `LedgerEngine`/util functions
+
+```
+Extract AddTransactionModal's inline business logic into testable functions
+```
+
+```markdown
+**Type:** Refactor / Testability
+**Area:** Transactions / Ledger
+
+### Problem
+Several pieces of real business logic — not presentation — live inline inside `AddTransactionModal.tsx` (and its sibling `DatePicker.tsx`), which means they can only be exercised today by mounting the full modal and simulating every input. Two of these are also duplicated (with drift risk) in `Trash.tsx`. This is the single biggest reason `docs/testing/transactions.md`'s unit-test section is thin compared to its component-test section — the logic isn't in a unit-testable shape yet.
+
+### Findings, ranked by priority
+
+**1. Edit-mode field derivation (highest priority)** — `AddTransactionModal.tsx:59-77, 172-194, 219-229`. Reconstructs UI fields (`accountId`, `targetId`, `fromMethodId`, `toMethodId`) from a transaction's raw `entries[]` by matching DEBIT/CREDIT type against `uiType`. This is the exact inverse of `LedgerEngine.createEntries` (`src/lib/ledger.ts:92-122`), but that inverse doesn't exist as a testable function — if the two mappings drift out of sync, edit mode silently prefills the wrong account/category with zero test coverage to catch it.
+   - **Fix:** add `LedgerEngine.deriveTransactionFields(txn, accounts, methods)` to `src/lib/ledger.ts`, as the formal inverse of `createEntries`.
+
+**2. `isValidTransaction` validation memo** — `AddTransactionModal.tsx:258-282`. The full save-gating ruleset (amount > 0, valid date, per-type field requirements, split-allocation completeness) lives inline as a `useMemo`. This is the single most important business rule in the form and currently can't be unit tested without full mount.
+   - **Fix:** extract `isValidTransactionInput(input: {...}): boolean` (or a discriminated result naming the failing rule) into `src/lib/ledger.ts` or a new `src/lib/transactionValidation.ts`.
+
+**3. Expected-balance preview + split-allocation math** — `AddTransactionModal.tsx:233-256`. Balance-preview calc excludes the transaction being edited from its own prior effect (`!initialData || isDuplicate || t.id !== initialData.id` — an easy off-by-one-condition bug); split totals/remaining/allocation use a hand-rolled epsilon check that duplicates (rather than reuses) `LedgerEngine.validate`'s existing epsilon pattern (`ledger.ts:86`).
+   - **Fix:** extract `computeExpectedBalance(...)` and `computeSplitAllocation(totalAmount, splits)` into `src/lib/ledger.ts`, reusing the existing epsilon constant.
+
+**4. `Trash.tsx` restore guards** — `Trash.tsx:57-118`. Blocks restoring a Method whose linked Account is still deleted, and blocks restoring a Transaction whose Account or (non-transfer) Category is still deleted. This re-derives the same DEBIT/CREDIT-vs-`uiType` entry-matching heuristic as finding #1, independently — duplicated logic, real data-integrity risk if the two copies drift.
+   - **Fix:** extract to `src/lib/restoreGuards.ts` (`canRestoreMethod`, `canRestoreTransaction`), reusing `deriveTransactionFields` from #1 for the entry-matching instead of re-implementing it.
+
+**5. Dashboard receivable/payable summary** — `Dashboard.tsx:117-157`. An inline IIFE filters accounts by `description?.toLowerCase() === 'receivable'|'payable'` — a fragile string-match standing in for what should be a typed account role, with no validation against typos/casing/whitespace variants silently dropping an account from the totals.
+   - **Fix:** extract `computeReceivablePayable(accounts, balances)` into `src/utils/accountRoles.ts` (or `src/lib/ledger.ts` if this becomes a first-class "account role" concept).
+
+**6. Dashboard net worth / liquidity / savings split** — `Dashboard.tsx:30-40`. A `useMemo` combining five boolean/enum conditions (`isActive`, `isDeleted`, `excludeFromNet`, `isSavings`, `type === 'Asset'`) to bucket accounts into net worth, liquidity, and savings totals — easy to get one AND/OR wrong, currently untested.
+   - **Fix:** extract as `useNetWorthSummary` in `src/hooks/useComputed.ts`, matching the existing `useBudgetSummary` pattern exactly.
+
+**7. `DatePicker.tsx` format-parsing cascade** — `DatePicker.tsx:55-86, 92-119`. Two near-identical 13-candidate date-format arrays with round-trip validation heuristics, duplicated between the input-change and blur handlers. Confirmed to operate purely on the input string plus `date-fns` calls — no component-state coupling, a clean pure-function candidate.
+   - **Fix:** extract `parseFlexibleDate(value: string): { date: Date | null; isComplete: boolean }` into `src/utils/dateParsing.ts`, consumed by both handlers (also de-duplicates the 13-format array).
+
+**8. Minor/DRY-only** — percent-of-total is independently recomputed in both `Dashboard.tsx:232-235` and `Insights.tsx:136` from the same `useCategorySpend` data. Low bug-risk, but worth folding a `percent` field directly onto `useCategorySpend`'s return in `useComputed.ts` to remove the duplication.
+
+`Budget.tsx` needs no changes — it already fully delegates its calculations to `useBudgetSummary` and is the reference example this issue is asking the rest of the codebase to match.
+
+### Suggested order
+Do #1 first (unblocks #4 for free, since restoreGuards can reuse it), then #2 and #3 (both isolated, no cross-dependency), then #5–#7 (independent, can be parallelized), then #8 last as cleanup.
+
+**Suitable for:** an AI coding agent, one extraction at a time — each item is independently testable and low-risk in isolation, but #1 and #4 touch ledger-entry semantics and deserve a quick correctness review (compare old vs. new behavior on a real edit-mode transaction) before merging.
+```
+
+---
+
 ## 16. [SECURITY — HIGH] Shared-device sessions can expose one user's financial data to the next person who opens the app
 
 ```
