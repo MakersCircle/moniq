@@ -45,3 +45,6 @@ public/new-logos/
 test-results/
 playwright-report/
 playwright/.cache/
+
+# Generated in-app changelog doc (copied from docs/CHANGELOG.md on dev/build)
+src/docs/changelog.mdx

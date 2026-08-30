@@ -1,45 +1,52 @@
 # Product Vision & Requirements
-**moniq** is a highly customizable, manual-entry personal finance tracking application designed to give users absolute control over their ledgers. It avoids opinionated integrations and banking APIs, allowing users to build a custom map of their financial reality.
+
+**moniq** is a manual-entry personal finance tracker. Users define their own accounts, payment methods, and categories rather than relying on bank integrations or auto-categorization.
 
 ## 1. Product Philosophy
-- **Manual > Automated**: The user stays in control. Data is entered explicitly.
-- **Customizable > Opinionated**: Build your own categories and sources.
-- **Privacy-first**: No central backend. Data is securely backed up directly to the user's Google Drive.
-- **Global-first**: No country, bank, or currency assumptions.
+
+- **Manual entry.** Users log income, expenses, and transfers explicitly. There is no bank-account linking or transaction auto-import.
+- **No fixed taxonomy.** Accounts, payment methods, and categories are entirely user-defined, not selected from a preset list.
+- **No central backend.** User data is not stored on any moniq-operated server. It's persisted locally and synced to the user's own Google Drive.
+- **No regional assumptions.** The app makes no assumptions about country, bank, or currency.
 
 ## 2. Target Audience
-- Salaried professionals seeking simple zero-based budgeting.
-- Privacy-conscious users who prefer owning their data (via Google Sheets backend).
-- Individuals looking for strict manual tracking to increase financial awareness.
-- Freelancers and multi-currency earners.
-- Global users outside major API ecosystems (e.g., heavily utilizing cash or custom wallets).
+
+- Users who prefer to keep their financial data in their own Google Drive rather than a third-party database.
 
 ## 3. Core Capabilities
-Allow a single user to define where their money lives, manually record all financial activity, track balances accurately, and see simple monthly insights.
+
+Let a single user define where their money lives, manually record financial activity, track balances accurately, and see monthly summaries.
 
 ### 3.1 Authentication & Data Storage
+
 - Users authenticate via Google Sign-In.
-- The app provisions a `Moniq Database` Spreadsheet inside a `moniq/` folder in the user's Drive.
-- Data changes sync directly to the Google Sheets API without storing user ledgers on an intermediate centralized database. Local state is persisted via `zustand/persist` with IndexedDB (`idb` library) and synced to Google Sheets via a client-side SyncEngine with conflict resolution, debounced writes, and retry logic.
+- The app provisions a `Moniq Database` spreadsheet inside a `moniq/` folder in the user's Drive.
+- Data syncs directly to the Google Sheets API — there is no intermediate centralized database. Local state is persisted via `zustand/persist` with IndexedDB (`idb` library) and synced to Google Sheets via a client-side SyncEngine with conflict resolution, debounced writes, and retry logic.
 
 ### 3.2 Master Configurations
-- **Accounts**: Users create, edit, archive, and safely delete custom "Accounts" where money resides (e.g., Bank, Wallet, Stash, Investment). These follow strict Asset/Liability classifications. Deleting an account cascade-removes its linked payment methods (if unreferenced by transactions).
-- **Payment Methods**: Users define "Payment Methods" representing how money moves (e.g., UPI, Card, Cash) and bind them to specific Accounts. A default payment method is automatically created when a new account is added.
-- **Categories**: A custom taxonomy for spend/income comprising Groups, Heads, and Sub-heads (e.g., Needs > Food > Groceries).
-- **Onboarding**: New users are offered curated defaults (accounts & categories from `src/data/defaults.json`) via an interactive onboarding modal, or may start from a blank slate.
 
-### 3.3 Transaction Logging (The Engine)
-- **Double-Entry Ledger**: Every transaction is recorded as a set of balanced ledger entries (Debits/Credits) behind the scenes.
-- Transactions support 3 primary modes: Income, Expense, Transfer.
-- **Split Transactions**: Support multiple categories within a single transaction entry (e.g., a single supermarket receipt split into Groceries and Household Items).
+- **Accounts**: Users create, edit, archive, and delete accounts where money resides (e.g. Bank, Wallet, Investment), classified as Asset or Liability. Deleting an account cascades to remove its linked payment methods, if unreferenced by transactions.
+- **Payment Methods**: Users define payment methods (e.g. UPI, Card, Cash) bound to a specific account. A default payment method is created automatically when a new account is added.
+- **Categories**: A user-defined taxonomy for spend/income, structured as Group → Head → Sub-head (e.g. Needs → Food → Groceries). Category groups include Income, Needs, Wants, Invest, Lend, and Borrow.
+
+### 3.3 Transaction Logging
+
+- **Double-entry ledger**: Every transaction is recorded as a set of balanced ledger entries (debits/credits) internally.
+- Transactions support three modes: Income, Expense, Transfer.
+- **Split transactions**: A single transaction can be divided across multiple categories (e.g. one supermarket receipt split into Groceries and Household Items).
 
 ### 3.4 Budgets & Lending
-- **Zero-based Budgeting**: A dedicated module for allocating monthly income into category buckets and tracking real-time spending against these allocations.
-- **Lend/Borrow**: Track lending money to friends (Loan Given) or borrowing (Loan Taken) using specific "Accounts" to maintain receivable/payable ledgers.
 
-### 3.5 Dashboards, Analytics & Export
-- **Desktop Command Center**: Balanced dashboard with high-level stats (Net Worth, Savings Rate) and detailed panel views for Accounts and Spending.
-- **Global Search**: Command-palette style quick-find for transactions, accounts, and navigation.
-- **Insights Engine**: Dedicated analytics page with category distribution, monthly trends, and income vs. expense bars.
-- **Spreadsheet Ledger**: A high-density transaction log with right-side detail panels and inline filtering.
-- **Export functionality (CSV)**: Download structured spending reports generated from the double-entry records.
+- **Zero-based budgeting**: Users allocate monthly income into category buckets and track spending against those allocations.
+- **Lend/Borrow**: Money lent to or borrowed from others is tracked via the Lend/Borrow category groups, maintaining receivable/payable balances.
+
+### 3.5 Dashboards & Analytics
+
+- **Dashboard**: Net worth, income, expenses, and savings-rate stats, with detail views for accounts and spending. Uses a bottom-nav/FAB layout on mobile and a sidebar layout on desktop.
+- **Insights**: A dedicated analytics page with category distribution, monthly trends, and income-vs-expense comparisons.
+- **Ledger**: A transaction log with a detail panel (side panel on desktop, bottom sheet on mobile) and inline filtering.
+
+### 3.6 Offline & Cross-Device
+
+- **Local-first & PWA**: All logic runs against IndexedDB first. The app is installable as a PWA and its shell loads offline.
+- **Demo Mode**: A local, no-login trial mode for evaluating the app before connecting a Google account.

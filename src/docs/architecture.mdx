@@ -1,0 +1,114 @@
+# System Architecture
+
+`moniq` is designed to be a lightweight, serverless (or "bring your own storage") application.
+To prioritize privacy and simplicity, it leverages the user's personal Google Drive via **Google Sheets** as the primary datastore, protected by **Google OAuth.**
+
+## High-Level Architecture
+
+### Characteristics
+
+- **Frontend:** Single Page Application (React / Vite). Mobile-first, Progressive Web App (PWA) ready.
+- **Backend:** Serverless, driven by direct Google Sheets API calls over HTTP.
+- **Authentication:** Google Sign-In (OAuth 2.0).
+- **Database:** Google Sheets API. Each user gets a "moniq" folder created in their Drive on first login, containing a "Moniq Database" spreadsheet.
+
+---
+
+## Database Schema (Google Sheets Outline)
+
+Instead of a traditional SQL/NoSQL database, `moniq` uses Tabs in a Google Sheet — six data tabs plus one internal metadata tab (`SHEET_NAMES` in `src/sync/types.ts`; column lists in `src/schema/entities/*.schema.ts`). Every data sheet ends with `Is Deleted`, `Created At`, `Updated At`, and `Checksum` columns (soft-delete, timestamps for conflict resolution, and a row-integrity hash), omitted below for brevity.
+
+### 1. `Accounts` Sheet
+Stores all custom accounts, wallets, etc. These are the source of truth for money.
+- `ID`, `Name`, `Type` ("Asset" | "Liability"), `Description`
+- `Is Savings` (Boolean), `Initial Balance` (Number), `Exclude Net` (Boolean — excludes this account from Net Worth calculations)
+- `Is Active` (Boolean)
+
+### 2. `Methods` Sheet
+Stores payment channels (abstractions over accounts).
+- `ID`, `Name`, `Linked Account ID` (UUID of Account)
+- `Is Active` (Boolean), `Sort Order` (Number — user-controlled drag-to-reorder position)
+
+### 3. `Categories` Sheet
+Holds headers and subheaders for tracking.
+- `ID`, `Group` ("Income" | "Needs" | "Wants" | "Invest" | "Lend" | "Borrow"), `Head` (e.g. "Food"), `Sub Head` (e.g. "Groceries")
+- `Initial Balance` (Number — opening balance for Invest/Lend/Borrow-style categories), `Is Active` (Boolean), `Sort Order` (Number)
+
+### 4. `Transactions` Sheet
+The core event log based on a **Double-Entry Ledger System**.
+- `ID`, `Group ID` (UUID — note: each transaction, including each line of a split, gets its own independent Group ID; they are not linked into one shared group), `UI Type` ("income" | "expense" | "transfer")
+- `Entries JSON` (Balanced `LedgerEntry[]`: `[{ accountId, type, amount }]`), `Amount` (Number), `Date` (ISO date string)
+- `Method ID`, `Note`, `Tags` (comma-separated string)
+
+### 5. `Budgets` Sheet
+Per-category monthly allocations.
+- `ID`, `Category ID` (UUID of Category), `Period` (String, `"YYYY-MM"`), `Amount` (Number)
+
+### 6. `Settings` Sheet
+A simple key/value store for user preferences (currency, locale, date format, fiscal year start month, etc.).
+- `Key`, `Value`
+
+### `_meta` Tab (internal)
+Not a data sheet — holds the schema version (`schema_version` key) used by the migration system (see below), separate from user-facing Settings.
+
+---
+
+## First-Run Resolution (Drive Folder & Spreadsheet)
+
+Both the root `moniq` Drive folder and the `Moniq Database` spreadsheet inside it are resolved through the identical persist-search-create pattern (`src/api/google.ts`):
+
+1. **Persist:** Reuse the ID already stored in IndexedDB from a previous session, after verifying via `GET /files/{id}?fields=id,trashed` that it still exists and isn't trashed. If stale, the ID is cleared and resolution falls through to the next step.
+2. **Search:** Query Drive's `files.list` — for the folder: `name='moniq' and mimeType='application/vnd.google-apps.folder' and trashed=false`; for the spreadsheet: the same idea scoped to `'{folderId}' in parents`. This step is what makes cross-device continuity work: signing in on a new device with no local IDs still finds the existing folder/spreadsheet.
+3. **Create:** Only on a true first run. Both are created via a Drive API `POST /files` call, not the Sheets API. This is deliberate: `drive.file` scope only grants access to files the app creates or the user explicitly opens with it, and creating the spreadsheet through Drive's `files.create` (with `mimeType: application/vnd.google-apps.spreadsheet`) keeps it inside that scope, whereas the Sheets API's own `spreadsheets.create` endpoint is not.
+
+---
+
+## API & Integration Layers
+
+### 1. Google OAuth Authentication
+- Scopes: `email`, `profile`, `drive.file`
+- The app only accesses files it created itself.
+
+### 2. State Management & Sync (Client-Side)
+- **Local Storage:** `zustand/persist` with a custom IndexedDB adapter (`idb` library).
+- **Optimistic UI:** Mutations update the Zustand store immediately. The SyncEngine debounces writes (3s window) before flushing.
+- **SyncEngine:**
+  - **Pull:** Reconciles local vs remote using `updatedAt` timestamps.
+  - **Push:** Groups dirty operations by entity type. Uses `append` for new rows and `batchUpdate` for existing rows.
+  - **Conflict resolution:** If a row's checksum doesn't match what Moniq last wrote (i.e. someone manually edited the sheet), the remote row unconditionally wins. Otherwise, whichever side has the newer `updatedAt` wins; on an exact tie, remote wins.
+
+---
+
+## Schema Versioning & Migrations
+
+Moniq tracks a schema version (`CURRENT_SCHEMA_VERSION` in `src/schema/version.ts`) for both IndexedDB and the Google Sheets database, so the on-disk/on-sheet shape can evolve safely across app versions.
+
+- **Migration runners:** separate runners for IndexedDB (`src/schema/runner/idbMigrationRunner.ts`) and Sheets (`src/schema/runner/sheetsMigrationRunner.ts`), each applying versioned migration steps in order.
+- **Safety backup:** before running a Sheets migration, the engine takes a dated backup copy of the spreadsheet first, so a failed or buggy migration can be recovered from.
+- **Sync status:** while a migration is running, `SyncEngine` reports a `'migrating'` status and gates all writes — no data is flushed to the sheet mid-migration.
+- **Multi-tab coordination:** `src/schema/runner/migrationChannel.ts` broadcasts migration start/end across open tabs (via `BroadcastChannel`), so only one tab runs a migration at a time and others wait rather than racing.
+
+---
+
+## Automated Backups
+
+`BackupManager` (`src/sync/BackupManager.ts`) maintains dated snapshot copies of the live spreadsheet in a "Moniq Backups" Drive folder, resolved the same persist-search-create way as the main data folder (nested under the root `moniq` folder when known).
+
+- **Tiers and retention:** `manual: 5`, `daily: 7`, `weekly: 5`, `monthly: 12`, `yearly: 999` (practically unenforced — cleanup is skipped for any limit over 100).
+- **"Due" check:** for each tier, the latest existing backup's date is compared against the current period — today's date (daily), current ISO week (weekly), current `YYYY-MM` (monthly), or current fiscal year (yearly). The yearly tier is fiscal-year-aware: `fiscalYearStartMonth` (from Settings, defaulting to April for INR users and January otherwise) determines whether the current month rolls into this calendar year's fiscal year or the previous one.
+- **Manual backups** are never picked up by the due-check — they're only created when a user explicitly triggers a backup, which forces the tier to `manual` regardless of schedule.
+- **Naming:** `moniq-backup-{tier}-{timestamp}`, created via a true Drive-level file copy of the live spreadsheet (not a Sheets-API export).
+- **When it runs:** once per session, after the initial data load and after every successful sync flush (gated by a session flag so it isn't re-checked on every single flush), plus a 12-hour background timer that re-checks while the app stays open across a session boundary. A single in-memory flag prevents overlapping backup cycles.
+
+---
+
+## Demo Mode
+
+A fully local, no-sign-in trial mode (`src/store/slices/syncSlice.ts`) for evaluating Moniq without a Google account.
+
+- **Entering:** wipes any existing local data, then resets state to a clean slate with a persisted `isDemoMode` flag — no Google API calls are made at any point while in this mode.
+- **Persistence:** on reload, the `isDemoMode` flag is checked before anything else; if set, all entity data is restored straight from IndexedDB and the normal token/settings hydration path is skipped entirely.
+- **Exiting — Keep Data & Sync:** signs in with Google, clears the demo flag, and leaves existing local data untouched. There's no explicit push step — the existing records simply pick up a `spreadsheetId` and flow through the normal sync queue on the next flush.
+- **Exiting — Discard & Start Fresh:** signs in with Google and performs a full reset (wipes IndexedDB, resets all state) before continuing, so the account starts with nothing.
+
+Both exit paths request the same `drive.file` scope as the main sign-in flow.

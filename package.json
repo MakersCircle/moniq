@@ -7,8 +7,10 @@
   },
   "type": "module",
   "scripts": {
+    "predev": "npm run docs:sync-changelog",
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run docs:sync-changelog && tsc -b && vite build",
+    "docs:sync-changelog": "node scripts/sync-changelog-doc.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write 'src/**/*.{ts,tsx}'",
@@ -19,7 +21,6 @@
     "test:all": "npm run test && npm run test:e2e",
     "preview": "npm run build && wrangler dev",
     "prepare": "husky",
-    "docs:generate": "typedoc",
     "deploy": "npm run build && wrangler deploy"
   },
   "lint-staged": {
@@ -90,8 +91,6 @@
     "msw": "^2.15.0",
     "prettier": "^3.9.6",
     "tailwindcss": "^4.2.2",
-    "typedoc": "^0.28.20",
-    "typedoc-plugin-markdown": "^4.11.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.67.0",
     "vite": "^8.2.1",
