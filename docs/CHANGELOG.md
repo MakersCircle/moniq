@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Docs cleanup**: Removed stale planning-era docs (`layout.md`, `flow_diagram.md`, `todo.md`, `bugs.md`, `roadmap.md`) that no longer matched shipped behavior; merged `code_quality.md` into `CONTRIBUTING.md`; planned work now lives as GitHub Issues. Rewrote `product_vision.md` and `design_system.md` to match current app behavior.
 
+### Fixed
+- **Dashboard Calculations**: Fixed Net Liquid Assets (formerly Net Worth) calculation to correctly subtract liability balances instead of adding them, and extracted dashboard calculation logic into a reusable `useNetWorthSummary` hook.
+- **Terminology**: Renamed "Net Worth" to "Net Liquid Assets" throughout the app (dashboard stat card, account exclusion setting) to better reflect what the app is tracking (cash/bank accounts vs. total asset net worth).
+
 ---
 
 ## [0.9.4] - 2026-08-26

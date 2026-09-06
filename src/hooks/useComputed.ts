@@ -30,6 +30,40 @@ export function useAllBalances(): Record<string, number> {
 }
 
 /**
+ * Net Liquid Assets summary for the dashboard.
+ */
+export function useNetWorthSummary() {
+  const { accounts } = useDataStore();
+  const balances = useAllBalances();
+
+  return useMemo(() => {
+    const activeAccounts = accounts.filter(s => s.isActive && !s.isDeleted && !s.excludeFromNet);
+
+    let netWorth = 0;
+    let liquidity = 0;
+    let totalSavings = 0;
+
+    for (const s of activeAccounts) {
+      const balance = balances[s.id] || 0;
+
+      if (s.type === 'Liability') {
+        netWorth -= balance;
+      } else {
+        netWorth += balance;
+
+        if (s.isSavings) {
+          totalSavings += balance;
+        } else {
+          liquidity += balance;
+        }
+      }
+    }
+
+    return { netWorth, liquidity, totalSavings };
+  }, [accounts, balances]);
+}
+
+/**
  * Returns the summary for a specific month.
  */
 export function useMonthSummary(year: number, month: number) {

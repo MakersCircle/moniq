@@ -8,7 +8,12 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useDataStore } from '../store/dataStore';
-import { useAllBalances, useMonthSummary, useCategorySpend } from '../hooks/useComputed';
+import {
+  useAllBalances,
+  useMonthSummary,
+  useCategorySpend,
+  useNetWorthSummary,
+} from '../hooks/useComputed';
 import { formatCurrency, formatCurrencyShort } from '../utils/format';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -27,17 +32,7 @@ export default function Dashboard() {
   const categorySpend = useCategorySpend(year, month);
 
   // Stats Calculations
-  const { netWorth, liquidity, totalSavings } = useMemo(() => {
-    const activeAccounts = accounts.filter(s => s.isActive && !s.isDeleted && !s.excludeFromNet);
-    const nw = activeAccounts.reduce((sum, s) => sum + (balances[s.id] || 0), 0);
-    const liq = activeAccounts
-      .filter(s => !s.isSavings && s.type === 'Asset')
-      .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
-    const sav = activeAccounts
-      .filter(s => s.isSavings && s.type === 'Asset')
-      .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
-    return { netWorth: nw, liquidity: liq, totalSavings: sav };
-  }, [accounts, balances]);
+  const { netWorth, liquidity, totalSavings } = useNetWorthSummary();
 
   const savingsRate = income > 0 ? ((income - expenses) / income) * 100 : 0;
 
@@ -89,7 +84,7 @@ export default function Dashboard() {
       {/* Top Stats Row — 4 Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Net Worth"
+          label="Net Liquid Assets"
           value={netWorth}
           settings={settings}
           detail={`Liq: ${formatCurrencyShort(liquidity, settings.currencySymbol)} · Sav: ${formatCurrencyShort(totalSavings, settings.currencySymbol)}`}

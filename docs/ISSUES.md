@@ -561,7 +561,7 @@ Several pieces of real business logic — not presentation — live inline insid
 **5. Dashboard receivable/payable summary** — `Dashboard.tsx:117-157`. An inline IIFE filters accounts by `description?.toLowerCase() === 'receivable'|'payable'` — a fragile string-match standing in for what should be a typed account role, with no validation against typos/casing/whitespace variants silently dropping an account from the totals.
    - **Fix:** extract `computeReceivablePayable(accounts, balances)` into `src/utils/accountRoles.ts` (or `src/lib/ledger.ts` if this becomes a first-class "account role" concept).
 
-**6. Dashboard net worth / liquidity / savings split** — `Dashboard.tsx:30-40`. A `useMemo` combining five boolean/enum conditions (`isActive`, `isDeleted`, `excludeFromNet`, `isSavings`, `type === 'Asset'`) to bucket accounts into net worth, liquidity, and savings totals — easy to get one AND/OR wrong, currently untested.
+**6. Dashboard net liquid assets / liquidity / savings split** — `Dashboard.tsx:30-40`. A `useMemo` combining five boolean/enum conditions (`isActive`, `isDeleted`, `excludeFromNet`, `isSavings`, `type === 'Asset'`) to bucket accounts into net liquid assets, liquidity, and savings totals — easy to get one AND/OR wrong, currently untested.
    - **Fix:** extract as `useNetWorthSummary` in `src/hooks/useComputed.ts`, matching the existing `useBudgetSummary` pattern exactly.
 
 **7. `DatePicker.tsx` format-parsing cascade** — `DatePicker.tsx:55-86, 92-119`. Two near-identical 13-candidate date-format arrays with round-trip validation heuristics, duplicated between the input-change and blur handlers. Confirmed to operate purely on the input string plus `date-fns` calls — no component-state coupling, a clean pure-function candidate.
