@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Dashboard Calculations**: Fixed Net Liquid Assets (formerly Net Worth) calculation to correctly subtract liability balances instead of adding them, and extracted dashboard calculation logic into a reusable `useNetWorthSummary` hook.
 - **Terminology**: Renamed "Net Worth" to "Net Liquid Assets" throughout the app (dashboard stat card, account exclusion setting) to better reflect what the app is tracking (cash/bank accounts vs. total asset net worth).
+- **Mobile UI**: Optimized the dashboard's "Recent Transactions" table for mobile devices by stacking category names under descriptions and removing the "Type" column to prevent horizontal scrolling.
+- **Mobile UI**: Reduced global page padding on mobile to maximize screen space and refined vertical spacing for dashboard stat cards and sections.
+- **Mobile UI**: Refined the dashboard Stat Cards to use a 2-column layout on standard phones while gracefully collapsing to 1 column on ultra-narrow screens (e.g. 320px) to prevent amount truncation.
+- **Dashboard UI**: Fixed a text wrapping bug on the "Recent Transactions" header by enforcing proper flex constraints (`truncate` and `flex-shrink-0`) uniformly across all section headers.
+- **Dashboard UI**: Changed the Accounts and Spending Break down cards to have dynamic heights based purely on their internal content limits, rather than forcibly stretching to match each other.
+- **Transactions UI**: Globally updated the transfer amount color to blue to easily distinguish them from income (green) and expenses (red) without needing a dedicated "Type" column.
 
 ---
 

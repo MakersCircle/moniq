@@ -64,9 +64,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-12 pb-10 px-1">
+    <div className="space-y-6 sm:space-y-12 pb-10 px-1">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-row items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground">{monthLabel}</p>
@@ -82,7 +82,7 @@ export default function Dashboard() {
       </div>
 
       {/* Top Stats Row — 4 Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 min-[340px]:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           label="Net Liquid Assets"
           value={netWorth}
@@ -152,17 +152,17 @@ export default function Dashboard() {
       })()}
 
       {/* Middle Row — 50/50 Split */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-12 items-start">
         {/* Left Pane: Accounts */}
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
-              <Wallet className="h-4 w-4" />
-              Accounts
+          <div className="flex items-center justify-between gap-4">
+            <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-muted-foreground truncate">
+              <Wallet className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">Accounts</span>
             </h3>
             <Link
               to="/settings/accounts"
-              className="text-[10px] font-bold text-primary hover:underline"
+              className="text-[10px] font-bold text-primary hover:underline whitespace-nowrap flex-shrink-0"
             >
               Manage ›
             </Link>
@@ -207,18 +207,21 @@ export default function Dashboard() {
 
         {/* Right Pane: Spending Break down */}
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
-              <PieChartIcon className="h-4 w-4" />
-              Spending This Month
+          <div className="flex items-center justify-between gap-4">
+            <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-muted-foreground truncate">
+              <PieChartIcon className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">Spending This Month</span>
             </h3>
-            <Link to="/insights" className="text-[10px] font-bold text-primary hover:underline">
+            <Link
+              to="/insights"
+              className="text-[10px] font-bold text-primary hover:underline whitespace-nowrap flex-shrink-0"
+            >
               Analysis ›
             </Link>
           </div>
-          <Card className="p-6 border-border h-full min-h-[200px]">
+          <Card className="p-6 border-border">
             {categorySpend.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-muted-foreground italic text-sm py-10">
+              <div className="flex flex-col items-center justify-center text-muted-foreground italic text-sm py-10">
                 No data for this month
               </div>
             ) : (
@@ -258,11 +261,14 @@ export default function Dashboard() {
 
       {/* Bottom Row — Recent Transactions */}
       <section className="space-y-4 pt-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+        <div className="flex items-center justify-between gap-4">
+          <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground truncate">
             Recent Transactions
           </h3>
-          <Link to="/transactions" className="text-[10px] font-bold text-primary hover:underline">
+          <Link
+            to="/transactions"
+            className="text-[10px] font-bold text-primary hover:underline whitespace-nowrap flex-shrink-0"
+          >
             View Ledger ›
           </Link>
         </div>
@@ -301,20 +307,25 @@ function StatCard({
 }: StatCardProps) {
   return (
     <Card className="border-border shadow-sm hover:border-primary/30 transition-colors">
-      <CardContent className="p-6">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
+      <CardContent className="p-4 sm:p-6 overflow-hidden">
+        <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 sm:mb-3 truncate">
           {label}
         </p>
         <p
           className={cn(
-            'text-2xl font-bold mono tracking-tight mb-1',
+            'text-lg sm:text-2xl font-bold mono tracking-tight mb-1',
             valueColor || 'text-foreground'
           )}
         >
           {isPercent ? `${value.toFixed(1)}%` : formatCurrency(value, settings)}
         </p>
         {detail && (
-          <p className={cn('text-[11px] font-medium', detailColor || 'text-muted-foreground')}>
+          <p
+            className={cn(
+              'text-[9px] sm:text-[11px] font-medium truncate',
+              detailColor || 'text-muted-foreground'
+            )}
+          >
             {detail}
           </p>
         )}
