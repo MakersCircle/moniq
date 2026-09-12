@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fiscal Year**: Added an Indian Fiscal Year (April 1 - March 31) calculation hook (`useFiscalYearSummary`) and integrated it into the dashboard Income and Expenses cards to show YTD progress.
 
 ### Changed
+- **Dashboard Refactor**: Completely separated the Dashboard's UI layer from its business logic by extracting all data processing, calculations, and memos into a clean `useDashboardData` hook.
 - **Dashboard UI**: Changed the dashboard Accounts list to dynamically sort and display the 5 most recently used accounts based on your transaction history, rather than a static list.
 - **Terminology**: Renamed "Net Liquid Assets" to "Total Net Worth" and "Liq" to "Spendable Cash" on the dashboard stat card for clarity.
 - **Stat Cards**: Upgraded dashboard Stat Cards to support multi-line detail text, completely eliminating truncation issues for long labels (like Spendable Cash).

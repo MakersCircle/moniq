@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   TrendingUp,
@@ -7,14 +6,7 @@ import {
   PieChart as PieChartIcon,
   ArrowRight,
 } from 'lucide-react';
-import { useDataStore } from '../store/dataStore';
-import {
-  useAllBalances,
-  useMonthSummary,
-  useCategorySpend,
-  useNetWorthSummary,
-  useFiscalYearSummary,
-} from '../hooks/useComputed';
+import { useDashboardData } from '../hooks/useDashboardData';
 import { formatCurrency, formatCurrencyShort } from '../utils/format';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,55 +15,27 @@ import RecentTransactionsTable from '@/components/Dashboard/RecentTransactionsTa
 import type { UserSettings } from '@/types';
 
 export default function Dashboard() {
-  const { accounts, transactions, settings } = useDataStore();
-  const balances = useAllBalances();
+  const {
+    accounts,
+    settings,
+    balances,
+    monthLabel,
+    income,
+    expenses,
+    categorySpend,
+    fySummary,
+    netWorth,
+    liquidity,
+    totalSavings,
+    savingsRate,
+    recentTxns,
+    topAccounts,
+    totalReceivable,
+    totalPayable,
+    isEmpty,
+  } = useDashboardData();
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const { income, expenses } = useMonthSummary(year, month);
-  const categorySpend = useCategorySpend(year, month);
-  const fySummary = useFiscalYearSummary(now);
-
-  // Stats Calculations
-  const { netWorth, liquidity, totalSavings } = useNetWorthSummary();
-
-  const savingsRate = income > 0 ? ((income - expenses) / income) * 100 : 0;
-
-  const recentTxns = useMemo(() => {
-    return transactions
-      .filter(t => !t.isDeleted)
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, 5);
-  }, [transactions]);
-
-  const topAccounts = useMemo(() => {
-    const activeAccounts = accounts.filter(s => s.isActive && !s.isDeleted);
-
-    const lastUsedMap = new Map<string, string>();
-    transactions.forEach(t => {
-      if (t.isDeleted) return;
-      t.entries.forEach(e => {
-        const current = lastUsedMap.get(e.accountId) || '';
-        if (t.date > current) {
-          lastUsedMap.set(e.accountId, t.date);
-        }
-      });
-    });
-
-    return activeAccounts
-      .sort((a, b) => {
-        const aDate = lastUsedMap.get(a.id) || '';
-        const bDate = lastUsedMap.get(b.id) || '';
-        if (aDate === bDate) return 0;
-        return aDate > bDate ? -1 : 1;
-      })
-      .slice(0, 5);
-  }, [accounts, transactions]);
-
-  const monthLabel = now.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
-
-  if (transactions.length === 0) {
+  if (isEmpty) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50dvh] lg:h-[70vh] py-12 text-center px-4">
         <div className="h-16 w-16 lg:h-24 lg:w-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
@@ -157,47 +121,36 @@ export default function Dashboard() {
       </div>
 
       {/* Lending & Debt Stats */}
-      {(() => {
-        const totalReceivable = accounts
-          .filter(s => s.description?.toLowerCase() === 'receivable' && s.isActive && !s.isDeleted)
-          .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
-        const totalPayable = accounts
-          .filter(s => s.description?.toLowerCase() === 'payable' && s.isActive && !s.isDeleted)
-          .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
-
-        if (totalReceivable === 0 && totalPayable === 0) return null;
-
-        return (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-accent/10 border border-border rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Total Receivable
-                </p>
-                <p className="text-base font-bold mono text-income">
-                  {formatCurrency(totalReceivable, settings)}
-                </p>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-income/10 flex items-center justify-center text-income">
-                <TrendingUp className="h-4 w-4" />
-              </div>
+      {(totalReceivable > 0 || totalPayable > 0) && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-accent/10 border border-border rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+                Total Receivable
+              </p>
+              <p className="text-base font-bold mono text-income">
+                {formatCurrency(totalReceivable, settings)}
+              </p>
             </div>
-            <div className="bg-accent/10 border border-border rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Total Payable
-                </p>
-                <p className="text-base font-bold mono text-expense">
-                  {formatCurrency(totalPayable, settings)}
-                </p>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-expense/10 flex items-center justify-center text-expense">
-                <TrendingDown className="h-4 w-4" />
-              </div>
+            <div className="h-8 w-8 rounded-full bg-income/10 flex items-center justify-center text-income">
+              <TrendingUp className="h-4 w-4" />
             </div>
           </div>
-        );
-      })()}
+          <div className="bg-accent/10 border border-border rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+                Total Payable
+              </p>
+              <p className="text-base font-bold mono text-expense">
+                {formatCurrency(totalPayable, settings)}
+              </p>
+            </div>
+            <div className="h-8 w-8 rounded-full bg-expense/10 flex items-center justify-center text-expense">
+              <TrendingDown className="h-4 w-4" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Middle Row — 50/50 Split */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-12 items-start">
