@@ -48,7 +48,7 @@ export default function PrivacyPolicy() {
             Privacy Policy
           </h1>
           <p className="text-slate-400 font-mono text-sm uppercase tracking-widest">
-            Last Updated: May 2026
+            Last Updated: August 2026
           </p>
         </header>
 
@@ -93,6 +93,19 @@ export default function PrivacyPolicy() {
                 <strong className="text-slate-200">No Central Server:</strong> Moniq does not have a
                 centralized database. We do not (and cannot) see, store, or sell your financial
                 records.
+              </p>
+              <p>
+                <strong className="text-slate-200">Automated Backups:</strong> To protect against
+                accidental data loss, Moniq periodically creates dated snapshot copies of your
+                spreadsheet in a separate "Moniq Backups" folder alongside your main data folder.
+                These backups live entirely in your Drive under the same restricted access described
+                below — we still cannot see or access them.
+              </p>
+              <p>
+                <strong className="text-slate-200">Demo Mode:</strong> If you use Moniq without
+                signing in, your data is stored only in your browser's local storage and is never
+                sent to Google or anywhere else. It stays on your device until you clear it or sign
+                in to sync.
               </p>
             </div>
           </section>

@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   TrendingUp,
@@ -7,8 +6,7 @@ import {
   PieChart as PieChartIcon,
   ArrowRight,
 } from 'lucide-react';
-import { useDataStore } from '../store/dataStore';
-import { useAllBalances, useMonthSummary, useCategorySpend } from '../hooks/useComputed';
+import { useDashboardData } from '../hooks/useDashboardData';
 import { formatCurrency, formatCurrencyShort } from '../utils/format';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,40 +15,27 @@ import RecentTransactionsTable from '@/components/Dashboard/RecentTransactionsTa
 import type { UserSettings } from '@/types';
 
 export default function Dashboard() {
-  const { accounts, transactions, settings } = useDataStore();
-  const balances = useAllBalances();
+  const {
+    accounts,
+    settings,
+    balances,
+    monthLabel,
+    income,
+    expenses,
+    categorySpend,
+    fySummary,
+    netWorth,
+    liquidity,
+    totalSavings,
+    savingsRate,
+    recentTxns,
+    topAccounts,
+    totalReceivable,
+    totalPayable,
+    isEmpty,
+  } = useDashboardData();
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const { income, expenses } = useMonthSummary(year, month);
-  const categorySpend = useCategorySpend(year, month);
-
-  // Stats Calculations
-  const { netWorth, liquidity, totalSavings } = useMemo(() => {
-    const activeAccounts = accounts.filter(s => s.isActive && !s.isDeleted && !s.excludeFromNet);
-    const nw = activeAccounts.reduce((sum, s) => sum + (balances[s.id] || 0), 0);
-    const liq = activeAccounts
-      .filter(s => !s.isSavings && s.type === 'Asset')
-      .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
-    const sav = activeAccounts
-      .filter(s => s.isSavings && s.type === 'Asset')
-      .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
-    return { netWorth: nw, liquidity: liq, totalSavings: sav };
-  }, [accounts, balances]);
-
-  const savingsRate = income > 0 ? ((income - expenses) / income) * 100 : 0;
-
-  const recentTxns = useMemo(() => {
-    return transactions
-      .filter(t => !t.isDeleted)
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, 5);
-  }, [transactions]);
-
-  const monthLabel = now.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
-
-  if (transactions.length === 0) {
+  if (isEmpty) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50dvh] lg:h-[70vh] py-12 text-center px-4">
         <div className="h-16 w-16 lg:h-24 lg:w-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
@@ -69,9 +54,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-12 pb-10 px-1">
+    <div className="space-y-6 sm:space-y-12 pb-10 px-1">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-row items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground">{monthLabel}</p>
@@ -87,20 +72,42 @@ export default function Dashboard() {
       </div>
 
       {/* Top Stats Row — 4 Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 min-[340px]:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
-          label="Net Worth"
+          label="Total Net Worth"
           value={netWorth}
           settings={settings}
-          detail={`Liq: ${formatCurrencyShort(liquidity, settings.currencySymbol)} · Sav: ${formatCurrencyShort(totalSavings, settings.currencySymbol)}`}
+          detail={
+            <div className="flex flex-col">
+              <span>Spendable Cash: {formatCurrencyShort(liquidity, settings.currencySymbol)}</span>
+              <span>Savings: {formatCurrencyShort(totalSavings, settings.currencySymbol)}</span>
+            </div>
+          }
           detailColor="text-muted-foreground"
         />
-        <StatCard label="Income" value={income} settings={settings} detail="This Month" />
+        <StatCard
+          label="Income"
+          value={income}
+          settings={settings}
+          detail={
+            <div className="flex flex-col">
+              <span>This Month</span>
+              <span>This FY: {formatCurrencyShort(fySummary.income, settings.currencySymbol)}</span>
+            </div>
+          }
+        />
         <StatCard
           label="Expenses"
           value={expenses}
           settings={settings}
-          detail="This Month"
+          detail={
+            <div className="flex flex-col">
+              <span>This Month</span>
+              <span>
+                This FY: {formatCurrencyShort(fySummary.expenses, settings.currencySymbol)}
+              </span>
+            </div>
+          }
           valueColor="text-expense"
         />
         <StatCard
@@ -114,90 +121,76 @@ export default function Dashboard() {
       </div>
 
       {/* Lending & Debt Stats */}
-      {(() => {
-        const totalReceivable = accounts
-          .filter(s => s.description?.toLowerCase() === 'receivable' && s.isActive && !s.isDeleted)
-          .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
-        const totalPayable = accounts
-          .filter(s => s.description?.toLowerCase() === 'payable' && s.isActive && !s.isDeleted)
-          .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
-
-        if (totalReceivable === 0 && totalPayable === 0) return null;
-
-        return (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-accent/10 border border-border rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Total Receivable
-                </p>
-                <p className="text-base font-bold mono text-income">
-                  {formatCurrency(totalReceivable, settings)}
-                </p>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-income/10 flex items-center justify-center text-income">
-                <TrendingUp className="h-4 w-4" />
-              </div>
+      {(totalReceivable > 0 || totalPayable > 0) && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-accent/10 border border-border rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+                Total Receivable
+              </p>
+              <p className="text-base font-bold mono text-income">
+                {formatCurrency(totalReceivable, settings)}
+              </p>
             </div>
-            <div className="bg-accent/10 border border-border rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Total Payable
-                </p>
-                <p className="text-base font-bold mono text-expense">
-                  {formatCurrency(totalPayable, settings)}
-                </p>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-expense/10 flex items-center justify-center text-expense">
-                <TrendingDown className="h-4 w-4" />
-              </div>
+            <div className="h-8 w-8 rounded-full bg-income/10 flex items-center justify-center text-income">
+              <TrendingUp className="h-4 w-4" />
             </div>
           </div>
-        );
-      })()}
+          <div className="bg-accent/10 border border-border rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+                Total Payable
+              </p>
+              <p className="text-base font-bold mono text-expense">
+                {formatCurrency(totalPayable, settings)}
+              </p>
+            </div>
+            <div className="h-8 w-8 rounded-full bg-expense/10 flex items-center justify-center text-expense">
+              <TrendingDown className="h-4 w-4" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Middle Row — 50/50 Split */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-12 items-start">
         {/* Left Pane: Accounts */}
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
-              <Wallet className="h-4 w-4" />
-              Accounts
+          <div className="flex items-center justify-between gap-4">
+            <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-muted-foreground truncate">
+              <Wallet className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">Accounts</span>
             </h3>
             <Link
               to="/settings/accounts"
-              className="text-[10px] font-bold text-primary hover:underline"
+              className="text-[10px] font-bold text-primary hover:underline whitespace-nowrap flex-shrink-0"
             >
               Manage ›
             </Link>
           </div>
           <Card className="border-border">
             <div className="divide-y divide-border">
-              {accounts
-                .filter(s => s.isActive && !s.isDeleted)
-                .slice(0, 5)
-                .map(s => (
-                  <div
-                    key={s.id}
-                    className="flex items-center justify-between p-4 group hover:bg-accent/20 transition-colors"
-                  >
-                    <div>
-                      <p className="text-sm font-semibold">{s.name}</p>
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">
-                        {s.type}
-                      </p>
-                    </div>
-                    <p
-                      className={cn(
-                        'font-bold mono',
-                        (balances[s.id] || 0) < 0 ? 'text-expense' : 'text-foreground'
-                      )}
-                    >
-                      {formatCurrency(balances[s.id] || 0, settings)}
+              {topAccounts.map(s => (
+                <div
+                  key={s.id}
+                  className="flex items-center justify-between p-4 group hover:bg-accent/20 transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-semibold">{s.name}</p>
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">
+                      {s.type}
                     </p>
                   </div>
-                ))}
+                  <p
+                    className={cn(
+                      'font-bold mono',
+                      (balances[s.id] || 0) < 0 ? 'text-expense' : 'text-foreground'
+                    )}
+                  >
+                    {formatCurrency(balances[s.id] || 0, settings)}
+                  </p>
+                </div>
+              ))}
               {accounts.filter(s => s.isActive && !s.isDeleted).length > 5 && (
                 <Link
                   to="/settings/accounts"
@@ -212,18 +205,21 @@ export default function Dashboard() {
 
         {/* Right Pane: Spending Break down */}
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
-              <PieChartIcon className="h-4 w-4" />
-              Spending This Month
+          <div className="flex items-center justify-between gap-4">
+            <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-muted-foreground truncate">
+              <PieChartIcon className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">Spending This Month</span>
             </h3>
-            <Link to="/insights" className="text-[10px] font-bold text-primary hover:underline">
+            <Link
+              to="/insights"
+              className="text-[10px] font-bold text-primary hover:underline whitespace-nowrap flex-shrink-0"
+            >
               Analysis ›
             </Link>
           </div>
-          <Card className="p-6 border-border h-full min-h-[200px]">
+          <Card className="p-6 border-border">
             {categorySpend.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-muted-foreground italic text-sm py-10">
+              <div className="flex flex-col items-center justify-center text-muted-foreground italic text-sm py-10">
                 No data for this month
               </div>
             ) : (
@@ -263,11 +259,14 @@ export default function Dashboard() {
 
       {/* Bottom Row — Recent Transactions */}
       <section className="space-y-4 pt-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+        <div className="flex items-center justify-between gap-4">
+          <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground truncate">
             Recent Transactions
           </h3>
-          <Link to="/transactions" className="text-[10px] font-bold text-primary hover:underline">
+          <Link
+            to="/transactions"
+            className="text-[10px] font-bold text-primary hover:underline whitespace-nowrap flex-shrink-0"
+          >
             View Ledger ›
           </Link>
         </div>
@@ -290,7 +289,7 @@ interface StatCardProps {
   value: number;
   settings: UserSettings;
   isPercent?: boolean;
-  detail?: string;
+  detail?: React.ReactNode;
   detailColor?: string;
   valueColor?: string;
 }
@@ -306,22 +305,27 @@ function StatCard({
 }: StatCardProps) {
   return (
     <Card className="border-border shadow-sm hover:border-primary/30 transition-colors">
-      <CardContent className="p-6">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
+      <CardContent className="p-4 sm:p-6 overflow-hidden">
+        <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 sm:mb-3 truncate">
           {label}
         </p>
         <p
           className={cn(
-            'text-2xl font-bold mono tracking-tight mb-1',
+            'text-lg sm:text-2xl font-bold mono tracking-tight mb-1',
             valueColor || 'text-foreground'
           )}
         >
           {isPercent ? `${value.toFixed(1)}%` : formatCurrency(value, settings)}
         </p>
         {detail && (
-          <p className={cn('text-[11px] font-medium', detailColor || 'text-muted-foreground')}>
+          <div
+            className={cn(
+              'text-[9px] sm:text-[11px] font-medium mt-0.5',
+              detailColor || 'text-muted-foreground'
+            )}
+          >
             {detail}
-          </p>
+          </div>
         )}
       </CardContent>
     </Card>

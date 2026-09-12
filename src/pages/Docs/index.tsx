@@ -1,6 +1,5 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense } from 'react';
 import { useParams, Navigate, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { ChevronRight, Book, Code2, Layers, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MDXProvider } from '@mdx-js/react';
 
@@ -9,7 +8,7 @@ const docs = import.meta.glob('/src/docs/**/*.mdx');
 // Create a map of lazy components once, outside the component to avoid re-creation on render
 const lazyDocs = Object.fromEntries(
   Object.entries(docs).map(([path, loader]) => {
-    // Transform "/src/docs/api/Types/index.mdx" -> "api/Types/index"
+    // Transform "/src/docs/getting-started.mdx" -> "getting-started"
     const key = path.replace(/^\/src\/docs\//, '').replace(/\.mdx$/, '');
     return [
       key,
@@ -62,113 +61,52 @@ const mdxComponents = {
   a: MdxLink,
 };
 
-const DOC_STRUCTURE = [
-  {
-    title: 'User Guide',
-    icon: Book,
-    items: [
-      { title: 'Getting Started', slug: 'getting-started', category: 'user' },
-      { title: 'Keyboard Shortcuts', slug: 'keyboard-shortcuts', category: 'user' },
-      { title: 'FAQ', slug: 'faq', category: 'user' },
-      { title: 'Handling Scenarios', slug: 'scenarios', category: 'user' },
-    ],
-  },
-  {
-    title: 'Technical Docs',
-    icon: Code2,
-    items: [{ title: 'Architecture', slug: 'architecture', category: 'tech' }],
-  },
-  {
-    title: 'API Reference',
-    icon: Layers,
-    items: [
-      { title: 'Overview', slug: 'index', category: 'api' },
-      { title: 'Core Interfaces', slug: 'Types/index', category: 'api' },
-      { title: 'Sync Architecture', slug: 'sync/SyncEngine/index', category: 'api' },
-      { title: 'Google Integration', slug: 'lib/google/index', category: 'api' },
-    ],
-  },
+const DOC_ITEMS = [
+  { title: 'Getting Started', slug: 'getting-started' },
+  { title: 'Keyboard Shortcuts', slug: 'keyboard-shortcuts' },
+  { title: 'FAQ', slug: 'faq' },
+  { title: 'Handling Scenarios', slug: 'scenarios' },
+  { title: 'Architecture', slug: 'architecture' },
+  { title: 'Changelog', slug: 'changelog' },
 ];
 
 export default function DocsPage() {
   const params = useParams();
-  const category = params.category || '';
   const slug = params['*'] || '';
 
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    'User Guide': true,
-    'Technical Docs': true,
-    'API Reference': true,
-  });
-
-  const toggleSection = (title: string) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [title]: !prev[title],
-    }));
-  };
-
-  // If no category/slug, redirect to first doc
-  if (!category || !slug) {
-    return <Navigate to="/docs/user/getting-started" replace />;
+  // If no slug, redirect to first doc
+  if (!slug) {
+    return <Navigate to="/docs/getting-started" replace />;
   }
 
-  // Use the refactored keys for lookup
-  const docKey = `${category}/${slug}`;
-  const DocComponent = lazyDocs[docKey] || lazyDocs[`${docKey}/index`] || null;
+  const DocComponent = lazyDocs[slug] || lazyDocs[`${slug}/index`] || null;
 
   return (
     <div className="flex gap-8 items-start">
       {/* Internal Docs Sidebar */}
-      <aside className="w-64 sticky top-8 space-y-4 hidden md:block">
-        {DOC_STRUCTURE.map(section => {
-          const isExpanded = expandedSections[section.title];
-          return (
-            <div key={section.title} className="space-y-1">
-              <button
-                onClick={() => toggleSection(section.title)}
-                className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold tracking-tight uppercase text-muted-foreground/70 hover:text-foreground transition-colors group"
-              >
-                <div className="flex items-center gap-2">
-                  <section.icon className="h-4 w-4 text-primary" />
-                  {section.title}
-                </div>
-                {isExpanded ? (
-                  <ChevronDown className="h-3 w-3" />
-                ) : (
-                  <ChevronRight className="h-3 w-3" />
-                )}
-              </button>
-
-              {isExpanded && (
-                <div className="space-y-1 ml-4 border-l border-border/50">
-                  {section.items.map(item => (
-                    <NavLink
-                      key={item.slug}
-                      to={`/docs/${item.category}/${item.slug}`}
-                      className={({ isActive }) =>
-                        cn(
-                          'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all group',
-                          isActive
-                            ? 'bg-primary/10 text-primary border-l-2 border-primary -ml-[2px]'
-                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                        )
-                      }
-                    >
-                      {item.title}
-                    </NavLink>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
+      <aside className="w-64 sticky top-8 space-y-1 hidden md:block">
+        {DOC_ITEMS.map(item => (
+          <NavLink
+            key={item.slug}
+            to={`/docs/${item.slug}`}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all group',
+                isActive
+                  ? 'bg-primary/10 text-primary border-l-2 border-primary -ml-[2px]'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              )
+            }
+          >
+            {item.title}
+          </NavLink>
+        ))}
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 max-w-3xl min-w-0">
         <div
-          className="prose prose-zinc dark:prose-invert max-w-none 
+          className="prose prose-zinc dark:prose-invert max-w-none
           prose-headings:scroll-mt-20 prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-zinc-100
           prose-h1:text-4xl prose-h1:mb-8
           prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-4 prose-h2:border-b prose-h2:pb-2 prose-h2:border-border/50
@@ -202,7 +140,7 @@ export default function DocsPage() {
                     The page you're looking for doesn't exist.
                   </p>
                   <NavLink
-                    to="/docs/user/getting-started"
+                    to="/docs/getting-started"
                     className="text-primary hover:underline mt-4 inline-block"
                   >
                     Go to Getting Started

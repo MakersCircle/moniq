@@ -267,9 +267,9 @@ export default function App() {
         />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
-        <Route path="/docs" element={<Navigate to="/docs/user/getting-started" replace />} />
+        <Route path="/docs" element={<Navigate to="/docs/getting-started" replace />} />
         <Route
-          path="/docs/:category/*"
+          path="/docs/*"
           element={
             accessToken || isCloudInitialized ? (
               <LayoutShell onNewTransaction={openNew}>

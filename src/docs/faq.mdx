@@ -4,12 +4,12 @@
 
 ### Where is my data stored?
 Your data lives in two places:
-1. **Locally**: In your browser's IndexedDB.
-2. **Cloud**: In a private spreadsheet named `moniq-database` in your own Google Drive.
+1. **Locally**: In your browser's IndexedDB. If you're using Demo Mode (no sign-in), this is the *only* place your data lives — it never leaves your device.
+2. **Cloud**: In a private spreadsheet named "Moniq Database", inside a "moniq" folder in your own Google Drive.
 We never see, store, or sell your financial data.
 
-### Why does Moniq need "Full Drive Access"?
-Moniq uses the Google Sheets API to create and manage its own database file. While the permission scope says "See and manage all your files," Moniq *only* interacts with files it creates or files named `moniq-database`.
+### What permissions does Moniq ask for?
+Moniq requests the Google `drive.file` scope, not full Drive access. This scope only grants access to files that Moniq itself creates — it cannot see, read, or modify any other file in your Drive. Your email and profile name are also requested, just to identify your session.
 
 ## ⚙️ Synchronization
 
@@ -17,7 +17,7 @@ Moniq uses the Google Sheets API to create and manage its own database file. Whi
 Yes! You can add, edit, or delete transactions while offline. Moniq will queue these changes and sync them automatically the next time you have an internet connection.
 
 ### How do I sync across multiple devices?
-Just sign in with the same Google Account on any device. Moniq will automatically find your `moniq-database` file and pull your data.
+Just sign in with the same Google Account on any device. Moniq will automatically find your "Moniq Database" spreadsheet and pull your data.
 
 ### What if I edit the exact same transaction on two offline devices?
 Moniq uses a **"Last Write Wins"** strategy for individual transactions. If you edit a transaction on your phone offline, and then edit the exact same transaction on your laptop, whichever device successfully syncs to Google Sheets *last* will overwrite the other's changes. Because it's a personal finance app, concurrent edits to the exact same record are rare, and pushing your most recent local edit is the most performant approach.
