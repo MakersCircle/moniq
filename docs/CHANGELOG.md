@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **UI**: Refined Ledger table responsiveness (truncation, flat list, denser rows) and ensured action menu visibility on touch devices.
 
+### Fixed
+- **UI**: Fixed a visual alignment issue in the Ledger table where large amounts appeared left-aligned due to text overflow by increasing column widths.
+
 ---
 
 ## [0.9.5] - 2026-09-13
