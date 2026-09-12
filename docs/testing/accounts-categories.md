@@ -90,7 +90,7 @@ Focuses on form validation/rendering behavior (`AccountForm.test.tsx`, `Category
 | C-09 | Submit with non-numeric initial balance | `initialBalance` defaults to `0` (NaN guarded) |
 | C-10 | Toggling account `type` to `'Liability'` | "Savings Account" checkbox becomes disabled and visually de-emphasized; `isSavings` forced to `false` |
 | C-11 | Toggling account `type` back to `'Asset'` | "Savings Account" checkbox re-enabled; previous `isSavings` value not force-cleared |
-| C-12 | "Exclude from Net Worth" checkbox | Toggling sets `excludeFromNet` in submitted payload regardless of account type |
+| C-12 | "Exclude from Net Liquid Assets" checkbox | Toggling sets `excludeFromNet` in submitted payload regardless of account type |
 | C-13 | Cancel button click | Calls `onCancel`, does not call `onSave` |
 | C-14 | Custom `submitLabel` prop | Submit button renders the provided label text |
 | C-15 | Description textarea | Free-text value is trimmed and included in the submitted payload |

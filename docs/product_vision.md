@@ -42,7 +42,7 @@ Let a single user define where their money lives, manually record financial acti
 
 ### 3.5 Dashboards & Analytics
 
-- **Dashboard**: Net worth, income, expenses, and savings-rate stats, with detail views for accounts and spending. Uses a bottom-nav/FAB layout on mobile and a sidebar layout on desktop.
+- **Dashboard**: Net liquid assets, income, expenses, and savings-rate stats, with detail views for accounts and spending. Uses a bottom-nav/FAB layout on mobile and a sidebar layout on desktop.
 - **Insights**: A dedicated analytics page with category distribution, monthly trends, and income-vs-expense comparisons.
 - **Ledger**: A transaction log with a detail panel (side panel on desktop, bottom sheet on mobile) and inline filtering.
 

@@ -96,7 +96,7 @@ export default function Transactions() {
     }
     const catEntry = txn.entries.find(e => categories.some(c => c.id === e.accountId));
     const c = categories.find(c => c.id === catEntry?.accountId);
-    return c ? `${c.head}${c.subHead ? ' · ' + c.subHead : ''}` : '—';
+    return c ? (c.subHead ? `${c.head}.${c.subHead}` : c.head) : '—';
   };
 
   return (
@@ -289,7 +289,11 @@ export default function Transactions() {
                           <td
                             className={cn(
                               'px-5 py-3 font-bold text-right mono whitespace-nowrap',
-                              txn.uiType === 'income' ? 'text-income' : 'text-expense'
+                              txn.uiType === 'income'
+                                ? 'text-income'
+                                : txn.uiType === 'expense'
+                                  ? 'text-expense'
+                                  : 'text-blue-500'
                             )}
                           >
                             {txn.uiType === 'income' ? '+' : ''}

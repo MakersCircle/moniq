@@ -49,10 +49,10 @@ Focuses on rendering given mocked store/hook state, without hitting real calcula
 | ID | Scenario | Expected Outcome |
 |---|---|---|
 | C-01 | Empty state (no transactions) | Renders "Welcome to Moniq" headline and "Alt+N" hint instead of stats |
-| C-02 | Net Worth stat card | Displays sum of active, non-deleted, non-excluded account balances; detail shows `Liq:` and `Sav:` short-format breakdown |
+| C-02 | Net Liquid Assets stat card | Displays sum of active, non-deleted, non-excluded account balances; detail shows `Liq:` and `Sav:` short-format breakdown |
 | C-03 | Liquidity calculation | Only accounts with `isSavings: false` and `type === 'Asset'` contribute to `liquidity` |
 | C-04 | Savings calculation | Only accounts with `isSavings: true` and `type === 'Asset'` contribute to `totalSavings` |
-| C-05 | `excludeFromNet` accounts | Excluded from Net Worth, Liquidity, and Savings entirely |
+| C-05 | `excludeFromNet` accounts | Excluded from Net Liquid Assets, Liquidity, and Savings entirely |
 | C-06 | Income stat card | Displays `useMonthSummary` income value with "This Month" detail |
 | C-07 | Expenses stat card | Displays expenses in `text-expense` color |
 | C-08 | Savings Rate — positive income | `((income - expenses) / income) * 100`, shown to 1 decimal with `%` suffix |
@@ -119,7 +119,7 @@ Uses seeded/demo-mode local data (no live Google Sheets dependency) to drive rea
 ### Dashboard Flow
 | ID | Scenario | Expected Outcome |
 |---|---|---|
-| E-01 | Load dashboard with seeded data | Net Worth, Income, Expenses, Savings Rate cards all show non-empty, formatted currency/percent values |
+| E-01 | Load dashboard with seeded data | Net Liquid Assets, Income, Expenses, Savings Rate cards all show non-empty, formatted currency/percent values |
 | E-02 | Load dashboard with zero transactions | Empty state with "Welcome to Moniq" is shown; no stat cards render |
 | E-03 | Click "View Ledger" | Navigates to `/transactions` |
 | E-04 | Click "Analysis ›" | Navigates to `/insights` |

@@ -61,7 +61,7 @@ export default function LayoutShell({ children, onNewTransaction }: LayoutShellP
         >
           {isDemoMode && <DemoBanner />}
           {isSessionExpired && <SessionExpiredBanner />}
-          <div className="p-8 max-w-[1248px] mx-auto min-h-full flex flex-col w-full">
+          <div className="p-4 md:p-8 max-w-[1248px] mx-auto min-h-full flex flex-col w-full">
             {children}
           </div>
         </main>

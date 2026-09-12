@@ -9,8 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.9.5] - 2026-09-13
+
+### Added
+- **Fiscal Year**: Added an Indian Fiscal Year (April 1 - March 31) calculation hook (`useFiscalYearSummary`) and integrated it into the dashboard Income and Expenses cards to show YTD progress.
+
 ### Changed
+- **Dashboard Refactor**: Completely separated the Dashboard's UI layer from its business logic by extracting all data processing, calculations, and memos into a clean `useDashboardData` hook.
+- **Dashboard UI**: Changed the dashboard Accounts list to dynamically sort and display the 5 most recently used accounts based on your transaction history, rather than a static list.
+- **Terminology**: Renamed "Net Liquid Assets" to "Total Net Worth" and "Liq" to "Spendable Cash" on the dashboard stat card for clarity.
+- **Stat Cards**: Upgraded dashboard Stat Cards to support multi-line detail text, completely eliminating truncation issues for long labels (like Spendable Cash).
 - **Docs cleanup**: Removed stale planning-era docs (`layout.md`, `flow_diagram.md`, `todo.md`, `bugs.md`, `roadmap.md`) that no longer matched shipped behavior; merged `code_quality.md` into `CONTRIBUTING.md`; planned work now lives as GitHub Issues. Rewrote `product_vision.md` and `design_system.md` to match current app behavior.
+
+### Fixed
+- **Dashboard Calculations**: Fixed Net Liquid Assets (formerly Net Worth) calculation to correctly subtract liability balances instead of adding them, and extracted dashboard calculation logic into a reusable `useNetWorthSummary` hook.
+- **Terminology**: Renamed "Net Worth" to "Net Liquid Assets" throughout the app (dashboard stat card, account exclusion setting) to better reflect what the app is tracking (cash/bank accounts vs. total asset net worth).
+- **Mobile UI**: Optimized the dashboard's "Recent Transactions" table for mobile devices by stacking category names under descriptions and removing the "Type" column to prevent horizontal scrolling.
+- **Mobile UI**: Reduced global page padding on mobile to maximize screen space and refined vertical spacing for dashboard stat cards and sections.
+- **Mobile UI**: Refined the dashboard Stat Cards to use a 2-column layout on standard phones while gracefully collapsing to 1 column on ultra-narrow screens (e.g. 320px) to prevent amount truncation.
+- **Dashboard UI**: Fixed a text wrapping bug on the "Recent Transactions" header by enforcing proper flex constraints (`truncate` and `flex-shrink-0`) uniformly across all section headers.
+- **Dashboard UI**: Changed the Accounts and Spending Break down cards to have dynamic heights based purely on their internal content limits, rather than forcibly stretching to match each other.
+- **Transactions UI**: Globally updated the transfer amount color to blue to easily distinguish them from income (green) and expenses (red) without needing a dedicated "Type" column.
 
 ---
 

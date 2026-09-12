@@ -30,7 +30,7 @@ export interface Account {
   isActive: boolean;
   /** Soft delete flag for synchronization logic */
   isDeleted: boolean;
-  /** If true, this account balance is ignored in Net Worth calculation */
+  /** If true, this account balance is ignored in Net Liquid Assets calculation */
   excludeFromNet?: boolean;
   /** ISO timestamp of creation */
   createdAt: string;
