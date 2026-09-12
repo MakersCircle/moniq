@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.9.5] - 2026-09-13
+
 ### Added
 - **Fiscal Year**: Added an Indian Fiscal Year (April 1 - March 31) calculation hook (`useFiscalYearSummary`) and integrated it into the dashboard Income and Expenses cards to show YTD progress.
 
