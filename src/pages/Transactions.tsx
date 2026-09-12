@@ -1,14 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Download,
-  Search,
-  ChevronRight,
-  MoreVertical,
-  Pencil,
-  Copy,
-  Trash2,
-  List,
-} from 'lucide-react';
+import { Download, Search, ChevronRight, List } from 'lucide-react';
 import { useDataStore } from '../store/dataStore';
 import { useFilteredTransactions } from '../hooks/useComputed';
 import { exportToCSV, toMonthKey, formatCurrency } from '../utils/format';
@@ -24,13 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
+
 import { cn } from '@/lib/utils';
 import TransactionDetailPanel from '@/components/Transactions/TransactionDetailPanel';
 
@@ -73,10 +58,6 @@ export default function Transactions() {
 
   const handleEdit = (t: Transaction) => {
     window.openTransactionModal.openEdit(t);
-  };
-
-  const handleDuplicate = (t: Transaction) => {
-    window.openTransactionModal.openDuplicate(t);
   };
 
   const getAccountName = (txn: Transaction) => {
@@ -228,7 +209,6 @@ export default function Transactions() {
                     <th className="px-5 py-2 border-b border-border text-right w-[140px]">
                       Amount
                     </th>
-                    <th className="px-5 py-2 border-b border-border w-[60px]"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -292,37 +272,6 @@ export default function Transactions() {
                       >
                         {txn.uiType === 'income' ? '+' : ''}
                         {formatCurrency(txn.amount, settings)}
-                      </td>
-                      <td className="px-2 py-2" onClick={e => e.stopPropagation()}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-40">
-                            <DropdownMenuItem onClick={() => handleEdit(txn)} className="gap-2">
-                              <Pencil className="h-3.5 w-3.5" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDuplicate(txn)}
-                              className="gap-2"
-                            >
-                              <Copy className="h-3.5 w-3.5" /> Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => deleteTransaction(txn.id)}
-                              className="gap-2 text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       </td>
                     </tr>
                   ))}
