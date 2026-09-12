@@ -77,7 +77,7 @@ export default function Transactions() {
     }
     const catEntry = txn.entries.find(e => categories.some(c => c.id === e.accountId));
     const c = categories.find(c => c.id === catEntry?.accountId);
-    return c ? (c.subHead ? `${c.head}.${c.subHead}` : c.head) : '—';
+    return c ? (c.subHead ? `${c.head} . ${c.subHead}` : c.head) : '—';
   };
 
   return (
@@ -221,16 +221,23 @@ export default function Transactions() {
                           : 'hover:bg-accent/20'
                       )}
                     >
-                      <td className="px-5 py-2 whitespace-nowrap text-muted-foreground text-xs">
+                      <td className="px-5 py-3 whitespace-nowrap text-muted-foreground text-xs">
                         {new Date(txn.date).toLocaleDateString('en-IN', {
                           day: '2-digit',
                           month: 'short',
                           year: 'numeric',
                         })}
                       </td>
-                      <td className="px-5 py-2">
+                      <td className="px-5 py-3">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-medium truncate block flex-1">
+                          <span
+                            className={cn(
+                              'truncate block flex-1 transition-opacity',
+                              txn.note
+                                ? 'font-medium text-foreground'
+                                : 'text-muted-foreground font-normal opacity-40'
+                            )}
+                          >
                             {txn.note || 'No description'}
                           </span>
                           {selectedTxnId === txn.id && (
@@ -238,7 +245,7 @@ export default function Transactions() {
                           )}
                         </div>
                       </td>
-                      <td className="px-5 py-2">
+                      <td className="px-5 py-3">
                         <div className="flex items-center gap-1.5">
                           <div
                             className={cn(
@@ -255,12 +262,12 @@ export default function Transactions() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-5 py-2 text-muted-foreground text-xs whitespace-nowrap">
+                      <td className="px-5 py-3 text-muted-foreground text-xs whitespace-nowrap">
                         {getAccountName(txn)}
                       </td>
                       <td
                         className={cn(
-                          'px-5 py-2 font-bold text-right mono whitespace-nowrap',
+                          'px-5 py-3 font-bold text-right mono whitespace-nowrap',
                           txn.uiType === 'income'
                             ? 'text-income'
                             : txn.uiType === 'expense'
