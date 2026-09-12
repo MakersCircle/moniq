@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   Download,
   Search,
@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useDataStore } from '../store/dataStore';
 import { useFilteredTransactions } from '../hooks/useComputed';
-import { groupByDate, exportToCSV, toMonthKey, formatCurrency } from '../utils/format';
+import { exportToCSV, toMonthKey, formatCurrency } from '../utils/format';
 import type { TxnFilter } from '../hooks/useComputed';
 import type { Transaction } from '../types';
 
@@ -42,7 +42,7 @@ export default function Transactions() {
   const [selectedTxnId, setSelectedTxnId] = useState<string | null>(null);
 
   const txns = useFilteredTransactions(filter);
-  const grouped = useMemo(() => groupByDate(txns), [txns]);
+
   const selectedTxn = transactions.find(t => t.id === selectedTxnId) || null;
 
   const updateFilter = (patch: Partial<TxnFilter>) => setFilter(f => ({ ...f, ...patch }));
@@ -208,7 +208,7 @@ export default function Transactions() {
 
         {/* Results Table */}
         <div className="flex-1 overflow-auto p-4 md:p-8 pt-4">
-          {grouped.length === 0 ? (
+          {txns.length === 0 ? (
             <div className="py-20 text-center border-2 border-dashed border-border rounded-2xl bg-accent/5">
               <p className="text-muted-foreground font-medium">
                 No transactions found matching your filters.
@@ -216,123 +216,115 @@ export default function Transactions() {
             </div>
           ) : (
             <div className="rounded-xl border border-border bg-card shadow-sm w-full overflow-x-auto">
-              <table className="w-full min-w-[800px] text-sm text-left border-collapse">
+              <table className="w-full min-w-[800px] text-sm text-left border-collapse table-fixed">
                 <thead className="bg-accent/30 text-muted-foreground uppercase text-[10px] font-bold tracking-wider sticky top-0 z-10">
                   <tr>
-                    <th className="px-5 py-3 border-b border-border">Date</th>
-                    <th className="px-5 py-3 border-b border-border">Description</th>
-                    <th className="px-5 py-3 border-b border-border">Category / Target</th>
-                    <th className="px-5 py-3 border-b border-border">Account</th>
-                    <th className="px-5 py-3 border-b border-border text-right">Amount</th>
-                    <th className="px-5 py-3 border-b border-border w-10"></th>
+                    <th className="px-5 py-2 border-b border-border w-[100px]">Date</th>
+                    <th className="px-5 py-2 border-b border-border">Description</th>
+                    <th className="px-5 py-2 border-b border-border w-[150px]">
+                      Category / Target
+                    </th>
+                    <th className="px-5 py-2 border-b border-border w-[120px]">Account</th>
+                    <th className="px-5 py-2 border-b border-border text-right w-[100px]">
+                      Amount
+                    </th>
+                    <th className="px-5 py-2 border-b border-border w-[60px]"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {grouped.map(group => (
-                    <React.Fragment key={group.label}>
-                      {/* Day Divider Row */}
-                      <tr className="bg-accent/10 pointer-events-none">
-                        <td
-                          colSpan={6}
-                          className="px-5 py-1.5 text-[10px] uppercase font-bold text-muted-foreground/70"
-                        >
-                          {group.label}
-                        </td>
-                      </tr>
-                      {group.items.map(txn => (
-                        <tr
-                          key={txn.id}
-                          onClick={() => setSelectedTxnId(txn.id === selectedTxnId ? null : txn.id)}
-                          className={cn(
-                            'group cursor-pointer transition-colors',
-                            selectedTxnId === txn.id
-                              ? 'bg-primary/5 hover:bg-primary/10'
-                              : 'hover:bg-accent/20'
+                  {txns.map(txn => (
+                    <tr
+                      key={txn.id}
+                      onClick={() => setSelectedTxnId(txn.id === selectedTxnId ? null : txn.id)}
+                      className={cn(
+                        'group cursor-pointer transition-colors',
+                        selectedTxnId === txn.id
+                          ? 'bg-primary/5 hover:bg-primary/10'
+                          : 'hover:bg-accent/20'
+                      )}
+                    >
+                      <td className="px-5 py-2 whitespace-nowrap text-muted-foreground text-xs">
+                        {new Date(txn.date).toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </td>
+                      <td className="px-5 py-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium truncate block flex-1">
+                            {txn.note || 'No description'}
+                          </span>
+                          {selectedTxnId === txn.id && (
+                            <ChevronRight className="h-3.5 w-3.5 text-primary flex-shrink-0" />
                           )}
-                        >
-                          <td className="px-5 py-3 whitespace-nowrap text-muted-foreground text-xs">
-                            {new Date(txn.date).toLocaleDateString('en-IN', {
-                              day: '2-digit',
-                              month: 'short',
-                            })}
-                          </td>
-                          <td className="px-5 py-3">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium truncate">
-                                {txn.note || 'No description'}
-                              </span>
-                              {selectedTxnId === txn.id && (
-                                <ChevronRight className="h-3.5 w-3.5 text-primary" />
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-5 py-3">
-                            <div className="flex items-center gap-1.5">
-                              <div
-                                className={cn(
-                                  'h-1.5 w-1.5 rounded-full',
-                                  txn.uiType === 'income'
-                                    ? 'bg-income'
-                                    : txn.uiType === 'expense'
-                                      ? 'bg-expense'
-                                      : 'bg-blue-500'
-                                )}
-                              />
-                              <span className="text-muted-foreground text-xs">
-                                {getCategoryName(txn)}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3 text-muted-foreground text-xs whitespace-nowrap">
-                            {getAccountName(txn)}
-                          </td>
-                          <td
+                        </div>
+                      </td>
+                      <td className="px-5 py-2">
+                        <div className="flex items-center gap-1.5">
+                          <div
                             className={cn(
-                              'px-5 py-3 font-bold text-right mono whitespace-nowrap',
+                              'h-1.5 w-1.5 rounded-full',
                               txn.uiType === 'income'
-                                ? 'text-income'
+                                ? 'bg-income'
                                 : txn.uiType === 'expense'
-                                  ? 'text-expense'
-                                  : 'text-blue-500'
+                                  ? 'bg-expense'
+                                  : 'bg-blue-500'
                             )}
-                          >
-                            {txn.uiType === 'income' ? '+' : ''}
-                            {formatCurrency(txn.amount, settings)}
-                          </td>
-                          <td className="px-2 py-3" onClick={e => e.stopPropagation()}>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-40">
-                                <DropdownMenuItem onClick={() => handleEdit(txn)} className="gap-2">
-                                  <Pencil className="h-3.5 w-3.5" /> Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleDuplicate(txn)}
-                                  className="gap-2"
-                                >
-                                  <Copy className="h-3.5 w-3.5" /> Duplicate
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => deleteTransaction(txn.id)}
-                                  className="gap-2 text-destructive focus:text-destructive"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" /> Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      ))}
-                    </React.Fragment>
+                          />
+                          <span className="text-muted-foreground text-xs">
+                            {getCategoryName(txn)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-2 text-muted-foreground text-xs whitespace-nowrap">
+                        {getAccountName(txn)}
+                      </td>
+                      <td
+                        className={cn(
+                          'px-5 py-2 font-bold text-right mono whitespace-nowrap',
+                          txn.uiType === 'income'
+                            ? 'text-income'
+                            : txn.uiType === 'expense'
+                              ? 'text-expense'
+                              : 'text-blue-500'
+                        )}
+                      >
+                        {txn.uiType === 'income' ? '+' : ''}
+                        {formatCurrency(txn.amount, settings)}
+                      </td>
+                      <td className="px-2 py-2" onClick={e => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuItem onClick={() => handleEdit(txn)} className="gap-2">
+                              <Pencil className="h-3.5 w-3.5" /> Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDuplicate(txn)}
+                              className="gap-2"
+                            >
+                              <Copy className="h-3.5 w-3.5" /> Duplicate
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => deleteTransaction(txn.id)}
+                              className="gap-2 text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
