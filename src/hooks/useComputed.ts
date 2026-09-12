@@ -95,6 +95,39 @@ export function useMonthSummary(year: number, month: number) {
   }, [transactions, year, month]);
 }
 
+/**
+ * Returns the summary for the current Indian Fiscal Year (April 1 to March 31).
+ */
+export function useFiscalYearSummary(currentDate: Date = new Date()) {
+  const { transactions } = useDataStore();
+
+  return useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1; // 1-12
+
+    // FY starts April 1st
+    const startYear = month < 4 ? year - 1 : year;
+    const endYear = startYear + 1;
+
+    const startDateStr = `${startYear}-04-01`;
+    const endDateStr = `${endYear}-03-31`;
+
+    const activeTxns = transactions.filter(
+      t => !t.isDeleted && t.date >= startDateStr && t.date <= endDateStr
+    );
+
+    const income = activeTxns
+      .filter(t => t.uiType === 'income')
+      .reduce((sum, t) => sum + (t.entries[0]?.amount || 0), 0);
+
+    const expenses = activeTxns
+      .filter(t => t.uiType === 'expense')
+      .reduce((sum, t) => sum + (t.entries[0]?.amount || 0), 0);
+
+    return { income, expenses, net: income - expenses };
+  }, [transactions, currentDate]);
+}
+
 export interface TxnFilter {
   month?: string; // 'YYYY-MM'
   uiType?: string; // 'income' | 'expense' | 'transfer'

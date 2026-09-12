@@ -13,6 +13,7 @@ import {
   useMonthSummary,
   useCategorySpend,
   useNetWorthSummary,
+  useFiscalYearSummary,
 } from '../hooks/useComputed';
 import { formatCurrency, formatCurrencyShort } from '../utils/format';
 import { cn } from '@/lib/utils';
@@ -30,6 +31,7 @@ export default function Dashboard() {
   const month = now.getMonth() + 1;
   const { income, expenses } = useMonthSummary(year, month);
   const categorySpend = useCategorySpend(year, month);
+  const fySummary = useFiscalYearSummary(now);
 
   // Stats Calculations
   const { netWorth, liquidity, totalSavings } = useNetWorthSummary();
@@ -42,6 +44,30 @@ export default function Dashboard() {
       .sort((a, b) => b.date.localeCompare(a.date))
       .slice(0, 5);
   }, [transactions]);
+
+  const topAccounts = useMemo(() => {
+    const activeAccounts = accounts.filter(s => s.isActive && !s.isDeleted);
+
+    const lastUsedMap = new Map<string, string>();
+    transactions.forEach(t => {
+      if (t.isDeleted) return;
+      t.entries.forEach(e => {
+        const current = lastUsedMap.get(e.accountId) || '';
+        if (t.date > current) {
+          lastUsedMap.set(e.accountId, t.date);
+        }
+      });
+    });
+
+    return activeAccounts
+      .sort((a, b) => {
+        const aDate = lastUsedMap.get(a.id) || '';
+        const bDate = lastUsedMap.get(b.id) || '';
+        if (aDate === bDate) return 0;
+        return aDate > bDate ? -1 : 1;
+      })
+      .slice(0, 5);
+  }, [accounts, transactions]);
 
   const monthLabel = now.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
@@ -84,18 +110,40 @@ export default function Dashboard() {
       {/* Top Stats Row — 4 Cards */}
       <div className="grid grid-cols-1 min-[340px]:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
-          label="Net Liquid Assets"
+          label="Total Net Worth"
           value={netWorth}
           settings={settings}
-          detail={`Liq: ${formatCurrencyShort(liquidity, settings.currencySymbol)} · Sav: ${formatCurrencyShort(totalSavings, settings.currencySymbol)}`}
+          detail={
+            <div className="flex flex-col">
+              <span>Spendable Cash: {formatCurrencyShort(liquidity, settings.currencySymbol)}</span>
+              <span>Savings: {formatCurrencyShort(totalSavings, settings.currencySymbol)}</span>
+            </div>
+          }
           detailColor="text-muted-foreground"
         />
-        <StatCard label="Income" value={income} settings={settings} detail="This Month" />
+        <StatCard
+          label="Income"
+          value={income}
+          settings={settings}
+          detail={
+            <div className="flex flex-col">
+              <span>This Month</span>
+              <span>This FY: {formatCurrencyShort(fySummary.income, settings.currencySymbol)}</span>
+            </div>
+          }
+        />
         <StatCard
           label="Expenses"
           value={expenses}
           settings={settings}
-          detail="This Month"
+          detail={
+            <div className="flex flex-col">
+              <span>This Month</span>
+              <span>
+                This FY: {formatCurrencyShort(fySummary.expenses, settings.currencySymbol)}
+              </span>
+            </div>
+          }
           valueColor="text-expense"
         />
         <StatCard
@@ -169,30 +217,27 @@ export default function Dashboard() {
           </div>
           <Card className="border-border">
             <div className="divide-y divide-border">
-              {accounts
-                .filter(s => s.isActive && !s.isDeleted)
-                .slice(0, 5)
-                .map(s => (
-                  <div
-                    key={s.id}
-                    className="flex items-center justify-between p-4 group hover:bg-accent/20 transition-colors"
-                  >
-                    <div>
-                      <p className="text-sm font-semibold">{s.name}</p>
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">
-                        {s.type}
-                      </p>
-                    </div>
-                    <p
-                      className={cn(
-                        'font-bold mono',
-                        (balances[s.id] || 0) < 0 ? 'text-expense' : 'text-foreground'
-                      )}
-                    >
-                      {formatCurrency(balances[s.id] || 0, settings)}
+              {topAccounts.map(s => (
+                <div
+                  key={s.id}
+                  className="flex items-center justify-between p-4 group hover:bg-accent/20 transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-semibold">{s.name}</p>
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">
+                      {s.type}
                     </p>
                   </div>
-                ))}
+                  <p
+                    className={cn(
+                      'font-bold mono',
+                      (balances[s.id] || 0) < 0 ? 'text-expense' : 'text-foreground'
+                    )}
+                  >
+                    {formatCurrency(balances[s.id] || 0, settings)}
+                  </p>
+                </div>
+              ))}
               {accounts.filter(s => s.isActive && !s.isDeleted).length > 5 && (
                 <Link
                   to="/settings/accounts"
@@ -291,7 +336,7 @@ interface StatCardProps {
   value: number;
   settings: UserSettings;
   isPercent?: boolean;
-  detail?: string;
+  detail?: React.ReactNode;
   detailColor?: string;
   valueColor?: string;
 }
@@ -320,14 +365,14 @@ function StatCard({
           {isPercent ? `${value.toFixed(1)}%` : formatCurrency(value, settings)}
         </p>
         {detail && (
-          <p
+          <div
             className={cn(
-              'text-[9px] sm:text-[11px] font-medium truncate',
+              'text-[9px] sm:text-[11px] font-medium mt-0.5',
               detailColor || 'text-muted-foreground'
             )}
           >
             {detail}
-          </p>
+          </div>
         )}
       </CardContent>
     </Card>
