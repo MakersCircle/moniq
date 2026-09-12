@@ -200,13 +200,11 @@ export default function Transactions() {
               <table className="w-full min-w-[800px] text-sm text-left border-collapse table-fixed">
                 <thead className="bg-accent/30 text-muted-foreground uppercase text-[10px] font-bold tracking-wider sticky top-0 z-10">
                   <tr>
-                    <th className="px-5 py-2 border-b border-border w-[120px]">Date</th>
-                    <th className="px-5 py-2 border-b border-border">Description</th>
-                    <th className="px-5 py-2 border-b border-border w-[160px]">
-                      Category / Target
-                    </th>
-                    <th className="px-5 py-2 border-b border-border w-[140px]">Account</th>
-                    <th className="px-5 py-2 border-b border-border text-right w-[140px]">
+                    <th className="px-5 py-3 border-b border-border w-[120px]">Date</th>
+                    <th className="px-5 py-3 border-b border-border">Description</th>
+                    <th className="px-5 py-3 border-b border-border w-[160px]">Category</th>
+                    <th className="px-5 py-3 border-b border-border w-[140px]">Account</th>
+                    <th className="px-5 py-3 border-b border-border text-right w-[140px]">
                       Amount
                     </th>
                   </tr>
