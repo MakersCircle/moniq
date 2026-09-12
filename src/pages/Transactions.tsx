@@ -81,11 +81,11 @@ export default function Transactions() {
   };
 
   return (
-    <div className="flex h-full relative overflow-hidden -m-8">
+    <div className="absolute inset-0 flex flex-col pb-safe overflow-hidden">
       {/* Main Table Area */}
       <div
         className={cn(
-          'flex-1 flex flex-col transition-all duration-300',
+          'flex-1 flex flex-col transition-all duration-300 max-w-[1248px] w-full mx-auto min-h-0',
           selectedTxnId ? 'md:pr-[400px]' : ''
         )}
       >
@@ -188,7 +188,7 @@ export default function Transactions() {
         </div>
 
         {/* Results Table */}
-        <div className="flex-1 overflow-auto p-4 md:p-8 pt-4">
+        <div className="flex-1 flex flex-col pt-4 min-h-0 px-4 md:px-8 pb-4 md:pb-8">
           {txns.length === 0 ? (
             <div className="py-20 text-center border-2 border-dashed border-border rounded-2xl bg-accent/5">
               <p className="text-muted-foreground font-medium">
@@ -196,9 +196,9 @@ export default function Transactions() {
               </p>
             </div>
           ) : (
-            <div className="rounded-xl border border-border bg-card shadow-sm w-full overflow-x-auto">
+            <div className="flex-1 rounded-xl border border-border bg-card shadow-sm w-full overflow-auto min-h-0 relative custom-scrollbar pl-[6px]">
               <table className="w-full min-w-[800px] text-sm text-left border-collapse table-fixed">
-                <thead className="bg-accent/30 text-muted-foreground uppercase text-[10px] font-bold tracking-wider sticky top-0 z-10">
+                <thead className="bg-card/95 backdrop-blur-sm shadow-sm text-muted-foreground uppercase text-[10px] font-bold tracking-wider sticky top-0 z-10">
                   <tr>
                     <th className="px-5 py-3 border-b border-border w-[120px]">Date</th>
                     <th className="px-5 py-3 border-b border-border">Description</th>

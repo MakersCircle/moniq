@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **UI**: Refined Ledger table responsiveness (truncation, flat list, denser rows) and ensured action menu visibility on touch devices.
 - **UI**: Removed the redundant Action menu column from the Ledger table to maximize horizontal space, as its functionality is fully covered by the row-click detail panel.
 - **UI**: Polished table typography by formatting categories uniformly, increasing base row height, and fading empty descriptions so real notes stand out better.
+- **UI**: Re-architected Ledger layout to handle its own internal scrolling, enabling a perfectly frozen, glassmorphic sticky header and balanced scrollbar symmetry.
 
 ### Fixed
 - **UI**: Fixed a visual alignment issue in the Ledger table where large amounts appeared left-aligned due to text overflow by increasing column widths.
