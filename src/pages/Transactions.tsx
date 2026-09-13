@@ -56,10 +56,6 @@ export default function Transactions() {
     return sum;
   }, 0);
 
-  const handleEdit = (t: Transaction) => {
-    window.openTransactionModal.openEdit(t);
-  };
-
   const getAccountName = (txn: Transaction) => {
     const isIncome = txn.uiType === 'income';
     const entry = txn.entries.find(
@@ -295,7 +291,6 @@ export default function Transactions() {
           deleteTransaction(id);
           setSelectedTxnId(null);
         }}
-        onEdit={handleEdit}
       />
     </div>
   );

@@ -26,7 +26,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
 import { googleLogout } from '@react-oauth/google';
 
-import AddTransactionModal from './components/Transactions/AddTransactionModal';
+import TransactionForm from './components/Transactions/TransactionForm';
 import type { Transaction, TransactionType } from './types';
 
 export default function App() {
@@ -317,7 +317,7 @@ export default function App() {
           onOpenChange={open => setModalState(prev => ({ ...prev, isOpen: open }))}
         >
           <DialogContent className="w-full max-w-none sm:w-[95vw] sm:max-w-[520px] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-t-2xl sm:rounded-2xl top-auto bottom-0 left-0 right-0 translate-x-0 translate-y-0 sm:top-[50%] sm:left-[50%] sm:bottom-auto sm:right-auto sm:translate-x-[-50%] sm:translate-y-[-50%] h-auto max-h-[calc(100dvh-2rem)] sm:max-h-[90vh]">
-            <AddTransactionModal
+            <TransactionForm
               initialData={modalState.initialData}
               isDuplicate={modalState.isDuplicate}
               defaultType={modalState.defaultType}
