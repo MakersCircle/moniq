@@ -30,19 +30,21 @@ interface SplitLine {
 const now = new Date();
 const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-interface AddTransactionModalProps {
+interface TransactionFormProps {
   onClose: () => void;
   initialData?: Transaction;
   isDuplicate?: boolean;
   defaultType?: TransactionType;
+  hideTitle?: boolean;
 }
 
-export default function AddTransactionModal({
+export default function TransactionForm({
   onClose,
   initialData,
   isDuplicate,
   defaultType,
-}: AddTransactionModalProps) {
+  hideTitle,
+}: TransactionFormProps) {
   const {
     accounts,
     methods,
@@ -402,9 +404,11 @@ export default function AddTransactionModal({
       {/* Header Area */}
       <div className="shrink-0 px-6 py-4 border-b border-border bg-accent/5">
         <div className="flex flex-wrap items-center justify-between mb-4 pr-10 gap-y-4">
-          <h2 className="text-lg font-bold tracking-tight">
-            {initialData && !isDuplicate ? 'Edit' : 'New'} Transaction
-          </h2>
+          {!hideTitle && (
+            <h2 className="text-lg font-bold tracking-tight">
+              {initialData && !isDuplicate ? 'Edit' : 'New'} Transaction
+            </h2>
+          )}
           <Tabs
             value={type}
             onValueChange={v => {

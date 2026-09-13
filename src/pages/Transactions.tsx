@@ -1,17 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import {
-  Download,
-  Search,
-  ChevronRight,
-  MoreVertical,
-  Pencil,
-  Copy,
-  Trash2,
-  List,
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { Download, Search, ChevronRight, List } from 'lucide-react';
 import { useDataStore } from '../store/dataStore';
 import { useFilteredTransactions } from '../hooks/useComputed';
-import { groupByDate, exportToCSV, toMonthKey, formatCurrency } from '../utils/format';
+import { exportToCSV, toMonthKey, formatCurrency } from '../utils/format';
 import type { TxnFilter } from '../hooks/useComputed';
 import type { Transaction } from '../types';
 
@@ -24,13 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
+
 import { cn } from '@/lib/utils';
 import TransactionDetailPanel from '@/components/Transactions/TransactionDetailPanel';
 
@@ -42,7 +27,7 @@ export default function Transactions() {
   const [selectedTxnId, setSelectedTxnId] = useState<string | null>(null);
 
   const txns = useFilteredTransactions(filter);
-  const grouped = useMemo(() => groupByDate(txns), [txns]);
+
   const selectedTxn = transactions.find(t => t.id === selectedTxnId) || null;
 
   const updateFilter = (patch: Partial<TxnFilter>) => setFilter(f => ({ ...f, ...patch }));
@@ -71,14 +56,6 @@ export default function Transactions() {
     return sum;
   }, 0);
 
-  const handleEdit = (t: Transaction) => {
-    window.openTransactionModal.openEdit(t);
-  };
-
-  const handleDuplicate = (t: Transaction) => {
-    window.openTransactionModal.openDuplicate(t);
-  };
-
   const getAccountName = (txn: Transaction) => {
     const isIncome = txn.uiType === 'income';
     const entry = txn.entries.find(
@@ -96,15 +73,15 @@ export default function Transactions() {
     }
     const catEntry = txn.entries.find(e => categories.some(c => c.id === e.accountId));
     const c = categories.find(c => c.id === catEntry?.accountId);
-    return c ? (c.subHead ? `${c.head}.${c.subHead}` : c.head) : '—';
+    return c ? (c.subHead ? `${c.head} . ${c.subHead}` : c.head) : '—';
   };
 
   return (
-    <div className="flex h-full relative overflow-hidden -m-8">
+    <div className="absolute inset-0 flex flex-col pb-safe overflow-hidden">
       {/* Main Table Area */}
       <div
         className={cn(
-          'flex-1 flex flex-col transition-all duration-300',
+          'flex-1 flex flex-col transition-all duration-300 max-w-[1248px] w-full mx-auto min-h-0',
           selectedTxnId ? 'md:pr-[400px]' : ''
         )}
       >
@@ -207,135 +184,150 @@ export default function Transactions() {
         </div>
 
         {/* Results Table */}
-        <div className="flex-1 overflow-auto p-4 md:p-8 pt-4">
-          {grouped.length === 0 ? (
+        <div className="flex-1 flex flex-col pt-4 min-h-0 px-4 md:px-8 pb-4 md:pb-8">
+          {txns.length === 0 ? (
             <div className="py-20 text-center border-2 border-dashed border-border rounded-2xl bg-accent/5">
               <p className="text-muted-foreground font-medium">
                 No transactions found matching your filters.
               </p>
             </div>
           ) : (
-            <div className="rounded-xl border border-border bg-card shadow-sm w-full overflow-x-auto">
-              <table className="w-full min-w-[800px] text-sm text-left border-collapse">
-                <thead className="bg-accent/30 text-muted-foreground uppercase text-[10px] font-bold tracking-wider sticky top-0 z-10">
-                  <tr>
-                    <th className="px-5 py-3 border-b border-border">Date</th>
-                    <th className="px-5 py-3 border-b border-border">Description</th>
-                    <th className="px-5 py-3 border-b border-border">Category / Target</th>
-                    <th className="px-5 py-3 border-b border-border">Account</th>
-                    <th className="px-5 py-3 border-b border-border text-right">Amount</th>
-                    <th className="px-5 py-3 border-b border-border w-10"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {grouped.map(group => (
-                    <React.Fragment key={group.label}>
-                      {/* Day Divider Row */}
-                      <tr className="bg-accent/10 pointer-events-none">
-                        <td
-                          colSpan={6}
-                          className="px-5 py-1.5 text-[10px] uppercase font-bold text-muted-foreground/70"
-                        >
-                          {group.label}
-                        </td>
-                      </tr>
-                      {group.items.map(txn => (
-                        <tr
-                          key={txn.id}
-                          onClick={() => setSelectedTxnId(txn.id === selectedTxnId ? null : txn.id)}
-                          className={cn(
-                            'group cursor-pointer transition-colors',
-                            selectedTxnId === txn.id
-                              ? 'bg-primary/5 hover:bg-primary/10'
-                              : 'hover:bg-accent/20'
-                          )}
-                        >
-                          <td className="px-5 py-3 whitespace-nowrap text-muted-foreground text-xs">
-                            {new Date(txn.date).toLocaleDateString('en-IN', {
-                              day: '2-digit',
-                              month: 'short',
-                            })}
-                          </td>
-                          <td className="px-5 py-3">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium truncate">
-                                {txn.note || 'No description'}
-                              </span>
-                              {selectedTxnId === txn.id && (
-                                <ChevronRight className="h-3.5 w-3.5 text-primary" />
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-5 py-3">
-                            <div className="flex items-center gap-1.5">
-                              <div
-                                className={cn(
-                                  'h-1.5 w-1.5 rounded-full',
-                                  txn.uiType === 'income'
-                                    ? 'bg-income'
-                                    : txn.uiType === 'expense'
-                                      ? 'bg-expense'
-                                      : 'bg-blue-500'
-                                )}
-                              />
-                              <span className="text-muted-foreground text-xs">
-                                {getCategoryName(txn)}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3 text-muted-foreground text-xs whitespace-nowrap">
-                            {getAccountName(txn)}
-                          </td>
-                          <td
+            <div className="flex-1 rounded-xl border border-border bg-card shadow-sm w-full overflow-hidden flex flex-col min-h-0 relative">
+              <div className="w-full h-full overflow-x-auto flex flex-col custom-scrollbar">
+                <div className="w-full md:min-w-[800px] flex flex-col h-full">
+                  {/* Header Table Wrapper */}
+                  <div
+                    className="w-full pl-[6px] overflow-y-scroll custom-scrollbar bg-accent/50 backdrop-blur-md shadow-sm border-b border-border z-10 sticky top-0"
+                    style={{ scrollbarGutter: 'stable' }}
+                  >
+                    <table className="w-full text-sm text-left border-collapse table-fixed">
+                      <thead className="text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
+                        <tr>
+                          <th className="px-3 md:px-5 py-3 w-[80px] md:w-[120px]">Date</th>
+                          <th className="px-3 md:px-5 py-3">Description</th>
+                          <th className="hidden md:table-cell px-3 md:px-5 py-3 w-[160px]">
+                            Category
+                          </th>
+                          <th className="hidden md:table-cell px-3 md:px-5 py-3 w-[140px]">
+                            Account
+                          </th>
+                          <th className="px-3 md:px-5 py-3 text-right w-[110px] md:w-[140px]">
+                            Amount
+                          </th>
+                        </tr>
+                      </thead>
+                    </table>
+                  </div>
+
+                  {/* Body Table Wrapper */}
+                  <div className="flex-1 overflow-y-scroll custom-scrollbar pl-[6px]">
+                    <table className="w-full text-sm text-left border-collapse table-fixed">
+                      <tbody className="divide-y divide-border">
+                        {txns.map(txn => (
+                          <tr
+                            key={txn.id}
+                            onClick={() =>
+                              setSelectedTxnId(txn.id === selectedTxnId ? null : txn.id)
+                            }
                             className={cn(
-                              'px-5 py-3 font-bold text-right mono whitespace-nowrap',
-                              txn.uiType === 'income'
-                                ? 'text-income'
-                                : txn.uiType === 'expense'
-                                  ? 'text-expense'
-                                  : 'text-blue-500'
+                              'group cursor-pointer transition-colors',
+                              selectedTxnId === txn.id
+                                ? 'bg-primary/5 hover:bg-primary/10'
+                                : 'hover:bg-accent/20'
                             )}
                           >
-                            {txn.uiType === 'income' ? '+' : ''}
-                            {formatCurrency(txn.amount, settings)}
-                          </td>
-                          <td className="px-2 py-3" onClick={e => e.stopPropagation()}>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-40">
-                                <DropdownMenuItem onClick={() => handleEdit(txn)} className="gap-2">
-                                  <Pencil className="h-3.5 w-3.5" /> Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleDuplicate(txn)}
-                                  className="gap-2"
-                                >
-                                  <Copy className="h-3.5 w-3.5" /> Duplicate
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => deleteTransaction(txn.id)}
-                                  className="gap-2 text-destructive focus:text-destructive"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" /> Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      ))}
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
+                            <td className="px-3 md:px-5 py-3 whitespace-nowrap text-muted-foreground w-[80px] md:w-[120px]">
+                              {/* Desktop Date */}
+                              <span className="hidden md:block text-xs">
+                                {new Date(txn.date).toLocaleDateString('en-IN', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric',
+                                })}
+                              </span>
+                              {/* Mobile Date */}
+                              <div className="md:hidden flex flex-col text-xs">
+                                <span>
+                                  {new Date(txn.date).toLocaleDateString('en-IN', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                  })}
+                                </span>
+                                <span className="text-[10px] opacity-70">
+                                  {new Date(txn.date).toLocaleDateString('en-IN', {
+                                    year: 'numeric',
+                                  })}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-3 md:px-5 py-3">
+                              <div className="flex flex-col w-full overflow-hidden">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span
+                                    className={cn(
+                                      'truncate block flex-1 transition-opacity',
+                                      txn.note
+                                        ? 'font-medium text-foreground'
+                                        : 'text-muted-foreground font-normal opacity-40'
+                                    )}
+                                  >
+                                    {txn.note || 'No description'}
+                                  </span>
+                                  {selectedTxnId === txn.id && (
+                                    <ChevronRight className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                                  )}
+                                </div>
+                                <div className="md:hidden flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground truncate w-full min-w-0">
+                                  <span className="truncate flex-shrink-0 max-w-[70px]">
+                                    {getCategoryName(txn)}
+                                  </span>
+                                  <span className="flex-shrink-0 opacity-50">•</span>
+                                  <span className="truncate flex-shrink-0 max-w-[70px]">
+                                    {getAccountName(txn)}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="hidden md:table-cell px-3 md:px-5 py-3 w-[160px]">
+                              <div className="flex items-center gap-1.5">
+                                <div
+                                  className={cn(
+                                    'h-1.5 w-1.5 rounded-full',
+                                    txn.uiType === 'income'
+                                      ? 'bg-income'
+                                      : txn.uiType === 'expense'
+                                        ? 'bg-expense'
+                                        : 'bg-blue-500'
+                                  )}
+                                />
+                                <span className="text-muted-foreground text-xs">
+                                  {getCategoryName(txn)}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="hidden md:table-cell px-3 md:px-5 py-3 text-muted-foreground text-xs whitespace-nowrap w-[140px]">
+                              {getAccountName(txn)}
+                            </td>
+                            <td
+                              className={cn(
+                                'px-3 md:px-5 py-3 font-bold text-right mono whitespace-nowrap w-[110px] md:w-[140px]',
+                                txn.uiType === 'income'
+                                  ? 'text-income'
+                                  : txn.uiType === 'expense'
+                                    ? 'text-expense'
+                                    : 'text-blue-500'
+                              )}
+                            >
+                              {txn.uiType === 'income' ? '+' : ''}
+                              {formatCurrency(txn.amount, settings)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -349,7 +341,6 @@ export default function Transactions() {
           deleteTransaction(id);
           setSelectedTxnId(null);
         }}
-        onEdit={handleEdit}
       />
     </div>
   );

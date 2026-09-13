@@ -11,6 +11,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.6] - 2026-09-13
+
+### Added
+- **In-Place Editing**: Added seamless transaction editing. Clicking 'Edit' from the detail panel now transitions directly into an inline form instead of opening a disruptive global modal.
+
+### Changed
+- **Transactions UI**: Completely redesigned the transaction detail panel on mobile to function as a native, safe-area-aware bottom drawer.
+- **Transactions UI**: Overhauled the Ledger table architecture to support perfect frozen headers, glassmorphic styling, and native cross-browser scrollbar synchronization.
+- **Transactions UI**: Optimized the Ledger table layout for mobile screens by displaying secondary columns (Category and Account) as inline subtitles to eliminate horizontal scrolling.
+- **Transactions UI**: Polished table typography, removed the redundant Action column, and standardized row heights to maximize data density and readability.
+
+### Fixed
+- **Transactions UI**: Fixed visual alignment issues in the Ledger table for large numerical amounts and corrected header/body synchronization on varied screen sizes.
+
+---
+
 ## [0.9.5] - 2026-09-13
 
 ### Added
