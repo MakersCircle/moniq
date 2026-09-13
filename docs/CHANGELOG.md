@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **UI**: Removed the redundant Action menu column from the Ledger table to maximize horizontal space, as its functionality is fully covered by the row-click detail panel.
 - **UI**: Polished table typography by formatting categories uniformly, increasing base row height, and fading empty descriptions so real notes stand out better.
 - **UI**: Re-architected Ledger layout to handle its own internal scrolling, enabling a perfectly frozen, glassmorphic sticky header and balanced scrollbar symmetry.
+- **UI**: Color-matched the Ledger table header to the Dashboard tables using a tinted, glassmorphic `bg-accent/50` overlay.
+- **UI**: Split the Ledger table into synchronized header and body components to perfectly isolate the vertical scrollbar, ensuring it starts strictly below the header row without misalignment across different operating systems.
 - **UX**: Implemented seamless in-place editing for transactions. Clicking 'Edit' from the detail panel now smoothly morphs the panel into a form rather than popping a new global modal, preventing jarring layout shifts on desktop and modal-stacking clashes on mobile.
 - **UI**: Redesigned the transaction detail panel on mobile to function as a native-feeling, safe-area-aware bottom drawer rather than a side slide-out.
 
