@@ -18,7 +18,7 @@ export default function RecentTransactionsTable({ transactions }: RecentTransact
     }
     const catEntry = txn.entries.find(e => categories.some(c => c.id === e.accountId));
     const c = categories.find(c => c.id === catEntry?.accountId);
-    return c ? (c.subHead ? `${c.head}.${c.subHead}` : c.head) : '—';
+    return c ? (c.subHead ? `${c.head} . ${c.subHead}` : c.head) : '—';
   };
 
   return (
@@ -40,8 +40,17 @@ export default function RecentTransactionsTable({ transactions }: RecentTransact
               <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                 {format(new Date(t.date), 'dd MMM')}
               </td>
-              <td className="px-4 py-3 font-medium text-foreground max-w-[120px] sm:max-w-xs truncate">
-                <div className="truncate">{t.note || 'No description'}</div>
+              <td className="px-4 py-3 max-w-[120px] sm:max-w-xs">
+                <div
+                  className={cn(
+                    'truncate transition-opacity',
+                    t.note
+                      ? 'font-medium text-foreground'
+                      : 'text-muted-foreground font-normal opacity-40'
+                  )}
+                >
+                  {t.note || 'No description'}
+                </div>
                 <div className="sm:hidden text-[10px] text-muted-foreground mt-0.5 truncate">
                   {getCategoryName(t)}
                 </div>
