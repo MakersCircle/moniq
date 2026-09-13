@@ -9,18 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.9.6] - 2026-09-13
+
+### Added
+- **In-Place Editing**: Added seamless transaction editing. Clicking 'Edit' from the detail panel now transitions directly into an inline form instead of opening a disruptive global modal.
+
 ### Changed
-- **UI**: Refined Ledger table responsiveness (truncation, flat list, denser rows) and ensured action menu visibility on touch devices.
-- **UI**: Removed the redundant Action menu column from the Ledger table to maximize horizontal space, as its functionality is fully covered by the row-click detail panel.
-- **UI**: Polished table typography by formatting categories uniformly, increasing base row height, and fading empty descriptions so real notes stand out better.
-- **UI**: Re-architected Ledger layout to handle its own internal scrolling, enabling a perfectly frozen, glassmorphic sticky header and balanced scrollbar symmetry.
-- **UI**: Color-matched the Ledger table header to the Dashboard tables using a tinted, glassmorphic `bg-accent/50` overlay.
-- **UI**: Split the Ledger table into synchronized header and body components to perfectly isolate the vertical scrollbar, ensuring it starts strictly below the header row without misalignment across different operating systems.
-- **UX**: Implemented seamless in-place editing for transactions. Clicking 'Edit' from the detail panel now smoothly morphs the panel into a form rather than popping a new global modal, preventing jarring layout shifts on desktop and modal-stacking clashes on mobile.
-- **UI**: Redesigned the transaction detail panel on mobile to function as a native-feeling, safe-area-aware bottom drawer rather than a side slide-out.
+- **Transactions UI**: Completely redesigned the transaction detail panel on mobile to function as a native, safe-area-aware bottom drawer.
+- **Transactions UI**: Overhauled the Ledger table architecture to support perfect frozen headers, glassmorphic styling, and native cross-browser scrollbar synchronization.
+- **Transactions UI**: Optimized the Ledger table layout for mobile screens by displaying secondary columns (Category and Account) as inline subtitles to eliminate horizontal scrolling.
+- **Transactions UI**: Polished table typography, removed the redundant Action column, and standardized row heights to maximize data density and readability.
 
 ### Fixed
-- **UI**: Fixed a visual alignment issue in the Ledger table where large amounts appeared left-aligned due to text overflow by increasing column widths.
+- **Transactions UI**: Fixed visual alignment issues in the Ledger table for large numerical amounts and corrected header/body synchronization on varied screen sizes.
 
 ---
 
