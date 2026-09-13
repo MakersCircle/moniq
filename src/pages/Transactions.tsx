@@ -194,7 +194,7 @@ export default function Transactions() {
           ) : (
             <div className="flex-1 rounded-xl border border-border bg-card shadow-sm w-full overflow-hidden flex flex-col min-h-0 relative">
               <div className="w-full h-full overflow-x-auto flex flex-col custom-scrollbar">
-                <div className="min-w-[800px] flex flex-col h-full">
+                <div className="w-full md:min-w-[800px] flex flex-col h-full">
                   {/* Header Table Wrapper */}
                   <div
                     className="w-full pl-[6px] overflow-y-scroll custom-scrollbar bg-accent/50 backdrop-blur-md shadow-sm border-b border-border z-10 sticky top-0"
@@ -203,11 +203,17 @@ export default function Transactions() {
                     <table className="w-full text-sm text-left border-collapse table-fixed">
                       <thead className="text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
                         <tr>
-                          <th className="px-5 py-3 w-[120px]">Date</th>
-                          <th className="px-5 py-3">Description</th>
-                          <th className="px-5 py-3 w-[160px]">Category</th>
-                          <th className="px-5 py-3 w-[140px]">Account</th>
-                          <th className="px-5 py-3 text-right w-[140px]">Amount</th>
+                          <th className="px-3 md:px-5 py-3 w-[80px] md:w-[120px]">Date</th>
+                          <th className="px-3 md:px-5 py-3">Description</th>
+                          <th className="hidden md:table-cell px-3 md:px-5 py-3 w-[160px]">
+                            Category
+                          </th>
+                          <th className="hidden md:table-cell px-3 md:px-5 py-3 w-[140px]">
+                            Account
+                          </th>
+                          <th className="px-3 md:px-5 py-3 text-right w-[110px] md:w-[140px]">
+                            Amount
+                          </th>
                         </tr>
                       </thead>
                     </table>
@@ -230,31 +236,59 @@ export default function Transactions() {
                                 : 'hover:bg-accent/20'
                             )}
                           >
-                            <td className="px-5 py-3 whitespace-nowrap text-muted-foreground text-xs w-[120px]">
-                              {new Date(txn.date).toLocaleDateString('en-IN', {
-                                day: '2-digit',
-                                month: 'short',
-                                year: 'numeric',
-                              })}
-                            </td>
-                            <td className="px-5 py-3">
-                              <div className="flex items-center justify-between gap-2">
-                                <span
-                                  className={cn(
-                                    'truncate block flex-1 transition-opacity',
-                                    txn.note
-                                      ? 'font-medium text-foreground'
-                                      : 'text-muted-foreground font-normal opacity-40'
-                                  )}
-                                >
-                                  {txn.note || 'No description'}
+                            <td className="px-3 md:px-5 py-3 whitespace-nowrap text-muted-foreground w-[80px] md:w-[120px]">
+                              {/* Desktop Date */}
+                              <span className="hidden md:block text-xs">
+                                {new Date(txn.date).toLocaleDateString('en-IN', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric',
+                                })}
+                              </span>
+                              {/* Mobile Date */}
+                              <div className="md:hidden flex flex-col text-xs">
+                                <span>
+                                  {new Date(txn.date).toLocaleDateString('en-IN', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                  })}
                                 </span>
-                                {selectedTxnId === txn.id && (
-                                  <ChevronRight className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-                                )}
+                                <span className="text-[10px] opacity-70">
+                                  {new Date(txn.date).toLocaleDateString('en-IN', {
+                                    year: 'numeric',
+                                  })}
+                                </span>
                               </div>
                             </td>
-                            <td className="px-5 py-3 w-[160px]">
+                            <td className="px-3 md:px-5 py-3">
+                              <div className="flex flex-col w-full overflow-hidden">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span
+                                    className={cn(
+                                      'truncate block flex-1 transition-opacity',
+                                      txn.note
+                                        ? 'font-medium text-foreground'
+                                        : 'text-muted-foreground font-normal opacity-40'
+                                    )}
+                                  >
+                                    {txn.note || 'No description'}
+                                  </span>
+                                  {selectedTxnId === txn.id && (
+                                    <ChevronRight className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                                  )}
+                                </div>
+                                <div className="md:hidden flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground truncate w-full min-w-0">
+                                  <span className="truncate flex-shrink-0 max-w-[70px]">
+                                    {getCategoryName(txn)}
+                                  </span>
+                                  <span className="flex-shrink-0 opacity-50">•</span>
+                                  <span className="truncate flex-shrink-0 max-w-[70px]">
+                                    {getAccountName(txn)}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="hidden md:table-cell px-3 md:px-5 py-3 w-[160px]">
                               <div className="flex items-center gap-1.5">
                                 <div
                                   className={cn(
@@ -271,12 +305,12 @@ export default function Transactions() {
                                 </span>
                               </div>
                             </td>
-                            <td className="px-5 py-3 text-muted-foreground text-xs whitespace-nowrap w-[140px]">
+                            <td className="hidden md:table-cell px-3 md:px-5 py-3 text-muted-foreground text-xs whitespace-nowrap w-[140px]">
                               {getAccountName(txn)}
                             </td>
                             <td
                               className={cn(
-                                'px-5 py-3 font-bold text-right mono whitespace-nowrap w-[140px]',
+                                'px-3 md:px-5 py-3 font-bold text-right mono whitespace-nowrap w-[110px] md:w-[140px]',
                                 txn.uiType === 'income'
                                   ? 'text-income'
                                   : txn.uiType === 'expense'
