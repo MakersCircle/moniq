@@ -540,10 +540,13 @@ export default function TransactionForm({
                   <SelectContent>
                     {activeMethods.map(m => {
                       const acct = activeAccounts.find(a => a.id === m.linkedAccountId);
+                      const displayName =
+                        acct && !m.name.toLowerCase().includes(acct.name.toLowerCase())
+                          ? `${acct.name} · ${m.name}`
+                          : m.name;
                       return (
-                        <SelectItem key={m.id} value={m.id} textValue={m.name}>
-                          {m.name}
-                          {acct ? ` · ${acct.name}` : ''}
+                        <SelectItem key={m.id} value={m.id} textValue={displayName}>
+                          {displayName}
                         </SelectItem>
                       );
                     })}
@@ -593,10 +596,13 @@ export default function TransactionForm({
                   <SelectContent>
                     {toMethodOptions.map(m => {
                       const acct = activeAccounts.find(a => a.id === m.linkedAccountId);
+                      const displayName =
+                        acct && !m.name.toLowerCase().includes(acct.name.toLowerCase())
+                          ? `${acct.name} · ${m.name}`
+                          : m.name;
                       return (
-                        <SelectItem key={m.id} value={m.id} textValue={m.name}>
-                          {m.name}
-                          {acct ? ` · ${acct.name}` : ''}
+                        <SelectItem key={m.id} value={m.id} textValue={displayName}>
+                          {displayName}
                         </SelectItem>
                       );
                     })}
@@ -656,11 +662,18 @@ export default function TransactionForm({
                     <SelectValue placeholder="Select Method" />
                   </SelectTrigger>
                   <SelectContent>
-                    {activeMethods.map(m => (
-                      <SelectItem key={m.id} value={m.id} textValue={m.name}>
-                        {m.name}
-                      </SelectItem>
-                    ))}
+                    {activeMethods.map(m => {
+                      const acct = activeAccounts.find(a => a.id === m.linkedAccountId);
+                      const displayName =
+                        acct && !m.name.toLowerCase().includes(acct.name.toLowerCase())
+                          ? `${acct.name} · ${m.name}`
+                          : m.name;
+                      return (
+                        <SelectItem key={m.id} value={m.id} textValue={displayName}>
+                          {displayName}
+                        </SelectItem>
+                      );
+                    })}
                     <SelectSeparator />
                     <SelectItem value="NEW_METHOD" className="text-primary font-bold">
                       <Plus className="h-4 w-4 inline-block mr-2" />
