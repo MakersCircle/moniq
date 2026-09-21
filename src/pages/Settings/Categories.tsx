@@ -11,6 +11,8 @@ import { ResponsiveModal } from '@/components/ui/responsive-modal';
 import { cn } from '@/lib/utils';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
+import { useAllBalances } from '@/hooks/useComputed';
+import { formatCurrency } from '@/utils/format';
 
 const GROUPS: CategoryGroup[] = ['Income', 'Needs', 'Wants', 'Invest', 'Lend', 'Borrow'];
 
@@ -26,12 +28,14 @@ const GROUP_STYLES: Record<string, string> = {
 export default function Categories() {
   const {
     categories,
+    settings,
     addCategory,
     updateCategory,
     archiveCategory,
     deleteCategory,
     reorderCategories,
   } = useDataStore();
+  const balances = useAllBalances();
   const { t } = useTranslation();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
@@ -147,6 +151,18 @@ export default function Categories() {
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
+                          {['Invest', 'Lend', 'Borrow'].includes(group) && (
+                            <div className="text-right pr-2 min-w-16">
+                              <p
+                                className={cn(
+                                  'font-bold mono text-sm tracking-tight',
+                                  (balances[c.id] || 0) < 0 ? 'text-expense' : 'text-income'
+                                )}
+                              >
+                                {formatCurrency(balances[c.id] || 0, settings)}
+                              </p>
+                            </div>
+                          )}
                           <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity mr-2">
                             <Button
                               variant="ghost"
