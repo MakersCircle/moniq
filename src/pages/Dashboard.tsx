@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   TrendingUp,
@@ -5,6 +6,8 @@ import {
   Wallet,
   PieChart as PieChartIcon,
   ArrowRight,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { formatCurrency, formatCurrencyShort } from '../utils/format';
@@ -34,6 +37,8 @@ export default function Dashboard() {
     totalPayable,
     isEmpty,
   } = useDashboardData();
+
+  const [debtsExpanded, setDebtsExpanded] = useState(false);
 
   if (isEmpty) {
     return (
@@ -120,35 +125,55 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Lending & Debt Stats */}
+      {/* Additional Stats Collapse */}
       {(totalReceivable > 0 || totalPayable > 0) && (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-accent/10 border border-border rounded-xl p-4 flex items-center justify-between">
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-                Total Receivable
-              </p>
-              <p className="text-base font-bold mono text-income">
-                {formatCurrency(totalReceivable, settings)}
-              </p>
-            </div>
-            <div className="h-8 w-8 rounded-full bg-income/10 flex items-center justify-center text-income">
-              <TrendingUp className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="bg-accent/10 border border-border rounded-xl p-4 flex items-center justify-between">
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-                Total Payable
-              </p>
-              <p className="text-base font-bold mono text-expense">
-                {formatCurrency(totalPayable, settings)}
-              </p>
-            </div>
-            <div className="h-8 w-8 rounded-full bg-expense/10 flex items-center justify-center text-expense">
-              <TrendingDown className="h-4 w-4" />
+        <div className="space-y-4 pt-2">
+          <div
+            className="flex items-center gap-2 cursor-pointer group w-max"
+            onClick={() => setDebtsExpanded(!debtsExpanded)}
+          >
+            <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
+              Additional Summaries
+            </h3>
+            <div className="h-5 w-5 flex items-center justify-center rounded-full bg-accent/50 group-hover:bg-primary/20 text-muted-foreground group-hover:text-primary transition-colors">
+              {debtsExpanded ? (
+                <ChevronUp className="h-3 w-3" />
+              ) : (
+                <ChevronDown className="h-3 w-3" />
+              )}
             </div>
           </div>
+
+          {debtsExpanded && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-200">
+              <div className="bg-accent/10 border border-border rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Total Receivable
+                  </p>
+                  <p className="text-base font-bold mono text-income">
+                    {formatCurrency(totalReceivable, settings)}
+                  </p>
+                </div>
+                <div className="h-8 w-8 rounded-full bg-income/10 flex items-center justify-center text-income">
+                  <TrendingUp className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="bg-accent/10 border border-border rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Total Payable
+                  </p>
+                  <p className="text-base font-bold mono text-expense">
+                    {formatCurrency(totalPayable, settings)}
+                  </p>
+                </div>
+                <div className="h-8 w-8 rounded-full bg-expense/10 flex items-center justify-center text-expense">
+                  <TrendingDown className="h-4 w-4" />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

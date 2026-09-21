@@ -164,6 +164,34 @@ describe('category.schema – Deserialization', () => {
     expect(result.head).toBe(original.head);
     expect(result.group).toBe(original.group);
   });
+
+  it('D-13: initialBalance from form input round-trips correctly', () => {
+    // Simulate what the CategoryForm produces for an 'Invest' group
+    const formOutput = {
+      group: 'Invest' as const,
+      head: 'Vanguard',
+      subHead: 'S&P 500',
+      isActive: true,
+      initialBalance: 1500.5, // Parsed from form string input
+    };
+
+    // Simulate addCategory payload logic
+    const category: Category = {
+      id: 'form-123',
+      isDeleted: false,
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
+      sortOrder: 0,
+      ...formOutput,
+    };
+
+    const row = serializeCategory(category);
+    const restored = deserializeCategory(row, HEADERS);
+
+    expect(restored.initialBalance).toBe(1500.5);
+    expect(restored.group).toBe('Invest');
+    expect(restored.head).toBe('Vanguard');
+  });
 });
 
 // ── Defaults Tests ─────────────────────────────────────────────────

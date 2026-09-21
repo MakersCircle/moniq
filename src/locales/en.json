@@ -45,6 +45,8 @@
     "archivedCategories": "Archived Categories",
     "createDescription": "Create a category to group your transactions. You can manage and edit categories later in Settings.",
     "editDescription": "Update the details for this category.",
+    "initialBalance": "Initial Balance",
+    "initialBalanceTooltip": "Opening balance for tracking external items like Investments or Loans",
     "headRequired": "Head is required.",
     "alreadyExists": "This category already exists.",
     "group": "Group",
