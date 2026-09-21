@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Transactions UI**: Improved the Payment Method dropdown in the transaction form to display the associated Account name (e.g., `Account · Method`), reducing confusion when multiple accounts have identically named methods.
+
 ---
 
 ## [0.9.7] - 2026-09-21
