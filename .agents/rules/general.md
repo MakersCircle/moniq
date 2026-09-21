@@ -8,6 +8,6 @@ Review `docs/design_system.md` before making structural or aesthetic changes.
 
 If a particular change is important enough, update all docs/* accordingly.
 
-Document all changes in the `[Unreleased]` section of `docs/CHANGELOG.md` immediately after implementation. Bump the project version in `package.json` and finalize the changelog version only when a significant set of changes or a key milestone has been reached.
+After every meaningful implementation, update the existing `[Unreleased]` section of `docs/CHANGELOG.md`; group related iterations, fixes, and tweaks into a single cohesive entry instead of creating duplicates, and describe the final outcome rather than the implementation process. Only bump the version and finalize `[Unreleased]` when explicitly requested or when a significant milestone is reached, using `npm version patch|minor|major` as appropriate.
 
 Only use the **Conventional Commits** format for all commit messages (e.g., `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`, `perf:`, `style:`) to ensure clarity and support automated tools.
