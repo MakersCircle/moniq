@@ -19,6 +19,7 @@ export function CreateCategorySheet({ open, onOpenChange, onSuccess }: CreateCat
       head: data.head,
       subHead: data.subHead || undefined,
       isActive: data.isActive,
+      initialBalance: data.initialBalance,
     });
 
     onSuccess(id);

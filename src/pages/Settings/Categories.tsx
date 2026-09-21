@@ -52,6 +52,7 @@ export default function Categories() {
       head: data.head,
       subHead: data.subHead || undefined,
       isActive: data.isActive,
+      initialBalance: data.initialBalance,
     };
     if (editing) updateCategory(editing.id, payload);
     else addCategory(payload);
@@ -254,6 +255,7 @@ export default function Categories() {
                     head: editing.head,
                     subHead: editing.subHead,
                     isActive: editing.isActive,
+                    initialBalance: editing.initialBalance,
                   }
                 : undefined
             }
