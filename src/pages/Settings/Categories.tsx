@@ -156,7 +156,13 @@ export default function Categories() {
                               <p
                                 className={cn(
                                   'font-bold mono text-sm tracking-tight',
-                                  (balances[c.id] || 0) < 0 ? 'text-expense' : 'text-income'
+                                  (() => {
+                                    const bal = balances[c.id] || 0;
+                                    if (bal === 0) return 'text-muted-foreground';
+                                    if (group === 'Borrow')
+                                      return bal > 0 ? 'text-expense' : 'text-income';
+                                    return bal > 0 ? 'text-income' : 'text-expense';
+                                  })()
                                 )}
                               >
                                 {formatCurrency(balances[c.id] || 0, settings)}
