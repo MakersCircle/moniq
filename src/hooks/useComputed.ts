@@ -22,9 +22,17 @@ export function useAllBalances(): Record<string, number> {
 
   return useMemo(() => {
     const balances: Record<string, number> = {};
+
     for (const acc of accounts.filter(a => !a.isDeleted)) {
       balances[acc.id] = LedgerEngine.getNormalBalance(acc.id, transactions, accounts, categories);
     }
+
+    for (const cat of categories.filter(
+      c => !c.isDeleted && ['Invest', 'Lend', 'Borrow'].includes(c.group)
+    )) {
+      balances[cat.id] = LedgerEngine.getNormalBalance(cat.id, transactions, accounts, categories);
+    }
+
     return balances;
   }, [transactions, accounts, categories]);
 }

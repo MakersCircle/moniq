@@ -21,6 +21,7 @@ export interface CategoryFormData {
   head: string;
   subHead: string;
   isActive: boolean;
+  initialBalance?: number;
 }
 
 interface CategoryFormProps {
@@ -37,13 +38,15 @@ export function CategoryForm({
   onCancel,
   submitLabel = 'Save',
 }: CategoryFormProps) {
-  const { categories } = useDataStore();
+  const { categories, settings } = useDataStore();
   const { t } = useTranslation();
 
   const [form, setForm] = useState({
     group: initialData?.group || 'Needs',
     head: initialData?.head || '',
     subHead: initialData?.subHead || '',
+    initialBalance:
+      initialData?.initialBalance !== undefined ? String(initialData.initialBalance) : '',
   });
 
   const [error, setError] = useState('');
@@ -83,11 +86,15 @@ export function CategoryForm({
       return;
     }
 
+    const parsedInitial = parseFloat(form.initialBalance);
+    const validInitial = isNaN(parsedInitial) ? 0 : parsedInitial;
+
     onSave({
       group: form.group,
       head: form.head.trim(),
       subHead: form.subHead.trim(),
       isActive: initialData?.isActive ?? true,
+      initialBalance: ['Invest', 'Lend', 'Borrow'].includes(form.group) ? validInitial : undefined,
     });
   };
 
@@ -184,6 +191,32 @@ export function CategoryForm({
             className="h-10"
           />
         </div>
+
+        {['Invest', 'Lend', 'Borrow'].includes(form.group) && (
+          <div className="space-y-2">
+            <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+              {t('category.initialBalance')}
+              <InfoTooltip text={t('category.initialBalanceTooltip')} />
+            </Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
+                {settings.currencySymbol}
+              </span>
+              <Input
+                type="number"
+                value={form.initialBalance}
+                onChange={e => {
+                  setForm({ ...form, initialBalance: e.target.value });
+                  setError('');
+                }}
+                placeholder="0"
+                className="h-12 pl-8 border-border/50 text-lg font-bold mono"
+                inputMode="decimal"
+                step="any"
+              />
+            </div>
+          </div>
+        )}
 
         {error && <p className="text-sm font-medium text-destructive">{error}</p>}
       </div>

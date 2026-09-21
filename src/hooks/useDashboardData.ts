@@ -56,14 +56,35 @@ export function useDashboardData() {
   }, [accounts, transactions]);
 
   const { totalReceivable, totalPayable } = useMemo(() => {
-    const receivable = accounts
-      .filter(s => s.description?.toLowerCase() === 'receivable' && s.isActive && !s.isDeleted)
-      .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
-    const payable = accounts
-      .filter(s => s.description?.toLowerCase() === 'payable' && s.isActive && !s.isDeleted)
-      .reduce((sum, s) => sum + (balances[s.id] || 0), 0);
+    let receivable = 0;
+    let payable = 0;
 
-    return { totalReceivable: receivable, totalPayable: payable };
+    accounts
+      .filter(s => s.description?.toLowerCase() === 'receivable' && s.isActive && !s.isDeleted)
+      .forEach(s => {
+        receivable += balances[s.id] || 0;
+      });
+
+    accounts
+      .filter(s => s.description?.toLowerCase() === 'payable' && s.isActive && !s.isDeleted)
+      .forEach(s => {
+        payable += balances[s.id] || 0;
+      });
+
+    const { categories } = useDataStore.getState();
+    for (const cat of categories.filter(c => c.isActive && !c.isDeleted)) {
+      const bal = balances[cat.id] || 0;
+      if (['Lend', 'Invest'].includes(cat.group)) {
+        receivable += bal;
+      } else if (cat.group === 'Borrow') {
+        payable += bal;
+      }
+    }
+
+    return {
+      totalReceivable: Math.abs(receivable),
+      totalPayable: Math.abs(payable),
+    };
   }, [accounts, balances]);
 
   return {

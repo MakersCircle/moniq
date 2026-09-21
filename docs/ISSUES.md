@@ -806,9 +806,9 @@ The practical attack path is weak in this app's model: there's no multi-user dat
 
 ### Fix
 Prefix any exported cell value that starts with `=`, `+`, `-`, `@`, tab, or CR with a leading `'` before quoting — the standard mitigation used by most CSV-export libraries:
-```ts
+
 const sanitizeCsvCell = (v: string) => /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
-```
+
 Apply to the `note` field in `exportToCSV`, and defensively to category/account/method labels even though those are developer/in-app-defined rather than arbitrary free text.
 
 **Suitable for:** an AI coding agent — small, well-scoped, low-risk fix.

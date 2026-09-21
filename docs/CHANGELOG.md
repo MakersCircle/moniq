@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.7] - 2026-09-21
+
+### Added
+- **Category Balances**: Added detailed running balances for 'Invest', 'Lend', and 'Borrow' categories directly on the Settings > Categories page.
+- **Dashboard Enhancements**: Added a new expandable 'Additional Summaries' section on the Dashboard to track Total Receivable and Total Payable amounts. This aggregates data from both dedicated accounts and relevant categories.
+
+---
+
 ## [0.9.6] - 2026-09-13
 
 ### Added
