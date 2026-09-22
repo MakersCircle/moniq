@@ -63,12 +63,12 @@ function TxnGridRow({ txn, isSelected, accounts, categories, settings, onClick }
       )}
     >
       {/* Drag handle column */}
-      <div className="w-8 shrink-0 flex items-center justify-center opacity-0 group-hover:opacity-50 transition-opacity text-muted-foreground cursor-grab active:cursor-grabbing touch-none select-none">
-        <GripVertical className="h-4 w-4" />
+      <div className="w-5 md:w-6 shrink-0 flex items-center justify-center opacity-0 group-hover:opacity-50 transition-opacity text-muted-foreground cursor-grab active:cursor-grabbing touch-none select-none">
+        <GripVertical className="h-3.5 w-3.5" />
       </div>
 
-      {/* Date — same widths as original table */}
-      <div className="px-3 md:px-5 py-3 whitespace-nowrap text-muted-foreground shrink-0 w-[80px] md:w-[120px]">
+      {/* Date — exactly absorbs original left-padding for the drag handle */}
+      <div className="pr-3 md:pr-5 py-3 whitespace-nowrap text-muted-foreground shrink-0 w-[60px] md:w-[96px]">
         {/* Desktop */}
         <span className="hidden md:block text-xs">
           {new Date(txn.date).toLocaleDateString('en-IN', {
@@ -434,9 +434,9 @@ export default function Transactions() {
                     style={{ scrollbarGutter: 'stable' }}
                   >
                     <div className="pl-[6px] flex items-center text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
-                      <div className="w-8 shrink-0" />
+                      <div className="w-5 md:w-6 shrink-0" />
                       {/* Drag handle spacer */}
-                      <div className="px-3 md:px-5 py-3 shrink-0 w-[80px] md:w-[120px]">Date</div>
+                      <div className="pr-3 md:pr-5 py-3 shrink-0 w-[60px] md:w-[96px]">Date</div>
                       <div className="px-3 md:px-5 py-3 flex-1 min-w-0">Description</div>
                       <div className="hidden md:block px-3 md:px-5 py-3 shrink-0 w-[160px]">
                         Category
