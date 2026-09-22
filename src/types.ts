@@ -138,6 +138,8 @@ export interface Transaction {
   note: string;
   /** Optional categorization tags */
   tags?: string[];
+  /** Display order within a single date group (0-based, ascending) */
+  sortOrder?: number;
   /** Soft delete flag */
   isDeleted: boolean;
   /** ISO timestamp of creation */

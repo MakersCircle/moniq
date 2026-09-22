@@ -88,6 +88,7 @@ export interface DataState {
 
   updateTransaction: (id: string, patch: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
+  reorderTransactions: (orderedIds: string[]) => void;
 
   // Budgets
   updateBudget: (categoryId: string, period: string, amount: number) => void;

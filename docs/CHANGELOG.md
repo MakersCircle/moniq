@@ -9,8 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Intra-day Transaction Ordering**: Transactions within the same date can now be manually reordered via drag-and-drop handles in the Ledger. A new `sortOrder` field is persisted to both IndexedDB and Google Sheets (schema v2 migration runs automatically). New transactions are auto-assigned the next available order for their date; existing records are back-filled by `createdAt` on first boot.
+
 ### Changed
 - **Transactions UI**: Improved the Payment Method dropdown in the transaction form to display the associated Account name (e.g., `Account · Method`), reducing confusion when multiple accounts have identically named methods.
+- **Ledger Layout**: The table layout has been completely migrated to a high-performance Flexbox architecture to support butter-smooth 60fps `framer-motion` drag-to-reorder. Column widths and absolute parity with the original layout design are strictly preserved for both desktop and mobile modes.
 
 ---
 
