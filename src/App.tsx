@@ -1,18 +1,18 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect, useState, useCallback, useRef } from 'react';
-import Dashboard from './pages/Dashboard';
-import Transactions from './pages/Transactions';
-import Insights from './pages/Insights';
-import Budget from './pages/Budget';
-import SettingsIndex from './pages/Settings/index';
-import Accounts from './pages/Settings/Accounts';
-import Methods from './pages/Settings/Methods';
-import Categories from './pages/Settings/Categories';
-import SettingsTrash from './pages/Settings/Trash';
+import { useEffect, useState, useCallback, useRef, Suspense, lazy } from 'react';
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Transactions = lazy(() => import('./pages/Transactions'));
+const Insights = lazy(() => import('./pages/Insights'));
+const Budget = lazy(() => import('./pages/Budget'));
+const SettingsIndex = lazy(() => import('./pages/Settings/index'));
+const Accounts = lazy(() => import('./pages/Settings/Accounts'));
+const Methods = lazy(() => import('./pages/Settings/Methods'));
+const Categories = lazy(() => import('./pages/Settings/Categories'));
+const SettingsTrash = lazy(() => import('./pages/Settings/Trash'));
 import Home from './pages/Home';
-import DocsPage from './pages/Docs';
-import PrivacyPolicy from './pages/Legal/PrivacyPolicy';
-import TermsOfService from './pages/Legal/TermsOfService';
+const DocsPage = lazy(() => import('./pages/Docs'));
+const PrivacyPolicy = lazy(() => import('./pages/Legal/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/Legal/TermsOfService'));
 import LayoutShell from './components/Layout/LayoutShell';
 import { useDataStore } from './store/dataStore';
 import { fetchUserProfile, initializeDatabase } from './api/google';
@@ -259,57 +259,65 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Landing/Home page - No Sidebar/TopBar */}
-        <Route
-          path="/"
-          element={accessToken || isDemoMode ? <Navigate to="/dashboard" replace /> : <Home />}
-        />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        <Route path="/terms-of-service" element={<TermsOfService />} />
-        <Route path="/docs" element={<Navigate to="/docs/getting-started" replace />} />
-        <Route
-          path="/docs/*"
-          element={
-            accessToken || isCloudInitialized ? (
-              <LayoutShell onNewTransaction={openNew}>
-                <DocsPage />
-              </LayoutShell>
-            ) : (
-              <div className="min-h-screen bg-[#09090b] text-slate-200 selection:bg-primary/30">
-                <div className="max-w-[1248px] mx-auto p-6 md:p-12 pt-20">
+      <Suspense
+        fallback={
+          <div className="flex h-screen w-screen items-center justify-center text-muted-foreground">
+            <div className="size-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          </div>
+        }
+      >
+        <Routes>
+          {/* Landing/Home page - No Sidebar/TopBar */}
+          <Route
+            path="/"
+            element={accessToken || isDemoMode ? <Navigate to="/dashboard" replace /> : <Home />}
+          />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/docs" element={<Navigate to="/docs/getting-started" replace />} />
+          <Route
+            path="/docs/*"
+            element={
+              accessToken || isCloudInitialized ? (
+                <LayoutShell onNewTransaction={openNew}>
                   <DocsPage />
+                </LayoutShell>
+              ) : (
+                <div className="min-h-screen bg-[#09090b] text-slate-200 selection:bg-primary/30">
+                  <div className="max-w-[1248px] mx-auto p-6 md:p-12 pt-20">
+                    <DocsPage />
+                  </div>
                 </div>
-              </div>
-            )
-          }
-        />
+              )
+            }
+          />
 
-        {/* Application routes - Wrapped in LayoutShell */}
-        <Route
-          path="*"
-          element={
-            accessToken || isCloudInitialized || isDemoMode ? (
-              <LayoutShell onNewTransaction={openNew}>
-                <Routes>
-                  <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="transactions" element={<Transactions />} />
-                  <Route path="insights" element={<Insights />} />
-                  <Route path="budget" element={<Budget />} />
-                  <Route path="settings" element={<SettingsIndex />} />
-                  <Route path="settings/accounts" element={<Accounts />} />
-                  <Route path="settings/methods" element={<Methods />} />
-                  <Route path="settings/categories" element={<Categories />} />
-                  <Route path="settings/trash" element={<SettingsTrash />} />
-                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                </Routes>
-              </LayoutShell>
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-      </Routes>
+          {/* Application routes - Wrapped in LayoutShell */}
+          <Route
+            path="*"
+            element={
+              accessToken || isCloudInitialized || isDemoMode ? (
+                <LayoutShell onNewTransaction={openNew}>
+                  <Routes>
+                    <Route path="dashboard" element={<Dashboard />} />
+                    <Route path="transactions" element={<Transactions />} />
+                    <Route path="insights" element={<Insights />} />
+                    <Route path="budget" element={<Budget />} />
+                    <Route path="settings" element={<SettingsIndex />} />
+                    <Route path="settings/accounts" element={<Accounts />} />
+                    <Route path="settings/methods" element={<Methods />} />
+                    <Route path="settings/categories" element={<Categories />} />
+                    <Route path="settings/trash" element={<SettingsTrash />} />
+                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                  </Routes>
+                </LayoutShell>
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+        </Routes>
+      </Suspense>
 
       {(accessToken || isDemoMode) && (
         <Dialog
