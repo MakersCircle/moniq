@@ -5,14 +5,18 @@ import { LayoutDashboard, ReceiptText, BarChart3, Target, Settings, Plus } from 
 import { cn } from '@/lib/utils';
 import { BetaTag } from '../ui/BetaTag';
 
-const NAV_ITEMS = [
-  { icon: LayoutDashboard, label: 'Dashboard', to: '/dashboard' },
-  { icon: ReceiptText, label: 'Ledger', to: '/transactions' },
-  { icon: BarChart3, label: 'Insights', to: '/insights' },
-  { icon: Target, label: 'Budget', to: '/budget' },
-];
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function Sidebar({ onNewTransaction }: { onNewTransaction?: () => void }) {
+  const { t } = useTranslation();
+
+  const NAV_ITEMS = [
+    { icon: LayoutDashboard, label: t('common.dashboard'), to: '/dashboard' },
+    { icon: ReceiptText, label: t('common.ledger'), to: '/transactions' },
+    { icon: BarChart3, label: t('common.insights'), to: '/insights' },
+    { icon: Target, label: t('common.budget'), to: '/budget' },
+  ];
+
   return (
     <aside className="w-full h-[60px] lg:w-[220px] lg:h-screen flex flex-row lg:flex-col fixed bottom-0 lg:bottom-auto left-0 lg:top-0 border-t lg:border-t-0 lg:border-r border-border bg-background z-50">
       {/* Logo (Desktop Only) */}
@@ -72,7 +76,7 @@ export default function Sidebar({ onNewTransaction }: { onNewTransaction?: () =>
           }
         >
           <Settings className="h-4 w-4" />
-          Settings
+          {t('common.settings')}
         </NavLink>
         <div className="pt-2 px-3 pb-1">
           <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 flex items-center gap-1.5">

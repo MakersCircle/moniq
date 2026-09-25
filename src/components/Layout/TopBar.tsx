@@ -4,12 +4,14 @@ import { useDataStore } from '@/store/dataStore';
 import { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { BetaTag } from '../ui/BetaTag';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface TopBarProps {
   onNewTransaction: () => void;
 }
 
 export default function TopBar({ onNewTransaction }: TopBarProps) {
+  const { t } = useTranslation();
   const { syncStatus } = useDataStore();
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -50,7 +52,7 @@ export default function TopBar({ onNewTransaction }: TopBarProps) {
           <input
             ref={searchRef}
             type="text"
-            placeholder="Search... (/)"
+            placeholder={`${t('common.search')}... (/)`}
             className="w-full h-full bg-transparent min-[400px]:bg-accent/30 focus:bg-accent/50 border border-transparent focus:border-primary/30 rounded-lg pl-9 lg:pl-10 pr-3 text-sm lg:text-xs outline-none transition-all cursor-pointer min-[400px]:cursor-text opacity-0 min-[400px]:opacity-100 focus:opacity-100 absolute min-[400px]:relative right-0 focus:w-[200px] lg:focus:w-full z-20 focus:cursor-text focus:bg-background min-[400px]:focus:bg-accent/50"
             onClick={() => {
               /* TODO: Global search palette */
@@ -68,7 +70,7 @@ export default function TopBar({ onNewTransaction }: TopBarProps) {
           <div className="flex items-center gap-1.5 px-2 py-1.5 lg:py-1 rounded-md bg-accent/30 border border-border/50 text-muted-foreground animate-pulse">
             <RefreshCw className="h-4 w-4 lg:h-3.5 lg:w-3.5 animate-spin" />
             <span className="hidden lg:inline text-[10px] font-medium tracking-wide uppercase">
-              Syncing
+              {t('common.syncing')}
             </span>
           </div>
         )}
@@ -81,7 +83,7 @@ export default function TopBar({ onNewTransaction }: TopBarProps) {
           onClick={() => onNewTransaction()}
         >
           <Plus className="h-4 w-4" />
-          <span>New Transaction</span>
+          <span>{t('common.newTransaction')}</span>
         </Button>
 
         {/* Mobile Settings Icon */}

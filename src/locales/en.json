@@ -24,7 +24,15 @@
     "type": "Type",
     "name": "Name",
     "transactions": "Transactions",
-    "close": "Close"
+    "close": "Close",
+    "search": "Search",
+    "newTransaction": "New Transaction",
+    "dashboard": "Dashboard",
+    "ledger": "Ledger",
+    "insights": "Insights",
+    "budget": "Budget",
+    "settings": "Settings",
+    "syncing": "Syncing"
   },
   "ledger": {
     "title": "Ledger",
