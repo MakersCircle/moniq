@@ -165,6 +165,7 @@ export default function Home() {
           <img
             src="/favicon.svg"
             alt="moniq logo"
+            fetchPriority="high"
             className="absolute z-0"
             style={{ left: '56.48%', top: '36.71%', width: '41.42%', height: 'auto' }}
           />

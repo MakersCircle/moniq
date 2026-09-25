@@ -14,6 +14,7 @@ export default defineConfig({
     remarkPlugins: [],
     rehypePlugins: [],
   }), react(), tailwindcss(), cloudflare(), VitePWA({
+    injectRegister: 'script-defer',
     registerType: 'autoUpdate',
     includeAssets: ['favicon.svg', 'favicon.ico', 'apple-touch-icon-180x180.png'],
     manifest: {
