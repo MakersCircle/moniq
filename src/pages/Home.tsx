@@ -184,6 +184,14 @@ export default function Home() {
           '[@media(orientation:landscape)_and_(max-height:500px)]:gap-3',
         ].join(' ')}
       >
+        <a
+          href="https://github.com/MakersCircle/moniq"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-mono text-[9px] md:text-[10px] text-muted-foreground/40 hover:text-foreground transition-colors uppercase tracking-[0.2em]"
+        >
+          GitHub
+        </a>
         <Link
           to="/docs"
           className="font-mono text-[9px] md:text-[10px] text-muted-foreground/40 hover:text-foreground transition-colors uppercase tracking-[0.2em]"
