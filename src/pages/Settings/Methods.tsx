@@ -196,7 +196,7 @@ export default function Methods() {
                           if (!result.success)
                             setDeleteError(prev => ({
                               ...prev,
-                              [m.id]: result.reason || 'Cannot delete.',
+                              [m.id]: result.reason || t('common.cannotDelete'),
                             }));
                           else
                             setDeleteError(prev => {
@@ -248,7 +248,7 @@ export default function Methods() {
           <div className="space-y-2">
             <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
               {t('common.displayName')}
-              <InfoTooltip text="A recognizable name for this payment method (e.g., UPI, HDFC Debit Card). Used to identify it when adding transactions." />
+              <InfoTooltip text={t('method.nameTooltip')} />
             </Label>
             <Input
               placeholder={t('method.displayNamePlaceholder')}
@@ -264,7 +264,7 @@ export default function Methods() {
           <div className="space-y-2">
             <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center">
               {t('method.linkedAccount')}
-              <InfoTooltip text="Link this method to an account. When you select this method during a transaction, the linked account will be auto-filled, saving you a step." />
+              <InfoTooltip text={t('method.linkedAccountTooltip')} />
             </Label>
             <Select
               value={form.linkedAccountId || undefined}

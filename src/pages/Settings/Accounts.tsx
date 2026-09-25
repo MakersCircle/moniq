@@ -167,7 +167,7 @@ export default function Accounts() {
                           if (!result.success)
                             setDeleteError(prev => ({
                               ...prev,
-                              [a.id]: result.reason || 'Cannot delete.',
+                              [a.id]: result.reason || t('common.cannotDelete'),
                             }));
                           else
                             setDeleteError(prev => {

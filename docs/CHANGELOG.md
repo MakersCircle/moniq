@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **i18n**: Added internationalization (`i18n`) support to the landing page, dashboard, and ledger. Extracted shared strings into a global `common` namespace to reduce duplication.
+- **i18n**: Added internationalization (`i18n`) support to the landing page, dashboard, ledger, and settings pages (including nested sub-pages). Extracted shared strings into a global `common` namespace to reduce duplication. Modified the translation hook to support string interpolation.
 - **Intra-day Transaction Ordering**: Transactions within the same date can now be manually reordered via drag-and-drop handles in the Ledger. A new `sortOrder` field is persisted to both IndexedDB and Google Sheets (schema v2 migration runs automatically). New transactions are auto-assigned the next available order for their date; existing records are back-filled by `createdAt` on first boot.
 
 

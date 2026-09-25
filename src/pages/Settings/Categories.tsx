@@ -237,7 +237,7 @@ export default function Categories() {
                           if (!result.success)
                             setDeleteError(prev => ({
                               ...prev,
-                              [c.id]: result.reason || 'Cannot delete.',
+                              [c.id]: result.reason || t('common.cannotDelete'),
                             }));
                           else
                             setDeleteError(prev => {
