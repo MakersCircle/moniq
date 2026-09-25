@@ -7,7 +7,14 @@
     "delete": "Delete",
     "displayName": "Display Name",
     "displayNameRequired": "Display Name is required.",
-    "description": "Description"
+    "description": "Description",
+    "accounts": "Accounts",
+    "categories": "Categories",
+    "income": "Income",
+    "expenses": "Expenses",
+    "date": "Date",
+    "amount": "Amount",
+    "transfer": "Transfer"
   },
   "account": {
     "createDescription": "Create an account to track its balance and transactions. You can add more payment methods or edit details later in Settings.",
@@ -29,7 +36,6 @@
     "newAccount": "New Account",
     "editAccount": "Edit Account",
     "createAccount": "Create Account",
-    "title": "Accounts",
     "tooltip": "Accounts are the core of Moniq. They represent places where your money lives (like Bank Accounts or Wallets) or money you owe (like Credit Cards or Loans). Every transaction requires an account. You should create an account for each place where your money lives or where you owe money like individual bank accounts, individual credit cards etc.",
     "activeAccounts": "Financial Entities",
     "addAccount": "Add Account",
@@ -38,7 +44,6 @@
     "archivedAccounts": "Archived Accounts"
   },
   "category": {
-    "title": "Categories",
     "tooltip": "Categories organize your income and expenses into a hierarchy. Drag to reorder within groups.",
     "subtitle": "Expense & Income Classification",
     "addCategory": "Add Category",
@@ -62,7 +67,6 @@
     "subHead": "Sub-head (Optional)",
     "subHeadTooltip": "e.g. Groceries, Eating Out, Rent.",
     "subHeadPlaceholder": "e.g., Groceries, Eating Out, Rent",
-    "income": "Income",
     "needs": "Needs",
     "wants": "Wants",
     "invest": "Invest",
@@ -99,5 +103,34 @@
     "docs": "Docs",
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service"
+  },
+  "dashboard": {
+    "welcomeTitle": "Welcome to Moniq",
+    "welcomeDesc1": "Your ledger is a blank canvas. Tap the + button ",
+    "welcomeDesc2": "or press ",
+    "welcomeDesc3": " to log your first transaction.",
+    "title": "Dashboard",
+    "viewLedger": "View Ledger",
+    "viewLedgerArrow": "View Ledger ›",
+    "totalNetWorth": "Total Net Worth",
+    "spendableCash": "Spendable Cash",
+    "savings": "Savings",
+    "thisMonth": "This Month",
+    "thisFy": "This FY",
+    "savingsRate": "Savings Rate",
+    "remaining": "remaining",
+    "additionalSummaries": "Additional Summaries",
+    "totalReceivable": "Total Receivable",
+    "totalPayable": "Total Payable",
+    "manage": "Manage ›",
+    "viewAllAccounts": "View all accounts",
+    "spendingThisMonth": "Spending This Month",
+    "analysis": "Analysis ›",
+    "noDataThisMonth": "No data for this month",
+    "recentTransactions": "Recent Transactions",
+    "noTransactions": "No transactions yet.",
+    "tableCategory": "Category / Target",
+    "tableNoDescription": "No description"
   }
 }
+
