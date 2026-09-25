@@ -6,6 +6,7 @@ import { useFilteredTransactions } from '../hooks/useComputed';
 import { exportToCSV, toMonthKey, formatCurrency } from '../utils/format';
 import type { TxnFilter } from '../hooks/useComputed';
 import type { Transaction, Account, Category, UserSettings } from '../types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,20 +23,25 @@ import TransactionDetailPanel from '@/components/Transactions/TransactionDetailP
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function getAccountName(txn: Transaction, accounts: Account[]) {
+function getAccountName(txn: Transaction, accounts: Account[], t: (key: string) => string) {
   const isIncome = txn.uiType === 'income';
   const entry = txn.entries.find(
     e =>
       accounts.some(a => a.id === e.accountId) &&
       (isIncome ? e.type === 'DEBIT' : e.type === 'CREDIT')
   );
-  return accounts.find(a => a.id === entry?.accountId)?.name || 'Unknown';
+  return accounts.find(a => a.id === entry?.accountId)?.name || t('common.unknown');
 }
 
-function getCategoryName(txn: Transaction, accounts: Account[], categories: Category[]) {
+function getCategoryName(
+  txn: Transaction,
+  accounts: Account[],
+  categories: Category[],
+  t: (key: string) => string
+) {
   if (txn.uiType === 'transfer') {
     const targetEntry = txn.entries.find(e => e.type === 'DEBIT');
-    return accounts.find(a => a.id === targetEntry?.accountId)?.name || 'Transfer';
+    return accounts.find(a => a.id === targetEntry?.accountId)?.name || t('common.transfer');
   }
   const catEntry = txn.entries.find(e => categories.some(c => c.id === e.accountId));
   const c = categories.find(c => c.id === catEntry?.accountId);
@@ -50,10 +56,11 @@ interface TxnRowProps {
   accounts: Account[];
   categories: Category[];
   settings: UserSettings;
+  t: (key: string) => string;
   onClick: () => void;
 }
 
-function TxnGridRow({ txn, isSelected, accounts, categories, settings, onClick }: TxnRowProps) {
+function TxnGridRow({ txn, isSelected, accounts, categories, settings, t, onClick }: TxnRowProps) {
   return (
     <div
       onClick={onClick}
@@ -103,17 +110,17 @@ function TxnGridRow({ txn, isSelected, accounts, categories, settings, onClick }
                   : 'text-muted-foreground font-normal opacity-40'
               )}
             >
-              {txn.note || 'No description'}
+              {txn.note || t('common.noDescriptionProvided')}
             </span>
             {isSelected && <ChevronRight className="h-3.5 w-3.5 text-primary flex-shrink-0" />}
           </div>
           {/* Mobile: category + account beneath description */}
           <div className="md:hidden flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground min-w-0">
             <span className="truncate max-w-[70px]">
-              {getCategoryName(txn, accounts, categories)}
+              {getCategoryName(txn, accounts, categories, t)}
             </span>
             <span className="shrink-0 opacity-50">•</span>
-            <span className="truncate max-w-[70px]">{getAccountName(txn, accounts)}</span>
+            <span className="truncate max-w-[70px]">{getAccountName(txn, accounts, t)}</span>
           </div>
         </div>
       </div>
@@ -131,13 +138,13 @@ function TxnGridRow({ txn, isSelected, accounts, categories, settings, onClick }
           )}
         />
         <span className="text-muted-foreground text-xs truncate">
-          {getCategoryName(txn, accounts, categories)}
+          {getCategoryName(txn, accounts, categories, t)}
         </span>
       </div>
 
       {/* Account — desktop only, fixed width */}
       <div className="hidden md:block px-3 md:px-5 py-3 text-muted-foreground text-xs truncate shrink-0 w-[140px]">
-        {getAccountName(txn, accounts)}
+        {getAccountName(txn, accounts, t)}
       </div>
 
       {/* Amount — fixed width, right-aligned */}
@@ -166,6 +173,7 @@ function DateGroup({
   accounts,
   categories,
   settings,
+  t,
   onSelect,
   onCommitOrder,
 }: {
@@ -174,6 +182,7 @@ function DateGroup({
   accounts: Account[];
   categories: Category[];
   settings: UserSettings;
+  t: (key: string) => string;
   onSelect: (id: string | null) => void;
   onCommitOrder: (ids: string[]) => void;
 }) {
@@ -237,6 +246,7 @@ function DateGroup({
               accounts={accounts}
               categories={categories}
               settings={settings}
+              t={t}
               onClick={() => {
                 if (isDraggingRef.current) return;
                 onSelect(txn.id === selectedTxnId ? null : txn.id);
@@ -261,6 +271,7 @@ export default function Transactions() {
     deleteTransaction,
     reorderTransactions,
   } = useDataStore();
+  const { t } = useTranslation();
 
   const [filter, setFilter] = useState<TxnFilter>({});
   const [selectedTxnId, setSelectedTxnId] = useState<string | null>(null);
@@ -295,9 +306,11 @@ export default function Transactions() {
         <div className="h-16 w-16 lg:h-24 lg:w-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
           <List className="h-8 w-8 lg:h-12 lg:w-12 text-primary opacity-80" />
         </div>
-        <h2 className="text-2xl lg:text-3xl font-bold tracking-tight mb-3">Nothing here yet</h2>
+        <h2 className="text-2xl lg:text-3xl font-bold tracking-tight mb-3">
+          {t('ledger.noTransactions')}
+        </h2>
         <p className="text-muted-foreground max-w-md mx-auto mb-8 text-sm lg:text-base">
-          Your ledger is empty. Add a transaction to start seeing your history.
+          {t('ledger.noTransactionsDesc')}
         </p>
       </div>
     );
@@ -322,9 +335,9 @@ export default function Transactions() {
         <div className="sticky top-0 bg-background/80 backdrop-blur-md z-20 border-b border-border p-8 pb-4 space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Ledger</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{t('ledger.title')}</h1>
               <p className="text-sm text-muted-foreground">
-                {txns.length} transactions · Net:
+                {txns.length} {t('ledger.transactions')} · {t('ledger.net')}
                 <span
                   className={cn(
                     'ml-1 font-bold mono',
@@ -339,8 +352,8 @@ export default function Transactions() {
             <div className="flex items-center gap-2 self-start md:self-auto">
               <Button variant="outline" size="sm" onClick={handleExport} className="h-9 gap-2">
                 <Download className="h-4 w-4" />
-                <span className="hidden md:inline">Export CSV</span>
-                <span className="md:hidden">Export</span>
+                <span className="hidden md:inline">{t('ledger.exportCsv')}</span>
+                <span className="md:hidden">{t('ledger.export')}</span>
               </Button>
             </div>
           </div>
@@ -349,7 +362,7 @@ export default function Transactions() {
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search description..."
+                placeholder={t('ledger.searchDescription')}
                 className="pl-9 h-9 text-xs"
                 value={filter.search || ''}
                 onChange={e => updateFilter({ search: e.target.value || undefined })}
@@ -361,10 +374,10 @@ export default function Transactions() {
               onValueChange={val => updateFilter({ month: val === 'all' ? undefined : val })}
             >
               <SelectTrigger className="h-9 w-[160px] text-xs">
-                <SelectValue placeholder="All Time" />
+                <SelectValue placeholder={t('ledger.allTime')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Time</SelectItem>
+                <SelectItem value="all">{t('ledger.allTime')}</SelectItem>
                 {Array.from({ length: 12 }).map((_, i) => {
                   const d = new Date();
                   d.setMonth(d.getMonth() - i);
@@ -385,13 +398,13 @@ export default function Transactions() {
               }
             >
               <SelectTrigger className="h-9 w-[120px] text-xs">
-                <SelectValue placeholder="All Types" />
+                <SelectValue placeholder={t('ledger.allTypes')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="income">Income</SelectItem>
-                <SelectItem value="expense">Expense</SelectItem>
-                <SelectItem value="transfer">Transfer</SelectItem>
+                <SelectItem value="all">{t('ledger.allTypes')}</SelectItem>
+                <SelectItem value="income">{t('common.income')}</SelectItem>
+                <SelectItem value="expense">{t('common.expenses')}</SelectItem>
+                <SelectItem value="transfer">{t('common.transfer')}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -400,10 +413,10 @@ export default function Transactions() {
               onValueChange={val => updateFilter({ accountId: val === 'all' ? undefined : val })}
             >
               <SelectTrigger className="h-9 w-[150px] text-xs">
-                <SelectValue placeholder="All Accounts" />
+                <SelectValue placeholder={t('ledger.allAccounts')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Accounts</SelectItem>
+                <SelectItem value="all">{t('ledger.allAccounts')}</SelectItem>
                 {accounts
                   .filter(a => !a.isDeleted)
                   .map(s => (
@@ -421,7 +434,7 @@ export default function Transactions() {
           {txns.length === 0 ? (
             <div className="py-20 text-center border-2 border-dashed border-border rounded-2xl bg-accent/5">
               <p className="text-muted-foreground font-medium">
-                No transactions found matching your filters.
+                {t('ledger.noFilteredTransactions')}
               </p>
             </div>
           ) : (
@@ -436,16 +449,20 @@ export default function Transactions() {
                     <div className="pl-[6px] flex items-center text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
                       <div className="w-5 md:w-6 shrink-0" />
                       {/* Drag handle spacer */}
-                      <div className="pr-3 md:pr-5 py-3 shrink-0 w-[60px] md:w-[96px]">Date</div>
-                      <div className="px-3 md:px-5 py-3 flex-1 min-w-0">Description</div>
+                      <div className="pr-3 md:pr-5 py-3 shrink-0 w-[60px] md:w-[96px]">
+                        {t('common.date')}
+                      </div>
+                      <div className="px-3 md:px-5 py-3 flex-1 min-w-0">
+                        {t('common.description')}
+                      </div>
                       <div className="hidden md:block px-3 md:px-5 py-3 shrink-0 w-[160px]">
-                        Category
+                        {t('common.categories')}
                       </div>
                       <div className="hidden md:block px-3 md:px-5 py-3 shrink-0 w-[140px]">
-                        Account
+                        {t('common.accounts')}
                       </div>
                       <div className="px-3 md:px-5 py-3 text-right shrink-0 w-[110px] md:w-[140px]">
-                        Amount
+                        {t('common.amount')}
                       </div>
                     </div>
                   </div>
@@ -460,6 +477,7 @@ export default function Transactions() {
                         accounts={accounts}
                         categories={categories}
                         settings={settings}
+                        t={t}
                         onSelect={setSelectedTxnId}
                         onCommitOrder={reorderTransactions}
                       />

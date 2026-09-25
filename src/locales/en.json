@@ -14,7 +14,29 @@
     "expenses": "Expenses",
     "date": "Date",
     "amount": "Amount",
-    "transfer": "Transfer"
+      "transfer": "Transfer",
+    "unknown": "Unknown",
+    "uncategorized": "Uncategorized",
+    "noDescriptionProvided": "No description provided",
+    "edit": "Edit"
+  },
+  "ledger": {
+    "title": "Ledger",
+    "transactions": "transactions",
+    "net": "Net:",
+    "exportCsv": "Export CSV",
+    "export": "Export",
+    "searchDescription": "Search description...",
+    "allTime": "All Time",
+    "allTypes": "All Types",
+    "allAccounts": "All Accounts",
+    "noTransactions": "Nothing here yet",
+    "noTransactionsDesc": "Your ledger is empty. Add a transaction to start seeing your history.",
+    "noFilteredTransactions": "No transactions found matching your filters.",
+    "transactionDetails": "Transaction Details",
+    "editTransaction": "Edit Transaction",
+    "fromAccount": "From Account",
+    "toAccount": "To Account"
   },
   "account": {
     "createDescription": "Create an account to track its balance and transactions. You can add more payment methods or edit details later in Settings.",
