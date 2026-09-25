@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 import type { Transaction, Account, PaymentMethod, Category, UserSettings } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function InfoTooltip({ text, position = 'top' }: { text: string; position?: 'top' | 'bottom' }) {
   return (
@@ -44,6 +45,7 @@ export default function Trash() {
     updateCategory,
     restoreAccount,
   } = useDataStore();
+  const { t } = useTranslation();
   const [restoring, setRestoring] = useState<Record<string, boolean>>({});
   const [sortBy, setSortBy] = useState<SortOption>('deleted');
   const [activeTab, setActiveTab] = useState('transactions');
@@ -117,12 +119,12 @@ export default function Trash() {
     }, 150);
   };
 
-  const renderEmpty = (label: string) => (
+  const renderEmpty = () => (
     <div className="flex flex-col items-center justify-center p-12 text-center rounded-xl bg-accent/20 border border-border/50 border-dashed opacity-70">
       <Trash2 className="h-10 w-10 text-muted-foreground/50 mb-3" />
-      <h3 className="text-sm font-bold text-muted-foreground">No deleted {label}</h3>
+      <h3 className="text-sm font-bold text-muted-foreground">{t('trash.noDeleted')}</h3>
       <p className="text-[10px] text-muted-foreground mt-1 max-w-[250px] uppercase font-bold tracking-[0.1em]">
-        Discarded items will neatly stack up here.
+        {t('trash.emptyDesc')}
       </p>
     </div>
   );
@@ -135,20 +137,17 @@ export default function Trash() {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold tracking-tight text-destructive">
-                  Recently Deleted
+                  {t('trash.title')}
                 </h2>
-                <InfoTooltip
-                  position="bottom"
-                  text="Items you delete are sent here. Restoring an item will put it back in your ledger, accounts, or categories list."
-                />
+                <InfoTooltip position="bottom" text={t('trash.infoText')} />
               </div>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                System Trash
+                {t('trash.subtitle')}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mr-1">
-                Sort by
+                {t('trash.sortBy')}
               </span>
               <Select value={sortBy} onValueChange={val => setSortBy(val as SortOption)}>
                 <SelectTrigger className="h-8 w-[160px] text-[10px] font-bold uppercase tracking-widest">
@@ -159,13 +158,13 @@ export default function Trash() {
                     value="deleted"
                     className="text-[10px] font-bold uppercase tracking-widest"
                   >
-                    Recently Deleted
+                    {t('trash.recentlyDeleted')}
                   </SelectItem>
                   <SelectItem
                     value="created"
                     className="text-[10px] font-bold uppercase tracking-widest"
                   >
-                    Date Created
+                    {t('trash.dateCreated')}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -179,28 +178,28 @@ export default function Trash() {
                 className="rounded-lg px-4 h-8 gap-2 text-[10px] font-bold uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
                 <ReceiptText className="h-3.5 w-3.5" />
-                Transactions ({deletedTxns.length})
+                {t('common.transactions')} ({deletedTxns.length})
               </TabsTrigger>
               <TabsTrigger
                 value="accounts"
                 className="rounded-lg px-4 h-8 gap-2 text-[10px] font-bold uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
                 <Landmark className="h-3.5 w-3.5" />
-                Accounts ({deletedAccounts.length})
+                {t('common.accounts')} ({deletedAccounts.length})
               </TabsTrigger>
               <TabsTrigger
                 value="methods"
                 className="rounded-lg px-4 h-8 gap-2 text-[10px] font-bold uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
                 <CreditCard className="h-3.5 w-3.5" />
-                Pay Methods ({deletedMethods.length})
+                {t('trash.payMethods')} ({deletedMethods.length})
               </TabsTrigger>
               <TabsTrigger
                 value="categories"
                 className="rounded-lg px-4 h-8 gap-2 text-[10px] font-bold uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
                 <Tag className="h-3.5 w-3.5" />
-                Categories ({deletedCategories.length})
+                {t('common.categories')} ({deletedCategories.length})
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -216,7 +215,7 @@ export default function Trash() {
         <div className="pt-2">
           {activeTab === 'transactions' &&
             (deletedTxns.length === 0 ? (
-              renderEmpty('transactions')
+              renderEmpty()
             ) : (
               <TransactionsTable
                 transactions={deletedTxns}
@@ -225,12 +224,13 @@ export default function Trash() {
                 accounts={accounts}
                 restoring={restoring}
                 onRestore={id => handleRestore('transaction', id)}
+                t={t}
               />
             ))}
 
           {activeTab === 'accounts' &&
             (deletedAccounts.length === 0 ? (
-              renderEmpty('accounts')
+              renderEmpty()
             ) : (
               <AccountsTable
                 accounts={deletedAccounts}
@@ -238,12 +238,13 @@ export default function Trash() {
                 settings={settings}
                 restoring={restoring}
                 onRestore={id => handleRestore('account', id)}
+                t={t}
               />
             ))}
 
           {activeTab === 'methods' &&
             (deletedMethods.length === 0 ? (
-              renderEmpty('payment methods')
+              renderEmpty()
             ) : (
               <MethodsTable
                 methods={deletedMethods}
@@ -251,18 +252,20 @@ export default function Trash() {
                 sortBy={sortBy}
                 restoring={restoring}
                 onRestore={id => handleRestore('method', id)}
+                t={t}
               />
             ))}
 
           {activeTab === 'categories' &&
             (deletedCategories.length === 0 ? (
-              renderEmpty('categories')
+              renderEmpty()
             ) : (
               <CategoriesTable
                 categories={deletedCategories}
                 sortBy={sortBy}
                 restoring={restoring}
                 onRestore={id => handleRestore('category', id)}
+                t={t}
               />
             ))}
         </div>
@@ -280,6 +283,7 @@ interface TransactionsTableProps {
   accounts: Account[];
   restoring: Record<string, boolean>;
   onRestore: (id: string) => void;
+  t: (key: string) => string;
 }
 
 function TransactionsTable({
@@ -289,6 +293,7 @@ function TransactionsTable({
   accounts,
   restoring,
   onRestore,
+  t,
 }: TransactionsTableProps) {
   const sorted = [...transactions].sort((a, b) => {
     if (sortBy === 'deleted') return b.updatedAt.localeCompare(a.updatedAt);
@@ -300,47 +305,48 @@ function TransactionsTable({
       <table className="w-full text-sm text-left">
         <thead className="bg-accent/30 text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
           <tr>
-            <th className="px-5 py-3 border-b border-border">Date</th>
-            <th className="px-5 py-3 border-b border-border">Description</th>
-            <th className="px-5 py-3 border-b border-border">Account</th>
-            <th className="px-5 py-3 border-b border-border text-right">Amount</th>
+            <th className="px-5 py-3 border-b border-border">{t('common.date')}</th>
+            <th className="px-5 py-3 border-b border-border">{t('common.description')}</th>
+            <th className="px-5 py-3 border-b border-border">{t('common.accounts')}</th>
+            <th className="px-5 py-3 border-b border-border text-right">{t('common.amount')}</th>
             <th className="px-5 py-3 border-b border-border w-10"></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
-          {sorted.map(t => (
+          {sorted.map(txn => (
             <tr
-              key={t.id}
+              key={txn.id}
               className={cn(
                 'group hover:bg-accent/20 transition-all',
-                restoring[t.id] && 'opacity-0 scale-95'
+                restoring[txn.id] && 'opacity-0 scale-95'
               )}
             >
-              <td className="px-5 py-3 whitespace-nowrap text-xs font-bold">{t.date}</td>
+              <td className="px-5 py-3 whitespace-nowrap text-xs font-bold">{txn.date}</td>
               <td className="px-5 py-3">
-                <p className="font-bold text-xs">{t.note || 'No description'}</p>
+                <p className="font-bold text-xs">{txn.note || t('common.noDescriptionProvided')}</p>
                 <p className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter">
-                  Deleted on {t.updatedAt.slice(0, 10)}
+                  {t('trash.deletedOn')} {txn.updatedAt.slice(0, 10)}
                 </p>
               </td>
               <td className="px-5 py-3 text-xs text-muted-foreground">
-                {accounts.find((a: Account) => a.id === t.entries[0]?.accountId)?.name || 'Unknown'}
+                {accounts.find((a: Account) => a.id === txn.entries[0]?.accountId)?.name ||
+                  t('common.unknown')}
               </td>
               <td
                 className={cn(
                   'px-5 py-3 text-right mono font-bold',
-                  t.uiType === 'income' ? 'text-income' : 'text-expense'
+                  txn.uiType === 'income' ? 'text-income' : 'text-expense'
                 )}
               >
-                {t.uiType === 'income' ? '+' : ''}
-                {formatCurrency(t.amount, settings)}
+                {txn.uiType === 'income' ? '+' : ''}
+                {formatCurrency(txn.amount, settings)}
               </td>
               <td className="px-2 py-3">
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-8 w-8 text-primary opacity-0 group-hover:opacity-100 p-0"
-                  onClick={() => onRestore(t.id)}
+                  onClick={() => onRestore(txn.id)}
                 >
                   <RotateCcw className="h-4 w-4" />
                 </Button>
@@ -359,9 +365,10 @@ interface AccountsTableProps {
   settings: UserSettings;
   restoring: Record<string, boolean>;
   onRestore: (id: string) => void;
+  t: (key: string) => string;
 }
 
-function AccountsTable({ accounts, settings, restoring, onRestore }: AccountsTableProps) {
+function AccountsTable({ accounts, settings, restoring, onRestore, t }: AccountsTableProps) {
   const sorted = [...accounts].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
   return (
@@ -369,9 +376,11 @@ function AccountsTable({ accounts, settings, restoring, onRestore }: AccountsTab
       <table className="w-full text-sm text-left">
         <thead className="bg-accent/30 text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
           <tr>
-            <th className="px-5 py-3 border-b border-border">Name</th>
-            <th className="px-5 py-3 border-b border-border">Type</th>
-            <th className="px-5 py-3 border-b border-border text-right">Opening Balance</th>
+            <th className="px-5 py-3 border-b border-border">{t('common.name')}</th>
+            <th className="px-5 py-3 border-b border-border">{t('common.type')}</th>
+            <th className="px-5 py-3 border-b border-border text-right">
+              {t('account.openingBalance')}
+            </th>
             <th className="px-5 py-3 border-b border-border w-10"></th>
           </tr>
         </thead>
@@ -387,7 +396,7 @@ function AccountsTable({ accounts, settings, restoring, onRestore }: AccountsTab
               <td className="px-5 py-3">
                 <p className="font-bold text-xs">{a.name}</p>
                 <p className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter">
-                  Deleted on {a.updatedAt.slice(0, 10)}
+                  {t('trash.deletedOn')} {a.updatedAt.slice(0, 10)}
                 </p>
               </td>
               <td className="px-5 py-3 text-xs text-muted-foreground uppercase font-bold tracking-widest">
@@ -420,9 +429,10 @@ interface MethodsTableProps {
   sortBy: SortOption;
   restoring: Record<string, boolean>;
   onRestore: (id: string) => void;
+  t: (key: string) => string;
 }
 
-function MethodsTable({ methods, accounts, restoring, onRestore }: MethodsTableProps) {
+function MethodsTable({ methods, accounts, restoring, onRestore, t }: MethodsTableProps) {
   const sorted = [...methods].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
   return (
@@ -430,8 +440,8 @@ function MethodsTable({ methods, accounts, restoring, onRestore }: MethodsTableP
       <table className="w-full text-sm text-left">
         <thead className="bg-accent/30 text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
           <tr>
-            <th className="px-5 py-3 border-b border-border">Method Name</th>
-            <th className="px-5 py-3 border-b border-border">Linked Account</th>
+            <th className="px-5 py-3 border-b border-border">{t('trash.methodName')}</th>
+            <th className="px-5 py-3 border-b border-border">{t('method.linkedAccount')}</th>
             <th className="px-5 py-3 border-b border-border w-10"></th>
           </tr>
         </thead>
@@ -447,11 +457,12 @@ function MethodsTable({ methods, accounts, restoring, onRestore }: MethodsTableP
               <td className="px-5 py-3">
                 <p className="font-bold text-xs">{m.name}</p>
                 <p className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter">
-                  Deleted on {m.updatedAt.slice(0, 10)}
+                  {t('trash.deletedOn')} {m.updatedAt.slice(0, 10)}
                 </p>
               </td>
               <td className="px-5 py-3 text-xs text-muted-foreground font-bold">
-                {accounts.find((a: Account) => a.id === m.linkedAccountId)?.name || 'Unknown'}
+                {accounts.find((a: Account) => a.id === m.linkedAccountId)?.name ||
+                  t('common.unknown')}
               </td>
               <td className="px-2 py-3">
                 <Button
@@ -476,9 +487,10 @@ interface CategoriesTableProps {
   sortBy: SortOption;
   restoring: Record<string, boolean>;
   onRestore: (id: string) => void;
+  t: (key: string) => string;
 }
 
-function CategoriesTable({ categories, restoring, onRestore }: CategoriesTableProps) {
+function CategoriesTable({ categories, restoring, onRestore, t }: CategoriesTableProps) {
   const sorted = [...categories].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
   return (
@@ -486,8 +498,8 @@ function CategoriesTable({ categories, restoring, onRestore }: CategoriesTablePr
       <table className="w-full text-sm text-left">
         <thead className="bg-accent/30 text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
           <tr>
-            <th className="px-5 py-3 border-b border-border">Category</th>
-            <th className="px-5 py-3 border-b border-border">Group</th>
+            <th className="px-5 py-3 border-b border-border">{t('common.categories')}</th>
+            <th className="px-5 py-3 border-b border-border">{t('common.group')}</th>
             <th className="px-5 py-3 border-b border-border w-10"></th>
           </tr>
         </thead>
@@ -505,7 +517,7 @@ function CategoriesTable({ categories, restoring, onRestore }: CategoriesTablePr
                   {c.head} {c.subHead ? `· ${c.subHead}` : ''}
                 </p>
                 <p className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter">
-                  Deleted on {c.updatedAt.slice(0, 10)}
+                  {t('trash.deletedOn')} {c.updatedAt.slice(0, 10)}
                 </p>
               </td>
               <td className="px-5 py-3 text-xs text-muted-foreground uppercase font-black tracking-widest">

@@ -16,8 +16,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import RecentTransactionsTable from '@/components/Dashboard/RecentTransactionsTable';
 import type { UserSettings } from '@/types';
+import { useTranslation } from '../hooks/useTranslation';
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const {
     accounts,
     settings,
@@ -46,13 +48,16 @@ export default function Dashboard() {
         <div className="h-16 w-16 lg:h-24 lg:w-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
           <PieChartIcon className="h-8 w-8 lg:h-12 lg:w-12 text-primary opacity-80" />
         </div>
-        <h2 className="text-2xl lg:text-3xl font-bold tracking-tight mb-3">Welcome to Moniq</h2>
+        <h2 className="text-2xl lg:text-3xl font-bold tracking-tight mb-3">
+          {t('dashboard.welcomeTitle')}
+        </h2>
         <p className="text-muted-foreground max-w-md mx-auto mb-8 text-sm lg:text-base">
-          Your ledger is a blank canvas. Tap the + button{' '}
+          {t('dashboard.welcomeDesc1')}
           <span className="hidden lg:inline">
-            or press <kbd className="px-2 py-1 bg-accent rounded text-xs font-mono">Alt+N</kbd>{' '}
+            {t('dashboard.welcomeDesc2')}
+            <kbd className="px-2 py-1 bg-accent rounded text-xs font-mono">Alt+N</kbd>
+            {t('dashboard.welcomeDesc3')}
           </span>
-          to log your first transaction.
         </p>
       </div>
     );
@@ -63,13 +68,13 @@ export default function Dashboard() {
       {/* Page Header */}
       <div className="flex flex-row items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('dashboard.title')}</h1>
           <p className="text-sm text-muted-foreground">{monthLabel}</p>
         </div>
         <div className="flex items-center gap-2">
           <Link to="/transactions">
             <Button variant="outline" size="sm" className="h-9 gap-2 text-xs">
-              View Ledger
+              {t('dashboard.viewLedger')}
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </Link>
@@ -79,48 +84,58 @@ export default function Dashboard() {
       {/* Top Stats Row — 4 Cards */}
       <div className="grid grid-cols-1 min-[340px]:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
-          label="Total Net Worth"
+          label={t('dashboard.totalNetWorth')}
           value={netWorth}
           settings={settings}
           detail={
             <div className="flex flex-col">
-              <span>Spendable Cash: {formatCurrencyShort(liquidity, settings.currencySymbol)}</span>
-              <span>Savings: {formatCurrencyShort(totalSavings, settings.currencySymbol)}</span>
+              <span>
+                {t('dashboard.spendableCash')}:{' '}
+                {formatCurrencyShort(liquidity, settings.currencySymbol)}
+              </span>
+              <span>
+                {t('dashboard.savings')}:{' '}
+                {formatCurrencyShort(totalSavings, settings.currencySymbol)}
+              </span>
             </div>
           }
           detailColor="text-muted-foreground"
         />
         <StatCard
-          label="Income"
+          label={t('common.income')}
           value={income}
           settings={settings}
           detail={
             <div className="flex flex-col">
-              <span>This Month</span>
-              <span>This FY: {formatCurrencyShort(fySummary.income, settings.currencySymbol)}</span>
+              <span>{t('dashboard.thisMonth')}</span>
+              <span>
+                {t('dashboard.thisFy')}:{' '}
+                {formatCurrencyShort(fySummary.income, settings.currencySymbol)}
+              </span>
             </div>
           }
         />
         <StatCard
-          label="Expenses"
+          label={t('common.expenses')}
           value={expenses}
           settings={settings}
           detail={
             <div className="flex flex-col">
-              <span>This Month</span>
+              <span>{t('dashboard.thisMonth')}</span>
               <span>
-                This FY: {formatCurrencyShort(fySummary.expenses, settings.currencySymbol)}
+                {t('dashboard.thisFy')}:{' '}
+                {formatCurrencyShort(fySummary.expenses, settings.currencySymbol)}
               </span>
             </div>
           }
           valueColor="text-expense"
         />
         <StatCard
-          label="Savings Rate"
+          label={t('dashboard.savingsRate')}
           value={savingsRate}
           settings={settings}
           isPercent
-          detail={`${formatCurrency(income - expenses, settings)} remaining`}
+          detail={`${formatCurrency(income - expenses, settings)} ${t('dashboard.remaining')}`}
           detailColor={income - expenses >= 0 ? 'text-income' : 'text-expense'}
         />
       </div>
@@ -133,7 +148,7 @@ export default function Dashboard() {
             onClick={() => setDebtsExpanded(!debtsExpanded)}
           >
             <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
-              Additional Summaries
+              {t('dashboard.additionalSummaries')}
             </h3>
             <div className="h-5 w-5 flex items-center justify-center rounded-full bg-accent/50 group-hover:bg-primary/20 text-muted-foreground group-hover:text-primary transition-colors">
               {debtsExpanded ? (
@@ -149,7 +164,7 @@ export default function Dashboard() {
               <div className="bg-accent/10 border border-border rounded-xl p-4 flex items-center justify-between">
                 <div>
                   <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-                    Total Receivable
+                    {t('dashboard.totalReceivable')}
                   </p>
                   <p className="text-base font-bold mono text-income">
                     {formatCurrency(totalReceivable, settings)}
@@ -162,7 +177,7 @@ export default function Dashboard() {
               <div className="bg-accent/10 border border-border rounded-xl p-4 flex items-center justify-between">
                 <div>
                   <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-                    Total Payable
+                    {t('dashboard.totalPayable')}
                   </p>
                   <p className="text-base font-bold mono text-expense">
                     {formatCurrency(totalPayable, settings)}
@@ -184,13 +199,13 @@ export default function Dashboard() {
           <div className="flex items-center justify-between gap-4">
             <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-muted-foreground truncate">
               <Wallet className="h-4 w-4 flex-shrink-0" />
-              <span className="truncate">Accounts</span>
+              <span className="truncate">{t('common.accounts')}</span>
             </h3>
             <Link
               to="/settings/accounts"
               className="text-[10px] font-bold text-primary hover:underline whitespace-nowrap flex-shrink-0"
             >
-              Manage ›
+              {t('dashboard.manage')}
             </Link>
           </div>
           <Card className="border-border">
@@ -221,7 +236,7 @@ export default function Dashboard() {
                   to="/settings/accounts"
                   className="block p-3 text-center text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
                 >
-                  View all accounts
+                  {t('dashboard.viewAllAccounts')}
                 </Link>
               )}
             </div>
@@ -233,19 +248,19 @@ export default function Dashboard() {
           <div className="flex items-center justify-between gap-4">
             <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-muted-foreground truncate">
               <PieChartIcon className="h-4 w-4 flex-shrink-0" />
-              <span className="truncate">Spending This Month</span>
+              <span className="truncate">{t('dashboard.spendingThisMonth')}</span>
             </h3>
             <Link
               to="/insights"
               className="text-[10px] font-bold text-primary hover:underline whitespace-nowrap flex-shrink-0"
             >
-              Analysis ›
+              {t('dashboard.analysis')}
             </Link>
           </div>
           <Card className="p-6 border-border">
             {categorySpend.length === 0 ? (
               <div className="flex flex-col items-center justify-center text-muted-foreground italic text-sm py-10">
-                No data for this month
+                {t('dashboard.noDataThisMonth')}
               </div>
             ) : (
               <div className="space-y-5">
@@ -286,19 +301,19 @@ export default function Dashboard() {
       <section className="space-y-4 pt-4">
         <div className="flex items-center justify-between gap-4">
           <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground truncate">
-            Recent Transactions
+            {t('dashboard.recentTransactions')}
           </h3>
           <Link
             to="/transactions"
             className="text-[10px] font-bold text-primary hover:underline whitespace-nowrap flex-shrink-0"
           >
-            View Ledger ›
+            {t('dashboard.viewLedgerArrow')}
           </Link>
         </div>
         <Card className="border-border overflow-hidden">
           {recentTxns.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground italic">
-              No transactions yet.
+              {t('dashboard.noTransactions')}
             </div>
           ) : (
             <RecentTransactionsTable transactions={recentTxns} />
