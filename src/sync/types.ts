@@ -61,6 +61,7 @@ export const SHEET_HEADERS: Record<string, string[]> = {
     'Is Deleted',
     'Created At',
     'Updated At',
+    'Sort Order',
     'Checksum',
   ],
   Accounts: [
