@@ -32,7 +32,37 @@
     "insights": "Insights",
     "budget": "Budget",
     "settings": "Settings",
-    "syncing": "Syncing"
+
+    "new": "New",
+    "transaction": "Transaction",
+    "expense": "Expense",
+    "from": "From",
+    "to": "To",
+    "account": "Account",
+    "category": "Category",
+    "subCategory": "Sub-category",
+    "paymentMethod": "Payment Method",
+    "selectMethod": "Select method",
+    "selectCategory": "Select category",
+    "selectSubCategory": "Select sub-category",
+    "createAccountMethod": "Create Account & Method",
+    "createCategory": "Create Category",
+    "save": "Save",
+    "notes": "Notes",
+    "optional": "Optional",
+    "addSplit": "Add split line",
+    "addCategory": "Add Category",
+    "saved": "Saved"
+  },
+  "transaction": {
+    "expectedBalance": "Expected Balance:",
+    "pickCategoryFirst": "Pick category first",
+    "disableSplit": "Disable Split",
+    "splitThisTransaction": "Split this transaction",
+    "allSplits": "✓ All Splits",
+    "allocatedOf": "Allocated {{allocated}} of {{total}}",
+    "notePlaceholder": "What was this for?",
+    "shiftEnter": "Shift + Enter for new line • Enter to save"
   },
   "ledger": {
     "title": "Ledger",
@@ -253,4 +283,3 @@
     "tableNoDescription": "No description"
   }
 }
-

@@ -20,6 +20,7 @@ import { LedgerEngine } from '@/lib/ledger';
 import { CreateAccountSheet } from './CreateAccountSheet';
 import { CreateCategorySheet } from './CreateCategorySheet';
 import { SelectSeparator } from '@/components/ui/select';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface SplitLine {
   categoryId: string;
@@ -45,6 +46,7 @@ export default function TransactionForm({
   defaultType,
   hideTitle,
 }: TransactionFormProps) {
+  const { t } = useTranslation();
   const {
     accounts,
     methods,
@@ -406,7 +408,8 @@ export default function TransactionForm({
         <div className="flex flex-wrap items-center justify-between mb-4 pr-10 gap-y-4">
           {!hideTitle && (
             <h2 className="text-lg font-bold tracking-tight">
-              {initialData && !isDuplicate ? 'Edit' : 'New'} Transaction
+              {initialData && !isDuplicate ? t('common.edit') : t('common.new')}{' '}
+              {t('common.transaction')}
             </h2>
           )}
           <Tabs
@@ -418,20 +421,20 @@ export default function TransactionForm({
             className="w-auto"
           >
             <TabsList className="bg-transparent border-b rounded-none h-auto p-0 gap-4">
-              {['expense', 'income', 'transfer'].map(t => (
+              {['expense', 'income', 'transfer'].map(tabType => (
                 <TabsTrigger
-                  key={t}
-                  value={t}
+                  key={tabType}
+                  value={tabType}
                   className={cn(
                     'rounded-none border-b-2 border-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 pb-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground transition-all',
-                    t === 'expense'
+                    tabType === 'expense'
                       ? 'data-[state=active]:border-expense data-[state=active]:text-expense'
-                      : t === 'income'
+                      : tabType === 'income'
                         ? 'data-[state=active]:border-income data-[state=active]:text-income'
                         : 'data-[state=active]:border-primary data-[state=active]:text-foreground'
                   )}
                 >
-                  {t}
+                  {t(`common.${tabType}`)}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -496,8 +499,11 @@ export default function TransactionForm({
               )}
             >
               {isFullyAllocated
-                ? '✓ All Splits'
-                : `Allocated ${formatCurrency(totalSplitAmount, settings)} of ${formatCurrency(parsedAmount, settings)}`}
+                ? t('transaction.allSplits')
+                : t('transaction.allocatedOf', {
+                    allocated: formatCurrency(totalSplitAmount, settings),
+                    total: formatCurrency(parsedAmount, settings),
+                  })}
             </div>
           )}
         </div>
@@ -511,7 +517,7 @@ export default function TransactionForm({
             <div className="grid grid-cols-1 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
-                  Date
+                  {t('common.date')}
                 </Label>
                 <DatePicker date={date} onChange={setDate} tabIndex={2} />
               </div>
@@ -521,7 +527,7 @@ export default function TransactionForm({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
-                  From
+                  {t('common.from')}
                 </Label>
                 <Select
                   value={fromMethodId}
@@ -535,7 +541,7 @@ export default function TransactionForm({
                   }}
                 >
                   <SelectTrigger className={inputClasses} tabIndex={3}>
-                    <SelectValue placeholder="Select method" />
+                    <SelectValue placeholder={t('common.selectMethod')} />
                   </SelectTrigger>
                   <SelectContent>
                     {activeMethods.map(m => {
@@ -553,7 +559,7 @@ export default function TransactionForm({
                     <SelectSeparator />
                     <SelectItem value="NEW_METHOD" className="text-primary font-bold">
                       <Plus className="h-4 w-4 inline-block mr-2" />
-                      Create Account & Method
+                      {t('common.createAccountMethod')}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -565,9 +571,11 @@ export default function TransactionForm({
                     const expectedBalance = currentBalance - parsedAmount;
                     return (
                       <div className="flex justify-between items-center px-0.5 mt-1">
-                        <p className="text-[9px] text-muted-foreground">Account: {account.name}</p>
                         <p className="text-[9px] text-muted-foreground">
-                          Expected Balance:{' '}
+                          {t('common.account')}: {account.name}
+                        </p>
+                        <p className="text-[9px] text-muted-foreground">
+                          {t('transaction.expectedBalance')}{' '}
                           <span className={expectedBalance < 0 ? 'text-expense' : ''}>
                             {formatCurrency(expectedBalance, settings)}
                           </span>
@@ -578,7 +586,7 @@ export default function TransactionForm({
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
-                  To
+                  {t('common.to')}
                 </Label>
                 <Select
                   value={toMethodId}
@@ -591,7 +599,7 @@ export default function TransactionForm({
                   }}
                 >
                   <SelectTrigger className={inputClasses} tabIndex={4}>
-                    <SelectValue placeholder="Select method" />
+                    <SelectValue placeholder={t('common.selectMethod')} />
                   </SelectTrigger>
                   <SelectContent>
                     {toMethodOptions.map(m => {
@@ -609,7 +617,7 @@ export default function TransactionForm({
                     <SelectSeparator />
                     <SelectItem value="NEW_METHOD" className="text-primary font-bold">
                       <Plus className="h-4 w-4 inline-block mr-2" />
-                      Create Account & Method
+                      {t('common.createAccountMethod')}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -621,9 +629,11 @@ export default function TransactionForm({
                     const expectedBalance = currentBalance + parsedAmount;
                     return (
                       <div className="flex justify-between items-center px-0.5 mt-1">
-                        <p className="text-[9px] text-muted-foreground">Account: {account.name}</p>
                         <p className="text-[9px] text-muted-foreground">
-                          Expected Balance:{' '}
+                          {t('common.account')}: {account.name}
+                        </p>
+                        <p className="text-[9px] text-muted-foreground">
+                          {t('transaction.expectedBalance')}{' '}
                           <span className={expectedBalance < 0 ? 'text-expense' : ''}>
                             {formatCurrency(expectedBalance, settings)}
                           </span>
@@ -640,13 +650,13 @@ export default function TransactionForm({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
-                  Date
+                  {t('common.date')}
                 </Label>
                 <DatePicker date={date} onChange={setDate} tabIndex={2} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
-                  Payment Method
+                  {t('common.paymentMethod')}
                 </Label>
                 <Select
                   value={methodId}
@@ -659,7 +669,7 @@ export default function TransactionForm({
                   }}
                 >
                   <SelectTrigger className={inputClasses} tabIndex={3}>
-                    <SelectValue placeholder="Select Method" />
+                    <SelectValue placeholder={t('common.selectMethod')} />
                   </SelectTrigger>
                   <SelectContent>
                     {activeMethods.map(m => {
@@ -677,7 +687,7 @@ export default function TransactionForm({
                     <SelectSeparator />
                     <SelectItem value="NEW_METHOD" className="text-primary font-bold">
                       <Plus className="h-4 w-4 inline-block mr-2" />
-                      Create Account & Method
+                      {t('common.createAccountMethod')}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -690,9 +700,11 @@ export default function TransactionForm({
                       currentBalance + (type === 'income' ? parsedAmount : -parsedAmount);
                     return (
                       <div className="flex justify-between items-center px-0.5 mt-1">
-                        <p className="text-[9px] text-muted-foreground">Account: {account.name}</p>
                         <p className="text-[9px] text-muted-foreground">
-                          Expected Balance:{' '}
+                          {t('common.account')}: {account.name}
+                        </p>
+                        <p className="text-[9px] text-muted-foreground">
+                          {t('transaction.expectedBalance')}{' '}
                           <span className={expectedBalance < 0 ? 'text-expense' : ''}>
                             {formatCurrency(expectedBalance, settings)}
                           </span>
@@ -708,7 +720,7 @@ export default function TransactionForm({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-right-2 duration-300">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
-                    Category
+                    {t('common.category')}
                   </Label>
                   <Select
                     value={selectedHead}
@@ -723,7 +735,7 @@ export default function TransactionForm({
                     }}
                   >
                     <SelectTrigger className={inputClasses} tabIndex={4}>
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder={t('common.selectCategory')} />
                     </SelectTrigger>
                     <SelectContent>
                       {categoryHeads.map(h => (
@@ -734,14 +746,14 @@ export default function TransactionForm({
                       <SelectSeparator />
                       <SelectItem value="NEW_CATEGORY" className="text-primary font-bold">
                         <Plus className="h-4 w-4 inline-block mr-2" />
-                        Create Category
+                        {t('common.createCategory')}
                       </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
-                    Sub-category
+                    {t('common.subCategory')}
                   </Label>
                   {subCategories.length <= 1 ? (
                     <div
@@ -757,14 +769,14 @@ export default function TransactionForm({
                         </span>
                       ) : (
                         <span className="text-muted-foreground">
-                          {selectedHead ? '—' : 'Pick category first'}
+                          {selectedHead ? '—' : t('transaction.pickCategoryFirst')}
                         </span>
                       )}
                     </div>
                   ) : (
                     <Select value={targetId} onValueChange={setTargetId}>
                       <SelectTrigger className={inputClasses} tabIndex={5}>
-                        <SelectValue placeholder="Select sub-category" />
+                        <SelectValue placeholder={t('common.selectSubCategory')} />
                       </SelectTrigger>
                       <SelectContent>
                         {subCategories.map(c => (
@@ -792,7 +804,7 @@ export default function TransactionForm({
               )}
             >
               <Repeat className="h-3 w-3" />
-              {isSplit ? 'Disable Split' : 'Split this transaction'}
+              {isSplit ? t('transaction.disableSplit') : t('transaction.splitThisTransaction')}
             </button>
           </div>
         )}
@@ -814,7 +826,7 @@ export default function TransactionForm({
                     }}
                   >
                     <SelectTrigger className="h-8 text-xs bg-background border-transparent">
-                      <SelectValue placeholder="Category" />
+                      <SelectValue placeholder={t('common.category')} />
                     </SelectTrigger>
                     <SelectContent>
                       {activeCategories.map(cat => (
@@ -863,17 +875,17 @@ export default function TransactionForm({
               className="w-full text-[9px] font-bold uppercase tracking-[0.2em] h-7 border-dashed border-muted-foreground/30 text-muted-foreground hover:text-primary hover:border-primary/50 bg-transparent"
               onClick={() => setSplits([...splits, { categoryId: '', amount: '', note: '' }])}
             >
-              <Plus className="h-3 w-3 mr-1.5" /> Add Category
+              <Plus className="h-3 w-3 mr-1.5" /> {t('common.addCategory')}
             </Button>
           </div>
         )}
 
         <div className="space-y-1.5 pb-4">
           <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
-            Note
+            {t('common.notes')}
           </Label>
           <textarea
-            placeholder="What was this for?"
+            placeholder={t('transaction.notePlaceholder')}
             className="w-full min-h-[60px] p-3 rounded-md bg-muted/40 border-transparent focus:ring-1 focus:ring-primary/20 text-xs outline-none resize-none transition-all placeholder:text-muted-foreground/50"
             value={note}
             onChange={e => setNote(e.target.value)}
@@ -881,7 +893,7 @@ export default function TransactionForm({
           />
           <div className="hidden sm:flex justify-end px-0.5">
             <span className="text-[9px] text-muted-foreground/50 italic font-medium">
-              Shift + Enter for new line • Enter to save
+              {t('transaction.shiftEnter')}
             </span>
           </div>
         </div>
@@ -891,7 +903,9 @@ export default function TransactionForm({
         {isSaved && (
           <div className="flex items-center gap-2 text-income animate-in fade-in slide-in-from-left-2">
             <div className="w-1.5 h-1.5 rounded-full bg-income animate-pulse" />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Saved</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest">
+              {t('common.saved')}
+            </span>
           </div>
         )}
         <Button
@@ -907,7 +921,7 @@ export default function TransactionForm({
           disabled={!isValidTransaction}
         >
           <Check className="h-4 w-4 mr-2" />
-          Save {type}
+          {t('common.save')} {t(`common.${type}`)}
         </Button>
       </div>
 
