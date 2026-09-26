@@ -14,6 +14,7 @@ import type {
 type AnyEntity = Account | PaymentMethod | Category | Transaction | Budget;
 import { SheetClient } from './SheetClient';
 import { reconcile, computeChecksum } from './ConflictResolver';
+import { uuid } from '@/store/helpers';
 import {
   SHEET_NAMES,
   SHEET_HEADERS,
@@ -534,7 +535,7 @@ export class SyncEngine {
     action: 'create' | 'update' | 'delete'
   ): Promise<void> {
     const op: SyncOperation = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       entity,
       action,
       entityId,
