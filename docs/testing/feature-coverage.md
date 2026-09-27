@@ -4,11 +4,11 @@ This matrix follows [the feature inventory](e2e-feature-inventory.md). Each row 
 
 - **Missing:** no automated test directly checks the feature.
 - **Partial:** an implemented test checks a part or a lower layer, but the full user journey is untested.
-- **Covered:** an implemented browser test checks the complete stated behavior. There are currently no features in this category.
+- **Covered:** an implemented browser test checks the complete stated behavior.
 
 “Live Google” identifies features that also merit a separate smoke check using a consented Google test account. It is **not** a requirement for deterministic CI coverage: CI can use a fake OAuth/Drive/Sheets service. For sync and backup, mocked runner tests and browser simulations cannot establish that real Drive and Sheets still accept the app's requests.
 
-Evidence names refer to these existing files: [Home auth hook](../../src/hooks/__tests__/useHomeAuth.test.ts), [Home component](../../src/pages/__tests__/Home.test.tsx), [Home browser](../../e2e/home.spec.ts), [ledger math](../../src/lib/__tests__/ledger.test.ts), and [schema tests](../../src/schema). The [case documents](README.md#planned-test-cases) are plans, not evidence. “Next automated check” gives the main missing layer; it does not exclude smaller unit tests needed to make a browser scenario reliable.
+Evidence names refer to these existing files: [Home auth hook](../../src/hooks/__tests__/useHomeAuth.test.ts), [Home component](../../src/pages/__tests__/Home.test.tsx), [Home browser](../../e2e/home.spec.ts), [demo/navigation browser](../../e2e/demo-navigation.spec.ts), [ledger math](../../src/lib/__tests__/ledger.test.ts), and [schema tests](../../src/schema). The [case documents](README.md#planned-test-cases) are plans, not evidence. “Next automated check” gives the main missing layer; it does not exclude smaller unit tests needed to make a browser scenario reliable. The demo browser fixture seeds records through store actions, so its persistence result does not test the forms.
 
 Known defects should get tests that describe the intended behavior once fixed: [#76](https://github.com/MakersCircle/moniq/issues/76) date format is saved but not applied, [#108](https://github.com/MakersCircle/moniq/issues/108) settings can reset after reload, [#91](https://github.com/MakersCircle/moniq/issues/91) auth gate, [#92](https://github.com/MakersCircle/moniq/issues/92) token refresh data loss, [#77](https://github.com/MakersCircle/moniq/issues/77) duplicate sync rows, [#94](https://github.com/MakersCircle/moniq/issues/94) reconnect account mismatch, [#95](https://github.com/MakersCircle/moniq/issues/95) backup migration safety, and [#96](https://github.com/MakersCircle/moniq/issues/96) cross-tab migration lock.
 
@@ -31,8 +31,8 @@ Known defects should get tests that describe the intended behavior once fixed: [
 
 | ID | Feature | Status | Existing automated evidence | Next automated check | Live Google? |
 | --- | --- | --- | --- | --- | --- |
-| DEMO-01 | Try Demo opens the app without Google authentication and stores entered data locally. | Missing | — | Component + browser | No |
-| DEMO-02 | Demo data and the demo session survive a page reload. | Missing | — | Component + browser | No |
+| DEMO-01 | Try Demo opens the app without Google authentication and stores entered data locally. | Partial | Demo/navigation browser entry; seed bypasses forms | Enter data through a form, then reload | No |
+| DEMO-02 | Demo data and the demo session survive a page reload. | Covered | Demo/navigation browser reload + IndexedDB | — | No |
 | DEMO-03 | The demo banner identifies local-only data and can be dismissed for the current view. | Missing | — | Component + browser | No |
 | DEMO-04 | Sign In to Sync can keep demo entries and upload them to the signed-in user's Drive data. | Missing | — | Fake Google browser + component | Yes |
 | DEMO-05 | Sign In to Sync can discard demo entries and start with an empty ledger. | Missing | — | Fake Google browser + component | Yes |
@@ -42,10 +42,10 @@ Known defects should get tests that describe the intended behavior once fixed: [
 
 | ID | Feature | Status | Existing automated evidence | Next automated check | Live Google? |
 | --- | --- | --- | --- | --- | --- |
-| NAV-01 | The main navigation opens Dashboard, Ledger, Insights, Budget, and Settings. | Missing | — | Browser | No |
-| NAV-02 | Settings navigation opens Accounts, Payment Methods, Categories, and Recently Deleted. | Missing | — | Browser | No |
-| NAV-03 | Desktop navigation uses a sidebar; mobile navigation uses a bottom bar and a new-transaction button. | Missing | — | Browser | No |
-| NAV-04 | The mobile top bar opens Settings and expands its search field when focused. | Missing | — | Browser | No |
+| NAV-01 | The main navigation opens Dashboard, Ledger, Insights, Budget, and Settings. | Covered | Demo/navigation browser, six viewports | — | No |
+| NAV-02 | Settings navigation opens Accounts, Payment Methods, Categories, and Recently Deleted. | Covered | Demo/navigation browser, six viewports | — | No |
+| NAV-03 | Desktop navigation uses a sidebar; mobile navigation uses a bottom bar and a new-transaction button. | Covered | Demo/navigation browser, six viewports | — | No |
+| NAV-04 | The mobile top bar opens Settings and expands its search field when focused. | Partial | Demo/navigation browser Settings link | Browser focus/expansion | No |
 | NAV-05 | A visitor can open Docs, Privacy Policy, and Terms of Service without signing in. | Partial | Home browser footer links | Browser page content | No |
 | NAV-06 | Docs navigation opens Getting Started, Keyboard Shortcuts, FAQ, Handling Scenarios, Architecture, and Changelog; internal document links stay in app navigation. | Missing | — | Browser | No |
 | NAV-07 | An unknown docs page shows its not-found state and a route back to Getting Started. | Missing | — | Browser | No |
@@ -57,7 +57,7 @@ Known defects should get tests that describe the intended behavior once fixed: [
 
 | ID | Feature | Status | Existing automated evidence | Next automated check | Live Google? |
 | --- | --- | --- | --- | --- | --- |
-| TXN-01 | New Transaction opens from desktop header, mobile action button, or global keyboard shortcut. | Missing | — | Component + browser | No |
+| TXN-01 | New Transaction opens from desktop header, mobile action button, or global keyboard shortcut. | Partial | Demo/navigation browser desktop + mobile buttons | Browser keyboard shortcuts | No |
 | TXN-02 | Create an expense with amount, date, payment method, category, and optional note; account and category balances update. | Partial | LedgerEngine expense entries/balance | Store + browser | No |
 | TXN-03 | Create an income with a payment method and category; the linked account and dashboard totals update. | Partial | LedgerEngine income entries/balance | Store + browser | No |
 | TXN-04 | Transfer between payment methods linked to different accounts; both account balances update without counting the transfer as income or expense. | Partial | LedgerEngine transfer entries/balance | Store + browser | No |
@@ -185,4 +185,4 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | PWA-02 | Previously cached app routes and assets load while offline. | Missing | — | Installed/offline browser | No |
 | PWA-03 | Installed mobile app icons display correctly on iOS and Android home screens. | Missing | — | Installed/offline browser | No |
 
-Tracked: **118 features**; **8 partial**, **110 missing**, **0 covered end to end**. Recalculate these totals when adding tests.
+Tracked: **118 features**; **11 partial**, **103 missing**, **4 covered end to end**. Recalculate these totals when adding tests.
