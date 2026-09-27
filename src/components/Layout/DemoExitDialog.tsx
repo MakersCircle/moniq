@@ -11,7 +11,9 @@ interface DemoExitDialogProps {
   onClose: () => void;
 }
 
-export default function DemoExitDialog({ onClose }: DemoExitDialogProps) {
+import { GoogleAuthProvider } from '@/components/GoogleAuthProvider';
+
+function DemoExitDialog({ onClose }: DemoExitDialogProps) {
   const exitDemoMode = useDataStore(s => s.exitDemoMode);
   const resetData = useDataStore(s => s.resetData);
   const setAccessToken = useDataStore(s => s.setAccessToken);
@@ -108,5 +110,13 @@ export default function DemoExitDialog({ onClose }: DemoExitDialogProps) {
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+export default function DemoExitDialogWithAuth(props: DemoExitDialogProps) {
+  return (
+    <GoogleAuthProvider>
+      <DemoExitDialog {...props} />
+    </GoogleAuthProvider>
   );
 }

@@ -1,4 +1,4 @@
-import type { IDBPDatabase } from 'idb';
+import type { IDBPDatabase, IDBPTransaction, StoreNames } from 'idb';
 import type { MoniqDB } from '@/lib/db';
 
 /**
@@ -10,15 +10,23 @@ import type { MoniqDB } from '@/lib/db';
  */
 const migration002: {
   version: number;
-  up: (db: IDBPDatabase<MoniqDB>, oldVersion: number) => Promise<void>;
+  up: (
+    db: IDBPDatabase<MoniqDB>,
+    oldVersion: number,
+    transaction: IDBPTransaction<MoniqDB, StoreNames<MoniqDB>[], 'versionchange'>
+  ) => Promise<void>;
 } = {
   version: 2,
 
-  async up(db: IDBPDatabase<MoniqDB>, oldVersion: number): Promise<void> {
+  async up(
+    db: IDBPDatabase<MoniqDB>,
+    oldVersion: number,
+    transaction: IDBPTransaction<MoniqDB, StoreNames<MoniqDB>[], 'versionchange'>
+  ): Promise<void> {
     if (oldVersion >= 2) return;
 
-    const tx = db.transaction('transactions', 'readwrite');
-    const all = await tx.store.getAll();
+    const txStore = transaction.objectStore('transactions');
+    const all = await txStore.getAll();
 
     // Group by date
     const byDate = new Map<string, (typeof all)[number][]>();
@@ -36,12 +44,11 @@ const migration002: {
 
       group.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
       group.forEach((txn, idx) => {
-        puts.push(tx.store.put({ ...txn, sortOrder: idx } as never).then(() => {}));
+        puts.push(txStore.put({ ...txn, sortOrder: idx } as never).then(() => {}));
       });
     }
 
     await Promise.all(puts);
-    await tx.done;
   },
 };
 

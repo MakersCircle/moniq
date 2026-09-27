@@ -7,7 +7,9 @@ import { useHomeAuth } from '../hooks/useHomeAuth';
 import { useDataStore } from '../store/dataStore';
 import { useTranslation } from '../hooks/useTranslation';
 
-export default function Home() {
+import { GoogleAuthProvider } from '../components/GoogleAuthProvider';
+
+function Home() {
   const { t } = useTranslation();
   const { isLoggedIn, login } = useHomeAuth();
   const startDemoMode = useDataStore(s => s.startDemoMode);
@@ -109,6 +111,7 @@ export default function Home() {
             {!isLoggedIn && (
               <button
                 onClick={handleTryDemo}
+                data-testid="try-demo"
                 className="opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 
                            transition-opacity duration-500 delay-100
                            font-mono text-[10px] text-muted-foreground/60 hover:text-foreground/90
@@ -165,6 +168,7 @@ export default function Home() {
           <img
             src="/favicon.svg"
             alt="moniq logo"
+            fetchPriority="high"
             className="absolute z-0"
             style={{ left: '56.48%', top: '36.71%', width: '41.42%', height: 'auto' }}
           />
@@ -184,6 +188,14 @@ export default function Home() {
           '[@media(orientation:landscape)_and_(max-height:500px)]:gap-3',
         ].join(' ')}
       >
+        <a
+          href="https://github.com/MakersCircle/moniq"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-mono text-[9px] md:text-[10px] text-muted-foreground/40 hover:text-foreground transition-colors uppercase tracking-[0.2em]"
+        >
+          GitHub
+        </a>
         <Link
           to="/docs"
           className="font-mono text-[9px] md:text-[10px] text-muted-foreground/40 hover:text-foreground transition-colors uppercase tracking-[0.2em]"
@@ -204,5 +216,13 @@ export default function Home() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function HomeWithAuth() {
+  return (
+    <GoogleAuthProvider>
+      <Home />
+    </GoogleAuthProvider>
   );
 }
