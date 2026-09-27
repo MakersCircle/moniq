@@ -7,7 +7,9 @@ import { useHomeAuth } from '../hooks/useHomeAuth';
 import { useDataStore } from '../store/dataStore';
 import { useTranslation } from '../hooks/useTranslation';
 
-export default function Home() {
+import { GoogleAuthProvider } from '../components/GoogleAuthProvider';
+
+function Home() {
   const { t } = useTranslation();
   const { isLoggedIn, login } = useHomeAuth();
   const startDemoMode = useDataStore(s => s.startDemoMode);
@@ -213,5 +215,13 @@ export default function Home() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function HomeWithAuth() {
+  return (
+    <GoogleAuthProvider>
+      <Home />
+    </GoogleAuthProvider>
   );
 }
