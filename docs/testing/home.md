@@ -1,6 +1,6 @@
 # Home Page Test Coverage
 
-This document details the 52 test cases covering `src/pages/Home.tsx` and its extracted authentication hook `src/hooks/useHomeAuth.ts`.
+This document lists planned and implemented cases for `src/pages/Home.tsx` and its authentication hook `src/hooks/useHomeAuth.ts`. Case IDs appearing here do not by themselves prove that a test exists.
 
 ## 1. Unit Tests (`useHomeAuth.test.ts`)
 Focuses purely on the business logic of authentication, token parsing, and navigation, separated from the UI. 
@@ -39,7 +39,7 @@ Focuses on rendering the correct static elements and reacting to mocked authenti
 | C-12 | Logo accessibility | Logo has descriptive alt text |
 
 ## 3. End-to-End Tests (`home.spec.ts`)
-Focuses on cross-browser responsive layout, dynamic CSS, and network interception. Runs across 6 Playwright viewports (mobile to desktop).
+Focuses on responsive layout and public navigation. Currently runs in Chromium at 6 configured viewport/touch profiles. OAuth routing is stubbed, but successful login is not exercised.
 
 ### Layout & Visibility (All devices)
 | ID | Scenario | Expected Outcome |
@@ -49,15 +49,15 @@ Focuses on cross-browser responsive layout, dynamic CSS, and network interceptio
 | E-03 | Headline visible | Text is visible and unclipped |
 | E-04 | Paragraph visible | Text is visible and unclipped |
 | E-05 | Footer links visible | All 3 footer links are visible |
-| E-06 | No horizontal overflow | `document.body.scrollWidth <= window.innerWidth` |
-| E-07 | No vertical overflow (portrait) | `document.body.scrollHeight <= window.innerHeight` (no scrollbars) |
+| E-06 | No horizontal overflow | `document.documentElement.scrollWidth <= window.innerWidth` |
+| E-07 | No vertical overflow (portrait) | The main landing container hides overflow; the existing test does not assert document scroll height |
 
 ### CTA Button (Touch devices)
 *Run on: iPhone (portrait/landscape), iPad (portrait/landscape)*
 | ID | Scenario | Expected Outcome |
 |---|---|---|
 | E-08 | Label visibility without interaction | "Sign in with Google" text is fully expanded (grid-cols-[1fr]) |
-| E-09 | Button click | Intercepts request to `accounts.google.com` (OAuth initiated) |
+| E-09 | Button click (planned) | Assert that tapping the CTA initiates Google login; the current browser suite only installs a route stub |
 
 ### CTA Button (Desktop pointer devices)
 *Run on: MacBook Pro (desktop)*

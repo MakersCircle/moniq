@@ -1,69 +1,30 @@
-# Testing Strategy
+# Testing coverage
 
-This project uses a 3-layer testing strategy to ensure reliability across logic, UI components, and end-to-end user flows.
+The [feature inventory](e2e-feature-inventory.md) is the list of user-visible behaviors to protect. The [feature-to-test matrix](feature-coverage.md) records actual automated evidence for **every inventory ID**, the next test layer, and where a live Google check is useful. A case in a planning document is not an implemented test.
 
-## 1. Unit Tests
+## Current test setup
 
-**Framework:** Vitest + JS-DOM  
-**Location:** `src/**/__tests__/*.test.ts`
-
-Unit tests focus on isolated business logic (e.g. custom hooks, utility functions, data store interactions).
-
-- **How to run:** `npm run test` (runs both unit and component tests)
-- **Watch mode:** `npm run test:watch`
-
-## 2. Component Tests
-
-**Framework:** Vitest + React Testing Library  
-**Location:** `src/**/__tests__/*.test.tsx`
-
-Component tests verify that React components render correctly given specific props or mocked hook states. They do NOT test network requests or full routing flows.
-
-- **How to run:** `npm run test`
-
-## 3. End-to-End (E2E) Tests
-
-**Framework:** Playwright  
-**Location:** `e2e/*.spec.ts`
-
-E2E tests run against a live dev server in real browser engines (Chromium, WebKit, Firefox). They verify cross-device responsive layouts, complex interactions (hover/touch), and navigation. Network calls to third-party services (like Google OAuth) are intercepted at the network level using `page.route()`.
-
-- **How to run:** `npm run test:e2e`
-- **View report:** `npx playwright show-report`
-
-## Continuous Integration (CI)
-
-In CI environments, run all test layers:
-
-```bash
-npm run test:all
-```
-
-## Coverage Specs by Feature
-
-Each doc below is a test-planning spec (test case tables, not test code) for one feature area, in the same format as this README's 3-layer split. Implemented tests should be checked against these specs; specs should be updated when behavior changes.
-
-| Doc | Covers | Actual test files |
+| Layer | Implemented files | What currently runs |
 | --- | --- | --- |
-| [home.md](home.md) | Landing page, Google sign-in, auth hook | `useHomeAuth.test.ts`, `Home.test.tsx`, `home.spec.ts` |
-| [schema.md](schema.md) | Entity (de)serialization, IndexedDB/Sheets schema migrations, multi-tab coordination | `src/schema/**/__tests__/*.test.ts` |
-| [transactions.md](transactions.md) | Add/edit/duplicate transaction modal, DatePicker, ledger page, double-entry generation | Not yet implemented |
-| [accounts-categories.md](accounts-categories.md) | Accounts, Payment Methods, Categories — CRUD, delete guards, reordering | Not yet implemented |
-| [dashboard-budget-insights.md](dashboard-budget-insights.md) | Dashboard stat cards, Budget allocation/editing, Insights charts | Not yet implemented |
-| [sync-settings.md](sync-settings.md) | SyncEngine, ConflictResolver, BackupManager, Trash restore guards, Settings | Not yet implemented |
+| Unit and integration | `src/lib/__tests__/ledger.test.ts`, `src/hooks/__tests__/useHomeAuth.test.ts`, `src/schema/**/__tests__/*.test.ts` | Ledger entries and balances, landing-page authentication hook, entity serialization, schema migration runners, and migration message shapes. These do not exercise a complete signed-in browser session. |
+| Component | `src/pages/__tests__/Home.test.tsx` | Landing-page rendering and CTA behavior. |
+| Browser | `e2e/home.spec.ts` | Landing-page layout and public-link navigation at six configured viewport/touch profiles. All projects currently use Chromium; WebKit and Firefox are not configured. Google login success is not exercised. |
 
-The four "Not yet implemented" docs are specs only — writing the actual `.test.ts`/`.test.tsx`/`.spec.ts` files against them is tracked separately.
+Run Vitest with `npm run test` and Playwright with `npm run test:e2e`. `npm run test:all` runs both locally. The current GitHub Actions workflow runs `npm run build` only; it does not run either test suite. The workflow configures Node 22 while `package.json` requires Node 24 or newer, so the CI runtime needs correction when tests become a required gate.
 
-## Known Gaps — Not Yet Speced
+## Planned test cases
 
-A few smaller feature areas have no coverage doc yet: Demo Mode (entry, keep-data vs. discard-and-restart conversion, exit dialog, reload persistence), the Legal pages and Docs/MDX viewer, i18n (`useTranslation`), PWA install/offline behavior, and `ErrorBoundary` crash-recovery. These were left out deliberately rather than missed — see **Strategy** below.
+The following documents describe test cases to implement. Their case IDs and expected results are plans unless linked to an existing test in the matrix.
 
-## Strategy: Implement First, Then Fill Gaps
+| Area | Planning document |
+| --- | --- |
+| Landing and authentication | [home.md](home.md) |
+| Schema and migration | [schema.md](schema.md) |
+| Transactions and ledger | [transactions.md](transactions.md) |
+| Accounts, methods, and categories | [accounts-categories.md](accounts-categories.md) |
+| Dashboard, Budget, and Insights | [dashboard-budget-insights.md](dashboard-budget-insights.md) |
+| Sync, backups, Trash, and Settings | [sync-settings.md](sync-settings.md) |
 
-Rather than speccing every remaining feature up front, the plan is:
+The inventory also includes demo mode, public Docs and legal pages, navigation, error recovery, and PWA behavior. These need test cases when their test work begins. Browser tests should cover desktop and mobile layouts explicitly. A deterministic fake Google API can exercise sync and backup flows in CI; a separate live-account smoke check should verify the real OAuth/Drive/Sheets contract.
 
-1. Implement tests against what's already speced above (`home.md`, `schema.md`, and the four newer docs) — this is substantial real coverage already.
-2. Run coverage tooling (`vitest --coverage`) once those land, to see what's actually exercised vs. just documented.
-3. Use real coverage gaps — plus anything the known gaps above turn out to matter for — to decide what needs a new spec doc, driven by evidence from writing real tests rather than speculation about edge cases no one has hit yet.
-
-Writing specs for untouched features before any implementation work starts risks guessing at edge cases without the feedback loop of a real test run.
+When a feature or test changes, update the inventory, matrix evidence/status, and the relevant case document in the same change.

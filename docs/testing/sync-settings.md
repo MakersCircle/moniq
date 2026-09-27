@@ -224,24 +224,17 @@ This document details test cases covering `src/sync/SyncEngine.ts`, `src/sync/Co
 | C-63 | Restore in progress for a row | Row gets `opacity-0 scale-95` classes applied (fade-out) during the 150ms window before the item disappears from the list |
 | C-64 | An error is set from a failed restore attempt | Error banner renders above the tab content with the exact message text; clicking restore again on a different row clears the previous error (`setError(null)` at top of `handleRestore`) |
 
-### 2.6 Trash — Sort-By Control (Transactions-only wiring)
+### 2.6 Trash — Sort-By Control
 
 | ID | Scenario | Expected Outcome |
 |---|---|---|
 | C-65 | Transactions tab, `sortBy = 'deleted'` | Rows ordered by `updatedAt` descending (most recently deleted first) |
 | C-66 | Transactions tab, `sortBy = 'created'` | Rows ordered by transaction `date` descending — sort actually changes when the control is toggled |
-| C-67 | Accounts tab, toggling sort-by between "Recently Deleted" and "Date Created" | **No visible change**: `AccountsTable` ignores its `sortBy` prop entirely and always sorts by `updatedAt` descending. This test documents current (arguably buggy) behavior and will fail loudly if a future fix wires `sortBy` through without updating this test — a deliberate tripwire |
-| C-68 | Methods tab, toggling sort-by | Same as C-67: `MethodsTable` always sorts by `updatedAt` descending regardless of `sortBy` value |
-| C-69 | Categories tab, toggling sort-by | Same as C-67: `CategoriesTable` always sorts by `updatedAt` descending regardless of `sortBy` value |
-| C-70 | Sort-by `Select` control itself | Renders and updates its own displayed value correctly on all four tabs (the control's UI state is fully wired — only the three non-Transactions tables fail to consume it) |
+| C-70 | Sort-by `Select` control itself | Renders and updates its displayed value; verify transaction sorting separately |
 
 ## 3. End-to-End Tests
 
-Full sync round-trips against real Google Sheets/Drive APIs are not practical to exercise in E2E:
-OAuth requires a live human-consented Google account, API quotas make repeated CI runs unreliable,
-and the reconcile/backup logic already has deterministic unit coverage above. E2E here is scoped to
-UI flows that can be driven entirely against **local/demo-mode data** (no real Google API calls),
-plus a small number of smoke checks against a seeded test Google account where unavoidable.
+These are planned cases. Local/demo cases need browser tests. Sync, backup, and reconciliation cases need a deterministic fake Google API in CI, with a separate live Google test-account smoke check for the real service contract. The unit cases above are also plans; no `SyncEngine`, `ConflictResolver`, or `BackupManager` test files exist yet.
 
 ### 3.1 Settings Page (Demo Mode / Local Data)
 
@@ -249,7 +242,7 @@ plus a small number of smoke checks against a seeded test Google account where u
 |---|---|---|
 | E-01 | Load `/settings` in demo mode | "Currently in Demo Mode" banner is visible; Cloud Sync and Backups sections are absent |
 | E-02 | Currency picker end-to-end | Search "yen", select "JPY — Japanese Yen", preview line and "Selected:" text update without a page reload |
-| E-03 | Date format picker end-to-end | Select `yyyy-MM-dd`, navigate to a page showing dates (e.g. Trash), confirm dates render in the newly selected format |
+| E-03 | Date format picker end-to-end | Select `yyyy-MM-dd` and confirm the Settings selection persists after reload. Applying this format to dates elsewhere is a separate desired behavior tracked by issue #76; current date displays are hard-coded |
 | E-04 | Number format picker end-to-end | Select a locale using comma decimal separators, confirm the currency preview string updates its separator style live |
 
 ### 3.2 Hard Reset Confirmation Flow (Local Data)
@@ -259,7 +252,7 @@ plus a small number of smoke checks against a seeded test Google account where u
 | E-05 | Click "Reset Data" | Confirmation modal opens showing the exact required phrase |
 | E-06 | Type an incorrect phrase | "Delete Everything" stays disabled; clicking it (forced) does nothing |
 | E-07 | Type the exact required phrase | "Delete Everything" becomes enabled |
-| E-08 | Confirm hard reset (against demo/local data, no real Google account attached) | Modal shows a spinner, then the app redirects to `/` and returns to the onboarding/demo landing state |
+| E-08 | Confirm hard reset (against demo/local data, no real Google account attached) | Modal shows a spinner, then the app redirects to `/` and returns to the signed-out landing page |
 | E-09 | Cancel out of the modal, reopen it | Confirmation text field is reset to empty (not remembered from the previous attempt) |
 
 ### 3.3 Trash Restore Flow (Local/Demo Data)
@@ -273,10 +266,12 @@ plus a small number of smoke checks against a seeded test Google account where u
 | E-14 | Switch between Trash tabs (Transactions/Accounts/Methods/Categories) | Tab content and counts update immediately; previously shown error banner clears when a new restore attempt begins on another row |
 | E-15 | Empty a tab of all deleted items via restores | Tab renders the "No deleted {label}" empty state |
 
-### 3.4 Out of Scope for E2E (documented, not automated)
+### 3.4 Simulated Google Flows and Live Smoke Checks
 
-| ID | Scenario | Why Excluded |
+| ID | Scenario | Expected outcome |
 |---|---|---|
-| E-16 | Full push/pull sync against live Google Sheets | Requires a persistent OAuth-consented test account; flaky under CI due to Sheets API quotas/latency; already covered by SyncEngine/ConflictResolver unit tests (U-01 – U-57) |
-| E-17 | Tiered backup creation actually appearing in Google Drive on schedule | Time-dependent (daily/weekly/monthly/yearly boundaries) and requires real Drive folder access; covered by BackupManager due-date unit tests (U-58 – U-83) instead |
-| E-18 | "Sync Now" full pull reconciling real manual Sheet edits (checksum-mismatch path) | Requires manually editing a live spreadsheet mid-test; covered by `reconcile()` unit tests (U-50) |
+| E-16 | Full push/pull sync through the UI | Browser with fake Google Sheets verifies queue flush, remote row update, pull after reload, and duplicate prevention. Live smoke verifies that the same flow works with a consented test account. |
+| E-17 | Tiered backup creation | Fake Drive browser/integration test advances the clock, checks due snapshots and retention, and verifies Backup Now. Live smoke verifies a new snapshot appears in Drive. |
+| E-18 | Sync Now pulls an externally changed row | Change the fake sheet between browser actions; Sync Now updates local data without losing pending changes. Live smoke repeats a minimal manual Sheet edit and pull. |
+
+The Accounts, Methods, and Categories Trash tables currently ignore the selected sort order. Add a desired-behavior case when fixing that control; do not lock the current inconsistency into a regression test.
