@@ -9,7 +9,11 @@ import type { MoniqDB } from '@/lib/db';
  */
 const migration001: {
   version: number;
-  up: (db: IDBPDatabase<MoniqDB>, oldVersion: number) => void;
+  up: (
+    db: IDBPDatabase<MoniqDB>,
+    oldVersion: number,
+    transaction: IDBPTransaction<MoniqDB, StoreNames<MoniqDB>[], 'versionchange'>
+  ) => void;
 } = {
   version: 1,
 
