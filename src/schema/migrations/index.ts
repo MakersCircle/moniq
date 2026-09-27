@@ -1,4 +1,4 @@
-import type { IDBPDatabase } from 'idb';
+import type { IDBPDatabase, IDBPTransaction, StoreNames } from 'idb';
 import type { MoniqDB } from '@/lib/db';
 import type { SheetClient } from '@/sync/SheetClient';
 
@@ -13,7 +13,11 @@ import migration002Sheets from './sheets/002_transaction_sort_order';
 
 export interface IdbMigration {
   version: number;
-  up: (db: IDBPDatabase<MoniqDB>, oldVersion: number) => void | Promise<void>;
+  up: (
+    db: IDBPDatabase<MoniqDB>,
+    oldVersion: number,
+    transaction: IDBPTransaction<MoniqDB, StoreNames<MoniqDB>[], 'versionchange'>
+  ) => void | Promise<void>;
 }
 
 export const idbMigrations: IdbMigration[] = [migration001Idb, migration002Idb];

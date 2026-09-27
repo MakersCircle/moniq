@@ -1,4 +1,4 @@
-import type { IDBPDatabase } from 'idb';
+import type { IDBPDatabase, IDBPTransaction, StoreNames } from 'idb';
 import type { MoniqDB } from '@/lib/db';
 
 /**
@@ -13,7 +13,11 @@ const migration001: {
 } = {
   version: 1,
 
-  up(db: IDBPDatabase<MoniqDB>, oldVersion: number): void {
+  up(
+    db: IDBPDatabase<MoniqDB>,
+    oldVersion: number,
+    _transaction: IDBPTransaction<MoniqDB, StoreNames<MoniqDB>[], 'versionchange'>
+  ): void {
     if (oldVersion >= 1) return;
 
     // Accounts
