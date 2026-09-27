@@ -10,13 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **i18n**: Added internationalization (`i18n`) support to the landing page, dashboard, ledger, and settings pages (including nested sub-pages). Extracted shared strings into a global `common` namespace to reduce duplication. Modified the translation hook to support string interpolation.
-- **Intra-day Transaction Ordering**: Transactions within the same date can now be manually reordered via drag-and-drop handles in the Ledger. A new `sortOrder` field is persisted to both IndexedDB and Google Sheets (schema v2 migration runs automatically). New transactions are auto-assigned the next available order for their date; existing records are back-filled by `createdAt` on first boot.
-
+- **i18n**: Introduced internationalization support across the landing page, dashboard, ledger, and settings. Shared strings are now centrally managed to reduce duplication, and the translation hook fully supports string interpolation.
+- **Intra-day Transaction Ordering**: Added manual drag-and-drop reordering for transactions occurring on the same date. The custom sort order seamlessly persists to both IndexedDB and Google Sheets, with an automated migration seamlessly backfilling existing data.
+- **Lighthouse Automation**: Implemented a comprehensive, Puppeteer-driven Lighthouse test suite to automatically audit performance, accessibility, and best practices across all core routes and user flows for both mobile and desktop viewports.
 
 ### Changed
-- **Transactions UI**: Improved the Payment Method dropdown in the transaction form to display the associated Account name (e.g., `Account · Method`), reducing confusion when multiple accounts have identically named methods.
-- **Ledger Layout**: The table layout has been completely migrated to a high-performance Flexbox architecture to support butter-smooth 60fps `framer-motion` drag-to-reorder. Column widths and absolute parity with the original layout design are strictly preserved for both desktop and mobile modes.
+- **Performance**: Optimized the loading of the Google Sign-In script. It now lazy-loads exclusively on authentication boundaries (Home page, Session Expired banner, and Demo Exit dialog), stripping ~100KiB of unused JavaScript from standard app routes and significantly improving First Contentful Paint.
+- **Transactions UI**: Updated the Payment Method dropdown to display its associated Account name (e.g., `Account · Method`), resolving ambiguity when multiple accounts share identically named payment methods.
+- **Ledger Layout**: Migrated the Ledger table architecture to a high-performance Flexbox layout, enabling buttery-smooth 60fps drag-to-reorder animations while strictly preserving column widths and design parity across all screen sizes.
+
+### Fixed
+- **Database**: Fixed a critical `InvalidStateError` that could cause IndexedDB schema upgrades to silently fail on first boot. The migration engine now correctly utilizes the browser's active upgrade transaction instead of erroneously attempting to spawn new ones.
 
 ---
 
