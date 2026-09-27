@@ -18,6 +18,20 @@ const ROUTES = [
 const FORM_FACTORS = ['mobile', 'desktop'];
 const BASE_URL = 'http://localhost:8787';
 
+async function enterDemoMode(page) {
+  await page.goto(`${BASE_URL}/`);
+  await page.waitForSelector('[data-testid="try-demo"]');
+  await page.$eval('[data-testid="try-demo"]', button => button.click());
+  await page.waitForFunction(() => window.location.pathname === '/dashboard');
+}
+
+async function verifyRoute(page, route) {
+  await page.waitForFunction(expected => window.location.pathname === expected, { timeout: 10000 }, route);
+  if (new URL(page.url()).pathname !== route) {
+    throw new Error(`Expected ${route}, reached ${page.url()}`);
+  }
+}
+
 async function runFlow(route, formFactor) {
   const isDesktop = formFactor === 'desktop';
   const reportPath = path.resolve(`./lighthouse-reports/flow-${formFactor}-${route === '/' ? 'home' : route.slice(1).replace(/\//g, '-')}.html`);
@@ -56,9 +70,20 @@ async function runFlow(route, formFactor) {
   console.log(`\nTesting ${url} on ${formFactor}...`);
 
   try {
+    if (route !== '/') {
+      await enterDemoMode(page);
+    }
+
     // 1. Navigation
     console.log(`  - Running Navigation audit...`);
-    await flow.navigate(url, { stepName: 'Navigation Load' });
+    await flow.navigate(url, {
+      stepName: 'Navigation Load',
+      disableStorageReset: route !== '/',
+    });
+    await verifyRoute(page, route);
+    if (route === '/') {
+      await page.waitForSelector('[data-testid="try-demo"]');
+    }
 
     // 2. Timespan (Simulate interaction)
     console.log(`  - Running Timespan audit...`);
@@ -86,6 +111,7 @@ async function runFlow(route, formFactor) {
     
   } catch (error) {
     console.error(`  ! Error during flow for ${route} (${formFactor}):`, error);
+    throw error;
   } finally {
     await browser.close();
   }
@@ -127,18 +153,18 @@ async function runModalFlow(formFactor) {
   console.log(`\nTesting Add Transaction Modal on ${formFactor}...`);
 
   try {
+    await enterDemoMode(page);
+
     console.log(`  - Navigating to dashboard...`);
-    await flow.navigate(url, { stepName: 'Dashboard Load' });
+    await flow.navigate(url, { stepName: 'Dashboard Load', disableStorageReset: true });
+    await verifyRoute(page, '/dashboard');
     await new Promise(r => setTimeout(r, 2000));
 
     console.log(`  - Opening Modal...`);
     await flow.startTimespan({ stepName: 'Open Add Transaction Modal' });
-    await page.evaluate(() => {
-      if (window.openTransactionModal && window.openTransactionModal.openNew) {
-        window.openTransactionModal.openNew();
-      }
-    });
-    await new Promise(r => setTimeout(r, 1500));
+    await page.waitForFunction(() => typeof window.openTransactionModal?.openNew === 'function');
+    await page.evaluate(() => window.openTransactionModal.openNew());
+    await page.waitForSelector('[role="dialog"]');
     await flow.endTimespan();
 
     console.log(`  - Capturing Modal Snapshot...`);
@@ -151,6 +177,7 @@ async function runModalFlow(formFactor) {
     console.log(`  - Saved: ${reportPath}`);
   } catch (error) {
     console.error(`  ! Error during flow for modal (${formFactor}):`, error);
+    throw error;
   } finally {
     await browser.close();
   }
@@ -170,4 +197,7 @@ async function main() {
   console.log('\nAll flows completed!');
 }
 
-main().catch(console.error);
+main().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});

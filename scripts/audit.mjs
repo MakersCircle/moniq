@@ -16,26 +16,15 @@ async function run() {
   
   const page = await browser.newPage();
   
-  // Set demo mode via localStorage/IndexedDB or just UI interaction
-  await page.goto('http://localhost:8787/');
-  
-  // Look for "Try Demo" button and click it to set isDemoMode
-  // We can just evaluate a script to enter demo mode
-  try {
-    await page.evaluate(() => {
-      // Trying to trigger demo mode if useDataStore is on window, otherwise we click the button
-      const demoBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes('Demo'));
-      if (demoBtn) demoBtn.click();
-    });
-  } catch (e) {}
-
-  await page.waitForTimeout(2000); // wait for demo mode to initialize
-
   const results = {};
 
   for (const route of ROUTES) {
     console.log(`Auditing ${route}...`);
     await page.goto(`http://localhost:8787${route}`);
+    await page.waitForSelector('[data-testid="try-demo"]');
+    if (new URL(page.url()).pathname !== route) {
+      throw new Error(`Expected ${route}, reached ${page.url()}`);
+    }
     await page.waitForTimeout(1000); // Wait for page to settle
 
     try {
@@ -73,4 +62,7 @@ async function run() {
   console.log('Audit complete, results saved to lighthouse-summary.json');
 }
 
-run().catch(console.error);
+run().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});

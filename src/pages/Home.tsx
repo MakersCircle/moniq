@@ -111,6 +111,7 @@ function Home() {
             {!isLoggedIn && (
               <button
                 onClick={handleTryDemo}
+                data-testid="try-demo"
                 className="opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 
                            transition-opacity duration-500 delay-100
                            font-mono text-[10px] text-muted-foreground/60 hover:text-foreground/90
