@@ -10,11 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Regression Tests**: Added a tracked feature-to-test matrix, pure transaction logic tests, and Chromium browser coverage for demo mode, navigation, and transaction creation, editing, and deletion across desktop and mobile viewports.
 - **i18n**: Introduced internationalization support across the landing page, dashboard, ledger, and settings. Shared strings are now centrally managed to reduce duplication, and the translation hook fully supports string interpolation.
 - **Intra-day Transaction Ordering**: Added manual drag-and-drop reordering for transactions occurring on the same date. The custom sort order seamlessly persists to both IndexedDB and Google Sheets, with an automated migration seamlessly backfilling existing data.
 - **Lighthouse Automation**: Implemented a comprehensive, Puppeteer-driven Lighthouse test suite to automatically audit performance, accessibility, and best practices across all core routes and user flows for both mobile and desktop viewports.
 
 ### Changed
+- **Transaction Logic**: Moved edit and soft-delete record changes into pure functions used by the data store, making those rules independently testable.
 - **Performance**: Optimized the loading of the Google Sign-In script. It now lazy-loads exclusively on authentication boundaries (Home page, Session Expired banner, and Demo Exit dialog), stripping ~100KiB of unused JavaScript from standard app routes and significantly improving First Contentful Paint.
 - **Transactions UI**: Updated the Payment Method dropdown to display its associated Account name (e.g., `Account · Method`), resolving ambiguity when multiple accounts share identically named payment methods.
 - **Ledger Layout**: Migrated the Ledger table architecture to a high-performance Flexbox layout, enabling buttery-smooth 60fps drag-to-reorder animations while strictly preserving column widths and design parity across all screen sizes.

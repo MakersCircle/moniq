@@ -54,6 +54,16 @@ The form uses these pure functions for save validation, split allocation, and ex
 | U-52 | Editing versus duplicating | Editing excludes the original transaction from the preview base balance; duplicating includes it |
 | U-53 | Expected balance impact | Expense and transfer source subtract the entered amount; income and transfer destination add it |
 
+### 1.1c Transaction mutations (implemented in `transactionMutations.test.ts`)
+
+The store uses these pure functions to edit and soft-delete records before persisting them. Store persistence and sync queue side effects remain separate from these rules.
+
+| ID | Scenario | Expected Outcome |
+|---|---|---|
+| U-54 | Edit an existing transaction | Replaces changed amount, note, entries, and update time while retaining its ID and leaving other records untouched |
+| U-55 | Soft-delete an existing transaction | Sets `isDeleted` and update time while retaining the amount, note, and entries for recovery |
+| U-56 | Edit a missing transaction ID | Returns no updated record and leaves all existing records untouched |
+
 ### 1.2 `transactionSlice` (`transactionSlice.test.ts`)
 Focuses on store mutations, ID/timestamp generation, and ledger entry wiring, mocking `put` (IndexedDB) and `markDirty`.
 
@@ -193,7 +203,7 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 
 ## 3. End-to-End Tests
 
-`e2e/transaction-create.spec.ts` now covers the save flows in E-10–13 using the form's default date across six Chromium viewport/touch profiles. It checks the ledger rows, account balances, dashboard totals, split allocation gate, and demo persistence. Explicit date editing, account/category creation during entry, keyboard save, and edit/delete flows below remain planned.
+`e2e/transaction-create.spec.ts` covers the save flows in E-10–13 using the form's default date across six Chromium viewport/touch profiles. It checks the ledger rows, account balances, dashboard totals, split allocation gate, and demo persistence. `e2e/transaction-manage.spec.ts` covers E-18–19 with edit and delete, including persistence after reload, balance changes, and the Recently Deleted row. Explicit date editing, account/category creation during entry, and keyboard save remain planned.
 
 ### 3.1 Opening the Modal (Entry Points)
 | ID | Scenario | Expected Outcome |
