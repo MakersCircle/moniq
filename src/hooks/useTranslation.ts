@@ -1,7 +1,7 @@
 import en from '@/locales/en.json';
 
 export function useTranslation() {
-  const t = (key: string) => {
+  const t = (key: string, vars?: Record<string, string | number>) => {
     const keys = key.split('.');
     let value: unknown = en;
     for (const k of keys) {
@@ -11,7 +11,16 @@ export function useTranslation() {
         return key;
       }
     }
-    return typeof value === 'string' ? value : key;
+    if (typeof value === 'string') {
+      if (vars) {
+        return Object.entries(vars).reduce(
+          (acc, [k, v]) => acc.replace(new RegExp(`{{${k}}}`, 'g'), String(v)),
+          value
+        );
+      }
+      return value;
+    }
+    return key;
   };
 
   return { t };

@@ -8,6 +8,7 @@ import { useDataStore } from '@/store/dataStore';
 import { Button } from '@/components/ui/button';
 import type { Transaction } from '@/types';
 import TransactionForm from './TransactionForm';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface TransactionDetailPanelProps {
   transaction: Transaction | null;
@@ -20,6 +21,7 @@ export default function TransactionDetailPanel({
   onClose,
   onDelete,
 }: TransactionDetailPanelProps) {
+  const { t } = useTranslation();
   const { accounts, categories, settings } = useDataStore();
   const [isEditing, setIsEditing] = React.useState(false);
 
@@ -72,7 +74,7 @@ export default function TransactionDetailPanel({
       {/* Header */}
       <div className="p-4 border-b border-border flex items-center justify-between bg-accent/10">
         <h2 className="font-bold text-sm uppercase tracking-widest text-muted-foreground">
-          {isEditing ? 'Edit Transaction' : 'Transaction Details'}
+          {isEditing ? t('ledger.editTransaction') : t('ledger.transactionDetails')}
         </h2>
         <Button
           variant="ghost"
@@ -122,36 +124,36 @@ export default function TransactionDetailPanel({
             <div className="space-y-4">
               <DetailRow
                 icon={Calendar}
-                label="Date"
+                label={t('common.date')}
                 value={format(new Date(transaction.date), 'EEEE, do MMMM')}
               />
               <DetailRow
                 icon={Wallet}
-                label={details.isTransfer ? 'From Account' : 'Account'}
-                value={details.account?.name || 'Unknown'}
+                label={details.isTransfer ? t('ledger.fromAccount') : t('common.accounts')}
+                value={details.account?.name || t('common.unknown')}
               />
               {details.isTransfer && (
                 <DetailRow
                   icon={Wallet}
-                  label="To Account"
-                  value={details.toAccount?.name || 'Unknown'}
+                  label={t('ledger.toAccount')}
+                  value={details.toAccount?.name || t('common.unknown')}
                 />
               )}
               {!details.isTransfer && (
                 <DetailRow
                   icon={Tag}
-                  label="Category"
+                  label={t('common.categories')}
                   value={
                     details.category
                       ? `${details.category.head}${details.category.subHead ? ' · ' + details.category.subHead : ''}`
-                      : 'Uncategorized'
+                      : t('common.uncategorized')
                   }
                 />
               )}
               <DetailRow
                 icon={Info}
-                label="Description"
-                value={transaction.note || 'No description provided'}
+                label={t('common.description')}
+                value={transaction.note || t('common.noDescriptionProvided')}
                 isNote
               />
             </div>
@@ -161,7 +163,7 @@ export default function TransactionDetailPanel({
           <div className="p-6 border-t border-border grid grid-cols-2 gap-3 bg-accent/5">
             <Button variant="outline" className="gap-2 h-10" onClick={() => setIsEditing(true)}>
               <Edit2 className="h-4 w-4" />
-              Edit
+              {t('common.edit')}
             </Button>
             <Button
               variant="destructive"
@@ -169,7 +171,7 @@ export default function TransactionDetailPanel({
               onClick={() => onDelete(transaction.id)}
             >
               <Trash2 className="h-4 w-4" />
-              Delete
+              {t('common.delete')}
             </Button>
           </div>
         </>

@@ -36,10 +36,10 @@ export function openMoniqDB(): Promise<IDBPDatabase<MoniqDB>> {
 
   dbPromise = new Promise<IDBPDatabase<MoniqDB>>((resolve, reject) => {
     openDB<MoniqDB>(DB_NAME, CURRENT_SCHEMA_VERSION, {
-      upgrade(db, oldVersion) {
+      upgrade(db, oldVersion, newVersion, transaction) {
         for (const migration of idbMigrations) {
           if (migration.version > oldVersion) {
-            migration.up(db, oldVersion);
+            migration.up(db, oldVersion, transaction);
           }
         }
       },

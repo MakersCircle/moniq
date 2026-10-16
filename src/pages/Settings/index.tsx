@@ -38,6 +38,7 @@ import { getAllCurrencies, COMMON_LOCALES } from '@/constants/currencies';
 import { formatCurrency } from '@/utils/format';
 import { format } from 'date-fns';
 import DemoExitDialog from '@/components/Layout/DemoExitDialog';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function SettingsIndex() {
   const {
@@ -58,6 +59,7 @@ export default function SettingsIndex() {
     budgets,
     isDemoMode,
   } = useDataStore();
+  const { t } = useTranslation();
 
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState('');
@@ -187,16 +189,16 @@ export default function SettingsIndex() {
     <SettingsLayout>
       <div className="space-y-10">
         <div className="sticky top-0 bg-background/95 backdrop-blur-md z-40 pb-4 pt-2 -mx-1 px-1">
-          <h2 className="text-xl font-bold tracking-tight">General</h2>
+          <h2 className="text-xl font-bold tracking-tight">{t('settings.title')}</h2>
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-            Preferences & Sync
+            {t('settings.subtitle')}
           </p>
         </div>
 
         {isDemoMode ? (
           <section className="space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
-              Account & Sync
+              {t('settings.accountSync')}
             </h3>
             <Card className="border-border shadow-sm overflow-hidden bg-amber-500/5 border-amber-500/20">
               <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-6 justify-between">
@@ -206,11 +208,10 @@ export default function SettingsIndex() {
                   </div>
                   <div>
                     <h4 className="text-sm font-bold tracking-tight text-amber-500">
-                      Currently in Demo Mode
+                      {t('settings.demoMode')}
                     </h4>
                     <p className="text-xs text-muted-foreground mt-1 max-w-[400px] leading-relaxed">
-                      You are using Moniq locally. Sign in with Google to enable cloud sync across
-                      devices and automated backups to your Google Drive.
+                      {t('settings.demoModeDesc')}
                     </p>
                   </div>
                 </div>
@@ -218,7 +219,7 @@ export default function SettingsIndex() {
                   onClick={() => setShowDemoDialog(true)}
                   className="shrink-0 bg-amber-500 hover:bg-amber-600 text-amber-950 font-bold tracking-wide mt-4 sm:mt-0"
                 >
-                  Sign in to Sync
+                  {t('settings.signInToSync')}
                 </Button>
               </CardContent>
             </Card>
@@ -229,7 +230,7 @@ export default function SettingsIndex() {
             {/* Profile */}
             <section className="space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
-                Profile
+                {t('settings.profile')}
               </h3>
               <Card className="border-border shadow-sm overflow-hidden">
                 <CardContent className="p-4 flex items-center justify-between gap-4">
@@ -256,16 +257,15 @@ export default function SettingsIndex() {
                     ) : (
                       <LogOut className="h-4 w-4" />
                     )}
-                    {isLoggingOut ? 'Signing out...' : 'Sign out'}
+                    {isLoggingOut ? t('settings.signingOut') : t('settings.signOut')}
                   </Button>
                 </CardContent>
               </Card>
             </section>
 
-            {/* Cloud Persistence */}
             <section id="tour-target-sync" className="space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
-                Cloud Sync
+                {t('settings.cloudSync')}
               </h3>
               <Card className="border-border shadow-sm">
                 <CardContent className="p-6">
@@ -296,19 +296,19 @@ export default function SettingsIndex() {
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-bold tracking-tight">Google Sheets Database</p>
+                        <p className="text-sm font-bold tracking-tight">{t('settings.dbName')}</p>
                         <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
                           {syncStatus === 'syncing'
-                            ? 'Syncing changes…'
+                            ? t('settings.syncing')
                             : syncStatus === 'pulling'
-                              ? 'Pulling from sheets…'
+                              ? t('settings.pulling')
                               : syncStatus === 'error'
-                                ? 'Sync error'
+                                ? t('settings.syncError')
                                 : syncStatus === 'offline'
-                                  ? 'Offline'
+                                  ? t('settings.offline')
                                   : lastSyncedAt
-                                    ? `Last synced ${new Date(lastSyncedAt).toLocaleString()}`
-                                    : 'No sync recorded'}
+                                    ? `${t('settings.lastSynced')} ${new Date(lastSyncedAt).toLocaleString()}`
+                                    : t('settings.noSyncRecorded')}
                         </p>
                         {pendingCount > 0 && (
                           <div className="flex items-center mt-0.5">
@@ -396,7 +396,7 @@ export default function SettingsIndex() {
                       size="sm"
                       className="h-9 px-6 font-bold uppercase text-[10px] tracking-widest"
                     >
-                      Sync Now
+                      {t('settings.syncNow')}
                     </Button>
                   </div>
                   {lastSyncError && syncStatus === 'error' && (
@@ -408,19 +408,16 @@ export default function SettingsIndex() {
                   )}
                   <div className="p-3 bg-accent/30 rounded-lg border border-border/50">
                     <p className="text-[10px] text-muted-foreground leading-relaxed">
-                      Your financial data is 100% private. Moniq does not have a central database;
-                      instead, all your transactions and settings are securely backed up to a
-                      dedicated spreadsheet inside your personal Google Drive.
+                      {t('settings.privacyNote')}
                     </p>
                   </div>
                 </CardContent>
               </Card>
             </section>
 
-            {/* Backups */}
             <section className="space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
-                Automated Backups
+                {t('settings.automatedBackups')}
               </h3>
               <Card className="border-border shadow-sm">
                 <CardContent className="p-6">
@@ -430,9 +427,11 @@ export default function SettingsIndex() {
                         <ShieldCheck className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold tracking-tight">Tiered Retention System</p>
+                        <p className="text-sm font-bold tracking-tight">
+                          {t('settings.tieredRetention')}
+                        </p>
                         <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                          Snapshots stored in "Moniq Backups" folder
+                          {t('settings.snapshotsStored')}
                         </p>
                       </div>
                     </div>
@@ -452,18 +451,15 @@ export default function SettingsIndex() {
                       className="h-8 px-4 font-bold uppercase text-[9px] tracking-widest min-w-25"
                     >
                       {isBackingUp ? <RefreshCw className="h-3 w-3 animate-spin mr-2" /> : null}
-                      {isBackingUp ? 'Backing up...' : 'Backup Now'}
+                      {isBackingUp ? t('settings.backingUp') : t('settings.backupNow')}
                     </Button>
                   </div>
 
                   <div className="p-3 bg-accent/30 rounded-lg border border-border/50 mb-6">
-                    <p className="text-[10px] text-muted-foreground leading-relaxed">
-                      Moniq automatically creates snapshots of your data at specific intervals.
-                      Clicking <strong>Backup Now</strong> immediately creates a new manual snapshot
-                      (up to 5 are retained). Each backup is saved as a new copy in the &quot;Moniq
-                      Backups&quot; folder in your Google Drive — existing backups are never
-                      overwritten.
-                    </p>
+                    <p
+                      className="text-[10px] text-muted-foreground leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: t('settings.backupDesc') }}
+                    />
                   </div>
 
                   <div className="border border-border/50 rounded-xl overflow-hidden bg-accent/10">
@@ -480,7 +476,7 @@ export default function SettingsIndex() {
                     >
                       <div className="flex items-center gap-2 text-sm font-bold tracking-tight">
                         <History className="h-4 w-4 text-muted-foreground" />
-                        View Latest Snapshots
+                        {t('settings.viewLatestSnapshots')}
                       </div>
                       <ChevronDown
                         className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${showSnapshots ? 'rotate-180' : ''}`}
@@ -491,28 +487,36 @@ export default function SettingsIndex() {
                       <div className="p-4 border-t border-border/50 space-y-3">
                         {!latestBackups ? (
                           <p className="text-xs text-muted-foreground animate-pulse flex items-center gap-2">
-                            <RefreshCw className="h-3 w-3 animate-spin" /> Fetching from Google
-                            Drive...
+                            <RefreshCw className="h-3 w-3 animate-spin" />{' '}
+                            {t('settings.fetchingFromDrive')}
                           </p>
                         ) : (
                           <div className="space-y-3">
                             {[
-                              { id: 'manual', label: 'Manual Backup', limit: 'Retains last 5' },
-                              { id: 'daily', label: 'Daily Backup', limit: 'Retains last 7 days' },
+                              {
+                                id: 'manual',
+                                label: t('settings.manualBackup'),
+                                limit: t('settings.retainManual'),
+                              },
+                              {
+                                id: 'daily',
+                                label: t('settings.dailyBackup'),
+                                limit: t('settings.retainDaily'),
+                              },
                               {
                                 id: 'weekly',
-                                label: 'Weekly Backup',
-                                limit: 'Retains last 5 weeks',
+                                label: t('settings.weeklyBackup'),
+                                limit: t('settings.retainWeekly'),
                               },
                               {
                                 id: 'monthly',
-                                label: 'Monthly Backup',
-                                limit: 'Retains last 12 months',
+                                label: t('settings.monthlyBackup'),
+                                limit: t('settings.retainMonthly'),
                               },
                               {
                                 id: 'yearly',
-                                label: 'Yearly Backup',
-                                limit: 'Retained indefinitely',
+                                label: t('settings.yearlyBackup'),
+                                limit: t('settings.retainYearly'),
                               },
                             ].map(tier => {
                               const snapshot = latestBackups[tier.id];
@@ -544,7 +548,7 @@ export default function SettingsIndex() {
                                       </>
                                     ) : (
                                       <p className="text-xs font-bold text-muted-foreground/50">
-                                        No snapshot yet
+                                        {t('settings.noSnapshot')}
                                       </p>
                                     )}
                                   </div>
@@ -566,7 +570,7 @@ export default function SettingsIndex() {
         <section className="space-y-4">
           <div className="px-1">
             <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              Regional Preferences
+              {t('settings.regionalPreferences')}
             </h3>
           </div>
           <Card className="border-border shadow-sm">
@@ -574,7 +578,7 @@ export default function SettingsIndex() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="space-y-2">
                   <Label className="text-[10px] uppercase font-bold text-muted-foreground">
-                    Currency
+                    {t('settings.currency')}
                   </Label>
                   <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
                     <PopoverTrigger asChild>
@@ -585,14 +589,14 @@ export default function SettingsIndex() {
                         <span className="truncate">
                           {getAllCurrencies().find(c => c.code === settings.currency)?.name
                             ? `${settings.currency} — ${getAllCurrencies().find(c => c.code === settings.currency)?.name}`
-                            : 'Select currency'}
+                            : t('settings.selectCurrency')}
                         </span>
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[300px] p-0" align="start">
                       <div className="p-2 border-b">
                         <Input
-                          placeholder="Search currency..."
+                          placeholder={t('settings.searchCurrency')}
                           value={currencySearch}
                           onChange={e => setCurrencySearch(e.target.value)}
                           className="h-8 w-full shadow-none focus-visible:ring-0"
@@ -630,7 +634,7 @@ export default function SettingsIndex() {
                             c.code.toLowerCase().includes(currencySearch.toLowerCase())
                         ).length === 0 && (
                           <div className="p-4 text-center text-sm text-muted-foreground">
-                            No currencies found.
+                            {t('settings.noCurrenciesFound')}
                           </div>
                         )}
                       </div>
@@ -638,14 +642,14 @@ export default function SettingsIndex() {
                   </Popover>
                   <div className="flex items-center justify-between pt-1">
                     <p className="text-[9px] text-muted-foreground italic">
-                      Selected: {currentCurrency.symbol} ({currentCurrency.name})
+                      {t('settings.selected')} {currentCurrency.symbol} ({currentCurrency.name})
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label className="text-[10px] uppercase font-bold text-muted-foreground">
-                    Number Format
+                    {t('settings.numberFormat')}
                   </Label>
                   <Popover open={formatOpen} onOpenChange={setFormatOpen}>
                     <PopoverTrigger asChild>
@@ -655,14 +659,14 @@ export default function SettingsIndex() {
                       >
                         <span className="truncate">
                           {COMMON_LOCALES.find(l => l.code === settings.numberLocale)?.name ||
-                            'Select format'}
+                            t('settings.selectFormat')}
                         </span>
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[300px] p-0" align="start">
                       <div className="p-2 border-b">
                         <Input
-                          placeholder="Search format..."
+                          placeholder={t('settings.searchFormat')}
                           value={formatSearch}
                           onChange={e => setFormatSearch(e.target.value)}
                           className="h-8 w-full shadow-none focus-visible:ring-0"
@@ -692,27 +696,27 @@ export default function SettingsIndex() {
                           l.name.toLowerCase().includes(formatSearch.toLowerCase())
                         ).length === 0 && (
                           <div className="p-4 text-center text-sm text-muted-foreground">
-                            No formats found.
+                            {t('settings.noFormatsFound')}
                           </div>
                         )}
                       </div>
                     </PopoverContent>
                   </Popover>
                   <p className="text-[9px] text-muted-foreground italic pt-1">
-                    Preview: {formatCurrency(1234567.89, settings)}
+                    {t('settings.preview')} {formatCurrency(1234567.89, settings)}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label className="text-[10px] uppercase font-bold text-muted-foreground">
-                    Date Format
+                    {t('settings.dateFormat')}
                   </Label>
                   <Select
                     value={settings.dateFormat || 'MMM d, yyyy'}
                     onValueChange={val => updateSettings({ dateFormat: val })}
                   >
                     <SelectTrigger className="h-10 border-border/50 focus:ring-primary/20">
-                      <SelectValue placeholder="Select format" />
+                      <SelectValue placeholder={t('settings.selectFormat')} />
                     </SelectTrigger>
                     <SelectContent>
                       {['MMM d, yyyy', 'dd/MM/yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd'].map(fmt => (
@@ -723,7 +727,7 @@ export default function SettingsIndex() {
                     </SelectContent>
                   </Select>
                   <p className="text-[9px] text-muted-foreground italic pt-1">
-                    Default date format across the app
+                    {t('settings.defaultDateFormat')}
                   </p>
                 </div>
               </div>
@@ -732,7 +736,7 @@ export default function SettingsIndex() {
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Globe className="h-4 w-4" />
                   <span className="text-xs font-medium uppercase tracking-wider text-[10px]">
-                    Locale Info
+                    {t('settings.localeInfo')}
                   </span>
                 </div>
                 <span className="text-xs font-bold text-primary bg-primary/5 px-2 py-0.5 rounded text-[10px]">
@@ -746,16 +750,15 @@ export default function SettingsIndex() {
         {/* Danger Zone */}
         <section className="space-y-4 pt-4">
           <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-destructive/70 px-1">
-            Danger Zone
+            {t('settings.dangerZone')}
           </h3>
           <Card className="border-destructive/20 bg-destructive/5 shadow-sm">
             <CardContent className="p-6">
               <div className="flex items-center justify-between gap-6">
                 <div className="space-y-1">
-                  <p className="text-sm font-bold text-destructive">Reset All Data</p>
+                  <p className="text-sm font-bold text-destructive">{t('settings.resetAllData')}</p>
                   <p className="text-xs text-muted-foreground leading-relaxed max-w-md">
-                    Permanently wipe all transactions, accounts, and categories from this device and
-                    your Google Sheet. This action cannot be undone.
+                    {t('settings.resetAllDataDesc')}
                   </p>
                 </div>
                 <Button
@@ -768,7 +771,7 @@ export default function SettingsIndex() {
                   className="h-9 px-4 shrink-0 shadow-sm"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Reset Data
+                  {t('settings.resetData')}
                 </Button>
               </div>
             </CardContent>
@@ -785,30 +788,30 @@ export default function SettingsIndex() {
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-lg font-bold tracking-tight">Are you absolutely sure?</h3>
-                <p className="text-sm text-muted-foreground">This action is irreversible.</p>
+                <h3 className="text-lg font-bold tracking-tight">{t('settings.areYouSure')}</h3>
+                <p className="text-sm text-muted-foreground">{t('settings.irreversible')}</p>
               </div>
             </div>
 
             <div className="space-y-4 rounded-xl bg-muted/50 p-4 border border-border">
               <ul className="text-xs space-y-2 text-muted-foreground list-disc list-inside">
                 <li>
-                  All <span className="text-foreground font-medium">local data</span> will be wiped.
+                  <span dangerouslySetInnerHTML={{ __html: t('settings.localDataWiped') }} />
                 </li>
                 <li>
-                  All data in your <span className="text-foreground font-medium">Google Sheet</span>{' '}
-                  will be cleared.
+                  <span dangerouslySetInnerHTML={{ __html: t('settings.googleSheetCleared') }} />
                 </li>
                 <li>
-                  The app will return to the{' '}
-                  <span className="text-foreground font-medium">onboarding</span> state.
+                  {t('settings.returnToOnboarding') && (
+                    <span dangerouslySetInnerHTML={{ __html: t('settings.returnToOnboarding') }} />
+                  )}
                 </li>
               </ul>
             </div>
 
             <div className="space-y-3">
               <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Type the following exactly to confirm:
+                {t('settings.typeToConfirm')}
                 <div className="mt-1 text-destructive font-mono select-none bg-destructive/5 p-2 rounded border border-destructive/10 text-[11px] normal-case">
                   {RESET_PHRASE}
                 </div>
@@ -828,7 +831,7 @@ export default function SettingsIndex() {
                 onClick={() => setResetModalOpen(false)}
                 disabled={isResetting}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 variant="destructive"
@@ -836,7 +839,11 @@ export default function SettingsIndex() {
                 disabled={resetConfirmText !== RESET_PHRASE || isResetting}
                 onClick={handleHardReset}
               >
-                {isResetting ? <RefreshCw className="h-4 w-4 animate-spin" /> : 'Delete Everything'}
+                {isResetting ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  t('settings.confirmReset')
+                )}
               </Button>
             </div>
           </div>
@@ -849,10 +856,11 @@ export default function SettingsIndex() {
               <AlertTriangle className="w-6 h-6 text-red-500" />
             </div>
             <div>
-              <h3 className="text-zinc-100 text-lg font-medium mb-2">Unsaved Changes</h3>
+              <h3 className="text-zinc-100 text-lg font-medium mb-2">
+                {t('settings.unsavedChanges')}
+              </h3>
               <p className="text-zinc-400 text-sm">
-                You have {logoutPendingCount} changes that couldn't be saved to Google Drive due to
-                a network error. If you sign out now, these changes will be lost.
+                {t('settings.unsavedChangesDesc', { count: logoutPendingCount })}
               </p>
             </div>
             <div className="flex gap-3 w-full mt-4">
@@ -864,14 +872,14 @@ export default function SettingsIndex() {
                   setIsLoggingOut(false);
                 }}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 variant="destructive"
                 className="flex-1 bg-red-600 hover:bg-red-700"
                 onClick={confirmAndLogout}
               >
-                Sign Out Anyway
+                {t('settings.signOutAnyway')}
               </Button>
             </div>
           </div>
@@ -881,11 +889,11 @@ export default function SettingsIndex() {
       <Dialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
         <DialogContent className="max-w-md p-6">
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-destructive">Hard Reset Failed</h3>
+            <h3 className="text-lg font-bold text-destructive">{t('settings.hardResetFailed')}</h3>
             <p className="text-sm text-muted-foreground whitespace-pre-wrap">{errorMessage}</p>
             <div className="flex justify-end pt-4">
               <Button variant="secondary" onClick={() => setErrorDialogOpen(false)}>
-                Close
+                {t('common.close')}
               </Button>
             </div>
           </div>

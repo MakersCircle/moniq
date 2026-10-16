@@ -103,7 +103,7 @@ export function CategoryForm({
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
         <div className="space-y-2">
           <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-            {t('category.group')}
+            {t('common.group')}
             <InfoTooltip
               text={
                 <div className="space-y-1">

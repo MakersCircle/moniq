@@ -88,7 +88,7 @@ export default function Categories() {
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold tracking-tight">{t('category.title')}</h2>
+                <h2 className="text-xl font-bold tracking-tight">{t('common.categories')}</h2>
                 <InfoTooltip position="bottom" text={t('category.tooltip')} />
               </div>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
@@ -237,7 +237,7 @@ export default function Categories() {
                           if (!result.success)
                             setDeleteError(prev => ({
                               ...prev,
-                              [c.id]: result.reason || 'Cannot delete.',
+                              [c.id]: result.reason || t('common.cannotDelete'),
                             }));
                           else
                             setDeleteError(prev => {

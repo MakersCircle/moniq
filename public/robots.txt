@@ -1,0 +1,11 @@
+# GitHub: https://github.com/MakersCircle/moniq
+User-agent: *
+Allow: /
+Allow: /docs
+Allow: /privacy-policy
+Allow: /terms-of-service
+Disallow: /dashboard
+Disallow: /transactions
+Disallow: /insights
+Disallow: /budget
+Disallow: /settings

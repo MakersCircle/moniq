@@ -58,7 +58,7 @@ export default function Accounts() {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold tracking-tight">{t('account.title')}</h2>
+                <h2 className="text-xl font-bold tracking-tight">{t('common.accounts')}</h2>
                 <InfoTooltip position="bottom" text={t('account.tooltip')} />
               </div>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
@@ -167,7 +167,7 @@ export default function Accounts() {
                           if (!result.success)
                             setDeleteError(prev => ({
                               ...prev,
-                              [a.id]: result.reason || 'Cannot delete.',
+                              [a.id]: result.reason || t('common.cannotDelete'),
                             }));
                           else
                             setDeleteError(prev => {

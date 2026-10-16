@@ -15,6 +15,7 @@ export const TRANSACTION_COLUMNS = [
   'Is Deleted',
   'Created At',
   'Updated At',
+  'Sort Order',
   'Checksum',
 ] as const;
 
@@ -77,6 +78,7 @@ export function serializeTransaction(t: Transaction): string[] {
     t.isDeleted ? 'TRUE' : 'FALSE',
     t.createdAt,
     t.updatedAt,
+    t.sortOrder !== undefined ? String(t.sortOrder) : '',
     '', // Checksum placeholder
   ];
 }
@@ -85,6 +87,7 @@ export function serializeTransaction(t: Transaction): string[] {
 
 export function deserializeTransaction(row: string[], header: string[]): Transaction {
   const entriesRaw = get(row, header, 'Entries JSON');
+  const sortOrderRaw = get(row, header, 'Sort Order');
   return {
     id: get(row, header, 'ID'),
     groupId: get(row, header, 'Group ID'),
@@ -98,5 +101,7 @@ export function deserializeTransaction(row: string[], header: string[]): Transac
     isDeleted: get(row, header, 'Is Deleted') === 'TRUE',
     createdAt: get(row, header, 'Created At'),
     updatedAt: get(row, header, 'Updated At') || get(row, header, 'Created At'),
+    // `get()` returns '' when the column is absent (old sheets pre-migration) — safe fallback to 0
+    sortOrder: sortOrderRaw !== '' ? Number(sortOrderRaw) : undefined,
   };
 }

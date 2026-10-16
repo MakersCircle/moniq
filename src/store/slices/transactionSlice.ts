@@ -19,6 +19,7 @@ export interface TransactionSlice {
   }) => void;
   updateTransaction: (id: string, patch: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
+  reorderTransactions: (orderedIds: string[]) => void;
 }
 
 export const createTransactionSlice: StateCreator<DataState, [], [], TransactionSlice> = set => ({
@@ -29,7 +30,18 @@ export const createTransactionSlice: StateCreator<DataState, [], [], Transaction
     const entries = LedgerEngine.createEntries({ type: uiType, amount, accountId, targetId });
     const id = uuid();
     const t = now();
-    const txn = {
+
+    // Compute next sortOrder for this date: max of existing same-date sortOrders + 1
+    let nextSortOrder = 0;
+    set(state => {
+      const sameDayOrders = state.transactions
+        .filter(tx => !tx.isDeleted && tx.date === date && tx.sortOrder !== undefined)
+        .map(tx => tx.sortOrder as number);
+      nextSortOrder = sameDayOrders.length > 0 ? Math.max(...sameDayOrders) + 1 : 0;
+      return {};
+    });
+
+    const txn: Transaction = {
       id,
       groupId: uuid(),
       date,
@@ -39,6 +51,7 @@ export const createTransactionSlice: StateCreator<DataState, [], [], Transaction
       methodId,
       note,
       tags,
+      sortOrder: nextSortOrder,
       isDeleted: false,
       createdAt: t,
       updatedAt: t,
@@ -73,5 +86,25 @@ export const createTransactionSlice: StateCreator<DataState, [], [], Transaction
       return { transactions: next };
     });
     markDirty('transaction', id, 'update');
+  },
+
+  reorderTransactions: orderedIds => {
+    const updatedAt = now();
+    set(state => {
+      const next = state.transactions.map(t => {
+        const idx = orderedIds.indexOf(t.id);
+        if (idx === -1) return t;
+        return { ...t, sortOrder: idx, updatedAt };
+      });
+      // Persist + queue sync for each re-ordered record
+      for (const id of orderedIds) {
+        const updated = next.find(t => t.id === id);
+        if (updated) {
+          put('transactions', updated);
+          markDirty('transaction', id, 'update');
+        }
+      }
+      return { transactions: next };
+    });
   },
 });

@@ -220,7 +220,6 @@ const Grainient: React.FC<GrainientProps> = ({
 
     const ro = new ResizeObserver(setSize);
     ro.observe(container);
-    setSize();
 
     let raf = 0;
     const t0 = performance.now();

@@ -11,6 +11,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.10.0] - 2026-10-17
+
+### Added
+- **i18n**: Introduced internationalization support across the landing page, dashboard, ledger, and settings. Shared strings are now centrally managed to reduce duplication, and the translation hook fully supports string interpolation.
+- **Intra-day Transaction Ordering**: Added manual drag-and-drop reordering for transactions occurring on the same date. The custom sort order seamlessly persists to both IndexedDB and Google Sheets, with an automated migration seamlessly backfilling existing data.
+- **Lighthouse Automation**: Implemented a comprehensive, Puppeteer-driven Lighthouse test suite to automatically audit performance, accessibility, and best practices across all core routes and user flows for both mobile and desktop viewports.
+
+### Changed
+- **Performance**: Optimized the loading of the Google Sign-In script. It now lazy-loads exclusively on authentication boundaries (Home page, Session Expired banner, and Demo Exit dialog), stripping ~100KiB of unused JavaScript from standard app routes and significantly improving First Contentful Paint.
+- **Transactions UI**: Updated the Payment Method dropdown to display its associated Account name (e.g., `Account · Method`), resolving ambiguity when multiple accounts share identically named payment methods.
+- **Ledger Layout**: Migrated the Ledger table architecture to a high-performance Flexbox layout, enabling buttery-smooth 60fps drag-to-reorder animations while strictly preserving column widths and design parity across all screen sizes.
+
+### Fixed
+- **Database**: Fixed a critical `InvalidStateError` that could cause IndexedDB schema upgrades to silently fail on first boot. The migration engine now correctly utilizes the browser's active upgrade transaction instead of erroneously attempting to spawn new ones.
+
+---
+
+## [0.9.7] - 2026-09-21
+
+### Added
+- **Category Balances**: Added detailed running balances for 'Invest', 'Lend', and 'Borrow' categories directly on the Settings > Categories page.
+- **Dashboard Enhancements**: Added a new expandable 'Additional Summaries' section on the Dashboard to track Total Receivable and Total Payable amounts. This aggregates data from both dedicated accounts and relevant categories.
+
+---
+
 ## [0.9.7] - 2026-09-21
 
 ### Added

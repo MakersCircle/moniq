@@ -4,7 +4,9 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { useDataStore } from '@/store/dataStore';
 import { Button } from '@/components/ui/button';
 
-export default function SessionExpiredBanner() {
+import { GoogleAuthProvider } from '@/components/GoogleAuthProvider';
+
+function SessionExpiredBanner() {
   const setAccessToken = useDataStore(s => s.setAccessToken);
   const setCloudInitialized = useDataStore(s => s.setCloudInitialized);
 
@@ -37,5 +39,13 @@ export default function SessionExpiredBanner() {
         Reconnect
       </Button>
     </div>
+  );
+}
+
+export default function SessionExpiredBannerWithAuth() {
+  return (
+    <GoogleAuthProvider>
+      <SessionExpiredBanner />
+    </GoogleAuthProvider>
   );
 }

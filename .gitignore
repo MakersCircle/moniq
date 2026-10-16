@@ -46,5 +46,9 @@ test-results/
 playwright-report/
 playwright/.cache/
 
+# Lighthouse Reports
+lighthouse-summary.json
+lighthouse-reports/
+
 # Generated in-app changelog doc (copied from docs/CHANGELOG.md on dev/build)
 src/docs/changelog.mdx

@@ -168,7 +168,16 @@ export function useFilteredTransactions(filter: TxnFilter) {
           return false;
         return true;
       })
-      .sort((a, b) => b.date.localeCompare(a.date));
+      .sort((a, b) => {
+        const dateDiff = b.date.localeCompare(a.date);
+        if (dateDiff !== 0) return dateDiff;
+        // Within same date: sortOrder ascending (explicit user order)
+        const aOrder = a.sortOrder ?? Infinity;
+        const bOrder = b.sortOrder ?? Infinity;
+        if (aOrder !== bOrder) return aOrder - bOrder;
+        // Final fallback: createdAt ascending (for records pre-dating migration)
+        return a.createdAt.localeCompare(b.createdAt);
+      });
   }, [transactions, filter]);
 }
 
