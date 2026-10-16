@@ -28,6 +28,18 @@ Focuses purely on double-entry bookkeeping math, isolated from React.
 | U-17 | `getNormalBalance` for id with no matching account or category | Balance derived purely from entries with `impact` of `0` for unmatched types (returns `0` contribution) |
 | U-18 | `getNormalBalance` aggregates multiple transactions | Balance is the sum across all matching entries, not just the latest |
 
+### 1.1a Shared selectors and edit prefill (implemented in `ledger.test.ts`)
+
+These checks use `LedgerEngine.createEntries` as the input to the inverse mapping. The Ledger row, detail panel, CSV export, Trash guard, category summary, and edit form now call the same selectors. `e2e/transaction-read.spec.ts` checks that an income row and its detail panel display the same debit account at six viewport profiles; other transaction details and types remain to test.
+
+| ID | Scenario | Expected Outcome |
+|---|---|---|
+| U-42 | `deriveTransactionFields` after income, expense, and transfer entry creation | Restores the original account and target IDs for all three types; transfer also restores source/destination method IDs |
+| U-43 | Primary account selector on income with an earlier CREDIT account entry | Returns the DEBIT account entry, preventing a wrong account in details or export |
+| U-44 | Category selector on expense/income and transfer | Returns the category entry for non-transfers and no category for transfers |
+| U-45 | Transfer destination selector | Returns the destination account's DEBIT entry |
+| U-46 | Transfer with no selectable destination method | Keeps the destination account ID but leaves the method field empty |
+
 ### 1.2 `transactionSlice` (`transactionSlice.test.ts`)
 Focuses on store mutations, ID/timestamp generation, and ledger entry wiring, mocking `put` (IndexedDB) and `markDirty`.
 

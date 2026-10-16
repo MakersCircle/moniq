@@ -8,7 +8,7 @@ This matrix follows [the feature inventory](e2e-feature-inventory.md). Each row 
 
 “Live Google” identifies features that also merit a separate smoke check using a consented Google test account. It is **not** a requirement for deterministic CI coverage: CI can use a fake OAuth/Drive/Sheets service. For sync and backup, mocked runner tests and browser simulations cannot establish that real Drive and Sheets still accept the app's requests.
 
-Evidence names refer to these existing files: [Home auth hook](../../src/hooks/__tests__/useHomeAuth.test.ts), [Home component](../../src/pages/__tests__/Home.test.tsx), [Home browser](../../e2e/home.spec.ts), [demo/navigation browser](../../e2e/demo-navigation.spec.ts), [ledger math](../../src/lib/__tests__/ledger.test.ts), and [schema tests](../../src/schema). The [case documents](README.md#planned-test-cases) are plans, not evidence. “Next automated check” gives the main missing layer; it does not exclude smaller unit tests needed to make a browser scenario reliable. The demo browser fixture seeds records through store actions, so its persistence result does not test the forms.
+Evidence names refer to these existing files: [Home auth hook](../../src/hooks/__tests__/useHomeAuth.test.ts), [Home component](../../src/pages/__tests__/Home.test.tsx), [Home browser](../../e2e/home.spec.ts), [demo/navigation browser](../../e2e/demo-navigation.spec.ts), [transaction read browser](../../e2e/transaction-read.spec.ts), [ledger math and selectors](../../src/lib/__tests__/ledger.test.ts), and [schema tests](../../src/schema). The [case documents](README.md#planned-test-cases) are plans, not evidence. “Next automated check” gives the main missing layer; it does not exclude smaller unit tests needed to make a browser scenario reliable. The demo browser fixture seeds records through store actions, so its persistence result does not test the forms.
 
 Known defects should get tests that describe the intended behavior once fixed: [#76](https://github.com/MakersCircle/moniq/issues/76) date format is saved but not applied, [#108](https://github.com/MakersCircle/moniq/issues/108) settings can reset after reload, [#91](https://github.com/MakersCircle/moniq/issues/91) auth gate, [#92](https://github.com/MakersCircle/moniq/issues/92) token refresh data loss, [#77](https://github.com/MakersCircle/moniq/issues/77) duplicate sync rows, [#94](https://github.com/MakersCircle/moniq/issues/94) reconnect account mismatch, [#95](https://github.com/MakersCircle/moniq/issues/95) backup migration safety, and [#96](https://github.com/MakersCircle/moniq/issues/96) cross-tab migration lock.
 
@@ -86,8 +86,8 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | LEDGER-03 | Search filters transactions by description; month, type, and account filters can be combined and cleared. | Missing | — | Component + browser | No |
 | LEDGER-04 | A filter with no matches shows an empty-results state while other transactions still exist. | Missing | — | Component + browser | No |
 | LEDGER-05 | Export CSV downloads the currently filtered transactions. | Missing | — | Component + browser | No |
-| LEDGER-06 | Selecting a row opens its details with date, amount, source account, category or destination account, and note. | Missing | — | Component + browser | No |
-| LEDGER-07 | Edit from the detail panel changes a transaction in place and updates the ledger and balances. | Missing | — | Component + browser | No |
+| LEDGER-06 | Selecting a row opens its details with date, amount, source account, category or destination account, and note. | Partial | LedgerEngine selectors; transaction read browser income account | Browser other details/types | No |
+| LEDGER-07 | Edit from the detail panel changes a transaction in place and updates the ledger and balances. | Partial | LedgerEngine edit-field inverse | Component + browser | No |
 | LEDGER-08 | Delete from the detail panel removes the transaction from active views and places it in Recently Deleted. | Missing | — | Component + browser | No |
 | LEDGER-09 | Dragging transactions within one date changes and persists their same-day order. | Missing | — | Component + browser | No |
 | LEDGER-10 | On mobile, category and account appear beneath the description and details open as a bottom drawer. | Missing | — | Component + browser | No |
@@ -185,4 +185,4 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | PWA-02 | Previously cached app routes and assets load while offline. | Missing | — | Installed/offline browser | No |
 | PWA-03 | Installed mobile app icons display correctly on iOS and Android home screens. | Missing | — | Installed/offline browser | No |
 
-Tracked: **118 features**; **11 partial**, **103 missing**, **4 covered end to end**. Recalculate these totals when adding tests.
+Tracked: **118 features**; **13 partial**, **101 missing**, **4 covered end to end**. Recalculate these totals when adding tests.

@@ -1,4 +1,5 @@
 import type { Transaction, Account, Category, PaymentMethod, UserSettings } from '../types';
+import { LedgerEngine } from '../lib/ledger';
 
 // ── Format currency ──────────────────────────────────────────
 export function formatCurrency(amount: number, settings: UserSettings): string {
@@ -73,15 +74,11 @@ export function exportToCSV(
     .filter(t => !t.isDeleted)
     .sort((a, b) => b.date.localeCompare(a.date))
     .map(t => {
-      const isIncome = t.uiType === 'income';
       const isTransfer = t.uiType === 'transfer';
-
-      const accEntry = t.entries.find(
-        e =>
-          accounts.some(a => a.id === e.accountId) &&
-          (isIncome ? e.type === 'DEBIT' : e.type === 'CREDIT')
-      );
-      const targetEntry = t.entries.find(e => e.accountId !== accEntry?.accountId);
+      const accEntry = LedgerEngine.getPrimaryAccountEntry(t, accounts);
+      const targetEntry = isTransfer
+        ? LedgerEngine.getTransferDestinationEntry(t, accounts)
+        : LedgerEngine.getCategoryEntry(t, categories);
 
       let targetLabel: string;
       if (isTransfer) {

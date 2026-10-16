@@ -59,27 +59,6 @@ export default function TransactionForm({
 
   const lastTransaction = useMemo(() => transactions[0], [transactions]);
 
-  // Helper to find initial account/category from ledger entries
-  const initialAccountId = useMemo(() => {
-    if (!initialData) return accounts.find(a => a.isActive)?.id || '';
-    const isIncome = initialData.uiType === 'income';
-    const entry = initialData.entries.find(
-      e =>
-        accounts.some(a => a.id === e.accountId) &&
-        (isIncome ? e.type === 'DEBIT' : e.type === 'CREDIT')
-    );
-    return entry?.accountId || accounts.find(a => a.isActive)?.id || '';
-  }, [initialData, accounts]);
-
-  const initialTargetId = useMemo(() => {
-    if (!initialData) return '';
-    const isIncome = initialData.uiType === 'income';
-    const entry = initialData.entries.find(
-      e => e.accountId !== initialAccountId && (isIncome ? e.type === 'CREDIT' : e.type === 'DEBIT')
-    );
-    return entry?.accountId || '';
-  }, [initialData, initialAccountId]);
-
   const activeAccounts = useMemo(
     () => accounts.filter(s => s.isActive && !s.isDeleted),
     [accounts]
@@ -98,6 +77,16 @@ export default function TransactionForm({
         .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)),
     [categories]
   );
+
+  const initialFields = useMemo(
+    () =>
+      initialData
+        ? LedgerEngine.deriveTransactionFields(initialData, accounts, activeMethods, categories)
+        : null,
+    [initialData, accounts, activeMethods, categories]
+  );
+  const initialAccountId = initialFields?.accountId || accounts.find(a => a.isActive)?.id || '';
+  const initialTargetId = initialFields?.targetId || '';
 
   // Get unique category heads
   const categoryHeads = useMemo(() => {
@@ -173,32 +162,8 @@ export default function TransactionForm({
   }, [selectedHead, activeCategories]);
 
   // Transfer: From/To using payment methods
-  const initialFromMethodId = useMemo(() => {
-    if (!initialData || initialData.uiType !== 'transfer') return '';
-    const sourceEntry = initialData.entries.find(
-      e => e.type === 'CREDIT' && accounts.some(a => a.id === e.accountId)
-    );
-    if (sourceEntry) {
-      const m = activeMethods.find(pm => pm.linkedAccountId === sourceEntry.accountId);
-      return m?.id || '';
-    }
-    return '';
-  }, [initialData, accounts, activeMethods]);
-
-  const initialToMethodId = useMemo(() => {
-    if (!initialData || initialData.uiType !== 'transfer') return '';
-    const destEntry = initialData.entries.find(
-      e => e.type === 'DEBIT' && accounts.some(a => a.id === e.accountId)
-    );
-    if (destEntry) {
-      const m = activeMethods.find(pm => pm.linkedAccountId === destEntry.accountId);
-      return m?.id || '';
-    }
-    return '';
-  }, [initialData, accounts, activeMethods]);
-
-  const [fromMethodId, setFromMethodId] = useState(initialFromMethodId);
-  const [toMethodId, setToMethodId] = useState(initialToMethodId);
+  const [fromMethodId, setFromMethodId] = useState(initialFields?.fromMethodId || '');
+  const [toMethodId, setToMethodId] = useState(initialFields?.toMethodId || '');
 
   // For transfers: derive account IDs from selected methods
   const fromAccountId = useMemo(() => {

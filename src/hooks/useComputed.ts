@@ -196,7 +196,7 @@ export function useCategorySpend(year: number, month: number) {
     const map: Record<string, { label: string; amount: number; group: string }> = {};
     for (const t of expenses) {
       // Find the entry that corresponds to the category (usually the DEBIT entry for expenses)
-      const categoryEntry = t.entries.find(e => categories.some(c => c.id === e.accountId));
+      const categoryEntry = LedgerEngine.getCategoryEntry(t, categories);
       if (!categoryEntry) continue;
 
       const cat = categories.find(c => c.id === categoryEntry.accountId);

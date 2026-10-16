@@ -19,17 +19,13 @@ import {
 } from '@/components/ui/select';
 
 import { cn } from '@/lib/utils';
+import { LedgerEngine } from '@/lib/ledger';
 import TransactionDetailPanel from '@/components/Transactions/TransactionDetailPanel';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function getAccountName(txn: Transaction, accounts: Account[], t: (key: string) => string) {
-  const isIncome = txn.uiType === 'income';
-  const entry = txn.entries.find(
-    e =>
-      accounts.some(a => a.id === e.accountId) &&
-      (isIncome ? e.type === 'DEBIT' : e.type === 'CREDIT')
-  );
+  const entry = LedgerEngine.getPrimaryAccountEntry(txn, accounts);
   return accounts.find(a => a.id === entry?.accountId)?.name || t('common.unknown');
 }
 
@@ -40,10 +36,10 @@ function getCategoryName(
   t: (key: string) => string
 ) {
   if (txn.uiType === 'transfer') {
-    const targetEntry = txn.entries.find(e => e.type === 'DEBIT');
+    const targetEntry = LedgerEngine.getTransferDestinationEntry(txn, accounts);
     return accounts.find(a => a.id === targetEntry?.accountId)?.name || t('common.transfer');
   }
-  const catEntry = txn.entries.find(e => categories.some(c => c.id === e.accountId));
+  const catEntry = LedgerEngine.getCategoryEntry(txn, categories);
   const c = categories.find(c => c.id === catEntry?.accountId);
   return c ? (c.subHead ? `${c.head} . ${c.subHead}` : c.head) : '—';
 }
