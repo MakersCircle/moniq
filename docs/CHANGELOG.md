@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Regression Tests**: Added a tracked feature-to-test matrix, pure transaction logic tests, and Chromium browser coverage for demo mode, navigation, transactions, and Google sign-in and mobile redirect initialization across desktop and mobile viewports.
 - **Returning-User Coverage**: Added browser checks that local records rehydrate and remote Sheets changes reconcile before the signed-in dashboard opens.
+- **Cloud Connection Error Coverage**: Added desktop and mobile browser checks for failed Sheets initialization, Retry Connection recovery, and Sign Out from the error screen.
 - **i18n**: Introduced internationalization support across the landing page, dashboard, ledger, and settings. Shared strings are now centrally managed to reduce duplication, and the translation hook fully supports string interpolation.
 - **Intra-day Transaction Ordering**: Added manual drag-and-drop reordering for transactions occurring on the same date. The custom sort order seamlessly persists to both IndexedDB and Google Sheets, with an automated migration seamlessly backfilling existing data.
 - **Lighthouse Automation**: Implemented a comprehensive, Puppeteer-driven Lighthouse test suite to automatically audit performance, accessibility, and best practices across all core routes and user flows for both mobile and desktop viewports.

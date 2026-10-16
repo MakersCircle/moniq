@@ -272,7 +272,9 @@ These are planned cases. Local/demo cases need browser tests. Sync, backup, and 
 |---|---|---|
 | E-16 | Full push/pull sync through the UI | Browser with fake Google Sheets verifies queue flush, remote row update, pull after reload, and duplicate prevention. Live smoke verifies that the same flow works with a consented test account. |
 | E-17 | Returning signed-in user (`auth-rehydration.spec.ts`) | A local IndexedDB account rehydrates after reload; a paused Sheets pull keeps the dashboard closed; releasing it merges a remote-only account before the dashboard appears. Runs at all six Chromium viewport profiles. |
-| E-17 | Tiered backup creation | Fake Drive browser/integration test advances the clock, checks due snapshots and retention, and verifies Backup Now. Live smoke verifies a new snapshot appears in Drive. |
-| E-18 | Sync Now pulls an externally changed row | Change the fake sheet between browser actions; Sync Now updates local data without losing pending changes. Live smoke repeats a minimal manual Sheet edit and pull. |
+| E-18 | Failed cloud initialization (`auth-connection-error.spec.ts`) | A failed Sheets pull shows Connection Error and keeps the dashboard closed; Retry Connection recovers after a one-time outage; Sign Out returns to the landing page and stays signed out after reload. Runs at all six Chromium viewport profiles. |
+| E-19 | Tiered backup creation | Fake Drive browser/integration test advances the clock, checks due snapshots and retention, and verifies Backup Now. Live smoke verifies a new snapshot appears in Drive. |
+| E-20 | Sync Now pulls an externally changed row | Change the fake sheet between browser actions; Sync Now updates local data without losing pending changes. Live smoke repeats a minimal manual Sheet edit and pull. |
+| E-21 | Returning user hits a persistent Sheets outage (planned) | After a successful prior sync and reload, a failed pull keeps the dashboard closed and local records intact; Retry Connection succeeds once service returns. This extends AUTH-04 and AUTH-06 to a cached session. |
 
 The Accounts, Methods, and Categories Trash tables currently ignore the selected sort order. Add a desired-behavior case when fixing that control; do not lock the current inconsistency into a regression test.

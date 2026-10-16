@@ -5,6 +5,8 @@ type GoogleMock = {
   createdSpreadsheets: string[];
   authorizedRequests: string[];
   unexpectedRequests: string[];
+  failedBatchGets: number;
+  failNextBatchGet: () => void;
   sheetRows: (name: string) => string[][];
   appendSheetRow: (name: string, row: string[]) => void;
   holdNextBatchGet: () => { requested: Promise<void>; release: () => void };
@@ -21,11 +23,16 @@ function json(route: Route, body: unknown, status = 200) {
 export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
   const rows = new Map<string, string[][]>();
   let heldBatchGet: { requested: () => void; resume: Promise<void> } | null = null;
+  let failNextBatchGet = false;
   const mock: GoogleMock = {
     createdFolders: [],
     createdSpreadsheets: [],
     authorizedRequests: [],
     unexpectedRequests: [],
+    failedBatchGets: 0,
+    failNextBatchGet: () => {
+      failNextBatchGet = true;
+    },
     sheetRows: name => (rows.get(name) || []).map(row => [...row]),
     appendSheetRow: (name, row) => {
       const current = rows.get(name);
@@ -162,6 +169,11 @@ export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
     }
 
     if (path === `/v4/spreadsheets/${spreadsheetId}/values:batchGet` && method === 'GET') {
+      if (failNextBatchGet) {
+        failNextBatchGet = false;
+        mock.failedBatchGets++;
+        return json(route, { error: 'Simulated Sheets outage' }, 503);
+      }
       if (heldBatchGet) {
         const hold = heldBatchGet;
         heldBatchGet = null;
