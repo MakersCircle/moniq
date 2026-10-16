@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Regression Tests**: Added a tracked feature-to-test matrix, pure transaction logic tests, and Chromium browser coverage for demo mode, navigation, and transaction creation, editing, and deletion across desktop and mobile viewports.
+- **Regression Tests**: Added a tracked feature-to-test matrix, pure transaction logic tests, and Chromium browser coverage for demo mode, navigation, transactions, and Google sign-in and mobile redirect initialization across desktop and mobile viewports.
 - **i18n**: Introduced internationalization support across the landing page, dashboard, ledger, and settings. Shared strings are now centrally managed to reduce duplication, and the translation hook fully supports string interpolation.
 - **Intra-day Transaction Ordering**: Added manual drag-and-drop reordering for transactions occurring on the same date. The custom sort order seamlessly persists to both IndexedDB and Google Sheets, with an automated migration seamlessly backfilling existing data.
 - **Lighthouse Automation**: Implemented a comprehensive, Puppeteer-driven Lighthouse test suite to automatically audit performance, accessibility, and best practices across all core routes and user flows for both mobile and desktop viewports.
@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Mobile Sign-In**: Removed duplicate OAuth redirect handling from the landing page so one callback stores the token and navigates once. Token expiry parsing now rejects invalid durations and is covered by pure unit tests.
+- **Mobile Sign-In Startup**: Prevented duplicate IndexedDB hydration in React Strict Mode from overwriting a redirect token before cloud initialization.
 - **Database**: Fixed a critical `InvalidStateError` that could cause IndexedDB schema upgrades to silently fail on first boot. The migration engine now correctly utilizes the browser's active upgrade transaction instead of erroneously attempting to spawn new ones.
 
 ---

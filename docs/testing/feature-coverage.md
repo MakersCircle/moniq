@@ -8,7 +8,7 @@ This matrix follows [the feature inventory](e2e-feature-inventory.md). Each row 
 
 “Live Google” identifies features that also merit a separate smoke check using a consented Google test account. It is **not** a requirement for deterministic CI coverage: CI can use a fake OAuth/Drive/Sheets service. For sync and backup, mocked runner tests and browser simulations cannot establish that real Drive and Sheets still accept the app's requests.
 
-Evidence names refer to these existing files: [Home auth hook](../../src/hooks/__tests__/useHomeAuth.test.ts), [OAuth session logic](../../src/lib/__tests__/authSession.test.ts), [Home component](../../src/pages/__tests__/Home.test.tsx), [Home browser](../../e2e/home.spec.ts), [demo/navigation browser](../../e2e/demo-navigation.spec.ts), [transaction creation browser](../../e2e/transaction-create.spec.ts), [transaction management browser](../../e2e/transaction-manage.spec.ts), [transaction read browser](../../e2e/transaction-read.spec.ts), [ledger math and selectors](../../src/lib/__tests__/ledger.test.ts), [transaction input logic](../../src/lib/__tests__/transactionInput.test.ts), [transaction mutation logic](../../src/lib/__tests__/transactionMutations.test.ts), and [schema tests](../../src/schema). The [case documents](README.md#planned-test-cases) are plans, not evidence. “Next automated check” gives the main missing layer; it does not exclude smaller unit tests needed to make a browser scenario reliable. The demo fixture seeds accounts and initial transactions through store actions; transaction creation browser tests use the form for the action under test.
+Evidence names refer to these existing files: [Home auth hook](../../src/hooks/__tests__/useHomeAuth.test.ts), [OAuth session logic](../../src/lib/__tests__/authSession.test.ts), [Home component](../../src/pages/__tests__/Home.test.tsx), [Home browser](../../e2e/home.spec.ts), [auth browser](../../e2e/auth-flow.spec.ts), [demo/navigation browser](../../e2e/demo-navigation.spec.ts), [transaction creation browser](../../e2e/transaction-create.spec.ts), [transaction management browser](../../e2e/transaction-manage.spec.ts), [transaction read browser](../../e2e/transaction-read.spec.ts), [ledger math and selectors](../../src/lib/__tests__/ledger.test.ts), [transaction input logic](../../src/lib/__tests__/transactionInput.test.ts), [transaction mutation logic](../../src/lib/__tests__/transactionMutations.test.ts), and [schema tests](../../src/schema). The [case documents](README.md#planned-test-cases) are plans, not evidence. “Next automated check” gives the main missing layer; it does not exclude smaller unit tests needed to make a browser scenario reliable. The demo fixture seeds accounts and initial transactions through store actions; transaction creation browser tests use the form for the action under test.
 
 Known defects should get tests that describe the intended behavior once fixed: [#76](https://github.com/MakersCircle/moniq/issues/76) date format is saved but not applied, [#108](https://github.com/MakersCircle/moniq/issues/108) settings can reset after reload, [#91](https://github.com/MakersCircle/moniq/issues/91) auth gate, [#92](https://github.com/MakersCircle/moniq/issues/92) token refresh data loss, [#77](https://github.com/MakersCircle/moniq/issues/77) duplicate sync rows, [#94](https://github.com/MakersCircle/moniq/issues/94) reconnect account mismatch, [#95](https://github.com/MakersCircle/moniq/issues/95) backup migration safety, and [#96](https://github.com/MakersCircle/moniq/issues/96) cross-tab migration lock.
 
@@ -16,16 +16,16 @@ Known defects should get tests that describe the intended behavior once fixed: [
 
 | ID | Feature | Status | Existing automated evidence | Next automated check | Live Google? |
 | --- | --- | --- | --- | --- | --- |
-| AUTH-01 | A signed-out visitor sees the landing page and can open the Google sign-in flow. | Partial | Home component CTA | Browser + fake OAuth | Yes |
-| AUTH-02 | Successful Google sign-in opens the dashboard and provisions or reconnects to the user's Drive folder and spreadsheet. | Partial | useHomeAuth callback | Browser + fake Google | Yes |
-| AUTH-03 | A mobile redirect login consumes the returned access token and opens the dashboard. | Partial | OAuth session parsing + useHomeAuth redirect hash | Mobile browser + fake OAuth | Yes |
+| AUTH-01 | A signed-out visitor sees the landing page and can open the Google sign-in flow. | Covered | Auth browser: CTA invokes fake Google token client, six viewports | — | Yes |
+| AUTH-02 | Successful Google sign-in opens the dashboard and provisions or reconnects to the user's Drive folder and spreadsheet. | Covered | Auth browser: Drive/Sheets provisioning and reload reconnect without duplicate files, six viewports | — | Yes |
+| AUTH-03 | A mobile redirect login consumes the returned access token and opens the dashboard. | Covered | Auth browser: redirect fragment, cloud initialization, cleared hash, five touch viewports | — | Yes |
 | AUTH-04 | A returning user reloads with locally stored data rehydrated and cloud changes reconciled before the app opens. | Missing | — | Fake Google browser + unit/integration | Yes |
 | AUTH-05 | An expired session shows a reconnect banner; re-authentication resumes cloud access. | Missing | — | Fake Google browser + unit/integration | Yes |
 | AUTH-06 | A cloud initialization failure shows a connection error with Retry Connection and Sign Out actions. | Missing | — | Fake Google browser + unit/integration | Yes |
 | AUTH-07 | Signing in with a different Google account on the same browser clears the prior account's local data before connecting. | Missing | — | Fake Google browser + unit/integration | Yes |
 | AUTH-08 | Signing out syncs pending changes first; a sync failure offers Cancel and Sign Out Anyway. | Missing | — | Fake Google browser + unit/integration | Yes |
 | AUTH-09 | Signed-out access to an app route returns to the landing page; signed-in access to `/` opens the dashboard. | Missing | — | Fake Google browser + unit/integration | No |
-| AUTH-10 | Google sign-in requests access to files this app creates and to the user's basic profile and email. | Missing | — | Fake Google browser + unit/integration | Yes |
+| AUTH-10 | Google sign-in requests access to files this app creates and to the user's basic profile and email. | Covered | Auth browser: Google token client scopes, six viewports | — | Yes |
 
 ## 2. Use demo mode
 
@@ -185,4 +185,4 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | PWA-02 | Previously cached app routes and assets load while offline. | Missing | — | Installed/offline browser | No |
 | PWA-03 | Installed mobile app icons display correctly on iOS and Android home screens. | Missing | — | Installed/offline browser | No |
 
-Tracked: **118 features**; **10 partial**, **97 missing**, **11 covered end to end**. Recalculate these totals when adding tests.
+Tracked: **118 features**; **7 partial**, **96 missing**, **15 covered end to end**. Recalculate these totals when adding tests.

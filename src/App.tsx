@@ -46,6 +46,7 @@ export default function App() {
 
   const [initError, setInitError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const hydrationStarted = useRef(false);
 
   const handleDisconnect = useCallback(() => {
     googleLogout();
@@ -82,6 +83,8 @@ export default function App() {
 
   // 1. Initial hydration from IndexedDB (structured)
   useEffect(() => {
+    if (hydrationStarted.current) return;
+    hydrationStarted.current = true;
     initializeFromDB();
   }, [initializeFromDB]);
 

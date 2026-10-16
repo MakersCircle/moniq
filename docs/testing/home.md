@@ -48,8 +48,8 @@ Focuses on rendering the correct static elements and reacting to mocked authenti
 | C-12 | Logo accessibility | Logo has descriptive alt text |
 | C-13 | OAuth redirect with mocked auth hook | Home leaves token handling to the auth hook, avoiding a duplicate store write |
 
-## 3. End-to-End Tests (`home.spec.ts`)
-Focuses on responsive layout and public navigation. Currently runs in Chromium at 6 configured viewport/touch profiles. OAuth routing is stubbed, but successful login is not exercised.
+## 3. End-to-End Tests (`home.spec.ts`, `auth-flow.spec.ts`)
+The home suite checks responsive layout and public navigation. The auth flow suite uses a fake Google token client and in-memory Drive/Sheets APIs to check sign-in, cloud provisioning, reload reconnect, requested scopes, and the mobile redirect. Both run in Chromium at the configured viewport/touch profiles. A real Google account is still needed for a separate live-service smoke check.
 
 ### Layout & Visibility (All devices)
 | ID | Scenario | Expected Outcome |
@@ -67,7 +67,7 @@ Focuses on responsive layout and public navigation. Currently runs in Chromium a
 | ID | Scenario | Expected Outcome |
 |---|---|---|
 | E-08 | Label visibility without interaction | "Sign in with Google" text is fully expanded (grid-cols-[1fr]) |
-| E-09 | Button click (planned) | Assert that tapping the CTA initiates Google login; the current browser suite only installs a route stub |
+| E-09 | Button click (`auth-flow.spec.ts`) | Tapping the CTA invokes the fake Google token client and opens the initialized dashboard |
 
 ### CTA Button (Desktop pointer devices)
 *Run on: MacBook Pro (desktop)*
