@@ -1,6 +1,6 @@
 # Transactions Test Coverage
 
-This document details test cases covering the transaction entry, editing, and ledger viewing flow: `src/components/Transactions/TransactionForm.tsx`, `src/components/Transactions/DatePicker.tsx`, `src/components/Transactions/TransactionDetailPanel.tsx`, `src/pages/Transactions.tsx`, `src/lib/ledger.ts`, and `src/store/slices/transactionSlice.ts`.
+This document details test cases covering the transaction entry, editing, and ledger viewing flow: `src/components/Transactions/TransactionForm.tsx`, `src/components/Transactions/DatePicker.tsx`, `src/components/Transactions/TransactionDetailPanel.tsx`, `src/pages/Transactions.tsx`, `src/lib/ledger.ts`, `src/lib/transactionInput.ts`, and `src/store/slices/transactionSlice.ts`.
 
 ## 1. Unit Tests
 
@@ -39,6 +39,20 @@ These checks use `LedgerEngine.createEntries` as the input to the inverse mappin
 | U-44 | Category selector on expense/income and transfer | Returns the category entry for non-transfers and no category for transfers |
 | U-45 | Transfer destination selector | Returns the destination account's DEBIT entry |
 | U-46 | Transfer with no selectable destination method | Keeps the destination account ID but leaves the method field empty |
+
+### 1.1b Transaction input logic (implemented in `transactionInput.test.ts`)
+
+The form uses these pure functions for save validation, split allocation, and expected balance math. The tests cover the logic layer; the component and browser cases below still need implementation.
+
+| ID | Scenario | Expected Outcome |
+|---|---|---|
+| U-47 | Single expense/income input validation | Requires a positive amount, parseable date, payment method, and category |
+| U-48 | Transfer input validation | Requires both source and destination methods; does not require a category |
+| U-49 | Split input validation | Requires a fully allocated total and a category and positive amount on every line |
+| U-50 | Split allocation tolerance | Totals within 0.01 are accepted; larger differences are rejected |
+| U-51 | Preview base balances | Starts at account opening balances, includes active transactions, and ignores soft-deleted transactions |
+| U-52 | Editing versus duplicating | Editing excludes the original transaction from the preview base balance; duplicating includes it |
+| U-53 | Expected balance impact | Expense and transfer source subtract the entered amount; income and transfer destination add it |
 
 ### 1.2 `transactionSlice` (`transactionSlice.test.ts`)
 Focuses on store mutations, ID/timestamp generation, and ledger entry wiring, mocking `put` (IndexedDB) and `markDirty`.

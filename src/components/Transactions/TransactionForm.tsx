@@ -17,6 +17,12 @@ import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/utils/format';
 import { DatePicker } from './DatePicker';
 import { LedgerEngine } from '@/lib/ledger';
+import {
+  computeExpectedBalance,
+  computeSplitAllocation,
+  getPreviewBalances,
+  isValidTransactionInput,
+} from '@/lib/transactionInput';
 import { CreateAccountSheet } from './CreateAccountSheet';
 import { CreateCategorySheet } from './CreateCategorySheet';
 import { SelectSeparator } from '@/components/ui/select';
@@ -200,16 +206,13 @@ export default function TransactionForm({
   const parsedAmount = parseFloat(amount) || 0;
 
   const balances = useMemo(() => {
-    const map = new Map<string, number>();
-    const activeTxns = transactions.filter(
-      t => !t.isDeleted && (!initialData || isDuplicate || t.id !== initialData.id)
+    return getPreviewBalances(
+      [derivedAccountId, fromAccountId, toAccountId],
+      transactions,
+      accounts,
+      categories,
+      initialData && !isDuplicate ? initialData.id : undefined
     );
-    [derivedAccountId, fromAccountId, toAccountId].forEach(id => {
-      if (id && !map.has(id)) {
-        map.set(id, LedgerEngine.getNormalBalance(id, activeTxns, accounts, categories));
-      }
-    });
-    return map;
   }, [
     derivedAccountId,
     fromAccountId,
@@ -220,35 +223,22 @@ export default function TransactionForm({
     initialData,
     isDuplicate,
   ]);
-  const totalSplitAmount = splits.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
-  const remainingForSplits = parsedAmount - totalSplitAmount;
-  const isFullyAllocated = Math.abs(remainingForSplits) < 0.01;
-
-  const isValidTransaction = useMemo(() => {
-    if (!parsedAmount || parsedAmount <= 0) return false;
-    if (!date || isNaN(Date.parse(date))) return false;
-
-    if (type === 'transfer') {
-      return !!fromMethodId && !!toMethodId;
-    } else {
-      if (!methodId) return false;
-      if (isSplit) {
-        return isFullyAllocated && splits.every(s => s.categoryId && parseFloat(s.amount) > 0);
-      }
-      return !!targetId;
-    }
-  }, [
+  const { allocated: totalSplitAmount, isFullyAllocated } = computeSplitAllocation(
     parsedAmount,
+    splits
+  );
+
+  const isValidTransaction = isValidTransactionInput({
+    amount: parsedAmount,
     date,
     type,
     fromMethodId,
     toMethodId,
     methodId,
     isSplit,
-    isFullyAllocated,
     splits,
     targetId,
-  ]);
+  });
 
   const [isSaved, setIsSaved] = useState(false);
 
@@ -533,7 +523,11 @@ export default function TransactionForm({
                     const account = activeAccounts.find(a => a.id === fromAccountId);
                     if (!account) return null;
                     const currentBalance = balances.get(fromAccountId) || 0;
-                    const expectedBalance = currentBalance - parsedAmount;
+                    const expectedBalance = computeExpectedBalance(
+                      currentBalance,
+                      parsedAmount,
+                      'decrease'
+                    );
                     return (
                       <div className="flex justify-between items-center px-0.5 mt-1">
                         <p className="text-[9px] text-muted-foreground">
@@ -591,7 +585,11 @@ export default function TransactionForm({
                     const account = activeAccounts.find(a => a.id === toAccountId);
                     if (!account) return null;
                     const currentBalance = balances.get(toAccountId) || 0;
-                    const expectedBalance = currentBalance + parsedAmount;
+                    const expectedBalance = computeExpectedBalance(
+                      currentBalance,
+                      parsedAmount,
+                      'increase'
+                    );
                     return (
                       <div className="flex justify-between items-center px-0.5 mt-1">
                         <p className="text-[9px] text-muted-foreground">
@@ -661,8 +659,11 @@ export default function TransactionForm({
                     const account = activeAccounts.find(a => a.id === derivedAccountId);
                     if (!account) return null;
                     const currentBalance = balances.get(derivedAccountId) || 0;
-                    const expectedBalance =
-                      currentBalance + (type === 'income' ? parsedAmount : -parsedAmount);
+                    const expectedBalance = computeExpectedBalance(
+                      currentBalance,
+                      parsedAmount,
+                      type === 'income' ? 'increase' : 'decrease'
+                    );
                     return (
                       <div className="flex justify-between items-center px-0.5 mt-1">
                         <p className="text-[9px] text-muted-foreground">
