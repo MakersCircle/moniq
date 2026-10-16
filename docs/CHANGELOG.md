@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ledger Layout**: Migrated the Ledger table architecture to a high-performance Flexbox layout, enabling buttery-smooth 60fps drag-to-reorder animations while strictly preserving column widths and design parity across all screen sizes.
 
 ### Fixed
+- **Mobile Sign-In**: Removed duplicate OAuth redirect handling from the landing page so one callback stores the token and navigates once. Token expiry parsing now rejects invalid durations and is covered by pure unit tests.
 - **Database**: Fixed a critical `InvalidStateError` that could cause IndexedDB schema upgrades to silently fail on first boot. The migration engine now correctly utilizes the browser's active upgrade transaction instead of erroneously attempting to spawn new ones.
 
 ---

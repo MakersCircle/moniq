@@ -57,7 +57,10 @@ describe('useHomeAuth', () => {
 
       renderHook(() => useHomeAuth());
 
-      expect(mockSetAccessToken).toHaveBeenCalledWith('abc', expect.any(Number));
+      expect(mockSetAccessToken).toHaveBeenCalledExactlyOnceWith(
+        'abc',
+        Date.parse('2026-08-01T01:00:00Z')
+      );
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
       expect(replaceStateSpy).toHaveBeenCalledWith(null, '', window.location.pathname);
     });
@@ -65,20 +68,20 @@ describe('useHomeAuth', () => {
     it('U-02: Valid token, no expires_in -> falls back to 3600', () => {
       window.location.hash = '#access_token=abc';
       renderHook(() => useHomeAuth());
-      expect(mockSetAccessToken).toHaveBeenCalledWith('abc', expect.any(Number));
+      expect(mockSetAccessToken).toHaveBeenCalledWith('abc', Date.parse('2026-08-01T01:00:00Z'));
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
     });
 
     it('U-03: expires_in is 0 -> falls back to 3600', () => {
       window.location.hash = '#access_token=abc&expires_in=0';
       renderHook(() => useHomeAuth());
-      expect(mockSetAccessToken).toHaveBeenCalledWith('abc', expect.any(Number));
+      expect(mockSetAccessToken).toHaveBeenCalledWith('abc', Date.parse('2026-08-01T01:00:00Z'));
     });
 
     it('U-04: expires_in is NaN string -> falls back to 3600', () => {
       window.location.hash = '#access_token=abc&expires_in=foo';
       renderHook(() => useHomeAuth());
-      expect(mockSetAccessToken).toHaveBeenCalledWith('abc', expect.any(Number));
+      expect(mockSetAccessToken).toHaveBeenCalledWith('abc', Date.parse('2026-08-01T01:00:00Z'));
     });
 
     it('U-05: Empty access_token -> nothing happens', () => {
@@ -116,7 +119,7 @@ describe('useHomeAuth', () => {
       renderHook(() => useHomeAuth());
       onSuccessCallback({ access_token: 'tok123', expires_in: 3600 });
 
-      expect(mockSetAccessToken).toHaveBeenCalledWith('tok123', expect.any(Number));
+      expect(mockSetAccessToken).toHaveBeenCalledWith('tok123', Date.parse('2026-08-01T01:00:00Z'));
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
     });
 
@@ -134,7 +137,7 @@ describe('useHomeAuth', () => {
       renderHook(() => useHomeAuth());
       onSuccessCallback({ access_token: 'tok123' });
 
-      expect(mockSetAccessToken).toHaveBeenCalledWith('tok123', expect.any(Number));
+      expect(mockSetAccessToken).toHaveBeenCalledWith('tok123', Date.parse('2026-08-01T01:00:00Z'));
     });
   });
 

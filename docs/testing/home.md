@@ -1,9 +1,9 @@
 # Home Page Test Coverage
 
-This document lists planned and implemented cases for `src/pages/Home.tsx` and its authentication hook `src/hooks/useHomeAuth.ts`. Case IDs appearing here do not by themselves prove that a test exists.
+This document lists planned and implemented cases for `src/pages/Home.tsx`, its authentication hook `src/hooks/useHomeAuth.ts`, and the pure OAuth session decisions in `src/lib/authSession.ts`. Case IDs appearing here do not by themselves prove that a test exists.
 
 ## 1. Unit Tests (`useHomeAuth.test.ts`)
-Focuses purely on the business logic of authentication, token parsing, and navigation, separated from the UI. 
+The hook tests check its store and navigation effects. The pure session tests check token parsing and expiry without React or browser state.
 
 | ID | Scenario | Expected Outcome |
 |---|---|---|
@@ -19,6 +19,15 @@ Focuses purely on the business logic of authentication, token parsing, and navig
 | U-12 | Login failure callback (`onError`) | Logs error to console |
 | U-13 | Store already has accessToken | Hook returns `isLoggedIn: true` |
 | U-14 | Store has no accessToken | Hook returns `isLoggedIn: false` |
+
+### Pure OAuth session decisions (`authSession.test.ts`)
+
+| ID | Scenario | Expected Outcome |
+|---|---|---|
+| U-15 | Encoded mobile redirect token with expiry | Decodes the token and calculates the exact expiry time |
+| U-16 | Redirect without a usable access token | Returns no session; the hook leaves store, URL, and navigation untouched |
+| U-17 | Missing, zero, negative, nonnumeric, or infinite expiry | Falls back to one hour |
+| U-18 | Login callback token and expiry | Uses the same expiry calculation as the redirect path; an empty token returns no session |
 
 ## 2. Component Tests (`Home.test.tsx`)
 Focuses on rendering the correct static elements and reacting to mocked authentication states. Uses `@testing-library/react`.
@@ -37,6 +46,7 @@ Focuses on rendering the correct static elements and reacting to mocked authenti
 | C-10 | CTA click (authenticated) | Handled by hook (mocked out in UI tests) |
 | C-11 | CTA button disabled state | Button is active (`cursor-pointer`), not disabled |
 | C-12 | Logo accessibility | Logo has descriptive alt text |
+| C-13 | OAuth redirect with mocked auth hook | Home leaves token handling to the auth hook, avoiding a duplicate store write |
 
 ## 3. End-to-End Tests (`home.spec.ts`)
 Focuses on responsive layout and public navigation. Currently runs in Chromium at 6 configured viewport/touch profiles. OAuth routing is stubbed, but successful login is not exercised.

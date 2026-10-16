@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Home from '../Home';
 import { useHomeAuth } from '../../hooks/useHomeAuth';
 import { BrowserRouter } from 'react-router-dom';
+import { useDataStore } from '../../store/dataStore';
 import '@testing-library/jest-dom/vitest';
 
 vi.mock('../../hooks/useHomeAuth', () => ({
@@ -99,5 +100,16 @@ describe('Home Component', () => {
       renderHome();
       expect(screen.getByAltText('moniq logo')).toHaveAttribute('alt', 'moniq logo');
     });
+  });
+
+  it('C-13: leaves redirect token handling to the auth hook', () => {
+    const setAccessToken = vi.spyOn(useDataStore.getState(), 'setAccessToken');
+    window.location.hash = '#access_token=redirect-token&expires_in=3600';
+
+    renderHome();
+
+    expect(setAccessToken).not.toHaveBeenCalled();
+    setAccessToken.mockRestore();
+    window.location.hash = '';
   });
 });
