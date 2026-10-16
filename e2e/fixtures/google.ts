@@ -5,6 +5,9 @@ type GoogleMock = {
   createdSpreadsheets: string[];
   authorizedRequests: string[];
   unexpectedRequests: string[];
+  sheetRows: (name: string) => string[][];
+  appendSheetRow: (name: string, row: string[]) => void;
+  holdNextBatchGet: () => { requested: Promise<void>; release: () => void };
 };
 
 const folderId = 'fake-moniq-folder';
@@ -16,14 +19,33 @@ function json(route: Route, body: unknown, status = 200) {
 
 /** Fake the public Google API contract while keeping the app's real init/sync path. */
 export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
+  const rows = new Map<string, string[][]>();
+  let heldBatchGet: { requested: () => void; resume: Promise<void> } | null = null;
   const mock: GoogleMock = {
     createdFolders: [],
     createdSpreadsheets: [],
     authorizedRequests: [],
     unexpectedRequests: [],
+    sheetRows: name => (rows.get(name) || []).map(row => [...row]),
+    appendSheetRow: (name, row) => {
+      const current = rows.get(name);
+      if (!current?.length) throw new Error(`Sheet ${name} has no header`);
+      current.push([...row]);
+    },
+    holdNextBatchGet: () => {
+      let requested!: () => void;
+      let release!: () => void;
+      const requestedPromise = new Promise<void>(resolve => {
+        requested = resolve;
+      });
+      const resume = new Promise<void>(resolve => {
+        release = resolve;
+      });
+      heldBatchGet = { requested, resume };
+      return { requested: requestedPromise, release };
+    },
   };
   const tabs = new Map<string, number>([['Sheet1', 0]]);
-  const rows = new Map<string, string[][]>();
   let nextSheetId = 1;
   let folderExists = false;
   let spreadsheetExists = false;
@@ -64,7 +86,7 @@ export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
       return json(route, {
         name: 'Browser Tester',
         email: 'browser@example.test',
-        picture: '',
+        picture: '/favicon.svg',
       });
     }
 
@@ -140,6 +162,12 @@ export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
     }
 
     if (path === `/v4/spreadsheets/${spreadsheetId}/values:batchGet` && method === 'GET') {
+      if (heldBatchGet) {
+        const hold = heldBatchGet;
+        heldBatchGet = null;
+        hold.requested();
+        await hold.resume;
+      }
       return json(route, {
         valueRanges: url.searchParams
           .getAll('ranges')

@@ -271,6 +271,7 @@ These are planned cases. Local/demo cases need browser tests. Sync, backup, and 
 | ID | Scenario | Expected outcome |
 |---|---|---|
 | E-16 | Full push/pull sync through the UI | Browser with fake Google Sheets verifies queue flush, remote row update, pull after reload, and duplicate prevention. Live smoke verifies that the same flow works with a consented test account. |
+| E-17 | Returning signed-in user (`auth-rehydration.spec.ts`) | A local IndexedDB account rehydrates after reload; a paused Sheets pull keeps the dashboard closed; releasing it merges a remote-only account before the dashboard appears. Runs at all six Chromium viewport profiles. |
 | E-17 | Tiered backup creation | Fake Drive browser/integration test advances the clock, checks due snapshots and retention, and verifies Backup Now. Live smoke verifies a new snapshot appears in Drive. |
 | E-18 | Sync Now pulls an externally changed row | Change the fake sheet between browser actions; Sync Now updates local data without losing pending changes. Live smoke repeats a minimal manual Sheet edit and pull. |
 

@@ -39,7 +39,6 @@ export default function App() {
 
   const isHydrated = useDataStore(s => s.isHydrated);
   const isCloudInitialized = useDataStore(s => s.isCloudInitialized);
-  const setCloudInitialized = useDataStore(s => s.setCloudInitialized);
   const syncStatus = useDataStore(s => s.syncStatus);
   const initializeFromDB = useDataStore(s => s.initializeFromDB);
   const isDemoMode = useDataStore(s => s.isDemoMode);
@@ -183,12 +182,12 @@ export default function App() {
           // Trigger the backup check after a successful initial load
           engine.triggerBackupCycle();
         } else {
-          setCloudInitialized(true);
+          throw new Error('Could not reconcile data with Google Sheets');
         }
       } catch (err) {
         console.error('Failed to initialize cloud database:', err);
         setInitError(err instanceof Error ? err.message : 'Unknown connection error');
-        // Do not call setCloudInitialized(true) here! The app should not proceed into a broken state.
+        // Keep the app gated until a successful retry or sign-out.
       }
     }
 
@@ -199,7 +198,6 @@ export default function App() {
     isHydrated,
     setUserProfile,
     setSpreadsheetId,
-    setCloudInitialized,
     retryCount,
     isDemoMode,
   ]);
