@@ -8,7 +8,7 @@ This matrix follows [the feature inventory](e2e-feature-inventory.md). Each row 
 
 “Live Google” identifies features that also merit a separate smoke check using a consented Google test account. It is **not** a requirement for deterministic CI coverage: CI can use a fake OAuth/Drive/Sheets service. For sync and backup, mocked runner tests and browser simulations cannot establish that real Drive and Sheets still accept the app's requests.
 
-Evidence names refer to these existing files: [Home auth hook](../../src/hooks/__tests__/useHomeAuth.test.ts), [Home component](../../src/pages/__tests__/Home.test.tsx), [Home browser](../../e2e/home.spec.ts), [demo/navigation browser](../../e2e/demo-navigation.spec.ts), [transaction read browser](../../e2e/transaction-read.spec.ts), [ledger math and selectors](../../src/lib/__tests__/ledger.test.ts), [transaction input logic](../../src/lib/__tests__/transactionInput.test.ts), and [schema tests](../../src/schema). The [case documents](README.md#planned-test-cases) are plans, not evidence. “Next automated check” gives the main missing layer; it does not exclude smaller unit tests needed to make a browser scenario reliable. The demo browser fixture seeds records through store actions, so its persistence result does not test the forms.
+Evidence names refer to these existing files: [Home auth hook](../../src/hooks/__tests__/useHomeAuth.test.ts), [Home component](../../src/pages/__tests__/Home.test.tsx), [Home browser](../../e2e/home.spec.ts), [demo/navigation browser](../../e2e/demo-navigation.spec.ts), [transaction creation browser](../../e2e/transaction-create.spec.ts), [transaction read browser](../../e2e/transaction-read.spec.ts), [ledger math and selectors](../../src/lib/__tests__/ledger.test.ts), [transaction input logic](../../src/lib/__tests__/transactionInput.test.ts), and [schema tests](../../src/schema). The [case documents](README.md#planned-test-cases) are plans, not evidence. “Next automated check” gives the main missing layer; it does not exclude smaller unit tests needed to make a browser scenario reliable. The demo fixture seeds accounts and initial transactions through store actions; transaction creation browser tests use the form for the action under test.
 
 Known defects should get tests that describe the intended behavior once fixed: [#76](https://github.com/MakersCircle/moniq/issues/76) date format is saved but not applied, [#108](https://github.com/MakersCircle/moniq/issues/108) settings can reset after reload, [#91](https://github.com/MakersCircle/moniq/issues/91) auth gate, [#92](https://github.com/MakersCircle/moniq/issues/92) token refresh data loss, [#77](https://github.com/MakersCircle/moniq/issues/77) duplicate sync rows, [#94](https://github.com/MakersCircle/moniq/issues/94) reconnect account mismatch, [#95](https://github.com/MakersCircle/moniq/issues/95) backup migration safety, and [#96](https://github.com/MakersCircle/moniq/issues/96) cross-tab migration lock.
 
@@ -31,7 +31,7 @@ Known defects should get tests that describe the intended behavior once fixed: [
 
 | ID | Feature | Status | Existing automated evidence | Next automated check | Live Google? |
 | --- | --- | --- | --- | --- | --- |
-| DEMO-01 | Try Demo opens the app without Google authentication and stores entered data locally. | Partial | Demo/navigation browser entry; seed bypasses forms | Enter data through a form, then reload | No |
+| DEMO-01 | Try Demo opens the app without Google authentication and stores entered data locally. | Covered | Transaction creation browser: form save and reload in demo mode, six viewports | — | No |
 | DEMO-02 | Demo data and the demo session survive a page reload. | Covered | Demo/navigation browser reload + IndexedDB | — | No |
 | DEMO-03 | The demo banner identifies local-only data and can be dismissed for the current view. | Missing | — | Component + browser | No |
 | DEMO-04 | Sign In to Sync can keep demo entries and upload them to the signed-in user's Drive data. | Missing | — | Fake Google browser + component | Yes |
@@ -58,11 +58,11 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | ID | Feature | Status | Existing automated evidence | Next automated check | Live Google? |
 | --- | --- | --- | --- | --- | --- |
 | TXN-01 | New Transaction opens from desktop header, mobile action button, or global keyboard shortcut. | Partial | Demo/navigation browser desktop + mobile buttons | Browser keyboard shortcuts | No |
-| TXN-02 | Create an expense with amount, date, payment method, category, and optional note; account and category balances update. | Partial | LedgerEngine expense entries/balance | Store + browser | No |
-| TXN-03 | Create an income with a payment method and category; the linked account and dashboard totals update. | Partial | LedgerEngine income entries/balance | Store + browser | No |
-| TXN-04 | Transfer between payment methods linked to different accounts; both account balances update without counting the transfer as income or expense. | Partial | LedgerEngine transfer entries/balance | Store + browser | No |
+| TXN-02 | Create an expense with amount, date, payment method, category, and optional note; account and category balances update. | Covered | Transaction creation browser: form, ledger, reload, account balance, category spending, six viewports | — | No |
+| TXN-03 | Create an income with a payment method and category; the linked account and dashboard totals update. | Covered | Transaction creation browser: form, ledger, account balance, income total, six viewports | — | No |
+| TXN-04 | Transfer between payment methods linked to different accounts; both account balances update without counting the transfer as income or expense. | Covered | Transaction creation browser: form, ledger, both balances, unchanged totals, six viewports | — | No |
 | TXN-05 | The transfer destination list excludes methods linked to the selected source account. | Missing | — | Component + browser | No |
-| TXN-06 | Split one expense across multiple categories; the total must be fully allocated before saving and each split appears as a transaction. | Partial | Transaction input logic: allocation and validation | Component + browser save flow | No |
+| TXN-06 | Split one expense across multiple categories; the total must be fully allocated before saving and each split appears as a transaction. | Covered | Transaction creation browser: disabled until allocated, two ledger rows, balance, six viewports | — | No |
 | TXN-07 | The Save action stays unavailable until required fields contain a valid positive amount, date, method, and category or transfer destination. | Partial | Transaction input logic: required fields | Component + browser disabled/enabled state | No |
 | TXN-08 | The amount input rejects negative and nonnumeric symbols and displays locale-aware thousands separators as the user types. | Missing | — | Component + browser | No |
 | TXN-09 | The form shows the expected account balance for the selected method and entered amount. | Partial | Transaction input logic: edit/duplicate preview and amount impact | Component + browser display | No |
@@ -185,4 +185,4 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | PWA-02 | Previously cached app routes and assets load while offline. | Missing | — | Installed/offline browser | No |
 | PWA-03 | Installed mobile app icons display correctly on iOS and Android home screens. | Missing | — | Installed/offline browser | No |
 
-Tracked: **118 features**; **16 partial**, **98 missing**, **4 covered end to end**. Recalculate these totals when adding tests.
+Tracked: **118 features**; **11 partial**, **98 missing**, **9 covered end to end**. Recalculate these totals when adding tests.

@@ -193,6 +193,8 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 
 ## 3. End-to-End Tests
 
+`e2e/transaction-create.spec.ts` now covers the save flows in E-10–13 using the form's default date across six Chromium viewport/touch profiles. It checks the ledger rows, account balances, dashboard totals, split allocation gate, and demo persistence. Explicit date editing, account/category creation during entry, keyboard save, and edit/delete flows below remain planned.
+
 ### 3.1 Opening the Modal (Entry Points)
 | ID | Scenario | Expected Outcome |
 |---|---|---|
