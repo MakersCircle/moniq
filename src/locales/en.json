@@ -193,7 +193,8 @@
     "archivedAccounts": "Archived Accounts"
   },
   "category": {
-    "tooltip": "Categories organize your income and expenses into a hierarchy. Drag to reorder within groups.",
+    "tooltip": "Categories organize your income and expenses into a hierarchy. Drag the six-dot handle to reorder within a group.",
+    "reorderHandle": "Reorder {{name}} within {{group}}. Drag or use arrow keys.",
     "subtitle": "Expense & Income Classification",
     "addCategory": "Add Category",
     "archivedCategories": "Archived Categories",

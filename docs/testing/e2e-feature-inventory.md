@@ -103,7 +103,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | CATEGORY-03 | Missing head and duplicate head/subhead combinations are rejected. | Code |
 | CATEGORY-04 | Invest, Lend, and Borrow categories accept an opening balance and show their running balance. | 0.9.7 |
 | CATEGORY-05 | Edit a category's group, head, subhead, or applicable opening balance. | Code |
-| CATEGORY-06 | Reorder categories within a group and see that order in transaction selectors and budget views. | 0.6.0 |
+| CATEGORY-06 | Reorder categories within a group using only the six-dot handle, keep dragging and mobile scrolling within that group, and see the saved order in transaction selectors and budget views. | 0.6.0, Unreleased |
 | CATEGORY-07 | Archive, reactivate, and delete a category; blocked deletion gives a reason. | 0.1.2 |
 | CATEGORY-08 | The account, method, and category editors use a side drawer on desktop and a bottom sheet on mobile. | 0.9.0 |
 

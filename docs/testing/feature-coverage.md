@@ -111,7 +111,7 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | CATEGORY-03 | Missing head and duplicate head/subhead combinations are rejected. | Missing | — | Component + browser | No |
 | CATEGORY-04 | Invest, Lend, and Borrow categories accept an opening balance and show their running balance. | Missing | — | Component + browser | No |
 | CATEGORY-05 | Edit a category's group, head, subhead, or applicable opening balance. | Missing | — | Component + browser | No |
-| CATEGORY-06 | Reorder categories within a group and see that order in transaction selectors and budget views. | Missing | — | Component + browser | No |
+| CATEGORY-06 | Reorder categories within a group using only the six-dot handle, keep dragging and mobile scrolling within that group, and see the saved order in transaction selectors and budget views. | Partial | `e2e/category-reorder.spec.ts` checks handle-only drag, group bounds, phone scroll bounds, stable row actions during drag, deferred save, IndexedDB/reload persistence, other-group stability, and keyboard movement. | Browser: selector and Budget ordering | No |
 | CATEGORY-07 | Archive, reactivate, and delete a category; blocked deletion gives a reason. | Missing | — | Component + browser | No |
 | CATEGORY-08 | The account, method, and category editors use a side drawer on desktop and a bottom sheet on mobile. | Missing | — | Component + browser | No |
 

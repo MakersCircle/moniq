@@ -158,7 +158,7 @@ Focuses on form validation/rendering behavior (`AccountForm.test.tsx`, `Category
 | C-61 | Restore click on archived category | Calls `updateCategory(id, { isActive: true })`, clears row's delete error |
 | C-62 | Delete click succeeding | Calls `deleteCategory(id)`; no error shown on success |
 | C-63 | Delete click failing (transaction/budget guard) | Shows the slice's `reason` string inline beneath that category's row |
-| C-64 | Drag-reorder within a single group | `handleReorder(group, newOrder)` recombines `newOrder` for that group with all other groups' untouched categories, then calls `reorderCategories` with the full merged id list (order of other groups preserved) |
+| C-64 | Drag-reorder within a single group | Drag previews the order locally; on drop, `reorderCategories` receives the reordered group's IDs merged with untouched groups, preserving their order |
 | C-65 | Form submit in create mode | Calls `addCategory(payload)` with `subHead` coerced to `undefined` when blank |
 | C-66 | Form submit in edit mode | Calls `updateCategory(editing.id, payload)` |
 
@@ -210,4 +210,6 @@ Focuses on full user flows through the real UI: creating, editing, archiving, re
 | E-32 | Delete an archived category with no transactions or budgets | Category row disappears entirely |
 | E-33 | Attempt to delete an archived category referenced by a transaction | Inline error "This category is referenced by existing transactions." appears; category remains listed |
 | E-34 | Attempt to delete an archived category referenced by a budget | Inline error "This category has a budget assigned. Remove the budget first." appears; category remains listed |
-| E-35 | Drag-reorder categories within one group, then reload the page | New order within that group persists after reload; categories in other groups are unaffected |
+| E-35 | Drag-reorder categories within one group, then reload the page (`e2e/category-reorder.spec.ts`) | New order is previewed during drag and persisted on drop; it survives reload while other groups keep their order |
+| E-36 | Drag a category row from outside its six-dot handle, then drag it from the handle toward another group (`e2e/category-reorder.spec.ts`) | The row does not move without the handle and cannot travel outside its own group; edit/archive actions keep stable visibility while dragging over other rows; the handle's arrow keys move a row within the group |
+| E-37 | Drag a category in a long group on a phone-sized viewport and try to scroll above and below that group (`e2e/category-reorder.spec.ts`) | Settings content scrolling stops at the dragged group's top and bottom while the drag is active |
