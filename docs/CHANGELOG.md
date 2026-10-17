@@ -10,9 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Regression Tests**: Added a tracked feature-to-test matrix, pure transaction logic tests, and Chromium browser coverage for demo mode, navigation, transactions, and Google sign-in and mobile redirect initialization across desktop and mobile viewports.
+- **Returning-User Coverage**: Added browser checks that local records rehydrate and remote Sheets changes reconcile before the signed-in dashboard opens.
+- **Cloud Connection Error Coverage**: Added desktop and mobile browser checks for failed Sheets initialization, Retry Connection recovery, and Sign Out from the error screen.
 - **Session Expiry Coverage**: Added browser checks for failed silent refresh, actual token expiry, cached data visibility, and interactive reconnection across desktop and mobile layouts.
 
+### Changed
+- **Transaction Logic**: Moved edit and soft-delete record changes into pure functions used by the data store, making those rules independently testable.
+
 ### Fixed
+- **Mobile Sign-In**: Removed duplicate OAuth redirect handling from the landing page so one callback stores the token and navigates once. Token expiry parsing now rejects invalid durations and is covered by pure unit tests.
+- **Mobile Sign-In Startup**: Prevented duplicate IndexedDB hydration in React Strict Mode from overwriting a redirect token before cloud initialization.
+- **Signed-In Reload**: Kept the app behind the cloud initialization screen until reconciliation succeeds, including after a previously synced session reloads.
 - **Session Expiry**: Kept cached records available behind the reconnect banner when a token expires, while preserving explicit Sign Out behavior. A failed early refresh now waits until the token actually expires before showing the banner.
 
 ---
@@ -20,23 +29,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.10.0] - 2026-10-17
 
 ### Added
-- **Regression Tests**: Added a tracked feature-to-test matrix, pure transaction logic tests, and Chromium browser coverage for demo mode, navigation, transactions, and Google sign-in and mobile redirect initialization across desktop and mobile viewports.
-- **Returning-User Coverage**: Added browser checks that local records rehydrate and remote Sheets changes reconcile before the signed-in dashboard opens.
-- **Cloud Connection Error Coverage**: Added desktop and mobile browser checks for failed Sheets initialization, Retry Connection recovery, and Sign Out from the error screen.
 - **i18n**: Introduced internationalization support across the landing page, dashboard, ledger, and settings. Shared strings are now centrally managed to reduce duplication, and the translation hook fully supports string interpolation.
 - **Intra-day Transaction Ordering**: Added manual drag-and-drop reordering for transactions occurring on the same date. The custom sort order seamlessly persists to both IndexedDB and Google Sheets, with an automated migration seamlessly backfilling existing data.
 - **Lighthouse Automation**: Implemented a comprehensive, Puppeteer-driven Lighthouse test suite to automatically audit performance, accessibility, and best practices across all core routes and user flows for both mobile and desktop viewports.
 
 ### Changed
-- **Transaction Logic**: Moved edit and soft-delete record changes into pure functions used by the data store, making those rules independently testable.
 - **Performance**: Optimized the loading of the Google Sign-In script. It now lazy-loads exclusively on authentication boundaries (Home page, Session Expired banner, and Demo Exit dialog), stripping ~100KiB of unused JavaScript from standard app routes and significantly improving First Contentful Paint.
 - **Transactions UI**: Updated the Payment Method dropdown to display its associated Account name (e.g., `Account · Method`), resolving ambiguity when multiple accounts share identically named payment methods.
 - **Ledger Layout**: Migrated the Ledger table architecture to a high-performance Flexbox layout, enabling buttery-smooth 60fps drag-to-reorder animations while strictly preserving column widths and design parity across all screen sizes.
 
 ### Fixed
-- **Mobile Sign-In**: Removed duplicate OAuth redirect handling from the landing page so one callback stores the token and navigates once. Token expiry parsing now rejects invalid durations and is covered by pure unit tests.
-- **Mobile Sign-In Startup**: Prevented duplicate IndexedDB hydration in React Strict Mode from overwriting a redirect token before cloud initialization.
-- **Signed-In Reload**: Kept the app behind the cloud initialization screen until reconciliation succeeds, including after a previously synced session reloads.
 - **Database**: Fixed a critical `InvalidStateError` that could cause IndexedDB schema upgrades to silently fail on first boot. The migration engine now correctly utilizes the browser's active upgrade transaction instead of erroneously attempting to spawn new ones.
 
 ---
