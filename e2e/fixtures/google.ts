@@ -7,6 +7,7 @@ type GoogleMock = {
   unexpectedRequests: string[];
   failedBatchGets: number;
   failNextBatchGet: () => void;
+  setSheetsUnavailable: (unavailable: boolean) => void;
   failSilentRefresh: () => Promise<void>;
   sheetRows: (name: string) => string[][];
   appendSheetRow: (name: string, row: string[]) => void;
@@ -25,6 +26,7 @@ export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
   const rows = new Map<string, string[][]>();
   let heldBatchGet: { requested: () => void; resume: Promise<void> } | null = null;
   let failNextBatchGet = false;
+  let sheetsUnavailable = false;
   const mock: GoogleMock = {
     createdFolders: [],
     createdSpreadsheets: [],
@@ -33,6 +35,9 @@ export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
     failedBatchGets: 0,
     failNextBatchGet: () => {
       failNextBatchGet = true;
+    },
+    setSheetsUnavailable: unavailable => {
+      sheetsUnavailable = unavailable;
     },
     failSilentRefresh: () =>
       page.evaluate(() => {
@@ -181,6 +186,10 @@ export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
     }
 
     if (path === `/v4/spreadsheets/${spreadsheetId}/values:batchGet` && method === 'GET') {
+      if (sheetsUnavailable) {
+        mock.failedBatchGets++;
+        return json(route, { error: 'Simulated persistent Sheets outage' }, 503);
+      }
       if (failNextBatchGet) {
         failNextBatchGet = false;
         mock.failedBatchGets++;

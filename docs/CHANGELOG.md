@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Regression Tests**: Added a tracked feature-to-test matrix, pure transaction logic tests, and Chromium browser coverage for demo mode, navigation, transactions, and Google sign-in and mobile redirect initialization across desktop and mobile viewports.
 - **Returning-User Coverage**: Added browser checks that local records rehydrate and remote Sheets changes reconcile before the signed-in dashboard opens.
 - **Cloud Connection Error Coverage**: Added desktop and mobile browser checks for failed Sheets initialization, Retry Connection recovery, and Sign Out from the error screen.
+- **Returning-User Outage Coverage**: Added browser checks that a persistent Sheets outage keeps the dashboard gated while cached records remain intact, then recovers after service restoration and retry.
 - **Session Expiry Coverage**: Added browser checks for failed silent refresh, actual token expiry, cached data visibility, and interactive reconnection across desktop and mobile layouts.
 - **Reloaded Session Expiry Coverage**: Added browser checks that an expired session reloads with cached records and a reconnect action, while explicit Sign Out returns to the landing page.
 
