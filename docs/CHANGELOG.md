@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Reloaded Session Expiry Coverage**: Added browser checks that an expired session reloads with cached records and a reconnect action, while explicit Sign Out returns to the landing page.
 
 ### Changed
+- **Contributor Guidance**: Documented test-first workflow, coverage updates, and focused and full test commands for pull requests.
 - **Transaction Logic**: Moved edit and soft-delete record changes into pure functions used by the data store, making those rules independently testable.
 
 ### Fixed
