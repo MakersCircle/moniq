@@ -76,7 +76,10 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
       </aside>
 
       {/* Settings Content Area Area */}
-      <div className="flex-1 min-w-0 max-w-full lg:max-w-[800px] overflow-y-auto custom-scrollbar lg:pr-6 pb-6 relative z-10 w-full px-1 lg:px-0">
+      <div
+        data-settings-scroll-container
+        className="flex-1 min-w-0 max-w-full lg:max-w-[800px] overflow-y-auto custom-scrollbar lg:pr-6 pb-6 relative z-10 w-full px-1 lg:px-0"
+      >
         {children}
       </div>
     </div>

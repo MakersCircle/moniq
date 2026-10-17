@@ -162,7 +162,7 @@ Collapsible/expandable search field on the mobile TopBar, rather than a permanen
 
 - Radix-driven open/close transitions on dialogs/sheets/popovers use `tailwindcss-animate` `data-[state=open|closed]` utilities — fade + slight zoom + slide-from-bottom, roughly 300ms, ease-out cubic-bezier.
 - Hover/interaction transitions are short, plain CSS transitions (`transition-colors`), not spring physics.
-- `framer-motion`'s `Reorder` powers drag-to-reorder lists (Categories and Payment Methods in Settings).
+- `framer-motion`'s `Reorder` powers drag-to-reorder lists (Categories and Payment Methods in Settings, plus same-day transactions in the Ledger). Reordering starts only from the six-dot handle. Category rows stay inside their own group; Ledger rows stay inside their date group. Payment Method and Category order previews stay local and save on drop; Ledger row content is memoized while the group previews positions. On touch viewports, handles remain visible without hover and auto-scrolling during a drag stops at the active list or date group's bounds. Category and Payment Method action visibility stays stable while dragging. Handle arrow keys move one position at a time.
 - The landing page background (`Grainient`) animates via WebGL (`ogl`), not CSS keyframes.
 
 A documented motion scale (durations/easings as tokens, rather than per-component values): **Not yet defined**.
