@@ -98,12 +98,13 @@ export class GoogleService {
             useDataStore.getState().setAccessToken(response.access_token!, expiresAt);
             resolve(response.access_token);
           } else {
-            // If it's a "user_logged_out" or similar, we should clear the session
+            // An early refresh failure does not invalidate a still-usable access token.
             if (
               response.error &&
               ['user_logged_out', 'immediate_failed'].includes(response.error)
             ) {
-              useDataStore.getState().setAccessToken(null);
+              const expiresAt = useDataStore.getState().tokenExpiresAt;
+              if (expiresAt && Date.now() >= expiresAt) useDataStore.getState().expireSession();
             }
             resolve(null);
           }
@@ -143,7 +144,7 @@ export class GoogleService {
       } else {
         const isFullyExpired = expiresAt && Date.now() > expiresAt;
         if (!currentToken || isFullyExpired) {
-          useDataStore.getState().setAccessToken(null);
+          useDataStore.getState().expireSession();
           throw new Error('Unauthenticated: Session expired');
         }
       }
@@ -174,7 +175,7 @@ export class GoogleService {
         });
       } else {
         // Refresh failed, user needs to log in manually
-        useDataStore.getState().setAccessToken(null);
+        useDataStore.getState().expireSession();
         throw new Error('Unauthenticated: Session expired');
       }
     }

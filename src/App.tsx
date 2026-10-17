@@ -87,21 +87,29 @@ export default function App() {
     initializeFromDB();
   }, [initializeFromDB]);
 
-  // 2. Proactive Token Refresh (checks every 5 minutes)
+  // 2. Proactive token refresh (checks each minute near expiry)
   useEffect(() => {
     if (!accessToken || isDemoMode) return;
 
-    const check = () => {
+    const check = async () => {
       const fiveMinutes = 5 * 60 * 1000;
       const isAboutToExpire = tokenExpiresAt && Date.now() > tokenExpiresAt - fiveMinutes;
 
       if (isAboutToExpire) {
-        googleService.silentRefresh();
+        try {
+          await googleService.silentRefresh();
+        } catch {
+          // The existing token remains usable until its actual expiry.
+        }
+        const state = useDataStore.getState();
+        if (state.accessToken && state.tokenExpiresAt && Date.now() >= state.tokenExpiresAt) {
+          state.expireSession();
+        }
       }
     };
 
-    check(); // Check immediately on mount or dependency change
-    const interval = setInterval(check, 60 * 1000); // And then every minute
+    void check(); // Check immediately on mount or dependency change
+    const interval = setInterval(() => void check(), 60 * 1000); // And then every minute
 
     return () => clearInterval(interval);
   }, [accessToken, tokenExpiresAt, isDemoMode]);
@@ -142,7 +150,7 @@ export default function App() {
           if (!newToken) {
             const isFullyExpired = Date.now() > tokenExpiresAt;
             if (isFullyExpired) {
-              useDataStore.getState().setAccessToken(null);
+              useDataStore.getState().expireSession();
               return;
             }
           }

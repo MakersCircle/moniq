@@ -96,6 +96,7 @@ export interface DataState {
   // Settings
   updateSettings: (patch: Partial<UserSettings>) => void;
   setAccessToken: (token: string | null, expiresAt?: number | null) => void;
+  expireSession: () => void;
 
   // Sync Engine
   hydrateFromSync: (data: {

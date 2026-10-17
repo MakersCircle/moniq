@@ -7,6 +7,7 @@ type GoogleMock = {
   unexpectedRequests: string[];
   failedBatchGets: number;
   failNextBatchGet: () => void;
+  failSilentRefresh: () => Promise<void>;
   sheetRows: (name: string) => string[][];
   appendSheetRow: (name: string, row: string[]) => void;
   holdNextBatchGet: () => { requested: Promise<void>; release: () => void };
@@ -33,6 +34,12 @@ export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
     failNextBatchGet: () => {
       failNextBatchGet = true;
     },
+    failSilentRefresh: () =>
+      page.evaluate(() => {
+        (
+          window as typeof window & { __fakeGoogleFailSilentRefresh: boolean }
+        ).__fakeGoogleFailSilentRefresh = true;
+      }),
     sheetRows: name => (rows.get(name) || []).map(row => [...row]),
     appendSheetRow: (name, row) => {
       const current = rows.get(name);
@@ -64,11 +71,16 @@ export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
       body: `
         window.__fakeGoogleScopes ||= [];
         window.__fakeGoogleLoginCount ||= 0;
+        window.__fakeGoogleFailSilentRefresh ||= false;
         window.google = { accounts: {
           oauth2: { initTokenClient(config) {
             window.__fakeGoogleScopes.push(config.scope);
             return { requestAccessToken() {
               window.__fakeGoogleLoginCount++;
+              if (config.prompt === 'none' && window.__fakeGoogleFailSilentRefresh) {
+                config.callback({ error: 'immediate_failed' });
+                return;
+              }
               config.callback({ access_token: 'fake-access-token', expires_in: 3600 });
             } };
           } },
