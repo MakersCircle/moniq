@@ -28,7 +28,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 lg:gap-10 h-[calc(100vh-112px)] lg:h-[calc(100vh-112px)] h-full overflow-hidden -mt-2">
+    <div className="flex flex-col lg:flex-row gap-4 lg:gap-10 h-full min-h-0 overflow-hidden -mt-2">
       {/* Settings Internal Sidebar */}
       <aside className="w-full lg:w-[200px] shrink-0 overflow-x-auto lg:overflow-y-auto custom-scrollbar lg:pr-2 pb-2 lg:pb-6 pt-2 border-b lg:border-b-0 border-border">
         <h2 className="hidden lg:block text-sm font-black uppercase tracking-[0.2em] text-muted-foreground mb-6 px-4">

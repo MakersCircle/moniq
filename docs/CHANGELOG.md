@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Transaction Logic**: Moved edit and soft-delete record changes into pure functions used by the data store, making those rules independently testable.
 
 ### Fixed
+- **Mobile Scrolling**: Sized the shared app shell to the visible viewport and its page area around status banners, removing the extra blank scroll range across navigation tabs and Settings while preserving Dashboard, Ledger, and Settings content scrolling.
 - **Mobile Sign-In**: Removed duplicate OAuth redirect handling from the landing page so one callback stores the token and navigates once. Popup, redirect, and silent-refresh token expiry use the same validated calculation and are covered by pure unit tests.
 - **Mobile Sign-In Startup**: Prevented duplicate IndexedDB hydration in React Strict Mode from overwriting a redirect token before cloud initialization.
 - **Signed-In Reload**: Kept the app behind the cloud initialization screen until reconciliation succeeds, including after a previously synced session reloads.

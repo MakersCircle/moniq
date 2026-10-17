@@ -9,6 +9,7 @@ Implemented browser checks live in [`e2e/demo-navigation.spec.ts`](../../e2e/dem
 | NAV-01 | Sidebar/bottom-bar links load Dashboard, Ledger, Insights, and Budget; desktop/sidebar or mobile/top-bar link opens Settings. | Google-authenticated routing remains for a later test. |
 | NAV-02 | Settings links load Accounts, Payment Methods, Categories, and Recently Deleted with their page headings. | CRUD behavior remains for later tests. |
 | NAV-03 | Sidebar/bottom-bar geometry, mobile top-bar Settings, new-transaction action, and app shell width are checked at desktop, tablet, phone, and foldable sizes. | Other pages need their own responsive checks when their flows are tested. |
+| NAV-11 | On the portrait phone viewport, short Dashboard, Ledger, Insights, Budget, and Settings pages have no extra document or main scroll while the demo banner is visible. A populated Dashboard remains scrollable, Ledger starts below the banner, and long Settings content scrolls in its own area. | Headless Chromium does not simulate expanding and collapsing mobile browser chrome; check that behavior on a physical phone. |
 | NAV-04 | Mobile Settings link is exercised. | Search focus and expansion remain untested. |
 | TXN-01 | Desktop header and mobile action button open the transaction form. | Keyboard entry shortcuts remain untested. |
 

@@ -140,6 +140,7 @@ Hover / focus / active / disabled treatment per component type (beyond what's im
 
 - **Desktop**: left sidebar (`Sidebar.tsx`).
 - **Mobile**: bottom tab bar + floating action button (FAB) for new transactions (`TopBar.tsx`).
+- **App scrolling**: the shared shell uses the visible viewport height (`100dvh`). Its content area fills the space below any demo or session banner. Pages scroll in the shell; the Ledger row list and Settings content can scroll within their own regions without adding a second page scroll.
 
 ### 3.2 Modals & Sheets
 

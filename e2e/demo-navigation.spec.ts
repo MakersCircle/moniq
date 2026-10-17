@@ -1,6 +1,8 @@
 import { test, expect } from './fixtures/demo';
 
-test('DEMO-01/02: seeded demo data and session survive reload', async ({ seededDemoPage: page }) => {
+test('DEMO-01/02: seeded demo data and session survive reload', async ({
+  seededDemoPage: page,
+}) => {
   await expect(page.getByText('Fixture Checking')).toBeVisible();
   await expect(page.getByText('Fixture groceries')).toBeVisible();
 
@@ -54,7 +56,9 @@ test('NAV-02: settings navigation opens all management pages', async ({ demoPage
   }
 });
 
-test('NAV-03/TXN-01: desktop sidebar or mobile bottom bar opens the transaction form', async ({ demoPage: page }) => {
+test('NAV-03/TXN-01: desktop sidebar or mobile bottom bar opens the transaction form', async ({
+  demoPage: page,
+}) => {
   const desktop = (page.viewportSize()?.width ?? 0) >= 1024;
   const sidebar = page.locator('body > div aside').first();
   const box = await sidebar.boundingBox();
@@ -92,4 +96,82 @@ test('NAV-03: app shell fits desktop and mobile viewport widths', async ({ demoP
       dimensions.viewport
     );
   }
+});
+
+test('NAV-11: short mobile pages do not create a second vertical scroll area', async ({
+  demoPage: page,
+}) => {
+  test.skip(test.info().project.name !== 'iphone-portrait', 'Checks the phone layout');
+
+  for (const path of [
+    '/dashboard',
+    '/transactions',
+    '/insights',
+    '/budget',
+    '/settings',
+    '/settings/accounts',
+    '/settings/methods',
+    '/settings/categories',
+    '/settings/trash',
+  ]) {
+    await page.goto(path);
+    await expect(page.locator('#main-scroll-container')).toBeVisible();
+
+    const overflow = await page.evaluate(() => {
+      const main = document.querySelector('#main-scroll-container');
+      if (!main) throw new Error('Missing app content scroller');
+      return {
+        document: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+        content: main.scrollHeight - main.clientHeight,
+      };
+    });
+
+    expect(overflow.document, `${path} scrolls the document`).toBeLessThanOrEqual(1);
+    expect(overflow.content, `${path} has empty content scroll`).toBeLessThanOrEqual(1);
+  }
+});
+
+test('NAV-11: populated mobile Dashboard scrolls while Ledger stays below the banner', async ({
+  seededDemoPage: page,
+}) => {
+  test.skip(test.info().project.name !== 'iphone-portrait', 'Checks the phone layout');
+
+  const main = page.locator('#main-scroll-container');
+  await expect(page.getByText('Fixture groceries')).toBeVisible();
+  const dashboardOverflow = await main.evaluate(
+    element => element.scrollHeight - element.clientHeight
+  );
+  expect(dashboardOverflow).toBeGreaterThan(0);
+  await main.evaluate(element => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expect(page.getByText('Fixture groceries')).toBeInViewport();
+
+  await page.locator('aside a[href="/transactions"]').click();
+  await expect(page).toHaveURL(/\/transactions$/);
+  const banner = page.getByText('Demo Mode (Local)');
+  const heading = page.getByRole('heading', { name: 'Ledger', exact: true });
+  const bannerBox = await banner.boundingBox();
+  const headingBox = await heading.boundingBox();
+  expect(bannerBox).not.toBeNull();
+  expect(headingBox).not.toBeNull();
+  expect(headingBox!.y).toBeGreaterThanOrEqual(bannerBox!.y + bannerBox!.height);
+  const ledgerOverflow = await main.evaluate(
+    element => element.scrollHeight - element.clientHeight
+  );
+  expect(ledgerOverflow).toBeLessThanOrEqual(1);
+
+  await page.goto('/settings');
+  const settingsContent = page.locator(
+    '#main-scroll-container > div:last-child > div > div:last-child'
+  );
+  const settingsScrollTop = await settingsContent.evaluate(element => {
+    element.scrollTop = element.scrollHeight;
+    return element.scrollTop;
+  });
+  expect(settingsScrollTop).toBeGreaterThan(0);
+  const settingsMainOverflow = await main.evaluate(
+    element => element.scrollHeight - element.clientHeight
+  );
+  expect(settingsMainOverflow).toBeLessThanOrEqual(1);
 });
