@@ -242,6 +242,7 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 | E-27 | Clearing filters back to defaults | Selecting "All Time"/"All Types"/"All Accounts" and clearing search restores the full unfiltered ledger |
 | E-28 | Opening detail panel on desktop viewport | Panel slides in from the right (`md:w-[400px]`); table area shifts left (`md:pr-[400px]`) so no row is obscured |
 | E-29 | Switching selected row while panel is open | Detail panel content updates to the newly clicked transaction without a full page reload |
+| E-35 | Try dragging a transaction row away from its six-dot handle, then reorder from the handle ([`e2e/ledger-reorder.spec.ts`](../../e2e/ledger-reorder.spec.ts)) | Only the handle starts a drag; order changes within the same date and persists after drop/reload; phone scrolling stays within the dragged date group |
 
 ### 3.4 Responsive Layout (Mobile/Tablet)
 | ID | Scenario | Expected Outcome |

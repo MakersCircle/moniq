@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Transaction Logic**: Moved edit and soft-delete record changes into pure functions used by the data store, making those rules independently testable.
 
 ### Fixed
+- **Drag Reordering**: Made Payment Methods and Ledger transactions draggable only from their six-dot handles. Reordering previews locally and persists on drop; memoized Ledger row content to avoid recalculating transaction details on each position change; kept mobile Ledger handles visible without hover; and bounded phone scrolling to the method list or transaction date group.
 - **Category Reordering**: Restricted dragging to the six-dot handle and to the current category group, kept phone drag scrolling within that group, stabilized row actions during dragging, and saved the new order once on drop. Limited drag previews to the active group and removed animated shadow/background paints to improve responsiveness. Added desktop and phone browser coverage.
 - **Mobile Scrolling**: Sized the shared app shell to the visible viewport and its page area around status banners, removing the extra blank scroll range across navigation tabs and Settings while preserving Dashboard, Ledger, and Settings content scrolling.
 - **Mobile Sign-In**: Removed duplicate OAuth redirect handling from the landing page so one callback stores the token and navigates once. Popup, redirect, and silent-refresh token expiry use the same validated calculation and are covered by pure unit tests.

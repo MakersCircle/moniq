@@ -192,7 +192,7 @@ Focuses on full user flows through the real UI: creating, editing, archiving, re
 | E-18 | Delete an archived, unused, non-last method | Method row disappears entirely |
 | E-19 | Attempt to delete an archived method used in a transaction | Inline error "This method is used in existing transactions. Archive it instead." appears; method remains listed |
 | E-20 | Attempt to delete the only active method linked to an account | Inline error about being the only active payment method appears; method remains listed |
-| E-21 | Drag-reorder active methods, then reload the page | New order persists after reload (verifies `reorderMethods` write-through to storage) |
+| E-21 | Drag-reorder active methods from the six-dot handle, then reload ([`e2e/method-reorder.spec.ts`](../../e2e/method-reorder.spec.ts)) | Other row content does not start a drag; order previews locally, saves on drop, remains within the active list, and persists after reload |
 
 ### Categories — Create, Edit, Archive, Restore, Delete, Reorder, Autocomplete
 | ID | Scenario | Expected Outcome |

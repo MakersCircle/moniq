@@ -82,7 +82,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | LEDGER-06 | Selecting a row opens its details with date, amount, source account, category or destination account, and note. | Code |
 | LEDGER-07 | Edit from the detail panel changes a transaction in place and updates the ledger and balances. | 0.9.6 |
 | LEDGER-08 | Delete from the detail panel removes the transaction from active views and places it in Recently Deleted. | 0.3.0 |
-| LEDGER-09 | Dragging transactions within one date changes and persists their same-day order. | Unreleased |
+| LEDGER-09 | Reorder transactions within one date using only the six-dot handle; keep mobile scrolling within that date group and persist order after drop. | Unreleased |
 | LEDGER-10 | On mobile, category and account appear beneath the description and details open as a bottom drawer. | 0.9.6 |
 
 ## 6. Manage accounts, methods, and categories
@@ -96,7 +96,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | ACCOUNT-05 | Delete an archived account; a dependency guard explains why deletion is blocked when related data remains. | 0.1.2 |
 | METHOD-01 | Create a named payment method linked to an active account; missing name or account is rejected. | 0.1.1, Code |
 | METHOD-02 | Edit a payment method's name or linked account. | Code |
-| METHOD-03 | Reorder active payment methods and see that order in transaction selectors. | 0.6.0 |
+| METHOD-03 | Reorder active payment methods using only the six-dot handle and see that order in transaction selectors. | 0.6.0, Unreleased |
 | METHOD-04 | Archive, reactivate, and delete a payment method; blocked deletion gives a reason. | 0.1.2 |
 | CATEGORY-01 | Create a category in Income, Needs, Wants, Invest, Lend, or Borrow with a head and optional subhead. | 0.1.2 |
 | CATEGORY-02 | Search existing heads while entering a category, or type a new head. | 0.6.0 |

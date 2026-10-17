@@ -90,7 +90,7 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | LEDGER-06 | Selecting a row opens its details with date, amount, source account, category or destination account, and note. | Partial | LedgerEngine selectors; transaction read browser income account | Browser other details/types | No |
 | LEDGER-07 | Edit from the detail panel changes a transaction in place and updates the ledger and balances. | Covered | Mutation unit tests; transaction management browser: edit, reload, category and balance, six viewports | — | No |
 | LEDGER-08 | Delete from the detail panel removes the transaction from active views and places it in Recently Deleted. | Covered | Mutation unit tests; transaction management browser: delete, reload, balance and Trash, six viewports | — | No |
-| LEDGER-09 | Dragging transactions within one date changes and persists their same-day order. | Missing | — | Component + browser | No |
+| LEDGER-09 | Reorder transactions within one date using only the six-dot handle; keep mobile scrolling within that date group and persist order after drop. | Covered | `e2e/ledger-reorder.spec.ts` checks handle-only interaction, same-day ordering, persistence after reload, other-day stability, and phone scroll bounds. | — | No |
 | LEDGER-10 | On mobile, category and account appear beneath the description and details open as a bottom drawer. | Missing | — | Component + browser | No |
 
 ## 6. Manage accounts, methods, and categories
@@ -104,7 +104,7 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | ACCOUNT-05 | Delete an archived account; a dependency guard explains why deletion is blocked when related data remains. | Missing | — | Component + browser | No |
 | METHOD-01 | Create a named payment method linked to an active account; missing name or account is rejected. | Missing | — | Component + browser | No |
 | METHOD-02 | Edit a payment method's name or linked account. | Missing | — | Component + browser | No |
-| METHOD-03 | Reorder active payment methods and see that order in transaction selectors. | Missing | — | Component + browser | No |
+| METHOD-03 | Reorder active payment methods using only the six-dot handle and see that order in transaction selectors. | Partial | `e2e/method-reorder.spec.ts` checks handle-only interaction, deferred save, and persistence after reload. | Transaction selector ordering | No |
 | METHOD-04 | Archive, reactivate, and delete a payment method; blocked deletion gives a reason. | Missing | — | Component + browser | No |
 | CATEGORY-01 | Create a category in Income, Needs, Wants, Invest, Lend, or Borrow with a head and optional subhead. | Missing | — | Component + browser | No |
 | CATEGORY-02 | Search existing heads while entering a category, or type a new head. | Missing | — | Component + browser | No |

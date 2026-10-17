@@ -14,6 +14,7 @@ import { InfoTooltip } from '@/components/ui/info-tooltip';
 import { useAllBalances } from '@/hooks/useComputed';
 import { formatCurrency } from '@/utils/format';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { boundDragScroll } from '@/lib/boundedDragScroll';
 
 const GROUPS: CategoryGroup[] = ['Income', 'Needs', 'Wants', 'Invest', 'Lend', 'Borrow'];
 
@@ -59,26 +60,7 @@ export default function Categories() {
     const scroller = list?.closest<HTMLElement>('[data-settings-scroll-container]');
     if (!list || !scroller) return;
 
-    const listBounds = list.getBoundingClientRect();
-    const viewportBounds = scroller.getBoundingClientRect();
-    const currentScroll = scroller.scrollTop;
-    const minScroll = Math.min(
-      currentScroll,
-      Math.max(0, currentScroll + listBounds.top - viewportBounds.top)
-    );
-    const maxScroll = Math.max(
-      currentScroll,
-      Math.min(
-        scroller.scrollHeight - scroller.clientHeight,
-        currentScroll + listBounds.bottom - viewportBounds.bottom
-      )
-    );
-
-    const stayInGroup = () => {
-      scroller.scrollTop = Math.max(minScroll, Math.min(maxScroll, scroller.scrollTop));
-    };
-    scroller.addEventListener('scroll', stayInGroup);
-    dragScrollCleanup.current = () => scroller.removeEventListener('scroll', stayInGroup);
+    dragScrollCleanup.current = boundDragScroll(list, scroller);
   };
 
   const openAdd = () => {

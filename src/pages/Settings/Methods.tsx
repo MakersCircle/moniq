@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { Reorder } from 'framer-motion';
+import { useEffect, useRef, useState, type RefObject } from 'react';
+import { Reorder, useDragControls } from 'framer-motion';
 import { Plus, Pencil, Archive, Trash2, CreditCard, ArrowRight, GripVertical } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
-import type { PaymentMethod } from '@/types';
+import type { Account, PaymentMethod } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,9 @@ import {
 } from '@/components/ui/select';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { boundDragScroll } from '@/lib/boundedDragScroll';
+import { cn } from '@/lib/utils';
 
 export default function Methods() {
   const {
@@ -71,10 +74,6 @@ export default function Methods() {
     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   const archived = methods.filter(m => !m.isActive && !m.isDeleted);
 
-  const handleReorder = (newOrder: PaymentMethod[]) => {
-    reorderMethods(newOrder.map(m => m.id));
-  };
-
   return (
     <SettingsLayout>
       <div id="tour-target-methods-page" className="space-y-6">
@@ -95,71 +94,13 @@ export default function Methods() {
           </div>
         </div>
 
-        <Reorder.Group
-          axis="y"
-          values={active}
-          onReorder={handleReorder}
-          className="grid grid-cols-1 gap-3"
-        >
-          {active.map(m => (
-            <Reorder.Item
-              key={m.id}
-              value={m}
-              whileDrag={{
-                boxShadow: '0 20px 50px -12px rgba(0,0,0,0.5)',
-                zIndex: 1000,
-                backgroundColor: '#18181b',
-              }}
-              className="group relative border border-border/40 hover:border-primary/30 transition-colors shadow-sm rounded-xl bg-card cursor-default select-none"
-            >
-              <Card className="border-none shadow-none bg-transparent">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-8 w-8 shrink-0 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                        <CreditCard className="h-4 w-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-sm tracking-tight truncate">{m.name}</p>
-                        {m.linkedAccountId && (
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <ArrowRight className="h-2 w-2 text-muted-foreground" />
-                            <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground truncate">
-                              {accounts.find(s => s.id === m.linkedAccountId)?.name || 'Unknown'}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity mr-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => openEdit(m)}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => archiveMethod(m.id)}
-                        >
-                          <Archive className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                      <div className="p-2 -mr-2 cursor-grab active:cursor-grabbing text-muted-foreground/20 group-hover:text-primary/40 transition-colors rounded-lg hover:bg-primary/5">
-                        <GripVertical className="h-5 w-5" />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Reorder.Item>
-          ))}
-        </Reorder.Group>
+        <MethodReorderList
+          methods={active}
+          accounts={accounts}
+          onEdit={openEdit}
+          onArchive={archiveMethod}
+          onCommit={reorderMethods}
+        />
 
         {archived.length > 0 && (
           <div className="pt-8 space-y-4">
@@ -292,5 +233,202 @@ export default function Methods() {
         </div>
       </ResponsiveModal>
     </SettingsLayout>
+  );
+}
+
+interface MethodReorderListProps {
+  methods: PaymentMethod[];
+  accounts: Account[];
+  onEdit: (method: PaymentMethod) => void;
+  onArchive: (id: string) => void;
+  onCommit: (ids: string[]) => void;
+}
+
+function MethodReorderList({
+  methods,
+  accounts,
+  onEdit,
+  onArchive,
+  onCommit,
+}: MethodReorderListProps) {
+  const listRef = useRef<HTMLUListElement>(null);
+  const scrollCleanup = useRef<(() => void) | null>(null);
+  const isMobile = useIsMobile();
+  const [draftIds, setDraftIds] = useState<string[] | null>(null);
+  const draftIdsRef = useRef<string[] | null>(null);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+
+  useEffect(() => () => scrollCleanup.current?.(), []);
+
+  const positions = draftIds ? new Map(draftIds.map((id, index) => [id, index])) : null;
+  const displayedMethods = positions
+    ? [...methods].sort(
+        (a, b) => (positions.get(a.id) ?? Infinity) - (positions.get(b.id) ?? Infinity)
+      )
+    : methods;
+
+  const startDrag = (id: string) => {
+    setDraggedId(id);
+    scrollCleanup.current?.();
+    const list = listRef.current;
+    const scroller = list?.closest<HTMLElement>('[data-settings-scroll-container]');
+    if (isMobile && list && scroller) scrollCleanup.current = boundDragScroll(list, scroller);
+  };
+
+  const finishDrag = () => {
+    scrollCleanup.current?.();
+    scrollCleanup.current = null;
+    setDraggedId(null);
+    const ids = draftIdsRef.current;
+    draftIdsRef.current = null;
+    setDraftIds(null);
+    if (ids && ids.some((id, index) => id !== methods[index]?.id)) onCommit(ids);
+  };
+
+  return (
+    <Reorder.Group
+      ref={listRef}
+      axis="y"
+      values={displayedMethods}
+      onReorder={next => {
+        const ids = next.map(method => method.id);
+        if (ids.every((id, index) => id === draftIdsRef.current?.[index])) return;
+        draftIdsRef.current = ids;
+        setDraftIds(ids);
+      }}
+      className="grid grid-cols-1 gap-3"
+    >
+      {displayedMethods.map((method, index) => (
+        <MethodReorderRow
+          key={method.id}
+          method={method}
+          accounts={accounts}
+          listRef={listRef}
+          isDragging={draggedId !== null}
+          isDragged={draggedId === method.id}
+          onEdit={() => onEdit(method)}
+          onArchive={() => onArchive(method.id)}
+          onDragStart={() => startDrag(method.id)}
+          onDragEnd={finishDrag}
+          onMove={direction => {
+            const nextIndex = index + direction;
+            if (nextIndex < 0 || nextIndex >= displayedMethods.length) return;
+            const next = [...displayedMethods];
+            [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+            onCommit(next.map(item => item.id));
+          }}
+        />
+      ))}
+    </Reorder.Group>
+  );
+}
+
+interface MethodReorderRowProps {
+  method: PaymentMethod;
+  accounts: Account[];
+  listRef: RefObject<HTMLUListElement | null>;
+  isDragging: boolean;
+  isDragged: boolean;
+  onEdit: () => void;
+  onArchive: () => void;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  onMove: (direction: -1 | 1) => void;
+}
+
+function MethodReorderRow({
+  method,
+  accounts,
+  listRef,
+  isDragging,
+  isDragged,
+  onEdit,
+  onArchive,
+  onDragStart,
+  onDragEnd,
+  onMove,
+}: MethodReorderRowProps) {
+  const controls = useDragControls();
+  const { t } = useTranslation();
+
+  return (
+    <Reorder.Item
+      value={method}
+      dragListener={false}
+      dragControls={controls}
+      dragConstraints={listRef}
+      dragElastic={0}
+      dragMomentum={false}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      whileDrag={{ zIndex: 1000 }}
+      className={cn(
+        'group relative border border-border/40 shadow-sm rounded-xl bg-card cursor-default select-none',
+        !isDragging && 'hover:border-primary/30 transition-colors'
+      )}
+    >
+      <Card className="border-none shadow-none bg-transparent">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-8 w-8 shrink-0 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                <CreditCard className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="font-bold text-sm tracking-tight truncate">{method.name}</p>
+                {method.linkedAccountId && (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <ArrowRight className="h-2 w-2 text-muted-foreground" />
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground truncate">
+                      {accounts.find(account => account.id === method.linkedAccountId)?.name ||
+                        'Unknown'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <div
+                data-method-actions
+                className={cn(
+                  'flex items-center gap-1 mr-2',
+                  isDragging
+                    ? cn('pointer-events-none opacity-100', !isDragged && 'md:opacity-0')
+                    : 'opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity'
+                )}
+              >
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onEdit}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                  onClick={onArchive}
+                >
+                  <Archive className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <button
+                type="button"
+                aria-label={t('method.reorderHandle', { name: method.name })}
+                aria-keyshortcuts="ArrowUp ArrowDown"
+                onPointerDown={event => {
+                  if (event.pointerType !== 'mouse' || event.button === 0) controls.start(event);
+                }}
+                onKeyDown={event => {
+                  if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+                  event.preventDefault();
+                  onMove(event.key === 'ArrowUp' ? -1 : 1);
+                }}
+                className="p-2 -mr-2 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/60 md:text-muted-foreground/30 group-hover:text-primary/60 transition-colors rounded-lg hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <GripVertical className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </Reorder.Item>
   );
 }
