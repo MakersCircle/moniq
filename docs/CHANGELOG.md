@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Returning-User Coverage**: Added browser checks that local records rehydrate and remote Sheets changes reconcile before the signed-in dashboard opens.
 - **Cloud Connection Error Coverage**: Added desktop and mobile browser checks for failed Sheets initialization, Retry Connection recovery, and Sign Out from the error screen.
 - **Session Expiry Coverage**: Added browser checks for failed silent refresh, actual token expiry, cached data visibility, and interactive reconnection across desktop and mobile layouts.
+- **Reloaded Session Expiry Coverage**: Added browser checks that an expired session reloads with cached records and a reconnect action, while explicit Sign Out returns to the landing page.
 
 ### Changed
 - **Transaction Logic**: Moved edit and soft-delete record changes into pure functions used by the data store, making those rules independently testable.

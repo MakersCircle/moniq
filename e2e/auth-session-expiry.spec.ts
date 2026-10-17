@@ -102,3 +102,77 @@ test('AUTH-05: a failed silent refresh keeps a valid token until it actually exp
   await expect(page.getByRole('heading', { name: 'Welcome to Moniq' })).toBeVisible();
   expect(google.unexpectedRequests).toEqual([]);
 });
+
+test('E-23: an expired session reloads into cached data and can still sign out', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    (
+      window as typeof window & { __fakeGoogleFailSilentRefresh: boolean }
+    ).__fakeGoogleFailSilentRefresh = true;
+  });
+  const google = await installFakeGoogle(page);
+  await page.goto('/');
+  await page.waitForFunction(
+    () => (window as unknown as { __fakeGoogleScopes?: string[] }).__fakeGoogleScopes?.length
+  );
+  await page.locator('.group > div.cursor-pointer').click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+
+  const accountId = await page.evaluate(() => {
+    const store = (
+      window as typeof window & { useDataStore: { getState: () => DataState } }
+    ).useDataStore.getState();
+    return store.addAccount({
+      name: 'Cached After Expiry',
+      type: 'Asset',
+      initialBalance: 500,
+      isSavings: false,
+      excludeFromNet: false,
+      isActive: true,
+    }).accountId;
+  });
+  await expect
+    .poll(() => google.sheetRows('Accounts').some(row => row[0] === accountId))
+    .toBe(true);
+
+  const expiredAt = Date.now() - 1000;
+  await page.evaluate(async expiresAt => {
+    (window as typeof window & { useDataStore: { getState: () => DataState } }).useDataStore
+      .getState()
+      .setAccessToken('fake-access-token', Date.now() + 60 * 60 * 1000);
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('moniq-db');
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const db = request.result;
+        const transaction = db.transaction('meta', 'readwrite');
+        transaction.objectStore('meta').put({ key: 'tokenExpiresAt', value: String(expiresAt) });
+        transaction.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        transaction.onerror = () => reject(transaction.error);
+      };
+    });
+  }, expiredAt);
+
+  await page.reload();
+  await expect(page.getByText(/Session expired\. Your changes won't sync/)).toBeVisible();
+  const settingsLink =
+    (page.viewportSize()?.width ?? 0) >= 1024
+      ? page.locator('aside a[href="/settings"]')
+      : page.locator('header a[href="/settings"]');
+  await settingsLink.first().click();
+  await page.locator('a[href="/settings/accounts"]').click();
+  await expect(page.getByText('Cached After Expiry')).toBeVisible();
+
+  await page.getByRole('link', { name: 'General' }).click();
+  await page.getByRole('button', { name: /^sign out$/i }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByText('Sign in with Google')).toBeVisible();
+  await expect(page.getByText('Cached After Expiry')).toBeHidden();
+  await page.reload();
+  await expect(page.getByText('Sign in with Google')).toBeVisible();
+  expect(google.unexpectedRequests).toEqual([]);
+});
