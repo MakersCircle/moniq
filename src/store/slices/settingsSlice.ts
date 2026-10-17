@@ -23,6 +23,7 @@ export interface SettingsSlice {
 
   updateSettings: (patch: Partial<UserSettings>) => void;
   setAccessToken: (token: string | null, expiresAt?: number | null) => void;
+  expireSession: () => void;
   setUserProfile: (profile: UserProfile | null) => void;
 }
 
@@ -71,6 +72,17 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
     if (!token) {
       set({ isCloudInitialized: false });
     }
+  },
+
+  expireSession: () => {
+    set(state => ({
+      accessToken: null,
+      tokenExpiresAt: null,
+      // A previously synced user can keep viewing cached records while reconnecting.
+      isCloudInitialized: !!state.lastSyncedAt,
+    }));
+    delMeta('accessToken');
+    delMeta('tokenExpiresAt');
   },
 
   setUserProfile: profile => {

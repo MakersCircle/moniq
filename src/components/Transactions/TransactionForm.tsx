@@ -17,6 +17,12 @@ import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/utils/format';
 import { DatePicker } from './DatePicker';
 import { LedgerEngine } from '@/lib/ledger';
+import {
+  computeExpectedBalance,
+  computeSplitAllocation,
+  getPreviewBalances,
+  isValidTransactionInput,
+} from '@/lib/transactionInput';
 import { CreateAccountSheet } from './CreateAccountSheet';
 import { CreateCategorySheet } from './CreateCategorySheet';
 import { SelectSeparator } from '@/components/ui/select';
@@ -59,27 +65,6 @@ export default function TransactionForm({
 
   const lastTransaction = useMemo(() => transactions[0], [transactions]);
 
-  // Helper to find initial account/category from ledger entries
-  const initialAccountId = useMemo(() => {
-    if (!initialData) return accounts.find(a => a.isActive)?.id || '';
-    const isIncome = initialData.uiType === 'income';
-    const entry = initialData.entries.find(
-      e =>
-        accounts.some(a => a.id === e.accountId) &&
-        (isIncome ? e.type === 'DEBIT' : e.type === 'CREDIT')
-    );
-    return entry?.accountId || accounts.find(a => a.isActive)?.id || '';
-  }, [initialData, accounts]);
-
-  const initialTargetId = useMemo(() => {
-    if (!initialData) return '';
-    const isIncome = initialData.uiType === 'income';
-    const entry = initialData.entries.find(
-      e => e.accountId !== initialAccountId && (isIncome ? e.type === 'CREDIT' : e.type === 'DEBIT')
-    );
-    return entry?.accountId || '';
-  }, [initialData, initialAccountId]);
-
   const activeAccounts = useMemo(
     () => accounts.filter(s => s.isActive && !s.isDeleted),
     [accounts]
@@ -98,6 +83,16 @@ export default function TransactionForm({
         .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)),
     [categories]
   );
+
+  const initialFields = useMemo(
+    () =>
+      initialData
+        ? LedgerEngine.deriveTransactionFields(initialData, accounts, activeMethods, categories)
+        : null,
+    [initialData, accounts, activeMethods, categories]
+  );
+  const initialAccountId = initialFields?.accountId || accounts.find(a => a.isActive)?.id || '';
+  const initialTargetId = initialFields?.targetId || '';
 
   // Get unique category heads
   const categoryHeads = useMemo(() => {
@@ -173,32 +168,8 @@ export default function TransactionForm({
   }, [selectedHead, activeCategories]);
 
   // Transfer: From/To using payment methods
-  const initialFromMethodId = useMemo(() => {
-    if (!initialData || initialData.uiType !== 'transfer') return '';
-    const sourceEntry = initialData.entries.find(
-      e => e.type === 'CREDIT' && accounts.some(a => a.id === e.accountId)
-    );
-    if (sourceEntry) {
-      const m = activeMethods.find(pm => pm.linkedAccountId === sourceEntry.accountId);
-      return m?.id || '';
-    }
-    return '';
-  }, [initialData, accounts, activeMethods]);
-
-  const initialToMethodId = useMemo(() => {
-    if (!initialData || initialData.uiType !== 'transfer') return '';
-    const destEntry = initialData.entries.find(
-      e => e.type === 'DEBIT' && accounts.some(a => a.id === e.accountId)
-    );
-    if (destEntry) {
-      const m = activeMethods.find(pm => pm.linkedAccountId === destEntry.accountId);
-      return m?.id || '';
-    }
-    return '';
-  }, [initialData, accounts, activeMethods]);
-
-  const [fromMethodId, setFromMethodId] = useState(initialFromMethodId);
-  const [toMethodId, setToMethodId] = useState(initialToMethodId);
+  const [fromMethodId, setFromMethodId] = useState(initialFields?.fromMethodId || '');
+  const [toMethodId, setToMethodId] = useState(initialFields?.toMethodId || '');
 
   // For transfers: derive account IDs from selected methods
   const fromAccountId = useMemo(() => {
@@ -235,16 +206,13 @@ export default function TransactionForm({
   const parsedAmount = parseFloat(amount) || 0;
 
   const balances = useMemo(() => {
-    const map = new Map<string, number>();
-    const activeTxns = transactions.filter(
-      t => !t.isDeleted && (!initialData || isDuplicate || t.id !== initialData.id)
+    return getPreviewBalances(
+      [derivedAccountId, fromAccountId, toAccountId],
+      transactions,
+      accounts,
+      categories,
+      initialData && !isDuplicate ? initialData.id : undefined
     );
-    [derivedAccountId, fromAccountId, toAccountId].forEach(id => {
-      if (id && !map.has(id)) {
-        map.set(id, LedgerEngine.getNormalBalance(id, activeTxns, accounts, categories));
-      }
-    });
-    return map;
   }, [
     derivedAccountId,
     fromAccountId,
@@ -255,35 +223,22 @@ export default function TransactionForm({
     initialData,
     isDuplicate,
   ]);
-  const totalSplitAmount = splits.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
-  const remainingForSplits = parsedAmount - totalSplitAmount;
-  const isFullyAllocated = Math.abs(remainingForSplits) < 0.01;
-
-  const isValidTransaction = useMemo(() => {
-    if (!parsedAmount || parsedAmount <= 0) return false;
-    if (!date || isNaN(Date.parse(date))) return false;
-
-    if (type === 'transfer') {
-      return !!fromMethodId && !!toMethodId;
-    } else {
-      if (!methodId) return false;
-      if (isSplit) {
-        return isFullyAllocated && splits.every(s => s.categoryId && parseFloat(s.amount) > 0);
-      }
-      return !!targetId;
-    }
-  }, [
+  const { allocated: totalSplitAmount, isFullyAllocated } = computeSplitAllocation(
     parsedAmount,
+    splits
+  );
+
+  const isValidTransaction = isValidTransactionInput({
+    amount: parsedAmount,
     date,
     type,
     fromMethodId,
     toMethodId,
     methodId,
     isSplit,
-    isFullyAllocated,
     splits,
     targetId,
-  ]);
+  });
 
   const [isSaved, setIsSaved] = useState(false);
 
@@ -568,7 +523,11 @@ export default function TransactionForm({
                     const account = activeAccounts.find(a => a.id === fromAccountId);
                     if (!account) return null;
                     const currentBalance = balances.get(fromAccountId) || 0;
-                    const expectedBalance = currentBalance - parsedAmount;
+                    const expectedBalance = computeExpectedBalance(
+                      currentBalance,
+                      parsedAmount,
+                      'decrease'
+                    );
                     return (
                       <div className="flex justify-between items-center px-0.5 mt-1">
                         <p className="text-[9px] text-muted-foreground">
@@ -626,7 +585,11 @@ export default function TransactionForm({
                     const account = activeAccounts.find(a => a.id === toAccountId);
                     if (!account) return null;
                     const currentBalance = balances.get(toAccountId) || 0;
-                    const expectedBalance = currentBalance + parsedAmount;
+                    const expectedBalance = computeExpectedBalance(
+                      currentBalance,
+                      parsedAmount,
+                      'increase'
+                    );
                     return (
                       <div className="flex justify-between items-center px-0.5 mt-1">
                         <p className="text-[9px] text-muted-foreground">
@@ -696,8 +659,11 @@ export default function TransactionForm({
                     const account = activeAccounts.find(a => a.id === derivedAccountId);
                     if (!account) return null;
                     const currentBalance = balances.get(derivedAccountId) || 0;
-                    const expectedBalance =
-                      currentBalance + (type === 'income' ? parsedAmount : -parsedAmount);
+                    const expectedBalance = computeExpectedBalance(
+                      currentBalance,
+                      parsedAmount,
+                      type === 'income' ? 'increase' : 'decrease'
+                    );
                     return (
                       <div className="flex justify-between items-center px-0.5 mt-1">
                         <p className="text-[9px] text-muted-foreground">

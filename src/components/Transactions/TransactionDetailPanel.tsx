@@ -8,6 +8,7 @@ import { useDataStore } from '@/store/dataStore';
 import { Button } from '@/components/ui/button';
 import type { Transaction } from '@/types';
 import TransactionForm from './TransactionForm';
+import { LedgerEngine } from '@/lib/ledger';
 import { useTranslation } from '@/hooks/useTranslation';
 
 interface TransactionDetailPanelProps {
@@ -42,15 +43,15 @@ export default function TransactionDetailPanel({
     let category = null;
 
     if (isTransfer) {
-      const fromEntry = transaction.entries.find(e => e.type === 'CREDIT');
-      const toEntry = transaction.entries.find(e => e.type === 'DEBIT');
+      const fromEntry = LedgerEngine.getPrimaryAccountEntry(transaction, accounts);
+      const toEntry = LedgerEngine.getTransferDestinationEntry(transaction, accounts);
       account = accounts.find(a => a.id === fromEntry?.accountId) || null;
       toAccount = accounts.find(a => a.id === toEntry?.accountId) || null;
     } else {
-      const accEntry = transaction.entries.find(e => accounts.some(a => a.id === e.accountId));
+      const accEntry = LedgerEngine.getPrimaryAccountEntry(transaction, accounts);
       account = accounts.find(a => a.id === accEntry?.accountId) || null;
 
-      const catEntry = transaction.entries.find(e => categories.some(c => c.id === e.accountId));
+      const catEntry = LedgerEngine.getCategoryEntry(transaction, categories);
       category = categories.find(c => c.id === catEntry?.accountId) || null;
     }
 

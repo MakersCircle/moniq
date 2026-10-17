@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Regression Tests**: Added a tracked feature-to-test matrix, pure transaction logic tests, and Chromium browser coverage for demo mode, navigation, transactions, and Google sign-in and mobile redirect initialization across desktop and mobile viewports.
+- **Returning-User Coverage**: Added browser checks that local records rehydrate and remote Sheets changes reconcile before the signed-in dashboard opens.
+- **Cloud Connection Error Coverage**: Added desktop and mobile browser checks for failed Sheets initialization, Retry Connection recovery, and Sign Out from the error screen.
+- **Returning-User Outage Coverage**: Added browser checks that a persistent Sheets outage keeps the dashboard gated while cached records remain intact, then recovers after service restoration and retry.
+- **Session Expiry Coverage**: Added browser checks for failed silent refresh, actual token expiry, cached data visibility, and interactive reconnection across desktop and mobile layouts.
+- **Reloaded Session Expiry Coverage**: Added browser checks that an expired session reloads with cached records and a reconnect action, while explicit Sign Out returns to the landing page.
+
+### Changed
+- **Contributor Guidance**: Documented test-first workflow, coverage updates, and focused and full test commands for pull requests.
+- **Transaction Logic**: Moved edit and soft-delete record changes into pure functions used by the data store, making those rules independently testable.
+
+### Fixed
+- **Mobile Sign-In**: Removed duplicate OAuth redirect handling from the landing page so one callback stores the token and navigates once. Popup, redirect, and silent-refresh token expiry use the same validated calculation and are covered by pure unit tests.
+- **Mobile Sign-In Startup**: Prevented duplicate IndexedDB hydration in React Strict Mode from overwriting a redirect token before cloud initialization.
+- **Signed-In Reload**: Kept the app behind the cloud initialization screen until reconciliation succeeds, including after a previously synced session reloads.
+- **Session Expiry**: Kept cached records available behind the reconnect banner when a token expires, while preserving explicit Sign Out behavior. A failed early refresh now waits until the token actually expires before showing the banner.
+
 ---
 
 ## [0.10.0] - 2026-10-17
@@ -25,14 +43,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Database**: Fixed a critical `InvalidStateError` that could cause IndexedDB schema upgrades to silently fail on first boot. The migration engine now correctly utilizes the browser's active upgrade transaction instead of erroneously attempting to spawn new ones.
-
----
-
-## [0.9.7] - 2026-09-21
-
-### Added
-- **Category Balances**: Added detailed running balances for 'Invest', 'Lend', and 'Borrow' categories directly on the Settings > Categories page.
-- **Dashboard Enhancements**: Added a new expandable 'Additional Summaries' section on the Dashboard to track Total Receivable and Total Payable amounts. This aggregates data from both dedicated accounts and relevant categories.
 
 ---
 

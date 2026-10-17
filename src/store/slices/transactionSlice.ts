@@ -4,6 +4,7 @@ import type { Transaction } from '../../types';
 import { uuid, now, markDirty } from '../helpers';
 import { put } from '../../lib/db';
 import { LedgerEngine } from '../../lib/ledger';
+import { patchTransaction, softDeleteTransaction } from '../../lib/transactionMutations';
 
 export interface TransactionSlice {
   transactions: Transaction[];
@@ -66,24 +67,18 @@ export const createTransactionSlice: StateCreator<DataState, [], [], Transaction
 
   updateTransaction: (id, patch) => {
     set(state => {
-      const next = state.transactions.map(t =>
-        t.id === id ? { ...t, ...patch, updatedAt: now() } : t
-      );
-      const updated = next.find(x => x.id === id);
+      const { transactions, updated } = patchTransaction(state.transactions, id, patch, now());
       if (updated) put('transactions', updated);
-      return { transactions: next };
+      return { transactions };
     });
     markDirty('transaction', id, 'update');
   },
 
   deleteTransaction: id => {
     set(state => {
-      const next = state.transactions.map(t =>
-        t.id === id ? { ...t, isDeleted: true, updatedAt: now() } : t
-      );
-      const updated = next.find(x => x.id === id);
+      const { transactions, updated } = softDeleteTransaction(state.transactions, id, now());
       if (updated) put('transactions', updated);
-      return { transactions: next };
+      return { transactions };
     });
     markDirty('transaction', id, 'update');
   },

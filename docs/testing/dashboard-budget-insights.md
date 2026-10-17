@@ -49,26 +49,26 @@ Focuses on rendering given mocked store/hook state, without hitting real calcula
 | ID | Scenario | Expected Outcome |
 |---|---|---|
 | C-01 | Empty state (no transactions) | Renders "Welcome to Moniq" headline and "Alt+N" hint instead of stats |
-| C-02 | Net Liquid Assets stat card | Displays sum of active, non-deleted, non-excluded account balances; detail shows `Liq:` and `Sav:` short-format breakdown |
-| C-03 | Liquidity calculation | Only accounts with `isSavings: false` and `type === 'Asset'` contribute to `liquidity` |
-| C-04 | Savings calculation | Only accounts with `isSavings: true` and `type === 'Asset'` contribute to `totalSavings` |
-| C-05 | `excludeFromNet` accounts | Excluded from Net Liquid Assets, Liquidity, and Savings entirely |
-| C-06 | Income stat card | Displays `useMonthSummary` income value with "This Month" detail |
-| C-07 | Expenses stat card | Displays expenses in `text-expense` color |
+| C-02 | Total Net Worth stat card | Displays assets minus liabilities among active, non-deleted, non-excluded accounts; detail shows Spendable Cash and Savings separately |
+| C-03 | Liquidity calculation | Only eligible non-savings Asset balances contribute to spendable cash |
+| C-04 | Savings calculation | Eligible savings asset balances contribute to savings |
+| C-05 | `excludeFromNet` accounts | Excluded from Total Net Worth, Spendable Cash, and Savings entirely |
+| C-06 | Income stat card | Displays current-month income and fiscal-year-to-date income in the detail |
+| C-07 | Expenses stat card | Displays current-month expenses and fiscal-year-to-date expenses in `text-expense` color |
 | C-08 | Savings Rate — positive income | `((income - expenses) / income) * 100`, shown to 1 decimal with `%` suffix |
 | C-09 | Savings Rate — zero income | Renders `0.0%` (guards divide-by-zero) |
 | C-10 | Savings Rate detail color | `text-income` when `income - expenses >= 0`, else `text-expense` |
-| C-11 | Receivable/Payable block — hidden | Not rendered when no account has `description` of `"receivable"` or `"payable"` (case-insensitive) |
-| C-12 | Receivable/Payable block — receivable only | Renders "Total Receivable" card summing balances of matching active accounts; payable shows if payable also present |
+| C-11 | Additional Summaries — hidden | Hidden when there are no receivable/payable accounts or Lend/Invest/Borrow category balances |
+| C-12 | Additional Summaries — receivable only | Expandable section shows total receivable from matching accounts and Lend/Invest categories; payable also appears when present |
 | C-13 | Receivable/Payable — case insensitivity | Account with `description: "Receivable"` (capitalized) still matches via `.toLowerCase()` |
-| C-14 | Receivable/Payable — inactive/deleted excluded | Accounts with `isActive: false` or `isDeleted: true` are excluded from the totals |
-| C-15 | Accounts list panel | Shows up to 5 active, non-deleted accounts with name, type, and balance |
+| C-14 | Receivable/Payable — inactive/deleted excluded | Inactive/deleted accounts and categories are excluded from the totals |
+| C-15 | Accounts list panel | Shows up to 5 active, non-deleted accounts ranked by most recent transaction use, with name, type, and balance |
 | C-16 | Accounts list — negative balance | Balance rendered in `text-expense` color when `< 0` |
 | C-17 | Accounts list — overflow link | "View all accounts" link shown only when more than 5 active accounts exist |
 | C-18 | Spending panel — empty | Shows "No data for this month" when `categorySpend` is `[]` |
 | C-19 | Spending panel — progress bars | Renders up to 5 categories with bar width `%` proportional to each category's share of total spend |
 | C-20 | Spending panel — percent label | Percent label matches `(amount / totalOfAllCategories) * 100`, rounded to 0 decimals |
-| C-21 | Recent transactions — empty | Shows "No transactions yet." when no non-deleted transactions exist |
+| C-21 | Recent transactions — none active | If the store has only deleted transactions, the activity panel shows "No transactions yet." |
 | C-22 | Recent transactions — top 5 | Shows the 5 most recent non-deleted transactions sorted by `date` descending |
 | C-23 | "View Ledger" link | Links to `/transactions` |
 | C-24 | "Analysis ›" link | Links to `/insights` |
@@ -119,7 +119,7 @@ Uses seeded/demo-mode local data (no live Google Sheets dependency) to drive rea
 ### Dashboard Flow
 | ID | Scenario | Expected Outcome |
 |---|---|---|
-| E-01 | Load dashboard with seeded data | Net Liquid Assets, Income, Expenses, Savings Rate cards all show non-empty, formatted currency/percent values |
+| E-01 | Load dashboard with seeded data | Total Net Worth, Income, Expenses, Savings Rate cards all show non-empty, formatted currency/percent values |
 | E-02 | Load dashboard with zero transactions | Empty state with "Welcome to Moniq" is shown; no stat cards render |
 | E-03 | Click "View Ledger" | Navigates to `/transactions` |
 | E-04 | Click "Analysis ›" | Navigates to `/insights` |
