@@ -44,6 +44,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | NAV-08 | An unexpected render failure shows the recovery screen with Reload Application and Clear Local Data actions. | 0.1.0 |
 | NAV-09 | The public landing page exposes its canonical and social-sharing metadata to the browser. | 0.9.0 |
 | NAV-10 | Pressing `/` outside a text field focuses the top-bar search input. | Code |
+| NAV-11 | Mobile app pages scroll within their intended content area without an extra document scroll or blank space, including when a banner is visible. | Unreleased |
 
 ## 4. Record transactions
 

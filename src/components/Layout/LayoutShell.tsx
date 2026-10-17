@@ -51,7 +51,7 @@ export default function LayoutShell({ children, onNewTransaction }: LayoutShellP
   }, [onNewTransaction]);
 
   return (
-    <div className="h-screen bg-background text-foreground overflow-hidden">
+    <div className="h-[100dvh] bg-background text-foreground overflow-hidden">
       <Sidebar onNewTransaction={() => onNewTransaction()} />
       <TopBar onNewTransaction={() => onNewTransaction()} />
       <div className="lg:pl-[220px] pt-14 lg:pt-16 pb-[60px] lg:pb-0 h-[100dvh]">
@@ -61,7 +61,7 @@ export default function LayoutShell({ children, onNewTransaction }: LayoutShellP
         >
           {isDemoMode && <DemoBanner />}
           {isSessionExpired && <SessionExpiredBanner />}
-          <div className="p-4 md:p-8 max-w-[1248px] mx-auto min-h-full flex flex-col w-full">
+          <div className="relative flex-1 min-h-0 p-4 md:p-8 max-w-[1248px] mx-auto flex flex-col w-full">
             {children}
           </div>
         </main>
