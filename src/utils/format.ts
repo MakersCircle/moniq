@@ -1,5 +1,4 @@
-import type { Transaction, Account, Category, PaymentMethod, UserSettings } from '../types';
-import { LedgerEngine } from '../lib/ledger';
+import type { UserSettings } from '../types';
 
 // ── Format currency ──────────────────────────────────────────
 export function formatCurrency(amount: number, settings: UserSettings): string {
@@ -45,67 +44,6 @@ export function formatMonth(iso: string): string {
 
 export function toMonthKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-}
-
-// ── CSV export ───────────────────────────────────────────────
-export function exportToCSV(
-  transactions: Transaction[],
-  accounts: Account[],
-  categories: Category[],
-  methods: PaymentMethod[],
-  filename = 'moniq-export.csv'
-) {
-  const accMap = Object.fromEntries(accounts.map(s => [s.id, s.name]));
-  const catMap = Object.fromEntries(
-    categories.map(c => [c.id, `${c.head}${c.subHead ? ' / ' + c.subHead : ''}`])
-  );
-  const metMap = Object.fromEntries(methods.map(m => [m.id, m.name]));
-
-  const header = [
-    'Date',
-    'Type',
-    'Amount',
-    'Primary Account',
-    'Target (Category/Account)',
-    'Method',
-    'Note',
-  ];
-  const rows = transactions
-    .filter(t => !t.isDeleted)
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map(t => {
-      const isTransfer = t.uiType === 'transfer';
-      const accEntry = LedgerEngine.getPrimaryAccountEntry(t, accounts);
-      const targetEntry = isTransfer
-        ? LedgerEngine.getTransferDestinationEntry(t, accounts)
-        : LedgerEngine.getCategoryEntry(t, categories);
-
-      let targetLabel: string;
-      if (isTransfer) {
-        targetLabel = accMap[targetEntry?.accountId || ''] || 'Unknown';
-      } else {
-        targetLabel = catMap[targetEntry?.accountId || ''] || 'Unknown';
-      }
-
-      return [
-        t.date,
-        t.uiType,
-        t.amount.toFixed(2),
-        accMap[accEntry?.accountId || ''] || 'Unknown',
-        targetLabel,
-        t.methodId ? metMap[t.methodId] || t.methodId : '',
-        `"${(t.note || '').replace(/"/g, '""')}"`,
-      ];
-    });
-
-  const csv = [header, ...rows].map(r => r.join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 // ── Group transactions by date ───────────────────────────────

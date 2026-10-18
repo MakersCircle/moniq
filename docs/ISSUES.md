@@ -789,6 +789,8 @@ Add an internal `private resetting = false` flag inside `performHardReset()` tha
 
 ## 24. CSV export doesn't sanitize spreadsheet-formula characters (formula/CSV injection)
 
+**Status (2026-10): Superseded for the Ledger.** Ledger export now downloads a PDF and no longer generates CSV cells. Revisit this mitigation if CSV export is reintroduced anywhere.
+
 ```
 Sanitize leading formula characters in CSV export to prevent spreadsheet formula injection
 ```
@@ -816,7 +818,7 @@ Apply to the `note` field in `exportToCSV`, and defensively to category/account/
 
 ---
 
-## 25. Add export to the Insights page (charts/summary data), matching the existing Ledger CSV export
+## 25. Add export to the Insights page (charts/summary data)
 
 ```
 Add data export to the Insights page (category breakdown, monthly trends, income vs. expense)
@@ -827,13 +829,13 @@ Add data export to the Insights page (category breakdown, monthly trends, income
 **Area:** Analytics / Export
 
 ### Problem
-The Transactions ("Ledger") page already has a working CSV export (`Export CSV` button, `src/pages/Transactions.tsx:130-134` → `exportToCSV` in `src/utils/format.ts`) covering raw transaction rows. The Insights page (`src/pages/Insights.tsx`) has no equivalent — there's no way to export the category-spend breakdown, the 6-month trend data, or the income-vs-expense comparison that the page already computes and charts (via `useCategorySpend`/`useHistoricalData` in `src/hooks/useComputed.ts`).
+The Ledger now exports filtered financial reports as PDF. The Insights page (`src/pages/Insights.tsx`) has no equivalent — there's no way to export the category-spend breakdown, the 6-month trend data, or the income-vs-expense comparison that the page already computes and charts (via `useCategorySpend`/`useHistoricalData` in `src/hooks/useComputed.ts`).
 
 ### Scope
 1. Add an "Export" action to the Insights page, similar in placement/style to the Transactions page's export button.
-2. Export the already-computed aggregate data (category totals, monthly trend series, income/expense series) as CSV — this is a much smaller export than the raw ledger, since the numbers are already aggregated by the existing hooks; no new calculation logic should be needed, only a CSV-serialization function analogous to `exportToCSV` (e.g. `exportInsightsCSV`).
-3. Apply the same formula-injection sanitization from issue #24 to any exported label field.
-4. Decide whether to export one CSV covering all three views, or a separate export per chart/section — recommend starting with one combined export (e.g. separate labeled sections in one file) for simplicity, and splitting later only if requested.
+2. Export the already-computed aggregate data (category totals, monthly trend series, income/expense series) in a suitable report format — the numbers are already aggregated by the existing hooks, so no new calculation logic should be needed.
+3. If CSV is chosen, apply formula-injection sanitization to any exported label field.
+4. Decide whether to export one report covering all three views, or a separate export per chart/section — recommend starting with one combined export for simplicity, and splitting later only if requested.
 
 **Suitable for:** an AI coding agent — the underlying data is already computed by existing hooks; this is primarily a serialization + UI-wiring task, following the exact pattern already established by the Ledger's `exportToCSV`.
 ```

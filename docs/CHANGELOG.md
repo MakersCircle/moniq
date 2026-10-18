@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Ledger PDF Reports**: Replaced CSV export with a local PDF report dialog offering date-range and account filters, full-list or category-wise tables, a separate Transfers table, centered compact date columns, income/expense totals, account/consolidated balance summaries, the app’s Inter font, a branded header with a 24 pt dark report title and `dd MMM yyyy` dates plus a 24-hour generated timestamp, and a compact footer row with a thin divider, aligned page counts, a centered website link, and the Moniq logo.
 - **Regression Tests**: Added a tracked feature-to-test matrix, pure transaction logic tests, and Chromium browser coverage for demo mode, navigation, transactions, and Google sign-in and mobile redirect initialization across desktop and mobile viewports.
 - **Returning-User Coverage**: Added browser checks that local records rehydrate and remote Sheets changes reconcile before the signed-in dashboard opens.
 - **Cloud Connection Error Coverage**: Added desktop and mobile browser checks for failed Sheets initialization, Retry Connection recovery, and Sign Out from the error screen.

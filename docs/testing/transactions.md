@@ -196,7 +196,7 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 | C-85 | No results after filtering | Shows "No transactions found matching your filters." instead of rows when `groupedByDate.length === 0` |
 | C-86 | Row click selects a transaction | Clicking a row sets `selectedTxnId`; clicking the same row again toggles it back to `null` |
 | C-87 | Row click while another row is selected | Table area gains `md:pr-[400px]` padding to make room for the detail panel |
-| C-91 | Export CSV button | Calls `exportToCSV(txns, accounts, categories, methods, "moniq-{month|'all'}.csv")` using the currently filtered transaction set |
+| C-91 | Export PDF button | Opens export options independent of Ledger filters; date range and account selections determine the report |
 | C-92 | Detail panel Edit action | Switches the detail panel to its inline edit form for the selected transaction |
 | C-93 | Detail panel Delete action | Calls `deleteTransaction(id)` and clears `selectedTxnId` back to `null` |
 | C-94 | Detail panel Close action | Clears `selectedTxnId` to `null` without deleting |
@@ -224,7 +224,7 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 | E-12 | Add a transfer end-to-end | Select From/To payment methods and amount; new row shows the destination account in the category column and an unsigned amount |
 | E-13 | Add a split expense end-to-end | Enable split, allocate amount across 2+ categories fully, save; two (or more) separate expense rows appear in the Ledger, one per split line, sharing the same date |
 | E-14 | Add transaction, then reopen Ledger filters | Newly added transaction is immediately findable via the search box (by note) and via the month/type/account filters |
-| E-15 | Add transaction and export CSV | Downloaded CSV includes a row for the new transaction with header `Date,Type,Amount,Primary Account,Target (Category/Account),Method,Note` and correctly quoted/escaped note field |
+| E-15 | Add transaction and export PDF | Downloaded PDF includes the transaction in the selected date range, uses the configured date format and currency, and keeps transfers out of income and expense totals |
 | E-16 | Rapid entry via Save & Stay (`Cmd+Enter`) | After each save, modal stays open, amount/category/note clear, date and payment method persist, and each entry shows up as a distinct row in the Ledger once the modal is finally closed |
 | E-17 | Save & Close via plain `Enter` | Pressing Enter while focused in the amount field (or note field, non-Shift) saves and closes the modal in one step |
 | E-18 | Edit an existing transaction end-to-end | Change the amount and category on an existing row, save; the Ledger row updates in place (no duplicate row created) and the account balance elsewhere in the app reflects the new amount |
@@ -243,6 +243,7 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 | E-28 | Opening detail panel on desktop viewport | Panel slides in from the right (`md:w-[400px]`); table area shifts left (`md:pr-[400px]`) so no row is obscured |
 | E-29 | Switching selected row while panel is open | Detail panel content updates to the newly clicked transaction without a full page reload |
 | E-35 | Try dragging a transaction row away from its six-dot handle, then reorder from the handle ([`e2e/ledger-reorder.spec.ts`](../../e2e/ledger-reorder.spec.ts)) | Only the handle starts a drag; order changes within the same date and persists after drop/reload; phone scrolling stays within the dragged date group |
+| E-36 | Configure and download the Ledger PDF ([`e2e/ledger-export.spec.ts`](../../e2e/ledger-export.spec.ts)) | Dialog starts with current month and all accounts; custom range, account filter, and both layouts work; PDF has ascending rows, totals, balances, and category-wise Transfers table |
 
 ### 3.4 Responsive Layout (Mobile/Tablet)
 | ID | Scenario | Expected Outcome |
@@ -250,5 +251,5 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 | E-30 | Detail panel on mobile viewport | Details open in a bottom drawer that fits the mobile viewport |
 | E-31 | FAB visibility | Floating action button is visible on mobile/tablet (`lg:hidden`) and absent on desktop layouts |
 | E-32 | Ledger on narrow viewports | Rows fit the narrow viewport; category and account appear below the description without page-wide horizontal overflow |
-| E-33 | Export button label on narrow viewports | Shows abbreviated "Export" text; full "Export CSV" label shown at `md` and above |
+| E-33 | Export button label on narrow viewports | Shows abbreviated "Export" text; full "Export PDF" label shown at `md` and above |
 | E-34 | Modal on mobile viewport | Modal form content area scrolls independently of the fixed header/footer, keeping Save button always reachable |

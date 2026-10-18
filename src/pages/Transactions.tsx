@@ -3,7 +3,7 @@ import { Download, Search, ChevronRight, List, GripVertical } from 'lucide-react
 import { Reorder, useDragControls } from 'framer-motion';
 import { useDataStore } from '../store/dataStore';
 import { useFilteredTransactions } from '../hooks/useComputed';
-import { exportToCSV, toMonthKey, formatCurrency } from '../utils/format';
+import { toMonthKey, formatCurrency } from '../utils/format';
 import type { TxnFilter } from '../hooks/useComputed';
 import type { Transaction, Account, Category, UserSettings } from '../types';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -23,6 +23,7 @@ import { LedgerEngine } from '@/lib/ledger';
 import TransactionDetailPanel from '@/components/Transactions/TransactionDetailPanel';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { boundDragScroll } from '@/lib/boundedDragScroll';
+import { LedgerExportDialog } from '@/components/Transactions/LedgerExportDialog';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -394,29 +395,19 @@ function LedgerReorderRow({
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function Transactions() {
-  const {
-    accounts,
-    categories,
-    methods,
-    settings,
-    transactions,
-    deleteTransaction,
-    reorderTransactions,
-  } = useDataStore();
+  const { accounts, categories, settings, transactions, deleteTransaction, reorderTransactions } =
+    useDataStore();
   const { t } = useTranslation();
 
   const [filter, setFilter] = useState<TxnFilter>({});
   const [selectedTxnId, setSelectedTxnId] = useState<string | null>(null);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   const txns = useFilteredTransactions(filter);
 
   const selectedTxn = transactions.find(t => t.id === selectedTxnId) || null;
 
   const updateFilter = (patch: Partial<TxnFilter>) => setFilter(f => ({ ...f, ...patch }));
-
-  const handleExport = () => {
-    exportToCSV(txns, accounts, categories, methods, `moniq-${filter.month || 'all'}.csv`);
-  };
 
   // Group txns by date (already sorted date-desc → sortOrder-asc)
   const groupedByDate = useMemo(() => {
@@ -482,9 +473,14 @@ export default function Transactions() {
               </p>
             </div>
             <div className="flex items-center gap-2 self-start md:self-auto">
-              <Button variant="outline" size="sm" onClick={handleExport} className="h-9 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setExportDialogOpen(true)}
+                className="h-9 gap-2"
+              >
                 <Download className="h-4 w-4" />
-                <span className="hidden md:inline">{t('ledger.exportCsv')}</span>
+                <span className="hidden md:inline">{t('ledger.exportPdf')}</span>
                 <span className="md:hidden">{t('ledger.export')}</span>
               </Button>
             </div>
@@ -626,6 +622,14 @@ export default function Transactions() {
       </div>
 
       {/* Slide-in Detail Panel */}
+      <LedgerExportDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        transactions={transactions}
+        accounts={accounts}
+        categories={categories}
+        settings={settings}
+      />
       <TransactionDetailPanel
         transaction={selectedTxn}
         onClose={() => setSelectedTxnId(null)}
