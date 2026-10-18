@@ -11,6 +11,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.11.0] - 2026-10-18
+
+### Added
+- **Ledger PDF Reports**: Replaced CSV export with a local PDF report dialog offering date-range and account filters, full-list or category-wise tables with larger category-only titles that combine subcategories, a separate Transfers table, light-accent UI summary cards for income, expenses, net income, Wants, Needs, Investments, savings transfers, and opening/closing Net Liquid Assets, plus per-account opening/closing balances and inflow/outflow totals (including transfers) under a separate divider. The dialog uses radio choices for report type and date range, keeps account selection in a dropdown, and reveals the shared transaction date picker only for a custom range. Account names are left aligned and account balance headings and amounts are right aligned. Tables use fixed widths, content-sized centered account columns, right-aligned amount columns, left-aligned wrapping notes, and light accent-tinted headers. Reports use the app’s Inter font, a branded header with a 24 pt dark report title and `dd MMM yyyy` dates plus a 24-hour generated timestamp, and a compact footer row with a thin divider, aligned page counts, a centered website link, and the Moniq logo.
+- **Regression Tests**: Added a tracked feature-to-test matrix, pure transaction logic tests, and Chromium browser coverage for demo mode, navigation, transactions, and Google sign-in and mobile redirect initialization across desktop and mobile viewports.
+- **Returning-User Coverage**: Added browser checks that local records rehydrate and remote Sheets changes reconcile before the signed-in dashboard opens.
+- **Cloud Connection Error Coverage**: Added desktop and mobile browser checks for failed Sheets initialization, Retry Connection recovery, and Sign Out from the error screen.
+- **Returning-User Outage Coverage**: Added browser checks that a persistent Sheets outage keeps the dashboard gated while cached records remain intact, then recovers after service restoration and retry.
+- **Session Expiry Coverage**: Added browser checks for failed silent refresh, actual token expiry, cached data visibility, and interactive reconnection across desktop and mobile layouts.
+- **Reloaded Session Expiry Coverage**: Added browser checks that an expired session reloads with cached records and a reconnect action, while explicit Sign Out returns to the landing page.
+
+### Changed
+- **Contributor and Agent Guidance**: Documented the development and pull request workflows, test commands, and required updates to the E2E feature inventory, coverage matrix, and test cases. Added root `AGENTS.md` to direct agents to the contributor guide and protect the local-first sync model.
+- **Transaction Logic**: Moved edit and soft-delete record changes into pure functions used by the data store, making those rules independently testable.
+
+### Fixed
+- **Drag Reordering**: Made Payment Methods and Ledger transactions draggable only from their six-dot handles. Reordering previews locally and persists on drop; memoized Ledger row content to avoid recalculating transaction details on each position change; kept mobile Ledger handles visible without hover; and bounded phone scrolling to the method list or transaction date group.
+- **Category Reordering**: Restricted dragging to the six-dot handle and to the current category group, kept touch drag scrolling within that group, kept row actions visible on touch viewports regardless of width, stabilized row actions during dragging, and saved the new order once on drop. Limited drag previews to the active group and removed animated shadow/background paints to improve responsiveness. Added desktop, tablet, and phone browser coverage.
+- **Mobile Scrolling**: Sized the shared app shell to the visible viewport and its page area around status banners, removing the extra blank scroll range across navigation tabs and Settings while preserving Dashboard, Ledger, and Settings content scrolling.
+- **Short Landscape Layout**: Reduced shell, Settings, and Ledger spacing at short viewport heights so scrollable rows and their drag handles remain visible and usable in landscape.
+- **Mobile Sign-In**: Removed duplicate OAuth redirect handling from the landing page so one callback stores the token and navigates once. Popup, redirect, and silent-refresh token expiry use the same validated calculation and are covered by pure unit tests.
+- **Mobile Sign-In Startup**: Prevented duplicate IndexedDB hydration in React Strict Mode from overwriting a redirect token before cloud initialization.
+- **Signed-In Reload**: Kept the app behind the cloud initialization screen until reconciliation succeeds, including after a previously synced session reloads.
+- **Session Expiry**: Kept cached records available behind the reconnect banner when a token expires, while preserving explicit Sign Out behavior. A failed early refresh now waits until the token actually expires before showing the banner.
+
+---
+
 ## [0.10.0] - 2026-10-17
 
 ### Added
@@ -25,14 +52,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Database**: Fixed a critical `InvalidStateError` that could cause IndexedDB schema upgrades to silently fail on first boot. The migration engine now correctly utilizes the browser's active upgrade transaction instead of erroneously attempting to spawn new ones.
-
----
-
-## [0.9.7] - 2026-09-21
-
-### Added
-- **Category Balances**: Added detailed running balances for 'Invest', 'Lend', and 'Borrow' categories directly on the Settings > Categories page.
-- **Dashboard Enhancements**: Added a new expandable 'Additional Summaries' section on the Dashboard to track Total Receivable and Total Payable amounts. This aggregates data from both dedicated accounts and relevant categories.
 
 ---
 

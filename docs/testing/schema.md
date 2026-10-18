@@ -1,6 +1,6 @@
 # Schema Versioning Test Coverage
 
-This document details the test cases covering the dynamic schema versioning engine (`src/schema/*`).
+This document details the test cases covering the dynamic schema versioning engine (`src/schema/*`). Existing tests cover entity round trips and migration runners with fake IndexedDB or mocked Sheets. The multi-tab tests check message shape and API presence, but do not assert that messages reach another tab or that a migration lock works. A listed case is a plan unless the corresponding assertion is present in a test file.
 
 ## 1. Entity Serialization Tests
 These tests run identically for all 5 Core Entities (`Account`, `Category`, `Transaction`, `PaymentMethod`, `Budget`) under `src/schema/entities/__tests__/`.
@@ -86,4 +86,4 @@ Tests the `MigrationChannel` wrapper around `BroadcastChannel`.
 | MT-02 | Start listening | Receiving `MIGRATION_STARTED` invokes all registered listener callbacks |
 | MT-03 | Done broadcasting | `broadcast({ type: 'MIGRATION_DONE' })` calls `postMessage` |
 | MT-04 | Unsubscribing | Invoking the unsubscribe callback prevents listeners from receiving future messages |
-| MT-05 | Dead leader locking | IDB constants (`migration_status`, `migration_target_version`) are reserved for crash recovery |
+| MT-05 | Dead leader locking (planned) | Exercise stale migration lock recovery across real browser tabs; this is not covered by the message-channel tests |

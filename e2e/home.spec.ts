@@ -1,16 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { installFakeGoogle } from './fixtures/google';
 
 test.describe('Home Page', () => {
   test.beforeEach(async ({ page }) => {
-    // Mock the Google OAuth API endpoint to avoid actual navigation
-    await page.route('**/accounts.google.com/**', route => {
-      route.fulfill({
-        status: 200,
-        contentType: 'text/html',
-        body: '<html><body>Mocked Google Login</body></html>'
-      });
-    });
-
+    await installFakeGoogle(page);
     await page.goto('/');
   });
 
@@ -36,17 +29,13 @@ test.describe('Home Page', () => {
     });
 
     test('E-06 & E-07: No overflow (page fits exactly 100dvh/vw)', async ({ page }) => {
-      const { scrollWidth, innerWidth, scrollHeight, innerHeight } = await page.evaluate(() => ({
+      await expect(page.locator('#root > .overflow-hidden')).toHaveCSS('overflow', 'hidden');
+      const { scrollWidth, innerWidth } = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,
         innerWidth: window.innerWidth,
-        scrollHeight: document.documentElement.scrollHeight,
-        innerHeight: window.innerHeight,
       }));
       
       expect(scrollWidth).toBeLessThanOrEqual(innerWidth);
-      // Wait, exact 100dvh doesn't always strictly mean scrollHeight === innerHeight if browser UI gets in the way.
-      // We check that body overflow is hidden anyway so scrollbars shouldn't appear.
-      const bodyOverflow = await page.evaluate(() => window.getComputedStyle(document.body).overflow);
       const mainDivOverflow = await page.evaluate(() => window.getComputedStyle(document.querySelector('.overflow-hidden') || document.body).overflow);
       expect(mainDivOverflow).toBe('hidden');
     });
@@ -68,12 +57,13 @@ test.describe('Home Page', () => {
       // Before hover, we check if the grid is collapsed (0fr or 0px or auto with 0 width)
       // Since computedStyle of gridTemplateColumns could be "0px", "0fr", or the actual width if it failed to collapse,
       // let's check the actual width of the overflow container instead.
-      const labelTextContainer = page.locator('.group.cursor-pointer .overflow-hidden').first();
+      const signInControl = page.locator('.group > div.cursor-pointer');
+      const labelTextContainer = signInControl.locator('.overflow-hidden');
       let box = await labelTextContainer.boundingBox();
       expect(box?.width).toBeLessThan(10); // should be collapsed near 0px
       
       // Hover the button
-      await page.locator('.group.cursor-pointer').hover();
+      await signInControl.hover();
       
       // After hover
       // Note: CSS transitions take 700ms. We wait for the box to expand.
@@ -113,7 +103,7 @@ test.describe('Home Page', () => {
       expect(wmBox!.x).toBeLessThan(ctaBox!.x);
     });
 
-    test('E-21: Footer does not overlap wordmark', async ({ page, isMobile, viewport }) => {
+    test('E-21: Footer does not overlap wordmark', async ({ page }) => {
       // In very narrow mobile viewports, the footer might overlap if the screen is too short, but let's check it.
       const wordmarkContainer = page.locator('div[style*="aspect-ratio"], div[style*="466 / 346"]').first();
       const footer = page.getByRole('link', { name: 'Docs' }).locator('..');

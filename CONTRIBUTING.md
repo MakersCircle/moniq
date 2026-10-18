@@ -54,9 +54,35 @@ moniq needs its own OAuth Client ID to talk to Google Drive/Sheets on your behal
 ## Issues & Feature Requests
 Planned work, bugs, and feature ideas are tracked as [GitHub Issues](../../issues). Check open issues before starting work to avoid duplicate effort, and open a new issue to propose a feature or report a bug before sending a large PR.
 
-## Pull Request Process
+## Development Workflow
+
 1. Ensure your code strictly adheres to the [Design System](docs/design_system.md).
 2. Create a clean branch (`feat/your-feature` or `fix/issue-description`).
-3. Run `npm run build` locally to verify there are absolutely no TypeScript compilation errors.
-4. Open a Pull Request referencing the GitHub Issue you are fixing or the feature you are adding.
-5. Log your change under `[Unreleased]` in [CHANGELOG.md](docs/CHANGELOG.md) and use [Conventional Commits](https://www.conventionalcommits.org/) for commit messages (`feat:`, `fix:`, `chore:`, `refactor:`, `docs:`, `perf:`, `style:`).
+3. Before adding a user-visible feature or modifying an existing one, review the [E2E feature inventory](docs/testing/e2e-feature-inventory.md), its row in the [feature-to-test matrix](docs/testing/feature-coverage.md), and the relevant cases in the [testing docs](docs/testing/README.md). Add or update planned cases for the behavior being changed.
+4. Add tests at the layer that best checks the behavior: keep business rules in testable pure functions or hooks where practical, cover component interactions with component tests, and use Playwright for important user journeys. Check responsive features at desktop and mobile sizes; the browser suite defines six viewport profiles.
+5. Run focused tests while developing.
+6. In the same change, update the E2E feature inventory, feature-to-test matrix with test evidence and status, relevant testing case documents, and `[Unreleased]` in [CHANGELOG.md](docs/CHANGELOG.md). Mark a feature covered only when its stated behavior is checked by an implemented test.
+7. Use [Conventional Commits](https://www.conventionalcommits.org/) for commit messages (`feat:`, `fix:`, `chore:`, `refactor:`, `docs:`, `perf:`, `style:`).
+
+## Pull Request Process
+
+1. Run the full test suites and production build. If a test cannot run locally, state why in the PR.
+2. Open a Pull Request against `develop`, reference the GitHub Issue you are fixing or feature you are adding, and summarize the change and test results.
+
+### Test Commands
+
+Run a focused unit or browser test while developing:
+
+```bash
+npm run test -- src/lib/__tests__/transactionMutations.test.ts
+npm run test:e2e -- e2e/auth-session-expiry.spec.ts --project=iphone-portrait
+```
+
+Before opening a PR, run all unit and browser tests, then build the app:
+
+```bash
+npm run test:all
+npm run build
+```
+
+Playwright runs the configured Chromium viewport profiles by default. If its bundled browser is unavailable, see the [testing setup](docs/testing/README.md) for using an installed Chrome or Chromium binary.

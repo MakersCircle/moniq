@@ -1,4 +1,4 @@
-import type { Account, Category, Transaction, LedgerEntry } from '../types';
+import type { Account, Category, PaymentMethod, Transaction, LedgerEntry } from '../types';
 
 /**
  * LedgerEngine handles the core professional accounting logic.
@@ -6,6 +6,61 @@ import type { Account, Category, Transaction, LedgerEntry } from '../types';
  * easy-to-use helpers for the UI.
  */
 export class LedgerEngine {
+  /** The account that funded an expense/transfer or received income. */
+  static getPrimaryAccountEntry(txn: Transaction, accounts: Account[]): LedgerEntry | undefined {
+    const expectedType = txn.uiType === 'income' ? 'DEBIT' : 'CREDIT';
+    return txn.entries.find(
+      entry =>
+        entry.type === expectedType && accounts.some(account => account.id === entry.accountId)
+    );
+  }
+
+  static getCategoryEntry(txn: Transaction, categories: Category[]): LedgerEntry | undefined {
+    if (txn.uiType === 'transfer') return undefined;
+    const expectedType = txn.uiType === 'income' ? 'CREDIT' : 'DEBIT';
+    return txn.entries.find(
+      entry =>
+        entry.type === expectedType && categories.some(category => category.id === entry.accountId)
+    );
+  }
+
+  static getTransferDestinationEntry(
+    txn: Transaction,
+    accounts: Account[]
+  ): LedgerEntry | undefined {
+    if (txn.uiType !== 'transfer') return undefined;
+    return txn.entries.find(
+      entry => entry.type === 'DEBIT' && accounts.some(account => account.id === entry.accountId)
+    );
+  }
+
+  /** Reconstruct form fields from the entries produced by createEntries(). */
+  static deriveTransactionFields(
+    txn: Transaction,
+    accounts: Account[],
+    methods: PaymentMethod[],
+    categories: Category[]
+  ): { accountId: string; targetId: string; fromMethodId: string; toMethodId: string } {
+    const accountId = this.getPrimaryAccountEntry(txn, accounts)?.accountId || '';
+    const targetId =
+      txn.uiType === 'transfer'
+        ? this.getTransferDestinationEntry(txn, accounts)?.accountId || ''
+        : this.getCategoryEntry(txn, categories)?.accountId || '';
+
+    return {
+      accountId,
+      targetId,
+      fromMethodId:
+        txn.uiType === 'transfer' && accountId
+          ? methods.find(method => method.linkedAccountId === accountId)?.id || ''
+          : '',
+      toMethodId:
+        txn.uiType === 'transfer' && targetId
+          ? methods.find(method => method.linkedAccountId === targetId)?.id || ''
+          : '',
+    };
+  }
+
   /**
    * Calculates the 'normal' balance for a specific node (Account or Category).
    *

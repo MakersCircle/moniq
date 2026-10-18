@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { LedgerEngine } from '../ledger';
-import type { Account, Category, Transaction, LedgerEntry } from '../../types';
+import type {
+  Account,
+  Category,
+  PaymentMethod,
+  Transaction,
+  LedgerEntry,
+  TransactionType,
+} from '../../types';
 
 describe('LedgerEngine', () => {
   const mockAccounts: Account[] = [
@@ -53,6 +60,93 @@ describe('LedgerEngine', () => {
       updatedAt: '',
     },
   ];
+
+  const mockMethods: PaymentMethod[] = mockAccounts.map((account, index) => ({
+    id: `method-${index + 1}`,
+    name: account.name,
+    linkedAccountId: account.id,
+    isActive: true,
+    isDeleted: false,
+    createdAt: '',
+    updatedAt: '',
+  }));
+
+  function makeTransaction(
+    type: TransactionType,
+    accountId: string,
+    targetId: string
+  ): Transaction {
+    return {
+      id: `txn-${type}`,
+      groupId: `group-${type}`,
+      date: '2024-01-01',
+      amount: 75,
+      entries: LedgerEngine.createEntries({ type, amount: 75, accountId, targetId }),
+      uiType: type,
+      note: '',
+      isDeleted: false,
+      createdAt: '',
+      updatedAt: '',
+    };
+  }
+
+  describe('transaction entry selectors and edit prefill', () => {
+    it.each([
+      ['income', 'acc-1', 'cat-2'],
+      ['expense', 'acc-1', 'cat-1'],
+      ['transfer', 'acc-1', 'acc-2'],
+    ] as const)('reverses createEntries for %s', (type, accountId, targetId) => {
+      const txn = makeTransaction(type, accountId, targetId);
+      const fields = LedgerEngine.deriveTransactionFields(
+        txn,
+        mockAccounts,
+        mockMethods,
+        mockCategories
+      );
+
+      expect(fields.accountId).toBe(accountId);
+      expect(fields.targetId).toBe(targetId);
+      expect(LedgerEngine.getPrimaryAccountEntry(txn, mockAccounts)?.accountId).toBe(accountId);
+
+      if (type === 'transfer') {
+        expect(fields.fromMethodId).toBe('method-1');
+        expect(fields.toMethodId).toBe('method-2');
+        expect(LedgerEngine.getTransferDestinationEntry(txn, mockAccounts)?.accountId).toBe(
+          targetId
+        );
+        expect(LedgerEngine.getCategoryEntry(txn, mockCategories)).toBeUndefined();
+      } else {
+        expect(fields.fromMethodId).toBe('');
+        expect(fields.toMethodId).toBe('');
+        expect(LedgerEngine.getCategoryEntry(txn, mockCategories)?.accountId).toBe(targetId);
+      }
+    });
+
+    it('selects the DEBIT account for income even when another account CREDIT entry comes first', () => {
+      const txn = makeTransaction('income', 'acc-1', 'cat-2');
+      txn.entries.unshift({ accountId: 'acc-2', type: 'CREDIT', amount: 75 });
+
+      expect(LedgerEngine.getPrimaryAccountEntry(txn, mockAccounts)?.accountId).toBe('acc-1');
+      expect(
+        LedgerEngine.deriveTransactionFields(txn, mockAccounts, mockMethods, mockCategories)
+      ).toMatchObject({ accountId: 'acc-1', targetId: 'cat-2' });
+    });
+
+    it('leaves method fields empty if a transfer account has no selectable method', () => {
+      const txn = makeTransaction('transfer', 'acc-1', 'acc-2');
+      const fields = LedgerEngine.deriveTransactionFields(
+        txn,
+        mockAccounts,
+        [mockMethods[0]],
+        mockCategories
+      );
+
+      expect(fields.accountId).toBe('acc-1');
+      expect(fields.targetId).toBe('acc-2');
+      expect(fields.fromMethodId).toBe('method-1');
+      expect(fields.toMethodId).toBe('');
+    });
+  });
 
   describe('validate()', () => {
     it('should validate balanced entries', () => {

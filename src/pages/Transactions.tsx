@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Download, Search, ChevronRight, List, GripVertical } from 'lucide-react';
-import { Reorder } from 'framer-motion';
+import { Reorder, useDragControls } from 'framer-motion';
 import { useDataStore } from '../store/dataStore';
 import { useFilteredTransactions } from '../hooks/useComputed';
-import { exportToCSV, toMonthKey, formatCurrency } from '../utils/format';
+import { toMonthKey, formatCurrency } from '../utils/format';
 import type { TxnFilter } from '../hooks/useComputed';
 import type { Transaction, Account, Category, UserSettings } from '../types';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -19,17 +19,16 @@ import {
 } from '@/components/ui/select';
 
 import { cn } from '@/lib/utils';
+import { LedgerEngine } from '@/lib/ledger';
 import TransactionDetailPanel from '@/components/Transactions/TransactionDetailPanel';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { boundDragScroll } from '@/lib/boundedDragScroll';
+import { LedgerExportDialog } from '@/components/Transactions/LedgerExportDialog';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function getAccountName(txn: Transaction, accounts: Account[], t: (key: string) => string) {
-  const isIncome = txn.uiType === 'income';
-  const entry = txn.entries.find(
-    e =>
-      accounts.some(a => a.id === e.accountId) &&
-      (isIncome ? e.type === 'DEBIT' : e.type === 'CREDIT')
-  );
+  const entry = LedgerEngine.getPrimaryAccountEntry(txn, accounts);
   return accounts.find(a => a.id === entry?.accountId)?.name || t('common.unknown');
 }
 
@@ -40,10 +39,10 @@ function getCategoryName(
   t: (key: string) => string
 ) {
   if (txn.uiType === 'transfer') {
-    const targetEntry = txn.entries.find(e => e.type === 'DEBIT');
+    const targetEntry = LedgerEngine.getTransferDestinationEntry(txn, accounts);
     return accounts.find(a => a.id === targetEntry?.accountId)?.name || t('common.transfer');
   }
-  const catEntry = txn.entries.find(e => categories.some(c => c.id === e.accountId));
+  const catEntry = LedgerEngine.getCategoryEntry(txn, categories);
   const c = categories.find(c => c.id === catEntry?.accountId);
   return c ? (c.subHead ? `${c.head} . ${c.subHead}` : c.head) : '—';
 }
@@ -56,23 +55,61 @@ interface TxnRowProps {
   accounts: Account[];
   categories: Category[];
   settings: UserSettings;
-  t: (key: string) => string;
-  onClick: () => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+  onSelect: (id: string) => void;
+  onHandlePointerDown: (event: React.PointerEvent<HTMLButtonElement>) => void;
+  onMove: (id: string, direction: -1 | 1) => void;
+  isDragging: boolean;
+  isDragged: boolean;
 }
 
-function TxnGridRow({ txn, isSelected, accounts, categories, settings, t, onClick }: TxnRowProps) {
+function TxnGridRow({
+  txn,
+  isSelected,
+  accounts,
+  categories,
+  settings,
+  t,
+  onSelect,
+  onHandlePointerDown,
+  onMove,
+  isDragging,
+  isDragged,
+}: TxnRowProps) {
   return (
     <div
-      onClick={onClick}
+      onClick={() => onSelect(txn.id)}
       className={cn(
         'group relative flex items-center cursor-pointer transition-colors border-b border-border text-sm',
         isSelected ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-accent/20'
       )}
     >
       {/* Drag handle column */}
-      <div className="w-5 md:w-6 shrink-0 flex items-center justify-center opacity-0 group-hover:opacity-50 transition-opacity text-muted-foreground cursor-grab active:cursor-grabbing touch-none select-none">
+      <button
+        type="button"
+        aria-label={t('ledger.reorderHandle', {
+          name: txn.note || t('common.noDescriptionProvided'),
+        })}
+        aria-keyshortcuts="ArrowUp ArrowDown"
+        onClick={event => event.stopPropagation()}
+        onPointerDown={onHandlePointerDown}
+        onKeyDown={event => {
+          if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+          event.preventDefault();
+          event.stopPropagation();
+          onMove(txn.id, event.key === 'ArrowUp' ? -1 : 1);
+        }}
+        className={cn(
+          'w-5 md:w-6 self-stretch shrink-0 flex items-center justify-center text-muted-foreground cursor-grab active:cursor-grabbing touch-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          isDragging
+            ? isDragged
+              ? 'opacity-70'
+              : 'opacity-70 md:opacity-0'
+            : 'opacity-50 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-50 [@media(hover:hover)]:focus-visible:opacity-100 transition-opacity'
+        )}
+      >
         <GripVertical className="h-3.5 w-3.5" />
-      </div>
+      </button>
 
       {/* Date — exactly absorbs original left-padding for the drag handle */}
       <div className="pr-3 md:pr-5 py-3 whitespace-nowrap text-muted-foreground shrink-0 w-[60px] md:w-[96px]">
@@ -165,7 +202,9 @@ function TxnGridRow({ txn, isSelected, accounts, categories, settings, t, onClic
   );
 }
 
-// ── Date Group Component (Handles local drag state for 60fps smoothness) ───
+const MemoTxnGridRow = React.memo(TxnGridRow);
+
+// ── Date Group Component ──────────────────────────────────────────────────
 
 function DateGroup({
   items,
@@ -189,6 +228,14 @@ function DateGroup({
   const [localIds, setLocalIds] = useState(() => items.map(t => t.id));
   const isDraggingRef = React.useRef(false);
   const lastStoreIdsRef = React.useRef(items.map(t => t.id).join(','));
+  const localIdsRef = React.useRef(localIds);
+  const groupRef = React.useRef<HTMLDivElement>(null);
+  const scrollCleanup = React.useRef<(() => void) | null>(null);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const isMobile = useIsMobile();
+  const transactionsById = useMemo(() => new Map(items.map(item => [item.id, item])), [items]);
+
+  React.useEffect(() => () => scrollCleanup.current?.(), []);
 
   // Sync if external store changes, but ONLY if the store's data actually changed from what we last saw.
   // This completely insulates the local drag state from React re-render cycles.
@@ -196,95 +243,171 @@ function DateGroup({
     const incomingIds = items.map(t => t.id).join(',');
     if (incomingIds !== lastStoreIdsRef.current) {
       setLocalIds(items.map(t => t.id));
+      localIdsRef.current = items.map(t => t.id);
       lastStoreIdsRef.current = incomingIds;
     }
   }, [items]);
 
+  const startDrag = (id: string) => {
+    isDraggingRef.current = true;
+    setDraggedId(id);
+    scrollCleanup.current?.();
+    const group = groupRef.current;
+    const scroller = group?.closest<HTMLElement>('[data-ledger-scroll-body]');
+    if (isMobile && group && scroller) scrollCleanup.current = boundDragScroll(group, scroller);
+  };
+
   const handleDragEnd = () => {
+    scrollCleanup.current?.();
+    scrollCleanup.current = null;
+    setDraggedId(null);
     // Clear flag after a short delay so the click event (which fires right after mouseup) is suppressed
     setTimeout(() => {
       isDraggingRef.current = false;
     }, 100);
 
     const original = items.map(i => i.id).join(',');
-    const current = localIds.join(',');
+    const current = localIdsRef.current.join(',');
     if (original !== current) {
-      onCommitOrder(localIds);
+      onCommitOrder(localIdsRef.current);
     }
   };
 
+  const handleSelect = useCallback(
+    (id: string) => {
+      if (isDraggingRef.current) return;
+      onSelect(id === selectedTxnId ? null : id);
+    },
+    [onSelect, selectedTxnId]
+  );
+
+  const moveTransaction = useCallback(
+    (id: string, direction: -1 | 1) => {
+      const index = localIdsRef.current.indexOf(id);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= localIdsRef.current.length) return;
+      const next = [...localIdsRef.current];
+      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+      onCommitOrder(next);
+    },
+    [onCommitOrder]
+  );
+
   return (
     <Reorder.Group
+      ref={groupRef}
+      data-ledger-date-group={items[0]?.date}
       axis="y"
       values={localIds}
-      onReorder={setLocalIds}
+      onReorder={ids => {
+        if (ids.every((id, index) => id === localIdsRef.current[index])) return;
+        localIdsRef.current = ids;
+        setLocalIds(ids);
+      }}
       as="div"
       style={{ listStyle: 'none', padding: 0, margin: 0 }}
     >
       {localIds.map(id => {
-        const txn = items.find(t => t.id === id);
+        const txn = transactionsById.get(id);
         if (!txn) return null;
 
         return (
-          <Reorder.Item
+          <LedgerReorderRow
             key={txn.id}
-            value={txn.id}
-            as="div"
-            onDragStart={() => {
-              isDraggingRef.current = true;
-            }}
+            txn={txn}
+            groupRef={groupRef}
+            isDragging={draggedId !== null}
+            isDragged={draggedId === txn.id}
+            isSelected={selectedTxnId === txn.id}
+            accounts={accounts}
+            categories={categories}
+            settings={settings}
+            t={t}
+            onDragStart={() => startDrag(txn.id)}
             onDragEnd={handleDragEnd}
-            whileDrag={{
-              boxShadow: '0 20px 50px -12px rgba(0,0,0,0.5)',
-              zIndex: 50,
-            }}
-            style={{ position: 'relative' }}
-          >
-            <TxnGridRow
-              txn={txn}
-              isSelected={selectedTxnId === txn.id}
-              accounts={accounts}
-              categories={categories}
-              settings={settings}
-              t={t}
-              onClick={() => {
-                if (isDraggingRef.current) return;
-                onSelect(txn.id === selectedTxnId ? null : txn.id);
-              }}
-            />
-          </Reorder.Item>
+            onMove={moveTransaction}
+            onSelect={handleSelect}
+          />
         );
       })}
     </Reorder.Group>
   );
 }
 
+function LedgerReorderRow({
+  txn,
+  groupRef,
+  isDragging,
+  isDragged,
+  isSelected,
+  accounts,
+  categories,
+  settings,
+  t,
+  onDragStart,
+  onDragEnd,
+  onMove,
+  onSelect,
+}: Omit<TxnRowProps, 'onHandlePointerDown'> & {
+  groupRef: React.RefObject<HTMLDivElement | null>;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+}) {
+  const controls = useDragControls();
+  const handlePointerDown = useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>) => {
+      if (event.pointerType !== 'mouse' || event.button === 0) controls.start(event);
+    },
+    [controls]
+  );
+
+  return (
+    <Reorder.Item
+      value={txn.id}
+      as="div"
+      dragListener={false}
+      dragControls={controls}
+      dragConstraints={groupRef}
+      dragElastic={0}
+      dragMomentum={false}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      whileDrag={{ zIndex: 50 }}
+      style={{ position: 'relative' }}
+    >
+      <MemoTxnGridRow
+        txn={txn}
+        isSelected={isSelected}
+        accounts={accounts}
+        categories={categories}
+        settings={settings}
+        t={t}
+        onSelect={onSelect}
+        onMove={onMove}
+        isDragging={isDragging}
+        isDragged={isDragged}
+        onHandlePointerDown={handlePointerDown}
+      />
+    </Reorder.Item>
+  );
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function Transactions() {
-  const {
-    accounts,
-    categories,
-    methods,
-    settings,
-    transactions,
-    deleteTransaction,
-    reorderTransactions,
-  } = useDataStore();
+  const { accounts, categories, settings, transactions, deleteTransaction, reorderTransactions } =
+    useDataStore();
   const { t } = useTranslation();
 
   const [filter, setFilter] = useState<TxnFilter>({});
   const [selectedTxnId, setSelectedTxnId] = useState<string | null>(null);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   const txns = useFilteredTransactions(filter);
 
   const selectedTxn = transactions.find(t => t.id === selectedTxnId) || null;
 
   const updateFilter = (patch: Partial<TxnFilter>) => setFilter(f => ({ ...f, ...patch }));
-
-  const handleExport = () => {
-    exportToCSV(txns, accounts, categories, methods, `moniq-${filter.month || 'all'}.csv`);
-  };
 
   // Group txns by date (already sorted date-desc → sortOrder-asc)
   const groupedByDate = useMemo(() => {
@@ -332,7 +455,7 @@ export default function Transactions() {
         )}
       >
         {/* Sticky Header with Filters */}
-        <div className="sticky top-0 bg-background/80 backdrop-blur-md z-20 border-b border-border p-8 pb-4 space-y-6">
+        <div className="sticky top-0 bg-background/80 backdrop-blur-md z-20 border-b border-border p-8 pb-4 space-y-6 [@media(max-height:500px)]:p-3 [@media(max-height:500px)]:pb-2 [@media(max-height:500px)]:space-y-3">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">{t('ledger.title')}</h1>
@@ -350,9 +473,14 @@ export default function Transactions() {
               </p>
             </div>
             <div className="flex items-center gap-2 self-start md:self-auto">
-              <Button variant="outline" size="sm" onClick={handleExport} className="h-9 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setExportDialogOpen(true)}
+                className="h-9 gap-2"
+              >
                 <Download className="h-4 w-4" />
-                <span className="hidden md:inline">{t('ledger.exportCsv')}</span>
+                <span className="hidden md:inline">{t('ledger.exportPdf')}</span>
                 <span className="md:hidden">{t('ledger.export')}</span>
               </Button>
             </div>
@@ -430,7 +558,7 @@ export default function Transactions() {
         </div>
 
         {/* Results */}
-        <div className="flex-1 flex flex-col pt-4 min-h-0 px-4 md:px-8 pb-4 md:pb-8">
+        <div className="flex-1 flex flex-col pt-4 min-h-0 px-4 md:px-8 pb-4 md:pb-8 [@media(max-height:500px)]:pt-2 [@media(max-height:500px)]:pb-2">
           {txns.length === 0 ? (
             <div className="py-20 text-center border-2 border-dashed border-border rounded-2xl bg-accent/5">
               <p className="text-muted-foreground font-medium">
@@ -468,7 +596,10 @@ export default function Transactions() {
                   </div>
 
                   {/* ── Scrollable Body ── */}
-                  <div className="flex-1 overflow-y-scroll custom-scrollbar pl-[6px]">
+                  <div
+                    data-ledger-scroll-body
+                    className="flex-1 overflow-y-scroll custom-scrollbar pl-[6px]"
+                  >
                     {groupedByDate.map(({ date, items }) => (
                       <DateGroup
                         key={date}
@@ -491,6 +622,14 @@ export default function Transactions() {
       </div>
 
       {/* Slide-in Detail Panel */}
+      <LedgerExportDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        transactions={transactions}
+        accounts={accounts}
+        categories={categories}
+        settings={settings}
+      />
       <TransactionDetailPanel
         transaction={selectedTxn}
         onClose={() => setSelectedTxnId(null)}

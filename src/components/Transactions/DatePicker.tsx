@@ -17,9 +17,10 @@ interface DatePickerProps {
   date: string;
   onChange: (date: string) => void;
   tabIndex?: number;
+  id?: string;
 }
 
-export function DatePicker({ date, onChange, tabIndex }: DatePickerProps) {
+export function DatePicker({ date, onChange, tabIndex, id }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
   const [inputValue, setInputValue] = React.useState(() => {
     const d = parseISO(date);
@@ -139,6 +140,7 @@ export function DatePicker({ date, onChange, tabIndex }: DatePickerProps) {
   return (
     <InputGroup>
       <InputGroupInput
+        id={id}
         value={inputValue}
         onChange={handleInputChange}
         onBlur={handleBlur}

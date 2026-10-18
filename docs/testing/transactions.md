@@ -1,6 +1,6 @@
 # Transactions Test Coverage
 
-This document details test cases covering the transaction entry, editing, and ledger viewing flow: `src/components/Transactions/AddTransactionModal.tsx`, `src/components/Transactions/DatePicker.tsx`, `src/components/Transactions/TransactionDetailPanel.tsx`, `src/pages/Transactions.tsx`, `src/components/TxnRow.tsx`, `src/lib/ledger.ts`, and `src/store/slices/transactionSlice.ts`.
+This document details test cases covering the transaction entry, editing, and ledger viewing flow: `src/components/Transactions/TransactionForm.tsx`, `src/components/Transactions/DatePicker.tsx`, `src/components/Transactions/TransactionDetailPanel.tsx`, `src/pages/Transactions.tsx`, `src/lib/ledger.ts`, `src/lib/transactionInput.ts`, and `src/store/slices/transactionSlice.ts`.
 
 ## 1. Unit Tests
 
@@ -27,6 +27,42 @@ Focuses purely on double-entry bookkeeping math, isolated from React.
 | U-16 | `getNormalBalance` excludes soft-deleted transactions | Entries on transactions with `isDeleted: true` are not aggregated |
 | U-17 | `getNormalBalance` for id with no matching account or category | Balance derived purely from entries with `impact` of `0` for unmatched types (returns `0` contribution) |
 | U-18 | `getNormalBalance` aggregates multiple transactions | Balance is the sum across all matching entries, not just the latest |
+
+### 1.1a Shared selectors and edit prefill (implemented in `ledger.test.ts`)
+
+These checks use `LedgerEngine.createEntries` as the input to the inverse mapping. The Ledger row, detail panel, CSV export, Trash guard, category summary, and edit form now call the same selectors. `e2e/transaction-read.spec.ts` checks that an income row and its detail panel display the same debit account at six viewport profiles; other transaction details and types remain to test.
+
+| ID | Scenario | Expected Outcome |
+|---|---|---|
+| U-42 | `deriveTransactionFields` after income, expense, and transfer entry creation | Restores the original account and target IDs for all three types; transfer also restores source/destination method IDs |
+| U-43 | Primary account selector on income with an earlier CREDIT account entry | Returns the DEBIT account entry, preventing a wrong account in details or export |
+| U-44 | Category selector on expense/income and transfer | Returns the category entry for non-transfers and no category for transfers |
+| U-45 | Transfer destination selector | Returns the destination account's DEBIT entry |
+| U-46 | Transfer with no selectable destination method | Keeps the destination account ID but leaves the method field empty |
+
+### 1.1b Transaction input logic (implemented in `transactionInput.test.ts`)
+
+The form uses these pure functions for save validation, split allocation, and expected balance math. The tests cover the logic layer; the component and browser cases below still need implementation.
+
+| ID | Scenario | Expected Outcome |
+|---|---|---|
+| U-47 | Single expense/income input validation | Requires a positive amount, parseable date, payment method, and category |
+| U-48 | Transfer input validation | Requires both source and destination methods; does not require a category |
+| U-49 | Split input validation | Requires a fully allocated total and a category and positive amount on every line |
+| U-50 | Split allocation tolerance | Totals within 0.01 are accepted; larger differences are rejected |
+| U-51 | Preview base balances | Starts at account opening balances, includes active transactions, and ignores soft-deleted transactions |
+| U-52 | Editing versus duplicating | Editing excludes the original transaction from the preview base balance; duplicating includes it |
+| U-53 | Expected balance impact | Expense and transfer source subtract the entered amount; income and transfer destination add it |
+
+### 1.1c Transaction mutations (implemented in `transactionMutations.test.ts`)
+
+The store uses these pure functions to edit and soft-delete records before persisting them. Store persistence and sync queue side effects remain separate from these rules.
+
+| ID | Scenario | Expected Outcome |
+|---|---|---|
+| U-54 | Edit an existing transaction | Replaces changed amount, note, entries, and update time while retaining its ID and leaving other records untouched |
+| U-55 | Soft-delete an existing transaction | Sets `isDeleted` and update time while retaining the amount, note, and entries for recovery |
+| U-56 | Edit a missing transaction ID | Returns no updated record and leaves all existing records untouched |
 
 ### 1.2 `transactionSlice` (`transactionSlice.test.ts`)
 Focuses on store mutations, ID/timestamp generation, and ledger entry wiring, mocking `put` (IndexedDB) and `markDirty`.
@@ -65,7 +101,7 @@ Focuses on the manual `dd/MM/yyyy` parsing cascade used for typed date input.
 
 ## 2. Component Tests
 
-### 2.1 `AddTransactionModal` (`AddTransactionModal.test.tsx`)
+### 2.1 `TransactionForm` (`TransactionForm.test.tsx`)
 Uses `@testing-library/react` with a mocked `useDataStore`.
 
 | ID | Scenario | Expected Outcome |
@@ -73,7 +109,6 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 | C-01 | Default render (no `initialData`, no `defaultType`) | Header reads "New Transaction"; `expense` tab active; amount input auto-focused |
 | C-02 | Render with `defaultType="income"` | `income` tab is active on mount, split toggle hidden (split only offered for expense) |
 | C-03 | Render with `initialData` (editing) | Header reads "Edit Transaction"; amount, date, note, method, and category fields pre-filled from the transaction |
-| C-04 | Render with `initialData` + `isDuplicate` | Header reads "New Transaction" (not "Edit"); date field resets to today instead of the original transaction's date |
 | C-05 | Edit-mode account pre-fill (expense) | Resolves the CREDIT entry whose `accountId` matches a known account as the selected payment-method-derived account |
 | C-06 | Edit-mode category pre-fill (expense) | Resolves the DEBIT entry's `accountId` as `targetId`, and pre-selects its `head` in the Category dropdown |
 | C-07 | Edit-mode pre-fill (income) | Resolves DEBIT entry as account, CREDIT entry as category/target (inverse of expense) |
@@ -99,7 +134,7 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 | C-27 | `CreateAccountSheet` `onSuccess` (transfer, "From" empty) | Sets `fromMethodId` to the new method's id |
 | C-28 | `CreateAccountSheet` `onSuccess` (transfer, "From" already set) | Sets `toMethodId` to the new method's id instead |
 | C-29 | Transfer "To" method options exclude the "From" account | `toMethodOptions` filters out any method whose `linkedAccountId` equals the "From" method's linked account |
-| C-30 | Selecting a "To" method identical to the current "From" method | Selecting the same method as `fromMethodId` for the "To" field clears `toMethodId` (guarded via the `onValueChange` reset in the "From" selector) |
+| C-30 | Changing From to the selected To method | Changing the From method to the currently selected To method clears the To selection |
 | C-31 | Split toggle only available for `expense` type | "Split this transaction" button renders only when `type === 'expense'`; hidden for income/transfer |
 | C-32 | Enabling split hides the single Category/Sub-category fields | Toggling `isSplit` on removes the head/sub-head selects and shows the split line editor |
 | C-33 | Split allocation badge — fully allocated | When `sum(splits.amount) === parsedAmount` (within 0.01), badge shows "✓ All Splits" with income styling |
@@ -113,10 +148,9 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 | C-41 | Expected balance preview (income) | Shows `currentBalance + parsedAmount` |
 | C-42 | Expected balance preview (transfer, "From" account) | Shows `currentBalance - parsedAmount` for the source account |
 | C-43 | Expected balance preview (transfer, "To" account) | Shows `currentBalance + parsedAmount` for the destination account |
-| C-44 | Expected balance excludes the transaction being edited | When editing, balance calculation filters out the original transaction by id (unless duplicating) so the preview reflects the post-edit state, not double-counted |
+| C-44 | Expected balance excludes the transaction being edited | When editing, balance calculation filters out the original transaction by id so the preview reflects the post-edit state |
 | C-45 | Submit (new, non-split) | Calls `addTransaction` with `{date, uiType, amount, accountId: derivedAccountId, targetId: derivedTargetId, methodId, note, tags: []}` |
 | C-46 | Submit (editing, non-split) | Calls `updateTransaction(initialData.id, {...payload, entries})` with entries freshly generated by `LedgerEngine.createEntries`, and does NOT call `addTransaction` |
-| C-47 | Submit (duplicate) | Treated as a new transaction: calls `addTransaction`, not `updateTransaction`, even though `initialData` is present |
 | C-48 | Submit blocked when invalid | Calling `handleSubmit` while `isValidTransaction` is `false` performs no store mutation and does not close the modal |
 | C-49 | Save & Close (`handleSubmit()` default) | Calls `onClose()` after a successful submit |
 | C-50 | Save & Stay (`handleSubmit(e, true)`) | Does NOT call `onClose()`; resets amount, note, targetId, selectedHead, fromMethodId, toMethodId, and splits back to one blank line |
@@ -144,43 +178,32 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 | C-67 | Amount sign and color | Income shows a leading `+` and income-green styling; expense shows no leading sign and expense-red styling |
 | C-68 | Missing/unresolvable account or category | Falls back to "Unknown" (account) or "Uncategorized" (category) |
 | C-69 | Missing note | Description row falls back to "No description provided" |
-| C-70 | Edit button click | Calls `onEdit(transaction)` with the full transaction object |
+| C-70 | Edit button click | Switches the detail panel to its inline `TransactionForm` with the selected transaction prefilled |
 | C-71 | Delete button click | Calls `onDelete(transaction.id)` |
 | C-72 | Close button click | Calls `onClose()` |
 
-### 2.3 `TxnRow` (`TxnRow.test.tsx`)
-
-| ID | Scenario | Expected Outcome |
-|---|---|---|
-| C-73 | Expense row | Renders down-arrow icon, category label as primary text, note (or account name if no note) as subtext, amount prefixed with `-` in expense color |
-| C-74 | Income row | Renders up-arrow icon, amount prefixed with `+` in income color |
-| C-75 | Transfer row | Renders left-right arrow icon, primary label as `"{fromAccount} → {toAccount}"`, amount with no sign prefix |
-| C-76 | Unresolvable account/category names | Falls back to `'?'` in the transfer label or `'—'` in the category label rather than throwing |
-| C-77 | Row click | Calls the provided `onClick` handler |
-
-### 2.4 `Transactions` page (`Transactions.test.tsx`)
+### 2.3 `Transactions` page (`Transactions.test.tsx`)
 
 | ID | Scenario | Expected Outcome |
 |---|---|---|
 | C-78 | Empty state | When `transactions.length === 0`, renders "Nothing here yet" empty-state message instead of the table |
-| C-79 | Populated ledger table | Renders one header divider row per date group plus one row per transaction, each showing date, note/description, category-or-target, account, and signed amount |
+| C-79 | Populated ledger table | Renders transactions newest date first in date groups; each row shows date, note, category or destination, account, and type-colored amount |
 | C-80 | Net total calculation | Header "Net" value sums `+amount` for income and `-amount` for expense rows in the currently filtered set, ignoring transfers |
 | C-81 | Search filter | Typing in the search box updates `filter.search`; only transactions whose `note` contains the (case-insensitive) query remain |
 | C-82 | Month filter | Selecting a month option sets `filter.month` to a `YYYY-MM` key; "All Time" clears it back to `undefined` |
 | C-83 | Type filter | Selecting "Income"/"Expense"/"Transfer" sets `filter.uiType`; "All Types" clears it |
 | C-84 | Account filter | Selecting an account sets `filter.accountId`; deleted accounts are excluded from the dropdown options |
-| C-85 | No results after filtering | Shows "No transactions found matching your filters." message instead of the table when `grouped.length === 0` |
+| C-85 | No results after filtering | Shows "No transactions found matching your filters." instead of rows when `groupedByDate.length === 0` |
 | C-86 | Row click selects a transaction | Clicking a row sets `selectedTxnId`; clicking the same row again toggles it back to `null` |
 | C-87 | Row click while another row is selected | Table area gains `md:pr-[400px]` padding to make room for the detail panel |
-| C-88 | Row overflow menu — Edit | Calls `window.openTransactionModal.openEdit(txn)` |
-| C-89 | Row overflow menu — Duplicate | Calls `window.openTransactionModal.openDuplicate(txn)` |
-| C-90 | Row overflow menu — Delete | Calls `deleteTransaction(txn.id)` directly from the row menu (no detail panel needed) |
-| C-91 | Export CSV button | Calls `exportToCSV(txns, accounts, categories, methods, "moniq-{month|'all'}.csv")` using the currently filtered transaction set |
-| C-92 | Detail panel Edit action | Calls `window.openTransactionModal.openEdit` (via `handleEdit`) with the selected transaction |
+| C-91 | Export PDF button | Opens export options independent of Ledger filters; date range and account selections determine the report |
+| C-92 | Detail panel Edit action | Switches the detail panel to its inline edit form for the selected transaction |
 | C-93 | Detail panel Delete action | Calls `deleteTransaction(id)` and clears `selectedTxnId` back to `null` |
 | C-94 | Detail panel Close action | Clears `selectedTxnId` to `null` without deleting |
 
 ## 3. End-to-End Tests
+
+`e2e/transaction-create.spec.ts` covers the save flows in E-10–13 using the form's default date across six Chromium viewport/touch profiles. It checks the ledger rows, account balances, dashboard totals, split allocation gate, and demo persistence. `e2e/transaction-manage.spec.ts` covers E-18–19 with edit and delete, including persistence after reload, balance changes, and the Recently Deleted row. Explicit date editing, account/category creation during entry, and keyboard save remain planned.
 
 ### 3.1 Opening the Modal (Entry Points)
 | ID | Scenario | Expected Outcome |
@@ -191,24 +214,21 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 | E-04 | `Shift+I` global shortcut | Opens modal with Income tab pre-selected |
 | E-05 | `Shift+T` global shortcut | Opens modal with Transfer tab pre-selected |
 | E-06 | Global shortcuts while focus is inside a text input elsewhere on the page | Shortcuts are suppressed; keystroke is typed into the field instead |
-| E-07 | Ledger row "Edit" action | Opens modal in edit mode with header "Edit Transaction" and all fields pre-filled from the selected transaction |
-| E-08 | Ledger row "Duplicate" action | Opens modal with fields pre-filled from the source transaction EXCEPT the date, which resets to today's date and the header reads "New Transaction" |
-| E-09 | Ledger detail panel "Edit" button | Opens the modal in edit mode for the currently open transaction |
+| E-09 | Ledger detail panel "Edit" button | Shows the inline transaction form inside the detail panel with the selected transaction prefilled |
 
 ### 3.2 Full Add-Transaction Flows
 | ID | Scenario | Expected Outcome |
 |---|---|---|
-| E-10 | Add a simple expense end-to-end | Fill amount, date, payment method, category; click Save; modal closes; new row appears at the top of the Ledger table with correct date, category label, account, and a `-`-prefixed amount in expense color |
+| E-10 | Add a simple expense end-to-end | Fill amount, date, payment method, category; click Save; modal closes; new row appears at the top of the Ledger table with correct date, category label, account, and an expense-colored amount |
 | E-11 | Add a simple income end-to-end | Same flow on the Income tab; new row appears with a `+`-prefixed amount in income color |
-| E-12 | Add a transfer end-to-end | Select From/To payment methods and amount; new row appears formatted as `"{From} → {To}"` with no sign prefix |
+| E-12 | Add a transfer end-to-end | Select From/To payment methods and amount; new row shows the destination account in the category column and an unsigned amount |
 | E-13 | Add a split expense end-to-end | Enable split, allocate amount across 2+ categories fully, save; two (or more) separate expense rows appear in the Ledger, one per split line, sharing the same date |
 | E-14 | Add transaction, then reopen Ledger filters | Newly added transaction is immediately findable via the search box (by note) and via the month/type/account filters |
-| E-15 | Add transaction and export CSV | Downloaded CSV includes a row for the new transaction with header `Date,Type,Amount,Primary Account,Target (Category/Account),Method,Note` and correctly quoted/escaped note field |
+| E-15 | Add transaction and export PDF | Downloaded PDF includes the transaction in the selected date range, uses the configured date format and currency, and keeps transfers out of income and expense totals |
 | E-16 | Rapid entry via Save & Stay (`Cmd+Enter`) | After each save, modal stays open, amount/category/note clear, date and payment method persist, and each entry shows up as a distinct row in the Ledger once the modal is finally closed |
 | E-17 | Save & Close via plain `Enter` | Pressing Enter while focused in the amount field (or note field, non-Shift) saves and closes the modal in one step |
 | E-18 | Edit an existing transaction end-to-end | Change the amount and category on an existing row, save; the Ledger row updates in place (no duplicate row created) and the account balance elsewhere in the app reflects the new amount |
-| E-19 | Delete a transaction from the Ledger row menu | Row disappears from the visible Ledger list (soft-deleted, filtered out by `isDeleted`) |
-| E-20 | Delete a transaction from the detail panel | Detail panel closes and the row disappears from the Ledger list |
+| E-19 | Delete a transaction from the detail panel | The detail panel closes and the row disappears from the active Ledger (soft-deleted) |
 | E-21 | Create a new payment method mid-entry ("Create Account & Method") | New method becomes immediately selected in the modal's Payment Method (or From/To) field without closing the modal |
 | E-22 | Create a new category mid-entry ("Create Category") | New category becomes immediately selected as the transaction's category without closing the modal |
 | E-23 | Date typed manually (e.g. `01/01/2026`) then saved | Ledger row reflects the typed date, not today's date |
@@ -217,17 +237,19 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 ### 3.3 Ledger Filtering, Grouping & Detail Panel (Desktop)
 | ID | Scenario | Expected Outcome |
 |---|---|---|
-| E-25 | Transactions grouped by date | Table renders a divider row per unique date, each labeled with the formatted date, transactions nested underneath in descending date order |
+| E-25 | Transactions grouped by date | Transactions are grouped by date for ordering and drag reorder; rows show their own dates, newest date first |
 | E-26 | Combined filters (month + type + account) | Only transactions satisfying all active filters simultaneously are shown; Net total in the header recalculates to match the filtered subset |
 | E-27 | Clearing filters back to defaults | Selecting "All Time"/"All Types"/"All Accounts" and clearing search restores the full unfiltered ledger |
 | E-28 | Opening detail panel on desktop viewport | Panel slides in from the right (`md:w-[400px]`); table area shifts left (`md:pr-[400px]`) so no row is obscured |
 | E-29 | Switching selected row while panel is open | Detail panel content updates to the newly clicked transaction without a full page reload |
+| E-35 | Try dragging a transaction row away from its six-dot handle, then reorder from the handle ([`e2e/ledger-reorder.spec.ts`](../../e2e/ledger-reorder.spec.ts)) | Only the handle starts a drag; order changes within the same date and persists after drop/reload; phone scrolling stays within the dragged date group |
+| E-36 | Configure and download the Ledger PDF ([`e2e/ledger-export.spec.ts`](../../e2e/ledger-export.spec.ts)) | Dialog starts with current month and all accounts; report type and date range are radio choices; custom dates are hidden until selected and use the transaction date picker; account filter and both report types work; PDF has ascending rows, totals, balances, and category-wise Transfers table |
 
 ### 3.4 Responsive Layout (Mobile/Tablet)
 | ID | Scenario | Expected Outcome |
 |---|---|---|
-| E-30 | Detail panel on mobile viewport | Panel takes full width (`w-full`) rather than the fixed 400px desktop panel, covering the table |
+| E-30 | Detail panel on mobile viewport | Details open in a bottom drawer that fits the mobile viewport |
 | E-31 | FAB visibility | Floating action button is visible on mobile/tablet (`lg:hidden`) and absent on desktop layouts |
-| E-32 | Ledger table horizontal scroll on narrow viewports | Table wrapper scrolls horizontally (`overflow-x-auto`, `min-w-[800px]`) rather than clipping or wrapping columns |
-| E-33 | Export button label on narrow viewports | Shows abbreviated "Export" text; full "Export CSV" label shown at `md` and above |
+| E-32 | Ledger on narrow viewports | Rows fit the narrow viewport; category and account appear below the description without page-wide horizontal overflow |
+| E-33 | Export button label on narrow viewports | Shows abbreviated "Export" text; full "Export PDF" label shown at `md` and above |
 | E-34 | Modal on mobile viewport | Modal form content area scrolls independently of the fixed header/footer, keeping Save button always reachable |

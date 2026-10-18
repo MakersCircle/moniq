@@ -1,4 +1,5 @@
 import { useDataStore } from '../store/dataStore';
+import { createAccessTokenSession } from './authSession';
 
 const SHEETS_API_URL = 'https://sheets.googleapis.com/v4';
 const DRIVE_API_URL = 'https://www.googleapis.com/drive/v3';
@@ -94,16 +95,25 @@ export class GoogleService {
           clearTimeout(timeoutId);
           this.isRefreshing = false;
           if (response.access_token) {
-            const expiresAt = Date.now() + (Number(response.expires_in) || 3600) * 1000;
-            useDataStore.getState().setAccessToken(response.access_token!, expiresAt);
-            resolve(response.access_token);
+            const session = createAccessTokenSession(
+              response.access_token,
+              response.expires_in,
+              Date.now()
+            );
+            if (session) {
+              useDataStore.getState().setAccessToken(session.accessToken, session.expiresAt);
+              resolve(session.accessToken);
+            } else {
+              resolve(null);
+            }
           } else {
-            // If it's a "user_logged_out" or similar, we should clear the session
+            // An early refresh failure does not invalidate a still-usable access token.
             if (
               response.error &&
               ['user_logged_out', 'immediate_failed'].includes(response.error)
             ) {
-              useDataStore.getState().setAccessToken(null);
+              const expiresAt = useDataStore.getState().tokenExpiresAt;
+              if (expiresAt && Date.now() >= expiresAt) useDataStore.getState().expireSession();
             }
             resolve(null);
           }
@@ -143,7 +153,7 @@ export class GoogleService {
       } else {
         const isFullyExpired = expiresAt && Date.now() > expiresAt;
         if (!currentToken || isFullyExpired) {
-          useDataStore.getState().setAccessToken(null);
+          useDataStore.getState().expireSession();
           throw new Error('Unauthenticated: Session expired');
         }
       }
@@ -174,7 +184,7 @@ export class GoogleService {
         });
       } else {
         // Refresh failed, user needs to log in manually
-        useDataStore.getState().setAccessToken(null);
+        useDataStore.getState().expireSession();
         throw new Error('Unauthenticated: Session expired');
       }
     }

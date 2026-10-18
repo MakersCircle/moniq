@@ -39,13 +39,13 @@ export default function App() {
 
   const isHydrated = useDataStore(s => s.isHydrated);
   const isCloudInitialized = useDataStore(s => s.isCloudInitialized);
-  const setCloudInitialized = useDataStore(s => s.setCloudInitialized);
   const syncStatus = useDataStore(s => s.syncStatus);
   const initializeFromDB = useDataStore(s => s.initializeFromDB);
   const isDemoMode = useDataStore(s => s.isDemoMode);
 
   const [initError, setInitError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const hydrationStarted = useRef(false);
 
   const handleDisconnect = useCallback(() => {
     googleLogout();
@@ -82,24 +82,34 @@ export default function App() {
 
   // 1. Initial hydration from IndexedDB (structured)
   useEffect(() => {
+    if (hydrationStarted.current) return;
+    hydrationStarted.current = true;
     initializeFromDB();
   }, [initializeFromDB]);
 
-  // 2. Proactive Token Refresh (checks every 5 minutes)
+  // 2. Proactive token refresh (checks each minute near expiry)
   useEffect(() => {
     if (!accessToken || isDemoMode) return;
 
-    const check = () => {
+    const check = async () => {
       const fiveMinutes = 5 * 60 * 1000;
       const isAboutToExpire = tokenExpiresAt && Date.now() > tokenExpiresAt - fiveMinutes;
 
       if (isAboutToExpire) {
-        googleService.silentRefresh();
+        try {
+          await googleService.silentRefresh();
+        } catch {
+          // The existing token remains usable until its actual expiry.
+        }
+        const state = useDataStore.getState();
+        if (state.accessToken && state.tokenExpiresAt && Date.now() >= state.tokenExpiresAt) {
+          state.expireSession();
+        }
       }
     };
 
-    check(); // Check immediately on mount or dependency change
-    const interval = setInterval(check, 60 * 1000); // And then every minute
+    void check(); // Check immediately on mount or dependency change
+    const interval = setInterval(() => void check(), 60 * 1000); // And then every minute
 
     return () => clearInterval(interval);
   }, [accessToken, tokenExpiresAt, isDemoMode]);
@@ -140,7 +150,7 @@ export default function App() {
           if (!newToken) {
             const isFullyExpired = Date.now() > tokenExpiresAt;
             if (isFullyExpired) {
-              useDataStore.getState().setAccessToken(null);
+              useDataStore.getState().expireSession();
               return;
             }
           }
@@ -180,12 +190,12 @@ export default function App() {
           // Trigger the backup check after a successful initial load
           engine.triggerBackupCycle();
         } else {
-          setCloudInitialized(true);
+          throw new Error('Could not reconcile data with Google Sheets');
         }
       } catch (err) {
         console.error('Failed to initialize cloud database:', err);
         setInitError(err instanceof Error ? err.message : 'Unknown connection error');
-        // Do not call setCloudInitialized(true) here! The app should not proceed into a broken state.
+        // Keep the app gated until a successful retry or sign-out.
       }
     }
 
@@ -196,7 +206,6 @@ export default function App() {
     isHydrated,
     setUserProfile,
     setSpreadsheetId,
-    setCloudInitialized,
     retryCount,
     isDemoMode,
   ]);

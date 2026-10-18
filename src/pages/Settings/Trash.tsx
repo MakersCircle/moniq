@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import SettingsLayout from '@/components/Layout/SettingsLayout';
 import type { Transaction, Account, PaymentMethod, Category, UserSettings } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { LedgerEngine } from '@/lib/ledger';
 
 function InfoTooltip({ text, position = 'top' }: { text: string; position?: 'top' | 'bottom' }) {
   return (
@@ -76,12 +77,7 @@ export default function Trash() {
       const txn = transactions.find(t => t.id === id);
       if (txn) {
         // Find the main account for this transaction
-        const isIncome = txn.uiType === 'income';
-        const entry = txn.entries.find(
-          e =>
-            accounts.some(a => a.id === e.accountId) &&
-            (isIncome ? e.type === 'DEBIT' : e.type === 'CREDIT')
-        );
+        const entry = LedgerEngine.getPrimaryAccountEntry(txn, accounts);
         const account = accounts.find(a => a.id === entry?.accountId);
 
         if (account?.isDeleted) {
@@ -93,7 +89,7 @@ export default function Trash() {
 
         // Check category for non-transfer txns
         if (txn.uiType !== 'transfer') {
-          const catEntry = txn.entries.find(e => categories.some(c => c.id === e.accountId));
+          const catEntry = LedgerEngine.getCategoryEntry(txn, categories);
           const cat = categories.find(c => c.id === catEntry?.accountId);
           if (cat?.isDeleted) {
             setError(

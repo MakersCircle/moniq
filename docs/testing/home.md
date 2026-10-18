@@ -1,9 +1,9 @@
 # Home Page Test Coverage
 
-This document details the 52 test cases covering `src/pages/Home.tsx` and its extracted authentication hook `src/hooks/useHomeAuth.ts`.
+This document lists planned and implemented cases for `src/pages/Home.tsx`, its authentication hook `src/hooks/useHomeAuth.ts`, and the pure OAuth session decisions in `src/lib/authSession.ts`. Case IDs appearing here do not by themselves prove that a test exists.
 
 ## 1. Unit Tests (`useHomeAuth.test.ts`)
-Focuses purely on the business logic of authentication, token parsing, and navigation, separated from the UI. 
+The hook tests check its store and navigation effects. The pure session tests check token parsing and expiry without React or browser state.
 
 | ID | Scenario | Expected Outcome |
 |---|---|---|
@@ -19,6 +19,15 @@ Focuses purely on the business logic of authentication, token parsing, and navig
 | U-12 | Login failure callback (`onError`) | Logs error to console |
 | U-13 | Store already has accessToken | Hook returns `isLoggedIn: true` |
 | U-14 | Store has no accessToken | Hook returns `isLoggedIn: false` |
+
+### Pure OAuth session decisions (`authSession.test.ts`)
+
+| ID | Scenario | Expected Outcome |
+|---|---|---|
+| U-15 | Encoded mobile redirect token with expiry | Decodes the token and calculates the exact expiry time |
+| U-16 | Redirect without a usable access token | Returns no session; the hook leaves store, URL, and navigation untouched |
+| U-17 | Missing, zero, negative, nonnumeric, or infinite expiry | Falls back to one hour |
+| U-18 | Login callback token and expiry | Uses the same expiry calculation as the redirect path; an empty token returns no session |
 
 ## 2. Component Tests (`Home.test.tsx`)
 Focuses on rendering the correct static elements and reacting to mocked authentication states. Uses `@testing-library/react`.
@@ -37,9 +46,10 @@ Focuses on rendering the correct static elements and reacting to mocked authenti
 | C-10 | CTA click (authenticated) | Handled by hook (mocked out in UI tests) |
 | C-11 | CTA button disabled state | Button is active (`cursor-pointer`), not disabled |
 | C-12 | Logo accessibility | Logo has descriptive alt text |
+| C-13 | OAuth redirect with mocked auth hook | Home leaves token handling to the auth hook, avoiding a duplicate store write |
 
-## 3. End-to-End Tests (`home.spec.ts`)
-Focuses on cross-browser responsive layout, dynamic CSS, and network interception. Runs across 6 Playwright viewports (mobile to desktop).
+## 3. End-to-End Tests (`home.spec.ts`, `auth-flow.spec.ts`)
+The home suite checks responsive layout and public navigation. The auth flow suite uses a fake Google token client and in-memory Drive/Sheets APIs to check sign-in, cloud provisioning, reload reconnect, requested scopes, and the mobile redirect. Both run in Chromium at the configured viewport/touch profiles. A real Google account is still needed for a separate live-service smoke check.
 
 ### Layout & Visibility (All devices)
 | ID | Scenario | Expected Outcome |
@@ -49,15 +59,15 @@ Focuses on cross-browser responsive layout, dynamic CSS, and network interceptio
 | E-03 | Headline visible | Text is visible and unclipped |
 | E-04 | Paragraph visible | Text is visible and unclipped |
 | E-05 | Footer links visible | All 3 footer links are visible |
-| E-06 | No horizontal overflow | `document.body.scrollWidth <= window.innerWidth` |
-| E-07 | No vertical overflow (portrait) | `document.body.scrollHeight <= window.innerHeight` (no scrollbars) |
+| E-06 | No horizontal overflow | `document.documentElement.scrollWidth <= window.innerWidth` |
+| E-07 | No vertical overflow (portrait) | The main landing container hides overflow; the existing test does not assert document scroll height |
 
 ### CTA Button (Touch devices)
 *Run on: iPhone (portrait/landscape), iPad (portrait/landscape)*
 | ID | Scenario | Expected Outcome |
 |---|---|---|
 | E-08 | Label visibility without interaction | "Sign in with Google" text is fully expanded (grid-cols-[1fr]) |
-| E-09 | Button click | Intercepts request to `accounts.google.com` (OAuth initiated) |
+| E-09 | Button click (`auth-flow.spec.ts`) | Tapping the CTA invokes the fake Google token client and opens the initialized dashboard |
 
 ### CTA Button (Desktop pointer devices)
 *Run on: MacBook Pro (desktop)*

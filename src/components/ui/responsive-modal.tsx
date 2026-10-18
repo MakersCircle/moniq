@@ -41,6 +41,7 @@ export function ResponsiveModal({
   description,
   children,
   footer,
+  className,
   headerClassName,
 }: ResponsiveModalProps) {
   const isMobile = useIsMobile();
@@ -50,7 +51,10 @@ export function ResponsiveModal({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="bottom"
-          className="flex flex-col p-0 rounded-t-2xl border-t shadow-2xl overflow-hidden max-h-[calc(100dvh-3rem)] h-auto"
+          className={cn(
+            'flex flex-col p-0 rounded-t-2xl border-t shadow-2xl overflow-hidden max-h-[calc(100dvh-3rem)] h-auto',
+            className
+          )}
         >
           {(title || description) && (
             <SheetHeader
@@ -80,7 +84,12 @@ export function ResponsiveModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md flex flex-col p-0 overflow-hidden border-none shadow-2xl">
+      <DialogContent
+        className={cn(
+          'max-w-md flex flex-col p-0 overflow-hidden border-none shadow-2xl',
+          className
+        )}
+      >
         {(title || description) && (
           <DialogHeader
             className={cn(
