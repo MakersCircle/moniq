@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.11.0] - 2026-10-18
+
 ### Added
 - **Ledger PDF Reports**: Replaced CSV export with a local PDF report dialog offering date-range and account filters, full-list or category-wise tables with larger category-only titles that combine subcategories, a separate Transfers table, light-accent UI summary cards for income, expenses, net income, Wants, Needs, Investments, savings transfers, and opening/closing Net Liquid Assets, plus per-account opening/closing balances and inflow/outflow totals (including transfers) under a separate divider. The dialog uses radio choices for report type and date range, keeps account selection in a dropdown, and reveals the shared transaction date picker only for a custom range. Account names are left aligned and account balance headings and amounts are right aligned. Tables use fixed widths, content-sized centered account columns, right-aligned amount columns, left-aligned wrapping notes, and light accent-tinted headers. Reports use the app’s Inter font, a branded header with a 24 pt dark report title and `dd MMM yyyy` dates plus a 24-hour generated timestamp, and a compact footer row with a thin divider, aligned page counts, a centered website link, and the Moniq logo.
 - **Regression Tests**: Added a tracked feature-to-test matrix, pure transaction logic tests, and Chromium browser coverage for demo mode, navigation, transactions, and Google sign-in and mobile redirect initialization across desktop and mobile viewports.
