@@ -4,8 +4,8 @@ import { toast } from 'sonner';
 import type { Account, Category, Transaction, UserSettings } from '@/types';
 import { ResponsiveModal } from '@/components/ui/responsive-modal';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
+import { DatePicker } from '@/components/Transactions/DatePicker';
 import {
   Select,
   SelectContent,
@@ -19,6 +19,36 @@ import { downloadLedgerPdf } from '@/lib/ledgerPdf';
 
 type DatePreset = 'current' | 'previous' | 'all' | 'custom';
 type ReportLayout = 'full' | 'category';
+
+interface RadioChoiceProps<T extends string> {
+  name: string;
+  value: T;
+  selected: T;
+  label: string;
+  onChange: (value: T) => void;
+}
+
+function RadioChoice<T extends string>({
+  name,
+  value,
+  selected,
+  label,
+  onChange,
+}: RadioChoiceProps<T>) {
+  return (
+    <label className="flex min-h-8 cursor-pointer items-center gap-2 text-sm text-foreground">
+      <input
+        type="radio"
+        name={name}
+        value={value}
+        checked={selected === value}
+        onChange={() => onChange(value)}
+        className="size-4 shrink-0 accent-primary"
+      />
+      <span>{label}</span>
+    </label>
+  );
+}
 
 interface DateRange {
   startDate: string;
@@ -147,20 +177,7 @@ export function LedgerExportDialog({
       }
     >
       <div className="space-y-5 p-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field>
-            <FieldLabel>{t('ledger.reportLayout')}</FieldLabel>
-            <Select value={layout} onValueChange={value => setLayout(value as ReportLayout)}>
-              <SelectTrigger aria-label={t('ledger.reportLayout')}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="full">{t('ledger.fullList')}</SelectItem>
-                <SelectItem value="category">{t('ledger.categoryWise')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </Field>
-
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <Field>
             <FieldLabel>{t('common.account')}</FieldLabel>
             <Select value={accountId} onValueChange={setAccountId}>
@@ -179,49 +196,90 @@ export function LedgerExportDialog({
               </SelectContent>
             </Select>
           </Field>
+
+          <fieldset className="space-y-2">
+            <legend className="px-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              {t('ledger.reportType')}
+            </legend>
+            <div className="grid gap-2">
+              <RadioChoice
+                name="report-layout"
+                value="full"
+                selected={layout}
+                label={t('ledger.fullList')}
+                onChange={setLayout}
+              />
+              <RadioChoice
+                name="report-layout"
+                value="category"
+                selected={layout}
+                label={t('ledger.categoryWise')}
+                onChange={setLayout}
+              />
+            </div>
+          </fieldset>
         </div>
 
-        <Field>
-          <FieldLabel>{t('ledger.dateRange')}</FieldLabel>
-          <Select value={datePreset} onValueChange={value => choosePreset(value as DatePreset)}>
-            <SelectTrigger aria-label={t('ledger.dateRange')}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="current">{t('ledger.currentMonth')}</SelectItem>
-              <SelectItem value="previous">{t('ledger.previousMonth')}</SelectItem>
-              <SelectItem value="all">{t('ledger.allTime')}</SelectItem>
-              <SelectItem value="custom">{t('ledger.customRange')}</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            <Field>
-              <FieldLabel>{t('ledger.fromDate')}</FieldLabel>
-              <Input
-                aria-label={t('ledger.fromDate')}
-                type="date"
-                value={effectiveRange?.startDate ?? ''}
-                disabled={datePreset !== 'custom'}
-                onChange={event => updateCustomRange({ startDate: event.target.value })}
-              />
-            </Field>
-            <Field>
-              <FieldLabel>{t('ledger.toDate')}</FieldLabel>
-              <Input
-                aria-label={t('ledger.toDate')}
-                type="date"
-                value={effectiveRange?.endDate ?? ''}
-                disabled={datePreset !== 'custom'}
-                onChange={event => updateCustomRange({ endDate: event.target.value })}
-              />
-            </Field>
+        <fieldset className="space-y-2">
+          <legend className="px-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            {t('ledger.dateRange')}
+          </legend>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <RadioChoice
+              name="date-range"
+              value="current"
+              selected={datePreset}
+              label={t('ledger.currentMonth')}
+              onChange={choosePreset}
+            />
+            <RadioChoice
+              name="date-range"
+              value="previous"
+              selected={datePreset}
+              label={t('ledger.previousMonth')}
+              onChange={choosePreset}
+            />
+            <RadioChoice
+              name="date-range"
+              value="all"
+              selected={datePreset}
+              label={t('ledger.allTime')}
+              onChange={choosePreset}
+            />
+            <RadioChoice
+              name="date-range"
+              value="custom"
+              selected={datePreset}
+              label={t('ledger.customRange')}
+              onChange={choosePreset}
+            />
           </div>
+          {datePreset === 'custom' && (
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <Field>
+                <FieldLabel htmlFor="export-start-date">{t('ledger.fromDate')}</FieldLabel>
+                <DatePicker
+                  id="export-start-date"
+                  date={effectiveRange?.startDate ?? ''}
+                  onChange={startDate => updateCustomRange({ startDate })}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="export-end-date">{t('ledger.toDate')}</FieldLabel>
+                <DatePicker
+                  id="export-end-date"
+                  date={effectiveRange?.endDate ?? ''}
+                  onChange={endDate => updateCustomRange({ endDate })}
+                />
+              </Field>
+            </div>
+          )}
           {!rangeIsValid && (
             <p role="alert" className="pt-2 text-xs text-destructive">
               {t('ledger.invalidDateRange')}
             </p>
           )}
-        </Field>
+        </fieldset>
 
         {effectiveRange && (
           <p className="text-xs text-muted-foreground">

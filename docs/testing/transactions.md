@@ -243,7 +243,7 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 | E-28 | Opening detail panel on desktop viewport | Panel slides in from the right (`md:w-[400px]`); table area shifts left (`md:pr-[400px]`) so no row is obscured |
 | E-29 | Switching selected row while panel is open | Detail panel content updates to the newly clicked transaction without a full page reload |
 | E-35 | Try dragging a transaction row away from its six-dot handle, then reorder from the handle ([`e2e/ledger-reorder.spec.ts`](../../e2e/ledger-reorder.spec.ts)) | Only the handle starts a drag; order changes within the same date and persists after drop/reload; phone scrolling stays within the dragged date group |
-| E-36 | Configure and download the Ledger PDF ([`e2e/ledger-export.spec.ts`](../../e2e/ledger-export.spec.ts)) | Dialog starts with current month and all accounts; custom range, account filter, and both layouts work; PDF has ascending rows, totals, balances, and category-wise Transfers table |
+| E-36 | Configure and download the Ledger PDF ([`e2e/ledger-export.spec.ts`](../../e2e/ledger-export.spec.ts)) | Dialog starts with current month and all accounts; report type and date range are radio choices; custom dates are hidden until selected and use the transaction date picker; account filter and both report types work; PDF has ascending rows, totals, balances, and category-wise Transfers table |
 
 ### 3.4 Responsive Layout (Mobile/Tablet)
 | ID | Scenario | Expected Outcome |

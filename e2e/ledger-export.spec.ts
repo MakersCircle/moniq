@@ -12,13 +12,14 @@ test('LEDGER-05: full-list PDF uses independent date and account filters', async
 
   await page.getByRole('button', { name: desktop ? 'Export PDF' : 'Export' }).click();
   await expect(page.getByRole('heading', { name: 'Export Ledger Report' })).toBeVisible();
-  await expect(page.getByRole('combobox', { name: 'Date range' })).toContainText('Current month');
+  await expect(page.getByRole('radio', { name: 'Current month' })).toBeChecked();
+  await expect(page.getByRole('group', { name: 'Report type' })).toBeVisible();
   await expect(page.getByRole('combobox', { name: 'Account' })).toContainText('All Accounts');
+  await expect(page.getByLabel('From date')).not.toBeVisible();
 
-  await page.getByRole('combobox', { name: 'Date range' }).click();
-  await page.getByRole('option', { name: 'Custom range' }).click();
+  await page.getByRole('radio', { name: 'Custom range' }).check();
   const today = new Date();
-  const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const date = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
   await page.getByLabel('From date').fill(date);
   await page.getByLabel('To date').fill(date);
   await page.getByRole('combobox', { name: 'Account' }).click();
@@ -97,12 +98,10 @@ test('LEDGER-05: category-wise PDF includes transfers outside category and incom
   await page.getByRole('link', { name: 'Ledger', exact: true }).click();
 
   await page.getByRole('button', { name: desktop ? 'Export PDF' : 'Export' }).click();
-  await page.getByRole('combobox', { name: 'Report layout' }).click();
-  await page.getByRole('option', { name: 'Category-wise' }).click();
-  await page.getByRole('combobox', { name: 'Date range' }).click();
-  await page.getByRole('option', { name: 'Custom range' }).click();
+  await page.getByRole('radio', { name: 'Category-wise' }).check();
+  await page.getByRole('radio', { name: 'Custom range' }).check();
   const today = new Date();
-  const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const date = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
   await page.getByLabel('From date').fill(date);
   await page.getByLabel('To date').fill(date);
   await expect(page.getByText('3 transactions will be included.')).toBeVisible();
