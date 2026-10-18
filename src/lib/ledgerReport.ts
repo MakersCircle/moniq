@@ -37,6 +37,8 @@ export interface LedgerReportAccountBalance {
   account: string;
   opening: number;
   closing: number;
+  incoming: number;
+  outgoing: number;
 }
 
 export interface LedgerReport {
@@ -53,6 +55,10 @@ export interface LedgerReport {
   expense: number;
   transferTotal: number;
   netIncome: number;
+  needsExpense: number;
+  wantsExpense: number;
+  investmentExpense: number;
+  netSavingsTransfers: number;
 }
 
 const accountName = (accountId: string | undefined, accounts: Account[]) =>
@@ -149,6 +155,10 @@ export function buildLedgerReport(
   let income = 0;
   let expense = 0;
   let transferTotal = 0;
+  let needsExpense = 0;
+  let wantsExpense = 0;
+  let investmentExpense = 0;
+  let netSavingsTransfers = 0;
 
   for (const transaction of rowsTransactions) {
     const isTransfer = transaction.uiType === 'transfer';
@@ -175,6 +185,12 @@ export function buildLedgerReport(
 
     if (isTransfer) {
       transferTotal += transaction.amount;
+      const sourceAccount = accounts.find(account => account.id === primaryEntry?.accountId);
+      const destinationAccount = accounts.find(
+        account => account.id === transferDestination?.accountId
+      );
+      if (destinationAccount?.isSavings) netSavingsTransfers += transaction.amount;
+      if (sourceAccount?.isSavings) netSavingsTransfers -= transaction.amount;
       transfers.push({
         ...baseRow,
         fromAccount: sourceName,
@@ -184,7 +200,13 @@ export function buildLedgerReport(
     }
 
     const categoryEntry = LedgerEngine.getCategoryEntry(transaction, categories);
-    const category = formatCategory(categories.find(item => item.id === categoryEntry?.accountId));
+    const transactionCategory = categories.find(item => item.id === categoryEntry?.accountId);
+    const category = formatCategory(transactionCategory);
+    if (transaction.uiType === 'expense') {
+      if (transactionCategory?.group === 'Needs') needsExpense += transaction.amount;
+      if (transactionCategory?.group === 'Wants') wantsExpense += transaction.amount;
+      if (transactionCategory?.group === 'Invest') investmentExpense += transaction.amount;
+    }
     let table = categoryMap.get(category.id);
     if (!table) {
       table = {
@@ -205,12 +227,27 @@ export function buildLedgerReport(
   const startBoundary = new Date(`${options.startDate}T00:00:00`);
   startBoundary.setDate(startBoundary.getDate() - 1);
   const openingDate = `${startBoundary.getFullYear()}-${String(startBoundary.getMonth() + 1).padStart(2, '0')}-${String(startBoundary.getDate()).padStart(2, '0')}`;
-  const accountBalances = selectedAccounts.map(account => ({
-    accountId: account.id,
-    account: account.name,
-    opening: accountBalanceAt(account, activeTransactions, openingDate),
-    closing: accountBalanceAt(account, activeTransactions, options.endDate),
-  }));
+  const accountBalances = selectedAccounts.map(account => {
+    let incoming = 0;
+    let outgoing = 0;
+    for (const transaction of rowsTransactions) {
+      for (const entry of transaction.entries) {
+        if (entry.accountId !== account.id) continue;
+        const increasesBalance =
+          account.type === 'Liability' ? entry.type === 'CREDIT' : entry.type === 'DEBIT';
+        if (increasesBalance) incoming += entry.amount;
+        else outgoing += entry.amount;
+      }
+    }
+    return {
+      accountId: account.id,
+      account: account.name,
+      opening: accountBalanceAt(account, activeTransactions, openingDate),
+      closing: accountBalanceAt(account, activeTransactions, options.endDate),
+      incoming,
+      outgoing,
+    };
+  });
 
   return {
     startDate: options.startDate,
@@ -238,5 +275,9 @@ export function buildLedgerReport(
     expense,
     transferTotal,
     netIncome: income - expense,
+    needsExpense,
+    wantsExpense,
+    investmentExpense,
+    netSavingsTransfers,
   };
 }

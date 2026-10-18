@@ -8,6 +8,7 @@ const PAGE_MARGIN = { top: 18, right: 12, bottom: 30, left: 12 };
 const FOOTER_RULE_Y = 281;
 const PDF_DATE_FORMAT = 'dd MMM yyyy';
 const TABLE_HEADER_FILL: [number, number, number] = [243, 235, 255];
+const SUMMARY_CARD_FILL: [number, number, number] = [250, 250, 250];
 const logoUrl = `${import.meta.env.BASE_URL}moniq-wordmark-dark.svg`;
 
 function toBase64(bytes: Uint8Array) {
@@ -111,6 +112,34 @@ function transactionColumnStyles(
   return styles;
 }
 
+interface SummaryMetric {
+  label: string;
+  value: string;
+  accent?: boolean;
+}
+
+function drawSummaryMetric(
+  doc: import('jspdf').jsPDF,
+  metric: SummaryMetric,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) {
+  doc.setDrawColor(228, 228, 231);
+  doc.setLineWidth(0.2);
+  doc.setFillColor(...(metric.accent ? TABLE_HEADER_FILL : SUMMARY_CARD_FILL));
+  doc.roundedRect(x, y, width, height, 1.5, 1.5, 'FD');
+
+  doc.setFont('Inter', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(82, 82, 91);
+  doc.text(metric.label, x + 3, y + 5.5);
+  doc.setFontSize(10);
+  doc.setTextColor(9, 9, 11);
+  doc.text(metric.value, x + 3, y + 12.5);
+}
+
 /** Generates and downloads the selected ledger report as a locally generated PDF. */
 export async function downloadLedgerPdf(report: LedgerReport, settings: UserSettings) {
   const [{ jsPDF }, { default: autoTable }, fontResponse, logoDataUrl] = await Promise.all([
@@ -131,6 +160,7 @@ export async function downloadLedgerPdf(report: LedgerReport, settings: UserSett
   const generatedAt = new Date();
   const generatedLabel = `${format(generatedAt, PDF_DATE_FORMAT)} ${format(generatedAt, 'HH:mm')}`;
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
   const rightEdge = pageWidth - PAGE_MARGIN.right;
   doc.addImage(logoDataUrl, 'PNG', PAGE_MARGIN.left, 10, 34, 9.6);
   doc.setFont('Inter', 'normal');
@@ -387,68 +417,115 @@ export async function downloadLedgerPdf(report: LedgerReport, settings: UserSett
     }
   }
 
-  if (startY > 245) {
+  const summaryBlockHeight = 125;
+  if (startY + summaryBlockHeight > pageHeight - PAGE_MARGIN.bottom) {
     doc.addPage();
     startY = PAGE_MARGIN.top;
   }
+  doc.setDrawColor(134, 59, 255);
+  doc.setLineWidth(0.4);
+  doc.line(PAGE_MARGIN.left, startY, pageWidth - PAGE_MARGIN.right, startY);
   doc.setFont('Inter', 'normal');
-  doc.setFontSize(12);
-  doc.text('Range summary', PAGE_MARGIN.left, startY + 5);
-  autoTable(doc, {
-    ...commonOptions,
-    startY: startY + 8,
-    head: [['Summary', 'Amount']],
-    body: [
-      ['Total income', formatCurrency(report.income, settings)],
-      ['Total expenses', formatCurrency(report.expense, settings)],
-      ['Total transfers', formatCurrency(report.transferTotal, settings)],
-      ['Net income', formatCurrency(report.netIncome, settings)],
-      ['Opening Net Liquid Assets', formatCurrency(report.openingNetLiquidAssets, settings)],
-      ['Closing Net Liquid Assets', formatCurrency(report.closingNetLiquidAssets, settings)],
-    ],
-    columnStyles: { 0: { cellWidth: 120 }, 1: { cellWidth: 60, halign: 'right' } },
-  });
+  doc.setTextColor(9, 9, 11);
+  doc.setFontSize(13);
+  doc.text('Range summary', PAGE_MARGIN.left, startY + 8);
 
-  const balanceTop =
-    (doc as typeof doc & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? startY;
+  const summaryContentX = PAGE_MARGIN.left;
+  const summaryGap = 3;
+  const summaryTop = startY + 13;
+  const metricHeight = 17;
+  const primaryMetricWidth = (tableWidth - summaryGap * 2) / 3;
+  const secondaryMetricWidth = (tableWidth - summaryGap * 3) / 4;
+  const summaryRows: { top: number; width: number; metrics: SummaryMetric[] }[] = [
+    {
+      top: summaryTop,
+      width: primaryMetricWidth,
+      metrics: [
+        { label: 'Total income', value: formatCurrency(report.income, settings) },
+        { label: 'Total expenses', value: formatCurrency(report.expense, settings) },
+        { label: 'Net income', value: formatCurrency(report.netIncome, settings), accent: true },
+      ],
+    },
+    {
+      top: summaryTop + metricHeight + summaryGap,
+      width: secondaryMetricWidth,
+      metrics: [
+        { label: 'Wants', value: formatCurrency(report.wantsExpense, settings) },
+        { label: 'Needs', value: formatCurrency(report.needsExpense, settings) },
+        { label: 'Investments', value: formatCurrency(report.investmentExpense, settings) },
+        {
+          label: 'Net moved to savings',
+          value: formatCurrency(report.netSavingsTransfers, settings),
+          accent: true,
+        },
+      ],
+    },
+    {
+      top: summaryTop + (metricHeight + summaryGap) * 2,
+      width: primaryMetricWidth,
+      metrics: [
+        {
+          label: 'Opening Net Liquid Assets',
+          value: formatCurrency(report.openingNetLiquidAssets, settings),
+        },
+        {
+          label: 'Closing Net Liquid Assets',
+          value: formatCurrency(report.closingNetLiquidAssets, settings),
+          accent: true,
+        },
+      ],
+    },
+  ];
+
+  for (const [rowIndex, row] of summaryRows.entries()) {
+    const gap = rowIndex === 2 ? summaryGap * 1.5 : summaryGap;
+    const rowWidth = row.width * row.metrics.length + gap * (row.metrics.length - 1);
+    const rowX = summaryContentX + (tableWidth - rowWidth) / 2;
+    row.metrics.forEach((metric, index) => {
+      drawSummaryMetric(
+        doc,
+        metric,
+        rowX + index * (row.width + gap),
+        row.top,
+        row.width,
+        metricHeight
+      );
+    });
+  }
+
+  let accountSectionTop = summaryTop + (metricHeight + summaryGap) * 2 + metricHeight + 12;
   if (report.accountBalances.length > 0) {
-    if (balanceTop > 245) doc.addPage();
-    const balancesStartY = balanceTop > 245 ? PAGE_MARGIN.top : balanceTop + 8;
+    if (accountSectionTop + 30 > pageHeight - PAGE_MARGIN.bottom) {
+      doc.addPage();
+      accountSectionTop = PAGE_MARGIN.top;
+    }
+    doc.setDrawColor(134, 59, 255);
+    doc.setLineWidth(0.35);
+    doc.line(PAGE_MARGIN.left, accountSectionTop, pageWidth - PAGE_MARGIN.right, accountSectionTop);
     doc.setFont('Inter', 'normal');
+    doc.setTextColor(9, 9, 11);
     doc.setFontSize(12);
-    doc.text('Account balances', PAGE_MARGIN.left, balancesStartY + 5);
+    doc.text('Account balances', PAGE_MARGIN.left, accountSectionTop + 8);
     autoTable(doc, {
       ...commonOptions,
-      startY: balancesStartY + 8,
-      head: [['Account', 'Opening balance', 'Closing balance']],
+      startY: accountSectionTop + 12,
+      head: [['Account', 'Opening balance', 'Closing balance', 'Inflows', 'Outflows']],
       body: report.accountBalances.map(balance => [
         balance.account,
         formatCurrency(balance.opening, settings),
         formatCurrency(balance.closing, settings),
+        formatCurrency(balance.incoming, settings),
+        formatCurrency(balance.outgoing, settings),
       ]),
       columnStyles: {
-        0: { cellWidth: 90 },
-        1: { cellWidth: 45, halign: 'right' },
-        2: { cellWidth: 45, halign: 'right' },
+        0: { cellWidth: 42, halign: 'left' },
+        1: { cellWidth: 36, halign: 'right' },
+        2: { cellWidth: 36, halign: 'right' },
+        3: { cellWidth: 36, halign: 'right' },
+        4: { cellWidth: 36, halign: 'right' },
       },
     });
   }
-
-  const finalTableY =
-    (doc as typeof doc & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ??
-    balanceTop;
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const noteY = finalTableY + 7;
-  const noteNeedsOwnPage = noteY > pageHeight - 31;
-  if (noteNeedsOwnPage) doc.addPage();
-  doc.setFont('Inter', 'normal');
-  doc.setFontSize(7);
-  doc.text(
-    'Opening and closing balances include full account history through each boundary date. Transfers affect balances but are excluded from income and expense totals.',
-    PAGE_MARGIN.left,
-    noteNeedsOwnPage ? PAGE_MARGIN.top : noteY,
-    { maxWidth: pageWidth - PAGE_MARGIN.left - PAGE_MARGIN.right }
-  );
 
   const pageCount = doc.getNumberOfPages();
   for (let page = 1; page <= pageCount; page++) {

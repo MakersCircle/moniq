@@ -153,6 +153,10 @@ describe('buildLedgerReport', () => {
     expect(report.expense).toBe(25);
     expect(report.transferTotal).toBe(10);
     expect(report.netIncome).toBe(-25);
+    expect(report.needsExpense).toBe(25);
+    expect(report.wantsExpense).toBe(0);
+    expect(report.investmentExpense).toBe(0);
+    expect(report.netSavingsTransfers).toBe(10);
   });
 
   it('combines subcategories under their category title in category-wise reports', () => {
@@ -186,11 +190,17 @@ describe('buildLedgerReport', () => {
     });
 
     expect(
-      report.accountBalances.map(balance => [balance.account, balance.opening, balance.closing])
+      report.accountBalances.map(balance => [
+        balance.account,
+        balance.opening,
+        balance.closing,
+        balance.incoming,
+        balance.outgoing,
+      ])
     ).toEqual([
-      ['Checking', 180, 145],
-      ['Savings', 50, 60],
-      ['Excluded', 500, 500],
+      ['Checking', 180, 145, 0, 35],
+      ['Savings', 50, 60, 10, 0],
+      ['Excluded', 500, 500, 0, 0],
     ]);
     expect(report.openingNetLiquidAssets).toBe(230);
     expect(report.closingNetLiquidAssets).toBe(205);
@@ -209,7 +219,12 @@ describe('buildLedgerReport', () => {
 
     expect(report.rows.map(row => row.transactionId)).toEqual(['transfer']);
     expect(report.accountBalances).toHaveLength(1);
-    expect(report.accountBalances[0]).toMatchObject({ opening: 50, closing: 60 });
+    expect(report.accountBalances[0]).toMatchObject({
+      opening: 50,
+      closing: 60,
+      incoming: 10,
+      outgoing: 0,
+    });
     expect(report.openingNetLiquidAssets).toBe(50);
     expect(report.closingNetLiquidAssets).toBe(60);
     expect(report.transferTotal).toBe(10);
