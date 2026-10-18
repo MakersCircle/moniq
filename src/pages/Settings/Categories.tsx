@@ -105,15 +105,18 @@ export default function Categories() {
 
   return (
     <SettingsLayout>
-      <div id="tour-target-categories-page" className="space-y-6">
-        <div className="sticky top-0 bg-background/95 backdrop-blur-md z-40 pb-4 pt-2 -mx-1 px-1">
+      <div
+        id="tour-target-categories-page"
+        className="space-y-6 [@media(max-height:500px)]:space-y-3"
+      >
+        <div className="sticky top-0 bg-background/95 backdrop-blur-md z-40 pb-4 pt-2 -mx-1 px-1 [@media(max-height:500px)]:pb-2 [@media(max-height:500px)]:pt-1">
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold tracking-tight">{t('common.categories')}</h2>
                 <InfoTooltip position="bottom" text={t('category.tooltip')} />
               </div>
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider [@media(max-height:500px)]:hidden">
                 {t('category.subtitle')}
               </p>
             </div>
@@ -123,7 +126,7 @@ export default function Categories() {
           </div>
         </div>
 
-        <div className="space-y-10">
+        <div className="space-y-10 [@media(max-height:500px)]:space-y-4">
           {Object.entries(grouped).map(([group, cats]) => (
             <CategoryGroupList
               key={group}
@@ -396,7 +399,7 @@ function CategoryReorderRow({
       )}
     >
       <Card className="border-none shadow-none bg-transparent">
-        <CardContent className="p-4 flex items-center justify-between gap-4">
+        <CardContent className="p-4 flex items-center justify-between gap-4 [@media(max-height:500px)]:p-2">
           <div className="flex items-center gap-3 min-w-0">
             <div
               className={cn(
@@ -428,8 +431,11 @@ function CategoryReorderRow({
               className={cn(
                 'flex items-center gap-1 mr-2',
                 isDragging
-                  ? cn('pointer-events-none opacity-100', !isDragged && 'md:opacity-0')
-                  : 'opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity'
+                  ? cn(
+                      'pointer-events-none opacity-100',
+                      !isDragged && '[@media(hover:hover)]:opacity-0'
+                    )
+                  : 'opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity'
               )}
             >
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onEdit}>

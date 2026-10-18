@@ -29,7 +29,8 @@ test('CATEGORY-06: only the handle reorders within its group', async ({ demoPage
     has: page.getByRole('heading', { name: 'Wants', exact: true }),
   });
   const alpha = needs.locator('li').filter({ hasText: 'Alpha' });
-  const charlie = needs.locator('li').filter({ hasText: 'Charlie' });
+  const bravo = needs.locator('li').filter({ hasText: 'Bravo' });
+  await alpha.evaluate(element => element.scrollIntoView({ block: 'center' }));
   const needsNames = () => needs.locator('li p.font-bold').allTextContents();
   const storeNeedsOrder = () =>
     page.evaluate(() => {
@@ -42,7 +43,7 @@ test('CATEGORY-06: only the handle reorders within its group', async ({ demoPage
   const originalOrder = await storeNeedsOrder();
 
   const rowBox = await alpha.boundingBox();
-  const targetBox = await charlie.boundingBox();
+  const targetBox = await bravo.boundingBox();
   expect(rowBox).not.toBeNull();
   expect(targetBox).not.toBeNull();
   await page.mouse.move(rowBox!.x + 65, rowBox!.y + rowBox!.height / 2);
@@ -52,16 +53,22 @@ test('CATEGORY-06: only the handle reorders within its group', async ({ demoPage
   expect((await needsNames()).indexOf('Alpha')).toBeLessThan((await needsNames()).indexOf('Bravo'));
 
   const handle = alpha.getByRole('button', { name: /Reorder Alpha within Needs/ });
+  await handle.evaluate(element => element.scrollIntoView({ block: 'center' }));
   const handleBox = await handle.boundingBox();
   const listBox = await needs.locator('ul').boundingBox();
+  const scrollerBox = await page.locator('[data-settings-scroll-container]').boundingBox();
   expect(handleBox).not.toBeNull();
   expect(listBox).not.toBeNull();
   const scrollPosition = await page
     .locator('[data-settings-scroll-container]')
     .evaluate(el => el.scrollTop);
+  const dragEndY = Math.min(
+    listBox!.y + listBox!.height + 90,
+    scrollerBox!.y + scrollerBox!.height - 2
+  );
   await page.mouse.move(handleBox!.x + handleBox!.width / 2, handleBox!.y + handleBox!.height / 2);
   await page.mouse.down();
-  await page.mouse.move(handleBox!.x + handleBox!.width / 2, listBox!.y + listBox!.height + 90, {
+  await page.mouse.move(handleBox!.x + handleBox!.width / 2, dragEndY, {
     steps: 18,
   });
 

@@ -455,7 +455,7 @@ export default function Transactions() {
         )}
       >
         {/* Sticky Header with Filters */}
-        <div className="sticky top-0 bg-background/80 backdrop-blur-md z-20 border-b border-border p-8 pb-4 space-y-6">
+        <div className="sticky top-0 bg-background/80 backdrop-blur-md z-20 border-b border-border p-8 pb-4 space-y-6 [@media(max-height:500px)]:p-3 [@media(max-height:500px)]:pb-2 [@media(max-height:500px)]:space-y-3">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">{t('ledger.title')}</h1>
@@ -558,7 +558,7 @@ export default function Transactions() {
         </div>
 
         {/* Results */}
-        <div className="flex-1 flex flex-col pt-4 min-h-0 px-4 md:px-8 pb-4 md:pb-8">
+        <div className="flex-1 flex flex-col pt-4 min-h-0 px-4 md:px-8 pb-4 md:pb-8 [@media(max-height:500px)]:pt-2 [@media(max-height:500px)]:pb-2">
           {txns.length === 0 ? (
             <div className="py-20 text-center border-2 border-dashed border-border rounded-2xl bg-accent/5">
               <p className="text-muted-foreground font-medium">

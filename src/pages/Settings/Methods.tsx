@@ -76,15 +76,15 @@ export default function Methods() {
 
   return (
     <SettingsLayout>
-      <div id="tour-target-methods-page" className="space-y-6">
-        <div className="sticky top-0 bg-background/95 backdrop-blur-md z-40 pb-4 pt-2 -mx-1 px-1">
+      <div id="tour-target-methods-page" className="space-y-6 [@media(max-height:500px)]:space-y-3">
+        <div className="sticky top-0 bg-background/95 backdrop-blur-md z-40 pb-4 pt-2 -mx-1 px-1 [@media(max-height:500px)]:pb-2 [@media(max-height:500px)]:pt-1">
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold tracking-tight">{t('method.title')}</h2>
                 <InfoTooltip position="bottom" text={t('method.tooltip')} />
               </div>
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider [@media(max-height:500px)]:hidden">
                 {t('method.activeMethods')} ({active.length})
               </p>
             </div>
@@ -368,7 +368,7 @@ function MethodReorderRow({
       )}
     >
       <Card className="border-none shadow-none bg-transparent">
-        <CardContent className="p-4">
+        <CardContent className="p-4 [@media(max-height:500px)]:p-2">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
               <div className="h-8 w-8 shrink-0 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
@@ -393,8 +393,11 @@ function MethodReorderRow({
                 className={cn(
                   'flex items-center gap-1 mr-2',
                   isDragging
-                    ? cn('pointer-events-none opacity-100', !isDragged && 'md:opacity-0')
-                    : 'opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity'
+                    ? cn(
+                        'pointer-events-none opacity-100',
+                        !isDragged && '[@media(hover:hover)]:opacity-0'
+                      )
+                    : 'opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity'
                 )}
               >
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onEdit}>
