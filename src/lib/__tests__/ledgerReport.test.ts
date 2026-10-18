@@ -137,7 +137,7 @@ describe('buildLedgerReport', () => {
       'transfer',
     ]);
     expect(report.categories.map(category => [category.group, category.label])).toEqual([
-      ['Needs', 'Food / Groceries'],
+      ['Needs', 'Food'],
     ]);
     expect(report.categories[0].rows.map(row => row.transactionId)).toEqual([
       'expense',
@@ -153,6 +153,29 @@ describe('buildLedgerReport', () => {
     expect(report.expense).toBe(25);
     expect(report.transferTotal).toBe(10);
     expect(report.netIncome).toBe(-25);
+  });
+
+  it('combines subcategories under their category title in category-wise reports', () => {
+    const diningCategory: Category = {
+      ...categories[1],
+      id: 'food-dining',
+      subHead: 'Dining',
+    };
+    const diningExpense = transaction('dining-expense', '2024-03-05', 'expense', 12, [
+      { accountId: 'food-dining', type: 'DEBIT', amount: 12 },
+      { accountId: 'checking', type: 'CREDIT', amount: 12 },
+    ]);
+    const report = buildLedgerReport(
+      [...transactions, diningExpense],
+      accounts,
+      [...categories, diningCategory],
+      { startDate: '2024-03-05', endDate: '2024-03-05', layout: 'category' }
+    );
+
+    const foodCategory = report.categories.find(category => category.label === 'Food');
+    expect(foodCategory?.rows.map(row => row.transactionId)).toContain('dining-expense');
+    expect(foodCategory?.expense).toBe(37);
+    expect(report.categories.filter(category => category.label === 'Food')).toHaveLength(1);
   });
 
   it('uses account history for period opening and closing balances and dashboard inclusion for NLA', () => {

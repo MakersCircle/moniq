@@ -117,9 +117,9 @@ function netLiquidAssetsAt(
 function formatCategory(category?: Category) {
   if (!category) return { id: 'uncategorized', group: '', label: 'Uncategorized' };
   return {
-    id: category.id,
+    id: `${category.group}:${category.head}`,
     group: category.group,
-    label: category.subHead ? `${category.head} / ${category.subHead}` : category.head,
+    label: category.head,
   };
 }
 

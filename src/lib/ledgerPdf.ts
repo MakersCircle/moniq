@@ -7,6 +7,7 @@ import { formatCurrency } from '@/utils/format';
 const PAGE_MARGIN = { top: 18, right: 12, bottom: 30, left: 12 };
 const FOOTER_RULE_Y = 281;
 const PDF_DATE_FORMAT = 'dd MMM yyyy';
+const TABLE_HEADER_FILL: [number, number, number] = [243, 235, 255];
 const logoUrl = `${import.meta.env.BASE_URL}moniq-wordmark-dark.svg`;
 
 function toBase64(bytes: Uint8Array) {
@@ -57,6 +58,59 @@ function transactionCells(row: LedgerReportRow, settings: UserSettings) {
   ];
 }
 
+interface FlexibleColumn {
+  index: number;
+  header: string;
+  values: string[];
+  minWidth: number;
+  maxWidth: number;
+  halign: 'center' | 'right';
+}
+
+function transactionColumnStyles(
+  doc: import('jspdf').jsPDF,
+  tableWidth: number,
+  noteIndex: number,
+  flexibleColumns: FlexibleColumn[]
+) {
+  const dateWidth = 20;
+  const noteMinWidth = 32;
+  const horizontalCellPadding = 4;
+  doc.setFont('Inter', 'normal');
+  doc.setFontSize(7.5);
+
+  const targets = flexibleColumns.map(column => {
+    const widestText = Math.max(
+      doc.getTextWidth(column.header),
+      ...column.values.map(value => doc.getTextWidth(value))
+    );
+    return Math.min(column.maxWidth, Math.max(column.minWidth, widestText + horizontalCellPadding));
+  });
+  const flexibleBudget = tableWidth - dateWidth - noteMinWidth;
+  const targetTotal = targets.reduce((total, width) => total + width, 0);
+  const minimumTotal = flexibleColumns.reduce((total, column) => total + column.minWidth, 0);
+  const shrinkRatio =
+    targetTotal > flexibleBudget
+      ? Math.min(1, (targetTotal - flexibleBudget) / (targetTotal - minimumTotal))
+      : 0;
+  const widths = targets.map((target, index) => {
+    const minimum = flexibleColumns[index].minWidth;
+    return target - (target - minimum) * shrinkRatio;
+  });
+
+  const styles: Record<number, { cellWidth: number; halign: 'left' | 'center' | 'right' }> = {
+    0: { cellWidth: dateWidth, halign: 'center' },
+  };
+  flexibleColumns.forEach((column, index) => {
+    styles[column.index] = { cellWidth: widths[index], halign: column.halign };
+  });
+  styles[noteIndex] = {
+    cellWidth: tableWidth - dateWidth - widths.reduce((total, width) => total + width, 0),
+    halign: 'left',
+  };
+  return styles;
+}
+
 /** Generates and downloads the selected ledger report as a locally generated PDF. */
 export async function downloadLedgerPdf(report: LedgerReport, settings: UserSettings) {
   const [{ jsPDF }, { default: autoTable }, fontResponse, logoDataUrl] = await Promise.all([
@@ -100,29 +154,26 @@ export async function downloadLedgerPdf(report: LedgerReport, settings: UserSett
 
   let startY = 40;
   const headers = ['Date', 'Account', 'Note', 'Income', 'Expense', 'Transfer'];
+  const tableWidth = pageWidth - PAGE_MARGIN.left - PAGE_MARGIN.right;
   const commonOptions = {
     theme: 'grid' as const,
+    tableWidth,
     margin: PAGE_MARGIN,
     styles: {
       font: 'Inter',
       fontSize: 7.5,
       cellPadding: 2,
       overflow: 'linebreak' as const,
-      valign: 'middle' as const,
+      valign: 'top' as const,
+      lineColor: [228, 228, 231] as [number, number, number],
+      lineWidth: 0.15,
     },
     headStyles: {
       font: 'Inter',
       fontStyle: 'normal' as const,
-      fillColor: [39, 39, 42] as [number, number, number],
-      textColor: 255,
-    },
-    columnStyles: {
-      0: { cellWidth: 20, halign: 'center' as const },
-      1: { cellWidth: 30 },
-      2: { cellWidth: 52 },
-      3: { cellWidth: 28, halign: 'right' as const },
-      4: { cellWidth: 28, halign: 'right' as const },
-      5: { cellWidth: 28, halign: 'right' as const },
+      fillColor: TABLE_HEADER_FILL,
+      textColor: [9, 9, 11] as [number, number, number],
+      valign: 'middle' as const,
     },
     showHead: 'everyPage' as const,
     rowPageBreak: 'avoid' as const,
@@ -134,6 +185,49 @@ export async function downloadLedgerPdf(report: LedgerReport, settings: UserSett
       startY,
       head: [headers],
       body: report.rows.map(row => transactionCells(row, settings)),
+      columnStyles: transactionColumnStyles(doc, tableWidth, 2, [
+        {
+          index: 1,
+          header: 'Account',
+          values: report.rows.map(row => row.account),
+          minWidth: 16,
+          maxWidth: 55,
+          halign: 'center',
+        },
+        {
+          index: 3,
+          header: 'Income',
+          values: [
+            ...report.rows.map(row => (row.income ? formatCurrency(row.income, settings) : '')),
+            formatCurrency(report.income, settings),
+          ],
+          minWidth: 16,
+          maxWidth: 30,
+          halign: 'right',
+        },
+        {
+          index: 4,
+          header: 'Expense',
+          values: [
+            ...report.rows.map(row => (row.expense ? formatCurrency(row.expense, settings) : '')),
+            formatCurrency(report.expense, settings),
+          ],
+          minWidth: 17,
+          maxWidth: 30,
+          halign: 'right',
+        },
+        {
+          index: 5,
+          header: 'Transfer',
+          values: [
+            ...report.rows.map(row => (row.transfer ? formatCurrency(row.transfer, settings) : '')),
+            formatCurrency(report.transferTotal, settings),
+          ],
+          minWidth: 18,
+          maxWidth: 30,
+          halign: 'center',
+        },
+      ]),
       foot: [
         [
           'Total',
@@ -144,7 +238,14 @@ export async function downloadLedgerPdf(report: LedgerReport, settings: UserSett
           formatCurrency(report.transferTotal, settings),
         ],
       ],
-      footStyles: { font: 'Inter', fontStyle: 'normal', fillColor: [39, 39, 42] },
+      footStyles: {
+        font: 'Inter',
+        fontStyle: 'normal',
+        fillColor: [244, 244, 245],
+        textColor: [9, 9, 11],
+        halign: 'right',
+        valign: 'middle',
+      },
     });
     startY =
       (doc as typeof doc & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? startY;
@@ -155,12 +256,9 @@ export async function downloadLedgerPdf(report: LedgerReport, settings: UserSett
         startY = PAGE_MARGIN.top;
       }
       doc.setFont('Inter', 'normal');
-      doc.setFontSize(11);
-      doc.text(
-        `${category.group ? `${category.group} · ` : ''}${category.label}`,
-        PAGE_MARGIN.left,
-        startY + 5
-      );
+      doc.setTextColor(9, 9, 11);
+      doc.setFontSize(13);
+      doc.text(category.label, PAGE_MARGIN.left, startY + 5);
       autoTable(doc, {
         ...commonOptions,
         startY: startY + 8,
@@ -168,21 +266,55 @@ export async function downloadLedgerPdf(report: LedgerReport, settings: UserSett
         body: category.rows.map(row => transactionCells(row, settings).slice(0, 5)),
         foot: [
           [
-            'Category total',
+            '',
             '',
             '',
             formatCurrency(category.income, settings),
             formatCurrency(category.expense, settings),
           ],
         ],
-        columnStyles: {
-          0: { cellWidth: 20, halign: 'center' },
-          1: { cellWidth: 32 },
-          2: { cellWidth: 63 },
-          3: { cellWidth: 35, halign: 'right' },
-          4: { cellWidth: 36, halign: 'right' },
+        columnStyles: transactionColumnStyles(doc, tableWidth, 2, [
+          {
+            index: 1,
+            header: 'Account',
+            values: category.rows.map(row => row.account),
+            minWidth: 16,
+            maxWidth: 55,
+            halign: 'center',
+          },
+          {
+            index: 3,
+            header: 'Income',
+            values: [
+              ...category.rows.map(row => (row.income ? formatCurrency(row.income, settings) : '')),
+              formatCurrency(category.income, settings),
+            ],
+            minWidth: 16,
+            maxWidth: 30,
+            halign: 'right',
+          },
+          {
+            index: 4,
+            header: 'Expense',
+            values: [
+              ...category.rows.map(row =>
+                row.expense ? formatCurrency(row.expense, settings) : ''
+              ),
+              formatCurrency(category.expense, settings),
+            ],
+            minWidth: 17,
+            maxWidth: 30,
+            halign: 'right',
+          },
+        ]),
+        footStyles: {
+          font: 'Inter',
+          fontStyle: 'normal',
+          fillColor: [244, 244, 245],
+          textColor: [9, 9, 11],
+          halign: 'right',
+          valign: 'middle',
         },
-        footStyles: { font: 'Inter', fontStyle: 'normal', fillColor: [39, 39, 42] },
       });
       startY =
         (doc as typeof doc & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ??
@@ -210,12 +342,42 @@ export async function downloadLedgerPdf(report: LedgerReport, settings: UserSett
           formatCurrency(transfer.transfer, settings),
         ]),
         foot: [['Transfer total', '', '', '', formatCurrency(report.transferTotal, settings)]],
-        columnStyles: {
-          0: { cellWidth: 20, halign: 'center' },
-          1: { cellWidth: 30 },
-          2: { cellWidth: 30 },
-          3: { cellWidth: 77 },
-          4: { cellWidth: 29, halign: 'right' },
+        columnStyles: transactionColumnStyles(doc, tableWidth, 3, [
+          {
+            index: 1,
+            header: 'From account',
+            values: report.transfers.map(transfer => transfer.fromAccount),
+            minWidth: 24,
+            maxWidth: 55,
+            halign: 'center',
+          },
+          {
+            index: 2,
+            header: 'To account',
+            values: report.transfers.map(transfer => transfer.toAccount),
+            minWidth: 22,
+            maxWidth: 55,
+            halign: 'center',
+          },
+          {
+            index: 4,
+            header: 'Amount',
+            values: [
+              ...report.transfers.map(transfer => formatCurrency(transfer.transfer, settings)),
+              formatCurrency(report.transferTotal, settings),
+            ],
+            minWidth: 18,
+            maxWidth: 30,
+            halign: 'center',
+          },
+        ]),
+        footStyles: {
+          font: 'Inter',
+          fontStyle: 'normal',
+          fillColor: [244, 244, 245],
+          textColor: [9, 9, 11],
+          halign: 'right',
+          valign: 'middle',
         },
       });
       startY =
