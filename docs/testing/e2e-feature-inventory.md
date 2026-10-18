@@ -78,7 +78,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | LEDGER-02 | The Ledger lists transactions newest date first, grouped by date, with type-specific amount styling and a displayed net for the current result set. | Code, 0.9.5 |
 | LEDGER-03 | Search filters transactions by description; month, type, and account filters can be combined and cleared. | Code |
 | LEDGER-04 | A filter with no matches shows an empty-results state while other transactions still exist. | Code |
-| LEDGER-05 | Export CSV downloads the currently filtered transactions. | 0.1.1, Code |
+| LEDGER-05 | Export a PDF using radio-selected date range and report type, an independent account dropdown, and transaction-style custom date inputs that appear only for a custom range. | Unreleased |
 | LEDGER-06 | Selecting a row opens its details with date, amount, source account, category or destination account, and note. | Code |
 | LEDGER-07 | Edit from the detail panel changes a transaction in place and updates the ledger and balances. | 0.9.6 |
 | LEDGER-08 | Delete from the detail panel removes the transaction from active views and places it in Recently Deleted. | 0.3.0 |

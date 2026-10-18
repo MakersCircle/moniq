@@ -36,11 +36,12 @@ test('METHOD-03: only the handle reorders payment methods and saves on drop', as
   await expect(list.locator('li')).toHaveCount(4);
   const names = () => list.locator('li p.font-bold.text-sm').allTextContents();
   const alpha = list.locator('li').filter({ hasText: 'Method Alpha' });
-  const charlie = list.locator('li').filter({ hasText: 'Method Charlie' });
+  const bravo = list.locator('li').filter({ hasText: 'Method Bravo' });
+  await alpha.evaluate(element => element.scrollIntoView({ block: 'center' }));
   const originalOrder = await names();
 
   const rowBox = await alpha.boundingBox();
-  const targetBox = await charlie.boundingBox();
+  const targetBox = await bravo.boundingBox();
   expect(rowBox).not.toBeNull();
   expect(targetBox).not.toBeNull();
   await page.mouse.move(rowBox!.x + 80, rowBox!.y + rowBox!.height / 2);
@@ -52,13 +53,18 @@ test('METHOD-03: only the handle reorders payment methods and saves on drop', as
   const handle = alpha.getByRole('button', {
     name: 'Reorder Method Alpha. Drag or use arrow keys.',
   });
+  await handle.evaluate(element => element.scrollIntoView({ block: 'center' }));
   const handleBox = await handle.boundingBox();
   expect(handleBox).not.toBeNull();
+  const targetAfterScroll = await bravo.boundingBox();
+  expect(targetAfterScroll).not.toBeNull();
   await page.mouse.move(handleBox!.x + handleBox!.width / 2, handleBox!.y + handleBox!.height / 2);
   await page.mouse.down();
-  await page.mouse.move(targetBox!.x + targetBox!.width / 2, targetBox!.y + targetBox!.height / 2, {
-    steps: 12,
-  });
+  await page.mouse.move(
+    targetAfterScroll!.x + targetAfterScroll!.width / 2,
+    targetAfterScroll!.y + targetAfterScroll!.height / 2,
+    { steps: 12 }
+  );
   await expect.poll(names).not.toEqual(originalOrder);
 
   const previewOrder = await names();

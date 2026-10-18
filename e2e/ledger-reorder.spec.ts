@@ -125,12 +125,13 @@ test('LEDGER-09: the handle reorders transactions only within their date and sav
   await expect(page).toHaveURL(/\/transactions$/);
   const reloadedGroup = dayGroup(page);
   const reloadedAlpha = reloadedGroup.locator('.cursor-pointer').filter({ hasText: 'Ledger A' });
-  const reloadedCharlie = reloadedGroup.locator('.cursor-pointer').filter({ hasText: 'Ledger C' });
+  const reloadedBravo = reloadedGroup.locator('.cursor-pointer').filter({ hasText: 'Ledger B' });
   const handle = reloadedAlpha.getByRole('button', {
     name: 'Reorder Ledger A within this date. Drag or use arrow keys.',
   });
+  await handle.evaluate(element => element.scrollIntoView({ block: 'center' }));
   const handleBox = await handle.boundingBox();
-  const targetAfterReload = await reloadedCharlie.boundingBox();
+  const targetAfterReload = await reloadedBravo.boundingBox();
   const groupBox = await reloadedGroup.boundingBox();
   expect(handleBox).not.toBeNull();
   expect(targetAfterReload).not.toBeNull();

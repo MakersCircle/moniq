@@ -9,7 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.11.0] - 2026-10-18
+
 ### Added
+- **Ledger PDF Reports**: Replaced CSV export with a local PDF report dialog offering date-range and account filters, full-list or category-wise tables with larger category-only titles that combine subcategories, a separate Transfers table, light-accent UI summary cards for income, expenses, net income, Wants, Needs, Investments, savings transfers, and opening/closing Net Liquid Assets, plus per-account opening/closing balances and inflow/outflow totals (including transfers) under a separate divider. The dialog uses radio choices for report type and date range, keeps account selection in a dropdown, and reveals the shared transaction date picker only for a custom range. Account names are left aligned and account balance headings and amounts are right aligned. Tables use fixed widths, content-sized centered account columns, right-aligned amount columns, left-aligned wrapping notes, and light accent-tinted headers. Reports use the app’s Inter font, a branded header with a 24 pt dark report title and `dd MMM yyyy` dates plus a 24-hour generated timestamp, and a compact footer row with a thin divider, aligned page counts, a centered website link, and the Moniq logo.
 - **Regression Tests**: Added a tracked feature-to-test matrix, pure transaction logic tests, and Chromium browser coverage for demo mode, navigation, transactions, and Google sign-in and mobile redirect initialization across desktop and mobile viewports.
 - **Returning-User Coverage**: Added browser checks that local records rehydrate and remote Sheets changes reconcile before the signed-in dashboard opens.
 - **Cloud Connection Error Coverage**: Added desktop and mobile browser checks for failed Sheets initialization, Retry Connection recovery, and Sign Out from the error screen.
@@ -23,8 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Drag Reordering**: Made Payment Methods and Ledger transactions draggable only from their six-dot handles. Reordering previews locally and persists on drop; memoized Ledger row content to avoid recalculating transaction details on each position change; kept mobile Ledger handles visible without hover; and bounded phone scrolling to the method list or transaction date group.
-- **Category Reordering**: Restricted dragging to the six-dot handle and to the current category group, kept phone drag scrolling within that group, stabilized row actions during dragging, and saved the new order once on drop. Limited drag previews to the active group and removed animated shadow/background paints to improve responsiveness. Added desktop and phone browser coverage.
+- **Category Reordering**: Restricted dragging to the six-dot handle and to the current category group, kept touch drag scrolling within that group, kept row actions visible on touch viewports regardless of width, stabilized row actions during dragging, and saved the new order once on drop. Limited drag previews to the active group and removed animated shadow/background paints to improve responsiveness. Added desktop, tablet, and phone browser coverage.
 - **Mobile Scrolling**: Sized the shared app shell to the visible viewport and its page area around status banners, removing the extra blank scroll range across navigation tabs and Settings while preserving Dashboard, Ledger, and Settings content scrolling.
+- **Short Landscape Layout**: Reduced shell, Settings, and Ledger spacing at short viewport heights so scrollable rows and their drag handles remain visible and usable in landscape.
 - **Mobile Sign-In**: Removed duplicate OAuth redirect handling from the landing page so one callback stores the token and navigates once. Popup, redirect, and silent-refresh token expiry use the same validated calculation and are covered by pure unit tests.
 - **Mobile Sign-In Startup**: Prevented duplicate IndexedDB hydration in React Strict Mode from overwriting a redirect token before cloud initialization.
 - **Signed-In Reload**: Kept the app behind the cloud initialization screen until reconciliation succeeds, including after a previously synced session reloads.

@@ -61,7 +61,7 @@ export default function LayoutShell({ children, onNewTransaction }: LayoutShellP
         >
           {isDemoMode && <DemoBanner />}
           {isSessionExpired && <SessionExpiredBanner />}
-          <div className="relative flex-1 min-h-0 p-4 md:p-8 max-w-[1248px] mx-auto flex flex-col w-full">
+          <div className="relative flex-1 min-h-0 p-4 md:p-8 [@media(max-height:500px)]:p-3 max-w-[1248px] mx-auto flex flex-col w-full">
             {children}
           </div>
         </main>
