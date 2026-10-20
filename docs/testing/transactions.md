@@ -190,10 +190,10 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 | C-79 | Populated ledger table | Renders transactions newest date first in date groups; each row shows date, note, category or destination, account, and type-colored amount |
 | C-80 | Net total calculation | Header "Net" value sums `+amount` for income and `-amount` for expense rows in the currently filtered set, ignoring transfers |
 | C-81 | Search filter | Typing in the search box updates `filter.search`; only transactions whose `note` contains the (case-insensitive) query remain |
-| C-82 | Month filter | Selecting a month option sets `filter.month` to a `YYYY-MM` key; "All Time" clears it back to `undefined` |
+| C-82 | Date column day, week, month, year, and custom filters | Day mode allows multiple selected dates; Week mode toggles multiple Sunday-to-Saturday weeks; Month mode navigates by year and toggles months; Year mode navigates by decade and toggles years; Custom mode filters inclusively between From and To dates after both are set and reports a reversed range. All filters can be cleared |
 | C-83 | Type filter | Selecting "Income"/"Expense"/"Transfer" sets `filter.uiType`; "All Types" clears it |
 | C-84 | Account filter | Selecting an account sets `filter.accountId`; deleted accounts are excluded from the dropdown options |
-| C-85 | No results after filtering | Shows "No transactions found matching your filters." instead of rows when `groupedByDate.length === 0` |
+| C-85 | No results after filtering | Shows "No transactions found matching your filters." inside the table body while retaining the column headings when `groupedByDate.length === 0` |
 | C-86 | Row click selects a transaction | Clicking a row sets `selectedTxnId`; clicking the same row again toggles it back to `null` |
 | C-87 | Row click while another row is selected | Table area gains `md:pr-[400px]` padding to make room for the detail panel |
 | C-91 | Export PDF button | Opens export options independent of Ledger filters; date range and account selections determine the report |
@@ -238,8 +238,8 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 | ID | Scenario | Expected Outcome |
 |---|---|---|
 | E-25 | Transactions grouped by date | Transactions are grouped by date for ordering and drag reorder; rows show their own dates, newest date first |
-| E-26 | Combined filters (month + type + account) | Only transactions satisfying all active filters simultaneously are shown; Net total in the header recalculates to match the filtered subset |
-| E-27 | Clearing filters back to defaults | Selecting "All Time"/"All Types"/"All Accounts" and clearing search restores the full unfiltered ledger |
+| E-26 | Combined filters (selected dates, weeks, months, years, or custom range + type + account) | Only transactions matching a selected date, full week, selected month, selected year, or inclusive custom range and satisfying each other active filter are shown; Net total in the header recalculates to match the filtered subset |
+| E-27 | Clearing filters back to defaults | Clearing selected dates, selecting "All Types"/"All Accounts", and clearing search restores the full unfiltered ledger |
 | E-28 | Opening detail panel on desktop viewport | Panel slides in from the right (`md:w-[400px]`); table area shifts left (`md:pr-[400px]`) so no row is obscured |
 | E-29 | Switching selected row while panel is open | Detail panel content updates to the newly clicked transaction without a full page reload |
 | E-35 | Try dragging a transaction row away from its six-dot handle, then reorder from the handle ([`e2e/ledger-reorder.spec.ts`](../../e2e/ledger-reorder.spec.ts)) | Only the handle starts a drag; order changes within the same date and persists after drop/reload; phone scrolling stays within the dragged date group |

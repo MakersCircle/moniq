@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Ledger Date Filtering**: Added a larger calendar panel beside the Date column with Day, Week, Month, Year, and Custom period choices. The active period uses a sliding indicator. Day filtering supports selecting multiple individual dates; Week supports selecting multiple Sunday-to-Saturday weeks by clicking any date in each week, and highlights the full row on hover with a consistent selection color; Month navigates by year and supports selecting multiple months; Year navigates by decade and supports selecting multiple years; Custom filters inclusively between From and To dates after both are set. Dots mark dates, months, and years with transactions. Type and Account filters and description search remain available.
+
+### Fixed
+- **Ledger Empty Filter Results**: Keep the Ledger table and its column headings visible when active filters produce no transactions, with the empty-results message shown in the table body.
+- **Custom Date Picker Placement**: Keep the custom From and To calendars at a stable height across months so navigating to a month with an additional week does not move the calendar popover.
+- **Custom Date Range Preview**: Preview the inclusive range while hovering in either custom date calendar, show the chosen endpoints in both calendars, and accept dates in either chronological order.
+- **Custom Date Range Entry**: When neither endpoint is set, allow selecting both dates in sequence from either open calendar, keeping it open after the first selection.
+- **Date Filter Calendar Spacing**: Use consistent spacing between highlighted adjacent dates in Day, Week, and Custom calendars.
+
 ---
 
 ## [0.11.0] - 2026-10-18

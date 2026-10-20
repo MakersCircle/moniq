@@ -1,15 +1,27 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Download, Search, ChevronRight, List, GripVertical } from 'lucide-react';
-import { Reorder, useDragControls } from 'framer-motion';
+import { addDays, format, startOfWeek } from 'date-fns';
+import {
+  Download,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  List,
+  GripVertical,
+  ListFilter,
+} from 'lucide-react';
+import { motion, Reorder, useDragControls } from 'framer-motion';
 import { useDataStore } from '../store/dataStore';
 import { useFilteredTransactions } from '../hooks/useComputed';
-import { toMonthKey, formatCurrency } from '../utils/format';
+import { formatCurrency } from '../utils/format';
 import type { TxnFilter } from '../hooks/useComputed';
 import type { Transaction, Account, Category, UserSettings } from '../types';
 import { useTranslation } from '@/hooks/useTranslation';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { DatePicker } from '@/components/Transactions/DatePicker';
 import {
   Select,
   SelectContent,
@@ -400,6 +412,8 @@ export default function Transactions() {
   const { t } = useTranslation();
 
   const [filter, setFilter] = useState<TxnFilter>({});
+  const [datePeriod, setDatePeriod] = useState<'day' | 'week' | 'month' | 'year' | 'custom'>('day');
+  const [dateCalendarMonth, setDateCalendarMonth] = useState(new Date());
   const [selectedTxnId, setSelectedTxnId] = useState<string | null>(null);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
@@ -408,6 +422,53 @@ export default function Transactions() {
   const selectedTxn = transactions.find(t => t.id === selectedTxnId) || null;
 
   const updateFilter = (patch: Partial<TxnFilter>) => setFilter(f => ({ ...f, ...patch }));
+  const hasCustomRangeValues = Boolean(filter.dateFrom || filter.dateTo);
+  const hasCompleteCustomRange = Boolean(filter.dateFrom && filter.dateTo);
+  const customRangeStart =
+    filter.dateFrom && filter.dateTo
+      ? filter.dateFrom < filter.dateTo
+        ? filter.dateFrom
+        : filter.dateTo
+      : filter.dateFrom || filter.dateTo;
+  const customRangeEnd =
+    filter.dateFrom && filter.dateTo
+      ? filter.dateFrom > filter.dateTo
+        ? filter.dateFrom
+        : filter.dateTo
+      : undefined;
+
+  const selectedFilterDates = (filter.dates || []).map(dateKey => {
+    const [year, month, day] = dateKey.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  });
+  const datesWithTransactions = useMemo(
+    () =>
+      transactions
+        .filter(transaction => !transaction.isDeleted)
+        .map(transaction => {
+          const [year, month, day] = transaction.date.split('-').map(Number);
+          return new Date(year, month - 1, day);
+        }),
+    [transactions]
+  );
+  const monthsWithTransactions = useMemo(
+    () =>
+      new Set(
+        transactions
+          .filter(transaction => !transaction.isDeleted)
+          .map(transaction => transaction.date.slice(0, 7))
+      ),
+    [transactions]
+  );
+  const yearsWithTransactions = useMemo(
+    () =>
+      new Set(
+        transactions
+          .filter(transaction => !transaction.isDeleted)
+          .map(transaction => transaction.date.slice(0, 4))
+      ),
+    [transactions]
+  );
 
   // Group txns by date (already sorted date-desc → sortOrder-asc)
   const groupedByDate = useMemo(() => {
@@ -498,28 +559,6 @@ export default function Transactions() {
             </div>
 
             <Select
-              value={filter.month || 'all'}
-              onValueChange={val => updateFilter({ month: val === 'all' ? undefined : val })}
-            >
-              <SelectTrigger className="h-9 w-[160px] text-xs">
-                <SelectValue placeholder={t('ledger.allTime')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('ledger.allTime')}</SelectItem>
-                {Array.from({ length: 12 }).map((_, i) => {
-                  const d = new Date();
-                  d.setMonth(d.getMonth() - i);
-                  const key = toMonthKey(d);
-                  return (
-                    <SelectItem key={key} value={key}>
-                      {d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-
-            <Select
               value={filter.uiType || 'all'}
               onValueChange={val =>
                 updateFilter({ uiType: val === 'all' ? undefined : (val as Transaction['uiType']) })
@@ -559,48 +598,439 @@ export default function Transactions() {
 
         {/* Results */}
         <div className="flex-1 flex flex-col pt-4 min-h-0 px-4 md:px-8 pb-4 md:pb-8 [@media(max-height:500px)]:pt-2 [@media(max-height:500px)]:pb-2">
-          {txns.length === 0 ? (
-            <div className="py-20 text-center border-2 border-dashed border-border rounded-2xl bg-accent/5">
-              <p className="text-muted-foreground font-medium">
-                {t('ledger.noFilteredTransactions')}
-              </p>
-            </div>
-          ) : (
-            <div className="flex-1 rounded-xl border border-border bg-card shadow-sm w-full overflow-hidden flex flex-col min-h-0 relative">
-              <div className="w-full h-full overflow-x-auto flex flex-col custom-scrollbar">
-                <div className="w-full md:min-w-[800px] flex flex-col h-full">
-                  {/* ── Sticky Column Header ── */}
-                  <div
-                    className="w-full overflow-y-scroll custom-scrollbar bg-accent/50 backdrop-blur-md shadow-sm border-b border-border z-10 sticky top-0"
-                    style={{ scrollbarGutter: 'stable' }}
-                  >
-                    <div className="pl-[6px] flex items-center text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
-                      <div className="w-5 md:w-6 shrink-0" />
-                      {/* Drag handle spacer */}
-                      <div className="pr-3 md:pr-5 py-3 shrink-0 w-[60px] md:w-[96px]">
-                        {t('common.date')}
-                      </div>
-                      <div className="px-3 md:px-5 py-3 flex-1 min-w-0">
-                        {t('common.description')}
-                      </div>
-                      <div className="hidden md:block px-3 md:px-5 py-3 shrink-0 w-[160px]">
-                        {t('common.categories')}
-                      </div>
-                      <div className="hidden md:block px-3 md:px-5 py-3 shrink-0 w-[140px]">
-                        {t('common.accounts')}
-                      </div>
-                      <div className="px-3 md:px-5 py-3 text-right shrink-0 w-[110px] md:w-[140px]">
-                        {t('common.amount')}
-                      </div>
+          <div className="flex-1 rounded-xl border border-border bg-card shadow-sm w-full overflow-hidden flex flex-col min-h-0 relative">
+            <div className="w-full h-full overflow-x-auto flex flex-col custom-scrollbar">
+              <div className="w-full md:min-w-[800px] flex flex-col h-full">
+                {/* ── Sticky Column Header ── */}
+                <div
+                  className="w-full overflow-y-scroll custom-scrollbar bg-accent/50 backdrop-blur-md shadow-sm border-b border-border z-10 sticky top-0"
+                  style={{ scrollbarGutter: 'stable' }}
+                >
+                  <div className="pl-[6px] flex items-center text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
+                    <div className="w-5 md:w-6 shrink-0" />
+                    {/* Drag handle spacer */}
+                    <div className="pr-1 md:pr-5 py-3 shrink-0 w-[60px] md:w-[96px] flex items-center gap-0.5">
+                      {t('common.date')}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={
+                              filter.dates?.length ||
+                              filter.months?.length ||
+                              filter.years?.length ||
+                              hasCustomRangeValues
+                                ? 'secondary'
+                                : 'ghost'
+                            }
+                            size="icon-xs"
+                            aria-label={t('ledger.filterByDate')}
+                            title={t('ledger.filterByDate')}
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          >
+                            <ListFilter className="h-3 w-3" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          align="start"
+                          side="bottom"
+                          className="w-[min(22rem,calc(100vw-2rem))] p-0 overflow-hidden"
+                        >
+                          <div className="border-b border-border px-3 pt-3 pb-3">
+                            <div className="grid grid-cols-5 gap-1">
+                              {(['day', 'week', 'month', 'year', 'custom'] as const).map(period => (
+                                <Button
+                                  key={period}
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={
+                                    period !== 'day' &&
+                                    period !== 'week' &&
+                                    period !== 'month' &&
+                                    period !== 'year' &&
+                                    period !== 'custom'
+                                  }
+                                  className={cn(
+                                    'relative h-8 px-1 text-xs capitalize transition-colors duration-200',
+                                    period === datePeriod && 'text-foreground',
+                                    period !== datePeriod &&
+                                      (period === 'day' ||
+                                        period === 'week' ||
+                                        period === 'month' ||
+                                        period === 'year' ||
+                                        period === 'custom') &&
+                                      'hover:bg-primary/15 hover:text-primary'
+                                  )}
+                                  onClick={() => {
+                                    if (
+                                      period === 'day' ||
+                                      period === 'week' ||
+                                      period === 'month' ||
+                                      period === 'year' ||
+                                      period === 'custom'
+                                    ) {
+                                      setDatePeriod(period);
+                                      updateFilter({
+                                        dates: undefined,
+                                        months: undefined,
+                                        years: undefined,
+                                        dateFrom: undefined,
+                                        dateTo: undefined,
+                                      });
+                                    }
+                                  }}
+                                >
+                                  {period === datePeriod && (
+                                    <motion.span
+                                      layoutId="ledger-date-period-indicator"
+                                      className="absolute inset-0 rounded-md bg-secondary"
+                                      transition={{ type: 'spring', stiffness: 480, damping: 34 }}
+                                    />
+                                  )}
+                                  <span className="relative z-10">
+                                    {t(`ledger.datePeriod.${period}`)}
+                                  </span>
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="p-3">
+                            {datePeriod === 'custom' ? (
+                              <div className="space-y-4 px-3 pb-3">
+                                <label className="block space-y-1.5 text-xs font-medium">
+                                  <span>{t('ledger.fromDate')}</span>
+                                  <DatePicker
+                                    date={filter.dateFrom || ''}
+                                    onChange={date => updateFilter({ dateFrom: date })}
+                                    fixedWeeks
+                                    rangeAnchor={filter.dateTo}
+                                    rangeStart={customRangeStart}
+                                    rangeEnd={customRangeEnd}
+                                    rangeSelectionRole="from"
+                                    onCompleteRange={(firstDate, secondDate) =>
+                                      updateFilter({ dateFrom: firstDate, dateTo: secondDate })
+                                    }
+                                  />
+                                </label>
+                                <label className="block space-y-1.5 text-xs font-medium">
+                                  <span>{t('ledger.toDate')}</span>
+                                  <DatePicker
+                                    date={filter.dateTo || ''}
+                                    onChange={date => updateFilter({ dateTo: date })}
+                                    fixedWeeks
+                                    rangeAnchor={filter.dateFrom}
+                                    rangeStart={customRangeStart}
+                                    rangeEnd={customRangeEnd}
+                                    rangeSelectionRole="to"
+                                    onCompleteRange={(firstDate, secondDate) =>
+                                      updateFilter({ dateTo: firstDate, dateFrom: secondDate })
+                                    }
+                                  />
+                                </label>
+                              </div>
+                            ) : datePeriod === 'year' ? (
+                              <div className="space-y-3 px-3 pb-3">
+                                <div className="flex items-center justify-between">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    aria-label={t('ledger.previousDecade')}
+                                    onClick={() =>
+                                      setDateCalendarMonth(
+                                        current =>
+                                          new Date(
+                                            current.getFullYear() - 10,
+                                            current.getMonth(),
+                                            1
+                                          )
+                                      )
+                                    }
+                                  >
+                                    <ChevronLeft className="h-4 w-4" />
+                                  </Button>
+                                  <span className="text-sm font-medium">
+                                    {Math.floor(dateCalendarMonth.getFullYear() / 10) * 10}–
+                                    {Math.floor(dateCalendarMonth.getFullYear() / 10) * 10 + 9}
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    aria-label={t('ledger.nextDecade')}
+                                    onClick={() =>
+                                      setDateCalendarMonth(
+                                        current =>
+                                          new Date(
+                                            current.getFullYear() + 10,
+                                            current.getMonth(),
+                                            1
+                                          )
+                                      )
+                                    }
+                                  >
+                                    <ChevronRight className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                <div className="grid grid-cols-5 gap-2">
+                                  {Array.from({ length: 10 }, (_, yearIndex) => {
+                                    const decadeStart =
+                                      Math.floor(dateCalendarMonth.getFullYear() / 10) * 10;
+                                    const year = String(decadeStart + yearIndex);
+                                    const isSelected = filter.years?.includes(year) || false;
+                                    const hasTransactions = yearsWithTransactions.has(year);
+                                    return (
+                                      <Button
+                                        key={year}
+                                        type="button"
+                                        variant="ghost"
+                                        aria-pressed={isSelected}
+                                        className={cn(
+                                          'relative h-12 justify-center gap-1 transition-colors',
+                                          isSelected
+                                            ? 'bg-primary/25 text-foreground hover:bg-primary/30'
+                                            : 'hover:bg-primary/10 hover:text-primary'
+                                        )}
+                                        onClick={() => {
+                                          const selectedYears = new Set(filter.years || []);
+                                          if (isSelected) selectedYears.delete(year);
+                                          else selectedYears.add(year);
+                                          updateFilter({
+                                            years: selectedYears.size
+                                              ? [...selectedYears].sort()
+                                              : undefined,
+                                          });
+                                        }}
+                                      >
+                                        {year}
+                                        {hasTransactions && (
+                                          <span
+                                            aria-hidden="true"
+                                            className="h-1 w-1 rounded-full bg-primary"
+                                          />
+                                        )}
+                                      </Button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ) : datePeriod === 'month' ? (
+                              <div className="space-y-3 px-3 pb-3">
+                                <div className="flex items-center justify-between">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    aria-label={t('ledger.previousYear')}
+                                    onClick={() =>
+                                      setDateCalendarMonth(
+                                        current =>
+                                          new Date(current.getFullYear() - 1, current.getMonth(), 1)
+                                      )
+                                    }
+                                  >
+                                    <ChevronLeft className="h-4 w-4" />
+                                  </Button>
+                                  <span className="text-sm font-medium">
+                                    {dateCalendarMonth.getFullYear()}
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    aria-label={t('ledger.nextYear')}
+                                    onClick={() =>
+                                      setDateCalendarMonth(
+                                        current =>
+                                          new Date(current.getFullYear() + 1, current.getMonth(), 1)
+                                      )
+                                    }
+                                  >
+                                    <ChevronRight className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {Array.from({ length: 12 }, (_, monthIndex) => {
+                                    const monthDate = new Date(
+                                      dateCalendarMonth.getFullYear(),
+                                      monthIndex,
+                                      1
+                                    );
+                                    const monthKey = format(monthDate, 'yyyy-MM');
+                                    const isSelected = filter.months?.includes(monthKey) || false;
+                                    const hasTransactions = monthsWithTransactions.has(monthKey);
+                                    return (
+                                      <Button
+                                        key={monthKey}
+                                        type="button"
+                                        variant="ghost"
+                                        aria-pressed={isSelected}
+                                        className={cn(
+                                          'relative h-12 justify-center gap-1 transition-colors',
+                                          isSelected
+                                            ? 'bg-primary/25 text-foreground hover:bg-primary/30'
+                                            : 'hover:bg-primary/10 hover:text-primary'
+                                        )}
+                                        onClick={() => {
+                                          const selectedMonths = new Set(filter.months || []);
+                                          if (isSelected) selectedMonths.delete(monthKey);
+                                          else selectedMonths.add(monthKey);
+                                          updateFilter({
+                                            months: selectedMonths.size
+                                              ? [...selectedMonths].sort()
+                                              : undefined,
+                                          });
+                                        }}
+                                      >
+                                        {monthDate.toLocaleDateString('en-IN', { month: 'long' })}
+                                        {hasTransactions && (
+                                          <span
+                                            aria-hidden="true"
+                                            className="h-1 w-1 rounded-full bg-primary"
+                                          />
+                                        )}
+                                      </Button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ) : datePeriod === 'day' ? (
+                              <Calendar
+                                mode="multiple"
+                                navLayout="around"
+                                className="p-0"
+                                selected={selectedFilterDates}
+                                modifiers={{ hasTransaction: datesWithTransactions }}
+                                month={dateCalendarMonth}
+                                onMonthChange={setDateCalendarMonth}
+                                onSelect={dates =>
+                                  updateFilter({
+                                    dates: dates?.length
+                                      ? dates.map(date => format(date, 'yyyy-MM-dd'))
+                                      : undefined,
+                                  })
+                                }
+                              />
+                            ) : (
+                              <Calendar
+                                mode="single"
+                                navLayout="around"
+                                className="p-0"
+                                classNames={{
+                                  week: cn(
+                                    'flex w-full mt-2 justify-between gap-1',
+                                    datePeriod === 'week' && 'group/week'
+                                  ),
+                                }}
+                                required
+                                selected={selectedFilterDates[0]}
+                                modifiers={{
+                                  hasTransaction: datesWithTransactions,
+                                  selectedWeek: selectedFilterDates,
+                                  weekMode: true,
+                                }}
+                                month={dateCalendarMonth}
+                                onMonthChange={setDateCalendarMonth}
+                                onSelect={date => {
+                                  if (!date) {
+                                    return;
+                                  }
+                                  const weekStart = startOfWeek(date, { weekStartsOn: 0 });
+                                  const weekDates = Array.from({ length: 7 }, (_, dayIndex) =>
+                                    format(addDays(weekStart, dayIndex), 'yyyy-MM-dd')
+                                  );
+                                  const selectedDates = new Set(filter.dates || []);
+                                  if (weekDates.every(weekDate => selectedDates.has(weekDate))) {
+                                    weekDates.forEach(weekDate => selectedDates.delete(weekDate));
+                                  } else {
+                                    weekDates.forEach(weekDate => selectedDates.add(weekDate));
+                                  }
+                                  updateFilter({
+                                    dates: selectedDates.size
+                                      ? [...selectedDates].sort()
+                                      : undefined,
+                                  });
+                                }}
+                              />
+                            )}
+                          </div>
+                          {filter.dates?.length ||
+                          filter.months?.length ||
+                          filter.years?.length ||
+                          hasCustomRangeValues ? (
+                            <div className="flex items-center justify-between border-t border-border px-4 py-3">
+                              <span className="text-xs text-muted-foreground">
+                                {datePeriod === 'custom'
+                                  ? hasCompleteCustomRange
+                                    ? t('ledger.customRangeSelected')
+                                    : t('ledger.customRangeIncomplete')
+                                  : datePeriod === 'year'
+                                    ? t('ledger.selectedYearCount', {
+                                        count: filter.years?.length || 0,
+                                      })
+                                    : datePeriod === 'month'
+                                      ? t('ledger.selectedMonthCount', {
+                                          count: filter.months?.length || 0,
+                                        })
+                                      : datePeriod === 'week'
+                                        ? t('ledger.selectedWeekCount', {
+                                            count: Math.floor((filter.dates?.length || 0) / 7),
+                                          })
+                                        : t('ledger.selectedDateCount', {
+                                            count: filter.dates?.length || 0,
+                                          })}
+                              </span>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-2 text-xs"
+                                onClick={() =>
+                                  updateFilter({
+                                    dates: undefined,
+                                    months: undefined,
+                                    years: undefined,
+                                    dateFrom: undefined,
+                                    dateTo: undefined,
+                                  })
+                                }
+                              >
+                                {t('ledger.clearDateFilter')}
+                              </Button>
+                            </div>
+                          ) : null}
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="px-3 md:px-5 py-3 flex-1 min-w-0">
+                      {t('common.description')}
+                    </div>
+                    <div className="hidden md:block px-3 md:px-5 py-3 shrink-0 w-[160px]">
+                      {t('common.categories')}
+                    </div>
+                    <div className="hidden md:block px-3 md:px-5 py-3 shrink-0 w-[140px]">
+                      {t('common.accounts')}
+                    </div>
+                    <div className="px-3 md:px-5 py-3 text-right shrink-0 w-[110px] md:w-[140px]">
+                      {t('common.amount')}
                     </div>
                   </div>
+                </div>
 
-                  {/* ── Scrollable Body ── */}
-                  <div
-                    data-ledger-scroll-body
-                    className="flex-1 overflow-y-scroll custom-scrollbar pl-[6px]"
-                  >
-                    {groupedByDate.map(({ date, items }) => (
+                {/* ── Scrollable Body ── */}
+                <div
+                  data-ledger-scroll-body
+                  className={cn(
+                    'flex-1 overflow-y-scroll custom-scrollbar pl-[6px]',
+                    txns.length === 0 && 'flex items-center justify-center px-4 text-center'
+                  )}
+                >
+                  {txns.length === 0 ? (
+                    <p className="text-muted-foreground font-medium">
+                      {t('ledger.noFilteredTransactions')}
+                    </p>
+                  ) : (
+                    groupedByDate.map(({ date, items }) => (
                       <DateGroup
                         key={date}
                         items={items}
@@ -612,12 +1042,12 @@ export default function Transactions() {
                         onSelect={setSelectedTxnId}
                         onCommitOrder={reorderTransactions}
                       />
-                    ))}
-                  </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
