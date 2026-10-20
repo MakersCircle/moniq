@@ -190,7 +190,7 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 | C-79 | Populated ledger table | Renders transactions newest date first in date groups; each row shows date, note, category or destination, account, and type-colored amount |
 | C-80 | Net total calculation | Header "Net" value sums `+amount` for income and `-amount` for expense rows in the currently filtered set, ignoring transfers |
 | C-81 | Search filter | Typing in the search box updates `filter.search`; only transactions whose `note` contains the (case-insensitive) query remain |
-| C-82 | Date column day, week, month, year, and custom filters | Day mode allows multiple selected dates; Week mode toggles multiple Sunday-to-Saturday weeks; Month mode navigates by year and toggles months; Year mode navigates by decade and toggles years; Custom mode filters inclusively between From and To dates after both are set and reports a reversed range. All filters can be cleared |
+| C-82 | Date column day, week, month, year, and custom filters | Day mode allows multiple selected dates; Week mode toggles multiple Sunday-to-Saturday weeks and previews a full row on hover; Month mode navigates by year and toggles months; Year mode navigates by decade and toggles years; Custom mode previews and highlights the inclusive range in both calendars, lets the user select both endpoints in one calendar session, and filters correctly when endpoints are entered in reverse order. All filters can be cleared |
 | C-83 | Type filter | Selecting "Income"/"Expense"/"Transfer" sets `filter.uiType`; "All Types" clears it |
 | C-84 | Account filter | Selecting an account sets `filter.accountId`; deleted accounts are excluded from the dropdown options |
 | C-85 | No results after filtering | Shows "No transactions found matching your filters." inside the table body while retaining the column headings when `groupedByDate.length === 0` |
@@ -203,7 +203,7 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 
 ## 3. End-to-End Tests
 
-`e2e/transaction-create.spec.ts` covers the save flows in E-10–13 using the form's default date across six Chromium viewport/touch profiles. It checks the ledger rows, account balances, dashboard totals, split allocation gate, and demo persistence. `e2e/transaction-manage.spec.ts` covers E-18–19 with edit and delete, including persistence after reload, balance changes, and the Recently Deleted row. Explicit date editing, account/category creation during entry, and keyboard save remain planned.
+`e2e/transaction-create.spec.ts` covers the save flows in E-10–13 using the form's default date across six Chromium viewport/touch profiles. It checks the ledger rows, account balances, dashboard totals, split allocation gate, and demo persistence. `e2e/transaction-manage.spec.ts` covers E-18–19 with edit and delete, including persistence after reload, balance changes, and the Recently Deleted row. `e2e/ledger-date-filter.spec.ts` covers E-37–39 on desktop and phone, including multi-period selection, combining and clearing filters, custom range preview and reverse endpoints, and the filtered empty state. Explicit transaction date editing, account/category creation during entry, and keyboard save remain planned.
 
 ### 3.1 Opening the Modal (Entry Points)
 | ID | Scenario | Expected Outcome |
@@ -244,6 +244,9 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 | E-29 | Switching selected row while panel is open | Detail panel content updates to the newly clicked transaction without a full page reload |
 | E-35 | Try dragging a transaction row away from its six-dot handle, then reorder from the handle ([`e2e/ledger-reorder.spec.ts`](../../e2e/ledger-reorder.spec.ts)) | Only the handle starts a drag; order changes within the same date and persists after drop/reload; phone scrolling stays within the dragged date group |
 | E-36 | Configure and download the Ledger PDF ([`e2e/ledger-export.spec.ts`](../../e2e/ledger-export.spec.ts)) | Dialog starts with current month and all accounts; report type and date range are radio choices; custom dates are hidden until selected and use the transaction date picker; account filter and both report types work; PDF has ascending rows, totals, balances, and category-wise Transfers table |
+| E-37 | Select and combine Ledger date periods ([`e2e/ledger-date-filter.spec.ts`](../../e2e/ledger-date-filter.spec.ts)) | Transaction dots appear in Day, Month, and Year views; Day, Week, Month, and Year allow multiple selections; selected dates toggle off, Sunday-to-Saturday weeks toggle as a unit and preview a full row on desktop hover; date, search, type, and account filters combine; clearing restores results |
+| E-38 | Preview and complete a Custom range ([`e2e/ledger-date-filter.spec.ts`](../../e2e/ledger-date-filter.spec.ts)) | The first endpoint keeps its calendar open for the second selection; hovering previews the inclusive range, the selected range remains highlighted in both calendars, and descending endpoint dates filter inclusively |
+| E-39 | Filter to a date with no transactions ([`e2e/ledger-date-filter.spec.ts`](../../e2e/ledger-date-filter.spec.ts)) | The empty-results message appears inside the Ledger table and the Date and Description headings remain visible |
 
 ### 3.4 Responsive Layout (Mobile/Tablet)
 | ID | Scenario | Expected Outcome |

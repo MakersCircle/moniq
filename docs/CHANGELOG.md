@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Custom Date Range Entry**: When neither endpoint is set, allow selecting both dates in sequence from either open calendar, keeping it open after the first selection.
 - **Date Filter Calendar Spacing**: Use consistent spacing between highlighted adjacent dates in Day, Week, and Custom calendars.
 
+### Testing
+- **Ledger Date Filter Coverage**: Add desktop and phone browser coverage for transaction dots, multi-period selection and deselection, Week row hover, combined filters, custom range preview and reversed endpoints, one-calendar range entry, and empty results with table headings retained.
+
 ---
 
 ## [0.11.0] - 2026-10-18
