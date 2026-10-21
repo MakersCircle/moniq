@@ -97,6 +97,7 @@ test('LEDGER-11: category and subcategory checkboxes filter matching Ledger rows
   const filter = page
     .locator('[data-radix-popper-content-wrapper]')
     .filter({ has: page.getByPlaceholder('Search categories...') });
+  await expect(filter.getByPlaceholder('Search categories...')).toBeFocused();
 
   await expect(filter.getByText('Needs', { exact: true })).toHaveCount(0);
   await filter.getByRole('button', { name: 'Expand Fixture Food' }).click();

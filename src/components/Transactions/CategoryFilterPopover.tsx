@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ChevronDown, ListFilter } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ export function CategoryFilterPopover({
 }: CategoryFilterPopoverProps) {
   const [search, setSearch] = useState('');
   const [expandedHeads, setExpandedHeads] = useState<Set<string>>(() => new Set());
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
   const query = search.trim().toLocaleLowerCase();
 
@@ -109,6 +110,12 @@ export function CategoryFilterPopover({
         align="start"
         side="bottom"
         className="w-[min(20rem,calc(100vw-2rem))] p-0 overflow-hidden"
+        onOpenAutoFocus={event => {
+          event.preventDefault();
+          if (window.matchMedia('(min-width: 768px)').matches) {
+            searchInputRef.current?.focus();
+          }
+        }}
       >
         <div className="border-b border-border p-3">
           <Input
@@ -116,6 +123,7 @@ export function CategoryFilterPopover({
             placeholder={t('ledger.searchCategories')}
             value={search}
             onChange={event => setSearch(event.target.value)}
+            ref={searchInputRef}
             className="h-9 text-xs focus-visible:border-input focus-visible:ring-muted-foreground/40"
           />
         </div>
