@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { DatePicker } from '@/components/Transactions/DatePicker';
+import { CategoryFilterPopover } from '@/components/Transactions/CategoryFilterPopover';
 import {
   Select,
   SelectContent,
@@ -1005,8 +1006,16 @@ export default function Transactions() {
                     <div className="px-3 md:px-5 py-3 flex-1 min-w-0">
                       {t('common.description')}
                     </div>
-                    <div className="hidden md:block px-3 md:px-5 py-3 shrink-0 w-[160px]">
-                      {t('common.categories')}
+                    <div className="hidden md:flex items-center gap-1 px-3 md:px-5 py-3 shrink-0 w-[160px]">
+                      <span>{t('common.categories')}</span>
+                      <CategoryFilterPopover
+                        categories={categories}
+                        selectedIds={filter.categoryIds || []}
+                        onChange={ids =>
+                          updateFilter({ categoryIds: ids.length ? ids : undefined })
+                        }
+                        t={t}
+                      />
                     </div>
                     <div className="hidden md:block px-3 md:px-5 py-3 shrink-0 w-[140px]">
                       {t('common.accounts')}

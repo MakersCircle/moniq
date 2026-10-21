@@ -4,6 +4,7 @@ This file applies to the whole repository. Before starting any work, especially 
 
 - Read [docs/product_vision.md](docs/product_vision.md) to understand the product's scope and principles.
 - Read [docs/design_system.md](docs/design_system.md) before making structural or visual changes.
+- Use subtle, purposeful micro-motion to make meaningful UI state changes such as expanding, collapsing, and selecting feel clear and comfortable. Follow the motion patterns in the design system and respect reduced-motion preferences; avoid motion that adds delay without improving feedback.
 - Preserve the local-first data model and Google Sheets sync behavior when changing persistence.
 - Update relevant files in `docs/` when a change affects their guidance or described behavior.
 - After every meaningful implementation, update the existing `[Unreleased]` section of [docs/CHANGELOG.md](docs/CHANGELOG.md). Group related changes into one cohesive entry that describes the final outcome.

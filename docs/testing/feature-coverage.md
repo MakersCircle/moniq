@@ -92,6 +92,7 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | LEDGER-08 | Delete from the detail panel removes the transaction from active views and places it in Recently Deleted. | Covered | Mutation unit tests; transaction management browser: delete, reload, balance and Trash, six viewports | — | No |
 | LEDGER-09 | Reorder transactions within one date using only the six-dot handle; keep mobile scrolling within that date group and persist order after drop. | Covered | `e2e/ledger-reorder.spec.ts` checks handle-only interaction, same-day ordering, persistence after reload, other-day stability, and phone scroll bounds. | — | No |
 | LEDGER-10 | On mobile, category and account appear beneath the description and details open as a bottom drawer. | Missing | — | Component + browser | No |
+| LEDGER-11 | Filter Ledger rows using expandable category checkboxes; selecting a category includes all its subcategories, individual subcategories can be selected, and multiple matching entries still show one transaction row. | Covered | `e2e/ledger-category-filter.spec.ts` checks category selection, parent indeterminate state, select all/clear, search, absence of category-group headings, and a multi-category transaction appearing once. | — | No |
 
 ## 6. Manage accounts, methods, and categories
 
@@ -186,4 +187,4 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | PWA-02 | Previously cached app routes and assets load while offline. | Missing | — | Installed/offline browser | No |
 | PWA-03 | Installed mobile app icons display correctly on iOS and Android home screens. | Missing | — | Installed/offline browser | No |
 
-Tracked: **118 features**; **7 partial**, **93 missing**, **18 covered end to end**. Recalculate these totals when adding tests.
+Tracked: **119 features**; **7 partial**, **93 missing**, **19 covered end to end**. Recalculate these totals when adding tests.

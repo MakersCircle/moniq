@@ -84,6 +84,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | LEDGER-08 | Delete from the detail panel removes the transaction from active views and places it in Recently Deleted. | 0.3.0 |
 | LEDGER-09 | Reorder transactions within one date using only the six-dot handle; keep mobile scrolling within that date group and persist order after drop. | Unreleased |
 | LEDGER-10 | On mobile, category and account appear beneath the description and details open as a bottom drawer. | 0.9.6 |
+| LEDGER-11 | Filter Ledger rows using expandable category checkboxes; selecting a category includes all its subcategories, individual subcategories can be selected, and multiple matching entries still show one transaction row. | Unreleased |
 
 ## 6. Manage accounts, methods, and categories
 
