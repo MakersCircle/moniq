@@ -143,7 +143,7 @@ export interface TxnFilter {
   dateFrom?: string;
   dateTo?: string;
   uiType?: string; // 'income' | 'expense' | 'transfer'
-  accountId?: string;
+  accountIds?: string[];
   categoryIds?: string[];
   search?: string;
 }
@@ -170,7 +170,10 @@ export function useFilteredTransactions(filter: TxnFilter) {
         }
         if (filter.uiType && t.uiType !== filter.uiType) return false;
 
-        if (filter.accountId && !t.entries.some(entry => entry.accountId === filter.accountId))
+        if (
+          filter.accountIds?.length &&
+          !t.entries.some(entry => filter.accountIds?.includes(entry.accountId))
+        )
           return false;
         if (
           filter.categoryIds?.length &&

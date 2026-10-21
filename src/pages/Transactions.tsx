@@ -23,6 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { DatePicker } from '@/components/Transactions/DatePicker';
 import { CategoryFilterPopover } from '@/components/Transactions/CategoryFilterPopover';
+import { AccountFilterPopover } from '@/components/Transactions/AccountFilterPopover';
 import {
   Select,
   SelectContent,
@@ -575,25 +576,6 @@ export default function Transactions() {
                 <SelectItem value="transfer">{t('common.transfer')}</SelectItem>
               </SelectContent>
             </Select>
-
-            <Select
-              value={filter.accountId || 'all'}
-              onValueChange={val => updateFilter({ accountId: val === 'all' ? undefined : val })}
-            >
-              <SelectTrigger className="h-9 w-[150px] text-xs">
-                <SelectValue placeholder={t('ledger.allAccounts')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('ledger.allAccounts')}</SelectItem>
-                {accounts
-                  .filter(a => !a.isDeleted)
-                  .map(s => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
 
@@ -1017,8 +999,14 @@ export default function Transactions() {
                         t={t}
                       />
                     </div>
-                    <div className="hidden md:block px-3 md:px-5 py-3 shrink-0 w-[140px]">
-                      {t('common.accounts')}
+                    <div className="hidden md:flex items-center gap-1 px-3 md:px-5 py-3 shrink-0 w-[140px]">
+                      <span>{t('common.accounts')}</span>
+                      <AccountFilterPopover
+                        accounts={accounts}
+                        selectedIds={filter.accountIds || []}
+                        onChange={ids => updateFilter({ accountIds: ids.length ? ids : undefined })}
+                        t={t}
+                      />
                     </div>
                     <div className="px-3 md:px-5 py-3 text-right shrink-0 w-[110px] md:w-[140px]">
                       {t('common.amount')}
