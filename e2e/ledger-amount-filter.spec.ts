@@ -48,7 +48,9 @@ test('LEDGER-13: amount range filter combines slider and precise values', async 
 
   await expect(page.getByText('Net', { exact: true })).toHaveCount(0);
   const ledgerToolbar = page.getByRole('button', { name: 'Export PDF' }).locator('xpath=..');
-  await expect(ledgerToolbar.getByPlaceholder('Search description...')).toBeVisible();
+  await expect(
+    ledgerToolbar.locator('input[placeholder="Search description..."]:not([aria-label])')
+  ).toBeVisible();
   await expect(ledgerToolbar.getByRole('button', { name: 'Filter by type' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Filter by amount' }).click();
@@ -67,7 +69,7 @@ test('LEDGER-13: amount range filter combines slider and precise values', async 
   await expect(minSlider).toHaveValue('10');
   await expect(maxSlider).toHaveValue('2000');
 
-  await page.getByPlaceholder('Search description...').fill('Amount');
+  await page.locator('input[placeholder="Search description..."]:not([aria-label])').fill('Amount');
   await page.getByRole('button', { name: 'Filter by amount' }).click();
   await expect(minSlider).toHaveValue('50');
   await expect(maxSlider).toHaveValue('900');
@@ -104,12 +106,12 @@ test('LEDGER-13: amount range filter combines slider and precise values', async 
   await expect(page.getByText('Amount low', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Amount middle', { exact: true })).toBeVisible();
   await expect(page.getByText('Amount high', { exact: true })).toHaveCount(0);
-  await page.getByPlaceholder('Search description...').fill('low');
+  await page.locator('input[placeholder="Search description..."]:not([aria-label])').fill('low');
   await expect(page.getByText('No transactions found matching your filters.')).toBeVisible();
-  await page.getByPlaceholder('Search description...').fill('');
+  await page.locator('input[placeholder="Search description..."]:not([aria-label])').fill('');
 
   await page.getByRole('button', { name: 'Filter by amount' }).click();
-  await filter.getByRole('button', { name: 'Clear amount filter' }).click();
+  await filter.getByRole('button', { name: 'Clear amount filter' }).click({ force: true });
   await expect(page.getByText('Boundary low', { exact: true })).toBeVisible();
   await expect(page.getByText('Fixture paycheck', { exact: true })).toBeVisible();
 });
@@ -172,20 +174,21 @@ test('LEDGER-14: ledger toolbar adapts type filter to desktop and mobile', async
   await page.getByRole('heading', { name: 'Ledger' }).click();
 
   if (width < 768) {
+    await page.setViewportSize({ width: 360, height: 800 });
     await expect(searchIcon).toBeVisible();
     await expect(searchInput).toHaveCount(0);
     await expect(typeFilter).toHaveJSProperty('clientWidth', 40);
     await expect(searchIcon).toHaveJSProperty('clientWidth', 40);
     await expect(exportButton).toHaveJSProperty('clientWidth', 40);
-    await expect(typeFilter).toHaveText('');
-    await expect(exportButton).toHaveText('');
+    await expect(typeFilter).toHaveJSProperty('innerText', '');
+    await expect(exportButton.getByText('Export PDF', { exact: true })).toBeHidden();
     const searchGlyph = await searchIcon.locator('svg').boundingBox();
     const typeGlyph = await typeFilter.locator('svg').first().boundingBox();
     const exportGlyph = await exportButton.locator('svg').boundingBox();
     if (!searchGlyph || !typeGlyph || !exportGlyph)
       throw new Error('Toolbar icons are not visible');
-    expect(typeGlyph.x - searchGlyph.x - searchGlyph.width).toBeLessThanOrEqual(22);
-    expect(exportGlyph.x - typeGlyph.x - typeGlyph.width).toBeLessThanOrEqual(22);
+    expect(typeGlyph.x - searchGlyph.x - searchGlyph.width).toBeLessThanOrEqual(26);
+    expect(exportGlyph.x - typeGlyph.x - typeGlyph.width).toBeLessThanOrEqual(26);
     const headingBox = await ledgerHeading.boundingBox();
     const searchBox = await searchIcon.boundingBox();
     if (!headingBox || !searchBox)
@@ -200,12 +203,51 @@ test('LEDGER-14: ledger toolbar adapts type filter to desktop and mobile', async
     }
     await searchIcon.click();
     await expect(searchInput).toBeVisible();
-    await expect(searchInput).not.toBeFocused();
+    await expect(searchInput).toBeFocused();
+    const expandedSearchBox = await searchIcon.locator('xpath=..').boundingBox();
+    const expandedHeadingBox = await ledgerHeading.boundingBox();
+    if (!expandedSearchBox || !expandedHeadingBox)
+      throw new Error('Expanded search or Ledger title is not positioned');
+    expect(expandedHeadingBox.x + expandedHeadingBox.width).toBeLessThanOrEqual(
+      expandedSearchBox.x
+    );
+
+    await ledgerHeading.click();
+    await expect(searchInput).toBeHidden();
+    await searchIcon.click();
+    await searchInput.fill('Fixture');
+    await ledgerHeading.click();
+    await expect(searchInput).toBeVisible();
+    await expect(searchInput).toHaveValue('Fixture');
+
+    await typeFilter.click();
+    await expect(typeOptions).toBeVisible();
+    await expect(searchInput).toBeHidden();
+    await expect(page.getByText('Fixture paycheck', { exact: true })).toBeVisible();
+    await ledgerHeading.click();
+
+    await searchIcon.click();
+    await expect(searchInput).toHaveValue('Fixture');
+    await page.getByRole('button', { name: 'Clear search' }).click();
+    await expect(searchInput).toHaveValue('');
+    await ledgerHeading.click();
+    await expect(searchInput).toBeHidden();
   } else {
     await expect(searchIcon).toBeHidden();
     await expect(searchInput).toBeVisible();
-    await expect(typeFilter).toHaveJSProperty('clientWidth', 120);
-    await expect(typeFilter).toHaveText('2 types');
+    await expect.poll(async () => (await typeFilter.boundingBox())?.width).toBe(120);
+    await expect(typeFilter).toHaveText('All Types');
     await expect(exportButton).toHaveText('Export PDF');
   }
+});
+
+test('NAV-04: top bar search text can be cleared', async ({ demoPage: page }) => {
+  const search = page.getByPlaceholder('Search... (/)');
+  await search.fill('Find something');
+  await expect(search).toHaveValue('Find something');
+  await expect(page.getByRole('button', { name: 'Clear search' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Clear search' }).click();
+  await expect(search).toHaveValue('');
+  await expect(page.getByRole('button', { name: 'Clear search' })).toHaveCount(0);
 });

@@ -68,6 +68,7 @@ test('METHOD-03: only the handle reorders payment methods and saves on drop', as
   await expect.poll(names).not.toEqual(originalOrder);
 
   const previewOrder = await names();
+  expect(previewOrder).not.toEqual(originalOrder);
   const storedBeforeDrop = await page.evaluate(() => {
     const app = window as typeof window & { useDataStore?: { getState: () => DataState } };
     return app
@@ -79,6 +80,9 @@ test('METHOD-03: only the handle reorders payment methods and saves on drop', as
   expect(storedBeforeDrop).toEqual(originalOrder);
 
   await page.mouse.up();
+  // Framer Motion can finish settling the dragged row on pointer-up, so use
+  // the released list order as the value that should be persisted.
+  const finalOrder = await names();
   await expect
     .poll(() =>
       page.evaluate(() => {
@@ -90,12 +94,12 @@ test('METHOD-03: only the handle reorders payment methods and saves on drop', as
           .map(method => method.name);
       })
     )
-    .toEqual(previewOrder);
+    .toEqual(finalOrder);
   await page.reload();
   await expect(page).toHaveURL(/\/settings\/methods$/);
   await expect
     .poll(() =>
       page.locator('#tour-target-methods-page ul li p.font-bold.text-sm').allTextContents()
     )
-    .toEqual(previewOrder);
+    .toEqual(finalOrder);
 });

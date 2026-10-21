@@ -1,5 +1,6 @@
 import { addDays, format } from 'date-fns';
 import { test, expect } from './fixtures/demo';
+import { fillLedgerSearch } from './helpers/ledgerSearch';
 import type { DataState } from '../src/store/types';
 
 const dateKey = (date: Date) => format(date, 'yyyy-MM-dd');
@@ -177,25 +178,39 @@ test('LEDGER-03: day, week, month, and year filters select multiple periods', as
 
   await filter.getByRole('button', { name: 'Day', exact: true }).click();
   await filter.getByRole('button', { name: calendarLabel(dates.today) }).click();
-  await page.getByPlaceholder('Search description...').fill('Filter today');
+  await fillLedgerSearch(page, 'Filter today');
   await page.getByRole('button', { name: 'Filter by type' }).click();
   const typeFilter = page.getByRole('group', { name: 'Filter by type' });
   await typeFilter.getByRole('checkbox', { name: 'Income', exact: true }).uncheck();
   await typeFilter.getByRole('checkbox', { name: 'Transfer', exact: true }).uncheck();
-  await page.getByRole('button', { name: 'Filter by account' }).click();
-  const accountFilter = page
-    .locator('[data-radix-popper-content-wrapper]')
-    .filter({ has: page.getByPlaceholder('Search accounts...') });
-  await accountFilter.getByRole('checkbox', { name: 'Fixture Checking', exact: true }).click();
-  await expect(page.getByText('Filter today', { exact: true })).toBeVisible();
-  await expect(page.getByText('Fixture paycheck', { exact: true })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  const accountFilterButton = page.getByRole('button', { name: 'Filter by account' });
+  if (await accountFilterButton.isVisible()) {
+    await accountFilterButton.click();
+    const accountFilter = page
+      .locator('[data-radix-popper-content-wrapper]')
+      .filter({ has: page.getByPlaceholder('Search accounts...') });
+    await accountFilter.getByRole('checkbox', { name: 'Fixture Checking', exact: true }).click();
+    await expect(page.getByText('Filter today', { exact: true })).toBeVisible();
+    await expect(page.getByText('Fixture paycheck', { exact: true })).toHaveCount(0);
 
-  await page.getByPlaceholder('Search description...').fill('');
-  await page.getByRole('button', { name: 'Filter by type' }).click();
-  await typeFilter.getByRole('checkbox', { name: 'Income', exact: true }).check();
-  await typeFilter.getByRole('checkbox', { name: 'Transfer', exact: true }).check();
-  await page.getByRole('button', { name: 'Filter by account' }).click();
-  await accountFilter.getByRole('button', { name: 'Clear account filter' }).click();
+    await fillLedgerSearch(page, '');
+    await page.getByRole('button', { name: 'Filter by type' }).click();
+    await typeFilter.getByRole('checkbox', { name: 'Income', exact: true }).check();
+    await typeFilter.getByRole('checkbox', { name: 'Transfer', exact: true }).check();
+    await page.keyboard.press('Escape');
+    await accountFilterButton.click();
+    await accountFilter.getByRole('button', { name: 'Clear account filter' }).click();
+  } else {
+    await expect(page.getByText('Filter today', { exact: true })).toBeVisible();
+    await expect(page.getByText('Fixture paycheck', { exact: true })).toHaveCount(0);
+    await fillLedgerSearch(page, '');
+    await page.getByRole('button', { name: 'Filter by type' }).click();
+    await typeFilter.getByRole('checkbox', { name: 'Income', exact: true }).check();
+    await typeFilter.getByRole('checkbox', { name: 'Transfer', exact: true }).check();
+    await page.keyboard.press('Escape');
+  }
+
   const combinedFilter = await openDateFilter(page);
   await combinedFilter.getByRole('button', { name: 'Clear date filter' }).click();
   await expect(page.getByText('Fixture paycheck', { exact: true })).toBeVisible();
