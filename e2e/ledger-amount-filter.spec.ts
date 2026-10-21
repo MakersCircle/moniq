@@ -46,6 +46,11 @@ test('LEDGER-13: amount range filter combines slider and precise values', async 
   if (!settings) throw new Error('Seeded Ledger settings are missing');
   await page.getByRole('link', { name: 'Ledger', exact: true }).first().click();
 
+  await expect(page.getByText('Net', { exact: true })).toHaveCount(0);
+  const ledgerToolbar = page.getByRole('button', { name: 'Export PDF' }).locator('xpath=..');
+  await expect(ledgerToolbar.getByPlaceholder('Search description...')).toBeVisible();
+  await expect(ledgerToolbar.getByRole('button', { name: 'Filter by type' })).toBeVisible();
+
   await page.getByRole('button', { name: 'Filter by amount' }).click();
   const filter = page
     .locator('[data-radix-popper-content-wrapper]')
@@ -107,4 +112,100 @@ test('LEDGER-13: amount range filter combines slider and precise values', async 
   await filter.getByRole('button', { name: 'Clear amount filter' }).click();
   await expect(page.getByText('Boundary low', { exact: true })).toBeVisible();
   await expect(page.getByText('Fixture paycheck', { exact: true })).toBeVisible();
+});
+
+test('LEDGER-14: ledger toolbar adapts type filter to desktop and mobile', async ({
+  seededDemoPage: page,
+}) => {
+  await seedAmountFilterData(page);
+  await page.getByRole('link', { name: 'Ledger', exact: true }).first().click();
+
+  const width = page.viewportSize()?.width ?? 0;
+  const searchIcon = page.getByRole('button', { name: 'Search description...' });
+  const searchInput = page.locator('input[placeholder="Search description..."]:visible');
+  const typeFilter = page.getByRole('button', { name: 'Filter by type' });
+  const exportButton = page.getByRole('button', { name: 'Export PDF' });
+  const ledgerHeading = page.getByRole('heading', { name: 'Ledger' });
+
+  await expect(typeFilter).toBeVisible();
+  await expect(exportButton).toBeVisible();
+  const closedSearchBox = width < 768 ? await searchIcon.boundingBox() : null;
+  await typeFilter.click();
+  const typeOptions = page.getByRole('group', { name: 'Filter by type' });
+  const incomeOption = typeOptions.getByRole('checkbox', { name: 'Income', exact: true });
+  const expensesOption = typeOptions.getByRole('checkbox', { name: 'Expenses', exact: true });
+  const transferOption = typeOptions.getByRole('checkbox', { name: 'Transfer', exact: true });
+  await expect(incomeOption).toBeChecked();
+  await expect(expensesOption).toBeChecked();
+  await expect(transferOption).toBeChecked();
+  if (width >= 768) await expect(typeOptions.getByText('All Types', { exact: true })).toBeVisible();
+  await expect(typeOptions.getByRole('checkbox', { name: 'All Types' })).toHaveCount(0);
+  await expect(typeFilter).toHaveCSS('opacity', '0');
+  const filterButtonBox = await typeFilter.boundingBox();
+  const menuBox = await typeOptions.boundingBox();
+  if (!filterButtonBox || !menuBox) throw new Error('Type filter options are not positioned');
+  expect(menuBox.y).toBeGreaterThanOrEqual(filterButtonBox.y);
+  if (width < 768) {
+    await expect(typeFilter).toHaveJSProperty('clientWidth', 144);
+    const expandedSearchBox = await searchIcon.boundingBox();
+    if (!closedSearchBox || !expandedSearchBox) throw new Error('Search icon is not positioned');
+    expect(expandedSearchBox.x).toBeLessThan(closedSearchBox.x);
+  }
+  await transferOption.uncheck();
+  await expect(expensesOption).toBeChecked();
+  await expect(incomeOption).toBeChecked();
+  await expect(page.getByText('Fixture groceries', { exact: true })).toBeVisible();
+  await expect(page.getByText('Fixture paycheck', { exact: true })).toBeVisible();
+  if (width >= 768) await expect(typeOptions.getByText('2 types', { exact: true })).toBeVisible();
+  await expensesOption.uncheck();
+  await expect(page.getByText('Fixture groceries', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Fixture paycheck', { exact: true })).toBeVisible();
+  await expensesOption.check();
+  await incomeOption.uncheck();
+  await expensesOption.uncheck();
+  await expect(page.getByText('No transactions found matching your filters.')).toBeVisible();
+  await incomeOption.check();
+  await expensesOption.check();
+  await transferOption.check();
+  await expect(page.getByText('Fixture paycheck', { exact: true })).toBeVisible();
+  await expect(page.getByText('Boundary low', { exact: true })).toBeVisible();
+  await page.getByRole('heading', { name: 'Ledger' }).click();
+
+  if (width < 768) {
+    await expect(searchIcon).toBeVisible();
+    await expect(searchInput).toHaveCount(0);
+    await expect(typeFilter).toHaveJSProperty('clientWidth', 40);
+    await expect(searchIcon).toHaveJSProperty('clientWidth', 40);
+    await expect(exportButton).toHaveJSProperty('clientWidth', 40);
+    await expect(typeFilter).toHaveText('');
+    await expect(exportButton).toHaveText('');
+    const searchGlyph = await searchIcon.locator('svg').boundingBox();
+    const typeGlyph = await typeFilter.locator('svg').first().boundingBox();
+    const exportGlyph = await exportButton.locator('svg').boundingBox();
+    if (!searchGlyph || !typeGlyph || !exportGlyph)
+      throw new Error('Toolbar icons are not visible');
+    expect(typeGlyph.x - searchGlyph.x - searchGlyph.width).toBeLessThanOrEqual(22);
+    expect(exportGlyph.x - typeGlyph.x - typeGlyph.width).toBeLessThanOrEqual(22);
+    const headingBox = await ledgerHeading.boundingBox();
+    const searchBox = await searchIcon.boundingBox();
+    if (!headingBox || !searchBox)
+      throw new Error('Mobile Ledger toolbar controls are not visible');
+    expect(
+      Math.abs(headingBox.y + headingBox.height / 2 - (searchBox.y + searchBox.height / 2))
+    ).toBeLessThan(16);
+    for (const control of [searchIcon, typeFilter, exportButton]) {
+      await expect
+        .poll(() => control.evaluate(element => getComputedStyle(element).borderTopWidth))
+        .toBe('0px');
+    }
+    await searchIcon.click();
+    await expect(searchInput).toBeVisible();
+    await expect(searchInput).not.toBeFocused();
+  } else {
+    await expect(searchIcon).toBeHidden();
+    await expect(searchInput).toBeVisible();
+    await expect(typeFilter).toHaveJSProperty('clientWidth', 120);
+    await expect(typeFilter).toHaveText('2 types');
+    await expect(exportButton).toHaveText('Export PDF');
+  }
 });

@@ -178,8 +178,10 @@ test('LEDGER-03: day, week, month, and year filters select multiple periods', as
   await filter.getByRole('button', { name: 'Day', exact: true }).click();
   await filter.getByRole('button', { name: calendarLabel(dates.today) }).click();
   await page.getByPlaceholder('Search description...').fill('Filter today');
-  await page.getByRole('combobox').nth(0).click();
-  await page.getByRole('option', { name: 'Expenses', exact: true }).click();
+  await page.getByRole('button', { name: 'Filter by type' }).click();
+  const typeFilter = page.getByRole('group', { name: 'Filter by type' });
+  await typeFilter.getByRole('checkbox', { name: 'Income', exact: true }).uncheck();
+  await typeFilter.getByRole('checkbox', { name: 'Transfer', exact: true }).uncheck();
   await page.getByRole('button', { name: 'Filter by account' }).click();
   const accountFilter = page
     .locator('[data-radix-popper-content-wrapper]')
@@ -189,8 +191,9 @@ test('LEDGER-03: day, week, month, and year filters select multiple periods', as
   await expect(page.getByText('Fixture paycheck', { exact: true })).toHaveCount(0);
 
   await page.getByPlaceholder('Search description...').fill('');
-  await page.getByRole('combobox').nth(0).click();
-  await page.getByRole('option', { name: 'All Types', exact: true }).click();
+  await page.getByRole('button', { name: 'Filter by type' }).click();
+  await typeFilter.getByRole('checkbox', { name: 'Income', exact: true }).check();
+  await typeFilter.getByRole('checkbox', { name: 'Transfer', exact: true }).check();
   await page.getByRole('button', { name: 'Filter by account' }).click();
   await accountFilter.getByRole('button', { name: 'Clear account filter' }).click();
   const combinedFilter = await openDateFilter(page);

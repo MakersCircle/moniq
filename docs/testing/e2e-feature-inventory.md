@@ -37,7 +37,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | NAV-01 | The main navigation opens Dashboard, Ledger, Insights, Budget, and Settings. | 0.1.0 |
 | NAV-02 | Settings navigation opens Accounts, Payment Methods, Categories, and Recently Deleted. | 0.2.0 |
 | NAV-03 | Desktop navigation uses a sidebar; mobile navigation uses a bottom bar and a new-transaction button. | 0.9.0 |
-| NAV-04 | The mobile top bar opens Settings and expands its search field when focused. | 0.9.0 |
+| NAV-04 | The mobile top bar opens Settings and expands its search field when focused; entered text can be cleared with an inline clear control. | Unreleased |
 | NAV-05 | A visitor can open Docs, Privacy Policy, and Terms of Service without signing in. | 0.6.1 |
 | NAV-06 | Docs navigation opens Getting Started, Keyboard Shortcuts, FAQ, Handling Scenarios, Architecture, and Changelog; internal document links stay in app navigation. | 0.6.1, Code |
 | NAV-07 | An unknown docs page shows its not-found state and a route back to Getting Started. | Code |
@@ -75,8 +75,8 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | ID | Testable behavior | Recorded |
 | --- | --- | --- |
 | LEDGER-01 | With no transactions, the Ledger shows an empty state. | Code |
-| LEDGER-02 | The Ledger lists transactions newest date first, grouped by date, with type-specific amount styling and a displayed net for the current result set. | Code, 0.9.5 |
-| LEDGER-03 | Search filters transactions by description; date, type, multi-select account, category, and amount range filters can be combined and cleared. The Date column filter supports multiple individual dates, Sunday-to-Saturday weeks, months, years, and an inclusive custom date range. Custom ranges preview between the selected endpoint and hovered date in either calendar, support choosing both endpoints in one calendar session, and accept either endpoint order. Clicking selected calendar periods toggles them off. Week mode highlights the full row on hover and uses a consistent selection color. | Unreleased |
+| LEDGER-02 | The Ledger shows the filtered transaction count and lists transactions newest date first, grouped by date, with type-specific amount styling. | Code, 0.9.5 |
+| LEDGER-03 | Search and type filters sit in the Ledger toolbar beside Export PDF, using labeled controls on desktop and compact icons on mobile; search opens from an icon without automatically focusing the mobile input. Date, multi-select account, category, and amount range filters can be combined and cleared. The Date column filter supports multiple individual dates, Sunday-to-Saturday weeks, months, years, and an inclusive custom date range. Custom ranges preview between the selected endpoint and hovered date in either calendar, support choosing both endpoints in one calendar session, and accept either endpoint order. Clicking selected calendar periods toggles them off. Week mode highlights the full row on hover and uses a consistent selection color. | Unreleased |
 | LEDGER-04 | A filter with no matches shows an empty-results message inside the Ledger table while its column headings remain visible. | Unreleased |
 | LEDGER-05 | Export a PDF using radio-selected date range and report type, an independent account dropdown, and transaction-style custom date inputs that appear only for a custom range. | Unreleased |
 | LEDGER-06 | Selecting a row opens its details with date, amount, source account, category or destination account, and note. | Code |
@@ -87,6 +87,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | LEDGER-11 | Filter Ledger rows using expandable category checkboxes; selecting a category includes all its subcategories, individual subcategories can be selected, search focuses on desktop without summoning the mobile keyboard, and multiple matching entries still show one transaction row. | Unreleased |
 | LEDGER-12 | Filter Ledger rows using a searchable, flat account checkbox list with multiple account selection and no expand controls. | Unreleased |
 | LEDGER-13 | Filter Ledger rows to an inclusive minimum and maximum transaction amount using a dual-ended slider or precise Min/Max fields; retain the global slider scale while constraining handles to the range left by other filters. | Unreleased |
+| LEDGER-14 | Keep borderless 40 px search, type-filter, and export touch targets with visually tight icon spacing on the same row as the Ledger title on mobile. The search field expands left with its icon retained, does not cover the title, collapses on outside click when empty, and stays expanded with text until the type filter opens. Search text can be cleared inline. The type filter opens a downward multi-select checkbox list with all types checked by default; selected types combine with OR, no checked types yields no results, and other filter groups combine with AND. On mobile, widen it leftward to reveal the checkboxes without a selected-types heading and shift search left. | Unreleased |
 
 ## 6. Manage accounts, methods, and categories
 

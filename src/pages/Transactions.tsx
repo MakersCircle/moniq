@@ -1,13 +1,15 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, format, startOfWeek } from 'date-fns';
 import {
   Download,
   Search,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   List,
   GripVertical,
   ListFilter,
+  X,
 } from 'lucide-react';
 import { motion, Reorder, useDragControls } from 'framer-motion';
 import { useDataStore } from '../store/dataStore';
@@ -18,6 +20,7 @@ import type { Transaction, Account, Category, UserSettings } from '../types';
 import { useTranslation } from '@/hooks/useTranslation';
 
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -25,14 +28,6 @@ import { DatePicker } from '@/components/Transactions/DatePicker';
 import { CategoryFilterPopover } from '@/components/Transactions/CategoryFilterPopover';
 import { AccountFilterPopover } from '@/components/Transactions/AccountFilterPopover';
 import { AmountFilterPopover } from '@/components/Transactions/AmountFilterPopover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-
 import { cn } from '@/lib/utils';
 import { LedgerEngine } from '@/lib/ledger';
 import TransactionDetailPanel from '@/components/Transactions/TransactionDetailPanel';
@@ -419,6 +414,46 @@ export default function Transactions() {
   const [dateCalendarMonth, setDateCalendarMonth] = useState(new Date());
   const [selectedTxnId, setSelectedTxnId] = useState<string | null>(null);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [typeFilterOpen, setTypeFilterOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const mobileSearchRef = useRef<HTMLInputElement>(null);
+  const mobileSearchContainerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (mobileSearchOpen) mobileSearchRef.current?.focus();
+  }, [mobileSearchOpen]);
+  useEffect(() => {
+    if (!mobileSearchOpen || filter.search) return;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!mobileSearchContainerRef.current?.contains(event.target as Node)) {
+        setMobileSearchOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    return () => document.removeEventListener('pointerdown', closeOnOutsidePointer);
+  }, [filter.search, mobileSearchOpen]);
+  const typeFilterOptions = [
+    { value: 'income', label: t('common.income') },
+    { value: 'expense', label: t('common.expenses') },
+    { value: 'transfer', label: t('common.transfer') },
+  ] as const;
+  const selectedTypes = filter.uiTypes ?? typeFilterOptions.map(option => option.value);
+  const typeFilterSummary =
+    selectedTypes.length === typeFilterOptions.length
+      ? t('ledger.allTypes')
+      : selectedTypes.length === 0
+        ? t('ledger.noTypesSelected')
+        : selectedTypes.length === 1
+          ? typeFilterOptions.find(option => option.value === selectedTypes[0])?.label ||
+            t('ledger.noTypesSelected')
+          : t('ledger.selectedTypeCount', { count: selectedTypes.length });
+
+  const toggleType = (value: (typeof typeFilterOptions)[number]['value'], checked: boolean) => {
+    const next = new Set(selectedTypes);
+    if (checked) next.add(value);
+    else next.delete(value);
+    updateFilter({ uiTypes: [...next] });
+  };
 
   const txns = useFilteredTransactions(filter);
   const filterWithoutAmount = useMemo(
@@ -527,12 +562,6 @@ export default function Transactions() {
     );
   }
 
-  const currentNet = txns.reduce((sum, t) => {
-    if (t.uiType === 'income') return sum + t.amount;
-    if (t.uiType === 'expense') return sum - t.amount;
-    return sum;
-  }, 0);
-
   return (
     <div className="absolute inset-0 flex flex-col pb-safe overflow-hidden">
       {/* Main Table Area */}
@@ -543,64 +572,190 @@ export default function Transactions() {
         )}
       >
         {/* Sticky Header with Filters */}
-        <div className="sticky top-0 bg-background/80 backdrop-blur-md z-20 border-b border-border p-8 pb-4 space-y-6 [@media(max-height:500px)]:p-3 [@media(max-height:500px)]:pb-2 [@media(max-height:500px)]:space-y-3">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">{t('ledger.title')}</h1>
-              <p className="text-sm text-muted-foreground">
-                {txns.length} {t('ledger.transactions')} · {t('ledger.net')}
-                <span
-                  className={cn(
-                    'ml-1 font-bold mono',
-                    currentNet >= 0 ? 'text-income' : 'text-expense'
-                  )}
-                >
-                  {currentNet >= 0 ? '+' : ''}
-                  {formatCurrency(currentNet, settings)}
-                </span>
+        <div className="sticky top-0 bg-background/80 backdrop-blur-md z-20 border-b border-border px-4 py-4 md:px-8 md:py-6 space-y-6 [@media(max-height:500px)]:p-3 [@media(max-height:500px)]:space-y-3">
+          <div className="flex flex-row items-center justify-between gap-3 md:flex-col md:items-start lg:flex-row lg:items-center lg:gap-4">
+            <div className="min-w-0 flex-1 md:flex-none lg:flex-none">
+              <h1
+                className={cn(
+                  'truncate font-bold tracking-tight transition-[font-size] duration-150 md:text-2xl',
+                  mobileSearchOpen ? 'text-xl md:text-2xl' : 'text-2xl'
+                )}
+              >
+                {t('ledger.title')}
+              </h1>
+              <p className="max-w-full truncate whitespace-nowrap text-sm text-muted-foreground">
+                {txns.length} {t('ledger.transactions')}
               </p>
             </div>
-            <div className="flex items-center gap-2 self-start md:self-auto">
+            <div className="flex w-auto shrink-0 items-center gap-0.5 md:w-full md:gap-2 lg:w-auto">
+              <div className="relative hidden min-w-0 flex-1 md:block lg:w-64 lg:flex-none">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={t('ledger.searchDescription')}
+                  className={cn('h-9 pl-9 text-xs', filter.search && 'pr-9')}
+                  value={filter.search || ''}
+                  onChange={e => updateFilter({ search: e.target.value || undefined })}
+                />
+                {filter.search && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t('ledger.clearSearch')}
+                    className="absolute right-0.5 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => updateFilter({ search: undefined })}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+
+              <div
+                ref={mobileSearchContainerRef}
+                className={cn(
+                  'flex h-10 w-10 shrink-0 items-center overflow-hidden rounded-md border border-transparent bg-transparent transition-[width,background-color,border-color] duration-200 md:hidden',
+                  mobileSearchOpen && 'w-40 border-input bg-background shadow-sm'
+                )}
+              >
+                <Button
+                  type="button"
+                  variant={filter.search ? 'secondary' : 'ghost'}
+                  size="icon"
+                  aria-label={t('ledger.searchDescription')}
+                  aria-expanded={mobileSearchOpen}
+                  title={t('ledger.searchDescription')}
+                  className="h-10 w-10 shrink-0 rounded-r-none border-0 bg-transparent px-0 shadow-none hover:bg-accent"
+                  onClick={() => {
+                    if (mobileSearchOpen) {
+                      setMobileSearchOpen(false);
+                      mobileSearchRef.current?.blur();
+                    } else {
+                      setMobileSearchOpen(true);
+                    }
+                  }}
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+                <Input
+                  ref={mobileSearchRef}
+                  placeholder={t('ledger.searchDescription')}
+                  aria-label={t('ledger.searchDescription')}
+                  tabIndex={mobileSearchOpen ? 0 : -1}
+                  className={cn(
+                    'h-9 min-w-0 border-0 bg-transparent px-0 text-xs opacity-0 transition-opacity duration-150 focus-visible:ring-0',
+                    mobileSearchOpen ? 'w-full opacity-100' : 'w-0 px-0'
+                  )}
+                  value={filter.search || ''}
+                  onChange={event => updateFilter({ search: event.target.value || undefined })}
+                  onKeyDown={event => {
+                    if (event.key === 'Escape') {
+                      setMobileSearchOpen(false);
+                      mobileSearchRef.current?.blur();
+                    }
+                  }}
+                />
+                {filter.search && mobileSearchOpen && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t('ledger.clearSearch')}
+                    className="h-8 w-8 shrink-0 rounded-l-none px-0 text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      updateFilter({ search: undefined });
+                      mobileSearchRef.current?.focus();
+                    }}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+
+              <Popover
+                open={typeFilterOpen}
+                onOpenChange={open => {
+                  setTypeFilterOpen(open);
+                  if (open) setMobileSearchOpen(false);
+                }}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant={
+                      selectedTypes.length !== typeFilterOptions.length ? 'secondary' : 'ghost'
+                    }
+                    size="icon"
+                    aria-label={t('ledger.filterByType')}
+                    aria-expanded={typeFilterOpen}
+                    title={t('ledger.filterByType')}
+                    className={cn(
+                      'h-10 w-10 shrink-0 justify-center border-0 bg-transparent px-2 shadow-none transition-[width] duration-150 hover:bg-accent md:h-9 md:w-[120px] md:justify-between md:border md:border-input md:bg-background md:px-3 md:shadow-sm md:hover:bg-accent/50 md:duration-200',
+                      typeFilterOpen && 'w-36 opacity-0 md:opacity-0',
+                      selectedTypes.length !== typeFilterOptions.length &&
+                        'bg-secondary md:bg-background'
+                    )}
+                  >
+                    <ListFilter className="h-4 w-4 md:hidden" />
+                    <span className="hidden min-w-0 flex-1 truncate text-left text-xs md:block">
+                      {typeFilterSummary}
+                    </span>
+                    <ChevronDown className="hidden h-4 w-4 opacity-50 md:block" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  side="bottom"
+                  align="end"
+                  sideOffset={-36}
+                  avoidCollisions={false}
+                  className="max-h-[calc(100dvh-1rem)] w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] overflow-y-auto p-0 duration-150 md:duration-200"
+                >
+                  <div
+                    role="group"
+                    aria-label={t('ledger.filterByType')}
+                    className="flex flex-col p-1"
+                  >
+                    <div className="hidden h-9 items-center justify-between gap-2 rounded-md px-2 text-xs font-medium md:flex">
+                      <span className="min-w-0 truncate">{typeFilterSummary}</span>
+                      <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                    </div>
+                    {typeFilterOptions.map(option => {
+                      const selected = selectedTypes.includes(option.value);
+                      const checkboxId = `type-filter-${option.value}`;
+                      return (
+                        <label
+                          key={option.value}
+                          htmlFor={checkboxId}
+                          className="group flex h-9 cursor-pointer items-center gap-2 rounded-md px-2 text-xs hover:bg-accent"
+                        >
+                          <span className="-ml-1 flex h-9 w-9 shrink-0 items-center justify-center">
+                            <Checkbox
+                              id={checkboxId}
+                              aria-label={option.label}
+                              checked={selected}
+                              className="border-input transition-colors duration-150 focus-visible:ring-muted-foreground/40 focus-visible:ring-offset-0 group-hover:border-primary data-[state=checked]:border-primary"
+                              onCheckedChange={value => toggleType(option.value, value === true)}
+                            />
+                          </span>
+                          <span>{option.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setExportDialogOpen(true)}
-                className="h-9 gap-2"
+                aria-label={t('ledger.exportPdf')}
+                title={t('ledger.exportPdf')}
+                className="h-10 w-10 shrink-0 justify-center border-0 bg-transparent px-0 shadow-none hover:bg-accent md:h-9 md:w-auto md:gap-2 md:border md:border-input md:bg-background md:px-3 md:shadow-sm"
               >
-                <Download className="h-4 w-4" />
+                <Download className="h-4 w-4 -translate-x-1.5 md:translate-x-0" />
                 <span className="hidden md:inline">{t('ledger.exportPdf')}</span>
-                <span className="md:hidden">{t('ledger.export')}</span>
               </Button>
             </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t('ledger.searchDescription')}
-                className="pl-9 h-9 text-xs"
-                value={filter.search || ''}
-                onChange={e => updateFilter({ search: e.target.value || undefined })}
-              />
-            </div>
-
-            <Select
-              value={filter.uiType || 'all'}
-              onValueChange={val =>
-                updateFilter({ uiType: val === 'all' ? undefined : (val as Transaction['uiType']) })
-              }
-            >
-              <SelectTrigger className="h-9 w-[120px] text-xs">
-                <SelectValue placeholder={t('ledger.allTypes')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('ledger.allTypes')}</SelectItem>
-                <SelectItem value="income">{t('common.income')}</SelectItem>
-                <SelectItem value="expense">{t('common.expenses')}</SelectItem>
-                <SelectItem value="transfer">{t('common.transfer')}</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
 
