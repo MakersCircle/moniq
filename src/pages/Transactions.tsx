@@ -24,6 +24,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { DatePicker } from '@/components/Transactions/DatePicker';
 import { CategoryFilterPopover } from '@/components/Transactions/CategoryFilterPopover';
 import { AccountFilterPopover } from '@/components/Transactions/AccountFilterPopover';
+import { AmountFilterPopover } from '@/components/Transactions/AmountFilterPopover';
 import {
   Select,
   SelectContent,
@@ -420,6 +421,30 @@ export default function Transactions() {
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   const txns = useFilteredTransactions(filter);
+  const filterWithoutAmount = useMemo(
+    () => ({ ...filter, minAmount: undefined, maxAmount: undefined }),
+    [filter]
+  );
+  const amountContextTransactions = useFilteredTransactions(filterWithoutAmount);
+  const amountBounds = useMemo(() => {
+    let min = Infinity;
+    let max = -Infinity;
+    transactions.forEach(transaction => {
+      if (transaction.isDeleted) return;
+      min = Math.min(min, transaction.amount);
+      max = Math.max(max, transaction.amount);
+    });
+    return Number.isFinite(min) ? { min, max } : { min: 0, max: 0 };
+  }, [transactions]);
+  const amountContextBounds = useMemo(() => {
+    let min = Infinity;
+    let max = -Infinity;
+    amountContextTransactions.forEach(transaction => {
+      min = Math.min(min, transaction.amount);
+      max = Math.max(max, transaction.amount);
+    });
+    return Number.isFinite(min) ? { min, max } : amountBounds;
+  }, [amountBounds, amountContextTransactions]);
 
   const selectedTxn = transactions.find(t => t.id === selectedTxnId) || null;
 
@@ -1008,8 +1033,27 @@ export default function Transactions() {
                         t={t}
                       />
                     </div>
-                    <div className="px-3 md:px-5 py-3 text-right shrink-0 w-[110px] md:w-[140px]">
-                      {t('common.amount')}
+                    <div className="flex items-center justify-end gap-1 px-3 md:px-5 py-3 text-right shrink-0 w-[110px] md:w-[140px]">
+                      <span>{t('common.amount')}</span>
+                      <AmountFilterPopover
+                        minBound={amountBounds.min}
+                        maxBound={amountBounds.max}
+                        contextMin={amountContextBounds.min}
+                        contextMax={amountContextBounds.max}
+                        minAmount={filter.minAmount}
+                        maxAmount={filter.maxAmount}
+                        settings={settings}
+                        onChange={(minAmount, maxAmount) =>
+                          updateFilter({
+                            minAmount:
+                              minAmount > amountBounds.min + 0.000001 ? minAmount : undefined,
+                            maxAmount:
+                              maxAmount < amountBounds.max - 0.000001 ? maxAmount : undefined,
+                          })
+                        }
+                        onClear={() => updateFilter({ minAmount: undefined, maxAmount: undefined })}
+                        t={t}
+                      />
                     </div>
                   </div>
                 </div>

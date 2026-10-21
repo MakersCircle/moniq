@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Ledger Category Filtering**: Added a category filter beside the Categories column with searchable, expandable category rows and parent and subcategory checkboxes. Selecting a parent includes its subcategories, and no category group headings are shown. The category row expands or collapses from its main area, while its checkbox selects; the parent checkbox has a larger hit area without changing its visual size. Search receives focus on desktop and stays unfocused on mobile to avoid opening the keyboard. Expansion uses a brief height and opacity transition. Checkbox borders shift to the accent color on row hover, and a stable scrollbar gutter prevents row width shifts when categories expand.
 - **Ledger Account Filtering**: Replaced the single-account dropdown with a searchable multi-select checkbox filter beside the Accounts column. The flat account list uses no expand controls and shares the category filter's focus, hit-area, hover, and scrollbar behavior.
+- **Ledger Amount Filtering**: Added an Amount column filter with a dual-ended slider and precise Min/Max fields. The slider keeps the full non-deleted transaction range as its scale while positioning and constraining its handles to the range left by other active filters; the amount range combines with those filters using AND logic.
 - **Ledger Date Filtering**: Added a larger calendar panel beside the Date column with Day, Week, Month, Year, and Custom period choices. The active period uses a sliding indicator. Day filtering supports selecting multiple individual dates; Week supports selecting multiple Sunday-to-Saturday weeks by clicking any date in each week, and highlights the full row on hover with a consistent selection color; Month navigates by year and supports selecting multiple months; Year navigates by decade and supports selecting multiple years; Custom filters inclusively between From and To dates after both are set. Dots mark dates, months, and years with transactions. Type and Account filters and description search remain available.
 
 ### Fixed
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Testing
 - **Ledger Category Filter Coverage**: Add desktop browser coverage for expandable category rows, parent and subcategory selection, search, and transactions with multiple matching category entries.
 - **Ledger Account Filter Coverage**: Add desktop browser coverage for account search, multi-selection, matching rows, clearing, and no-results search.
+- **Ledger Amount Filter Coverage**: Add desktop browser coverage for all-transaction slider bounds, keyboard adjustment, precise Min/Max entry, inclusive filtering, search composition, and clearing.
 - **Ledger Date Filter Coverage**: Add desktop and phone browser coverage for transaction dots, multi-period selection and deselection, Week row hover, combined filters, custom range preview and reversed endpoints, one-calendar range entry, and empty results with table headings retained.
 
 ---

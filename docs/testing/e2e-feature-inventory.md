@@ -76,7 +76,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | --- | --- | --- |
 | LEDGER-01 | With no transactions, the Ledger shows an empty state. | Code |
 | LEDGER-02 | The Ledger lists transactions newest date first, grouped by date, with type-specific amount styling and a displayed net for the current result set. | Code, 0.9.5 |
-| LEDGER-03 | Search filters transactions by description; date, type, and multi-select account filters can be combined and cleared. The Date column filter supports multiple individual dates, Sunday-to-Saturday weeks, months, years, and an inclusive custom date range. Custom ranges preview between the selected endpoint and hovered date in either calendar, support choosing both endpoints in one calendar session, and accept either endpoint order. Clicking selected calendar periods toggles them off. Week mode highlights the full row on hover and uses a consistent selection color. | Unreleased |
+| LEDGER-03 | Search filters transactions by description; date, type, multi-select account, category, and amount range filters can be combined and cleared. The Date column filter supports multiple individual dates, Sunday-to-Saturday weeks, months, years, and an inclusive custom date range. Custom ranges preview between the selected endpoint and hovered date in either calendar, support choosing both endpoints in one calendar session, and accept either endpoint order. Clicking selected calendar periods toggles them off. Week mode highlights the full row on hover and uses a consistent selection color. | Unreleased |
 | LEDGER-04 | A filter with no matches shows an empty-results message inside the Ledger table while its column headings remain visible. | Unreleased |
 | LEDGER-05 | Export a PDF using radio-selected date range and report type, an independent account dropdown, and transaction-style custom date inputs that appear only for a custom range. | Unreleased |
 | LEDGER-06 | Selecting a row opens its details with date, amount, source account, category or destination account, and note. | Code |
@@ -86,6 +86,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | LEDGER-10 | On mobile, category and account appear beneath the description and details open as a bottom drawer. | 0.9.6 |
 | LEDGER-11 | Filter Ledger rows using expandable category checkboxes; selecting a category includes all its subcategories, individual subcategories can be selected, search focuses on desktop without summoning the mobile keyboard, and multiple matching entries still show one transaction row. | Unreleased |
 | LEDGER-12 | Filter Ledger rows using a searchable, flat account checkbox list with multiple account selection and no expand controls. | Unreleased |
+| LEDGER-13 | Filter Ledger rows to an inclusive minimum and maximum transaction amount using a dual-ended slider or precise Min/Max fields; retain the global slider scale while constraining handles to the range left by other filters. | Unreleased |
 
 ## 6. Manage accounts, methods, and categories
 

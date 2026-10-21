@@ -145,6 +145,8 @@ export interface TxnFilter {
   uiType?: string; // 'income' | 'expense' | 'transfer'
   accountIds?: string[];
   categoryIds?: string[];
+  minAmount?: number;
+  maxAmount?: number;
   search?: string;
 }
 
@@ -169,6 +171,9 @@ export function useFilteredTransactions(filter: TxnFilter) {
           if (t.date < rangeStart || t.date > rangeEnd) return false;
         }
         if (filter.uiType && t.uiType !== filter.uiType) return false;
+
+        if (filter.minAmount !== undefined && t.amount < filter.minAmount) return false;
+        if (filter.maxAmount !== undefined && t.amount > filter.maxAmount) return false;
 
         if (
           filter.accountIds?.length &&
