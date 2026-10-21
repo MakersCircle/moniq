@@ -137,10 +137,16 @@ export function useFiscalYearSummary(currentDate: Date = new Date()) {
 }
 
 export interface TxnFilter {
-  month?: string; // 'YYYY-MM'
-  uiType?: string; // 'income' | 'expense' | 'transfer'
-  accountId?: string;
-  categoryId?: string;
+  dates?: string[]; // selected 'YYYY-MM-DD' values
+  months?: string[]; // selected 'YYYY-MM' values
+  years?: string[]; // selected 'YYYY' values
+  dateFrom?: string;
+  dateTo?: string;
+  uiTypes?: ('income' | 'expense' | 'transfer')[];
+  accountIds?: string[];
+  categoryIds?: string[];
+  minAmount?: number;
+  maxAmount?: number;
   search?: string;
 }
 
@@ -154,15 +160,31 @@ export function useFilteredTransactions(filter: TxnFilter) {
     return transactions
       .filter(t => {
         if (t.isDeleted) return false;
-        if (filter.month && !t.date.startsWith(filter.month)) return false;
-        if (filter.uiType && t.uiType !== filter.uiType) return false;
-
-        // Match if any entry in the transaction references the filtered ID
-        if (filter.accountId || filter.categoryId) {
-          const targetId = filter.accountId || filter.categoryId;
-          const hasMatch = t.entries.some(e => e.accountId === targetId);
-          if (!hasMatch) return false;
+        if (filter.dates?.length && !filter.dates.includes(t.date)) return false;
+        if (filter.months?.length && !filter.months.some(month => t.date.startsWith(month)))
+          return false;
+        if (filter.years?.length && !filter.years.some(year => t.date.startsWith(year)))
+          return false;
+        if (filter.dateFrom && filter.dateTo) {
+          const rangeStart = filter.dateFrom < filter.dateTo ? filter.dateFrom : filter.dateTo;
+          const rangeEnd = filter.dateFrom > filter.dateTo ? filter.dateFrom : filter.dateTo;
+          if (t.date < rangeStart || t.date > rangeEnd) return false;
         }
+        if (filter.uiTypes && !filter.uiTypes.includes(t.uiType)) return false;
+
+        if (filter.minAmount !== undefined && t.amount < filter.minAmount) return false;
+        if (filter.maxAmount !== undefined && t.amount > filter.maxAmount) return false;
+
+        if (
+          filter.accountIds?.length &&
+          !t.entries.some(entry => filter.accountIds?.includes(entry.accountId))
+        )
+          return false;
+        if (
+          filter.categoryIds?.length &&
+          !t.entries.some(entry => filter.categoryIds?.includes(entry.accountId))
+        )
+          return false;
 
         if (filter.search && !t.note.toLowerCase().includes(filter.search.toLowerCase()))
           return false;

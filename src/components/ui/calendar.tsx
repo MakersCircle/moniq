@@ -10,6 +10,7 @@ function Calendar({
   classNames,
   showOutsideDays = true,
   captionLayout = 'label',
+  navLayout = 'around',
   formatters,
   components,
   ...props
@@ -21,29 +22,30 @@ function Calendar({
       showOutsideDays={showOutsideDays}
       className={cn('bg-background p-4', className)}
       captionLayout={captionLayout}
+      navLayout={navLayout}
       formatters={{
         formatMonthDropdown: date => date.toLocaleString('default', { month: 'short' }),
         ...formatters,
       }}
       classNames={{
         months: 'flex flex-col gap-4',
-        month: 'space-y-4',
-        month_caption: 'flex justify-center pt-1 relative items-center h-9',
+        month: 'space-y-4 relative',
+        month_caption: 'mx-9 flex justify-center relative items-center h-9',
         caption_label: 'text-sm font-medium',
         nav: 'flex items-center',
         button_previous: cn(
           buttonVariants({ variant: 'outline' }),
-          'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute left-1'
+          'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute left-1 top-1'
         ),
         button_next: cn(
           buttonVariants({ variant: 'outline' }),
-          'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute right-1'
+          'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute right-1 top-1'
         ),
         month_grid: 'w-full border-collapse space-y-1',
         weekdays: 'flex',
         weekday:
           'text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] flex-1 text-center',
-        week: 'flex w-full mt-2 justify-between',
+        week: 'flex w-full mt-2 justify-between gap-1',
         day: cn('h-9 w-9 p-0 font-normal aria-selected:opacity-100', defaultClassNames.day),
         ...classNames,
       }}
@@ -64,6 +66,7 @@ function Calendar({
 function CalendarDayButton({
   className,
   modifiers,
+  children,
   ...props
 }: React.ComponentProps<typeof DayButton>) {
   return (
@@ -71,16 +74,38 @@ function CalendarDayButton({
       variant="ghost"
       size="icon"
       className={cn(
-        'h-9 w-9 p-0 font-normal aria-selected:opacity-100',
+        'relative h-9 w-9 p-0 font-normal aria-selected:opacity-100',
         modifiers.selected &&
+          !modifiers.selectedWeek &&
           'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground',
-        modifiers.today && 'bg-accent text-accent-foreground',
+        modifiers.selectedWeek && 'bg-primary/25 text-foreground',
+        modifiers.customRange && 'bg-primary/25 text-foreground',
+        modifiers.customRangeEndpoint &&
+          'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground',
+        modifiers.weekMode &&
+          !modifiers.selectedWeek &&
+          'group-hover/week:bg-accent group-hover/week:text-accent-foreground',
+        modifiers.weekMode &&
+          modifiers.selectedWeek &&
+          'group-hover/week:bg-primary/25 group-hover/week:text-foreground',
+        modifiers.today && !modifiers.selectedWeek && 'bg-accent text-accent-foreground',
         modifiers.outside && 'text-muted-foreground opacity-50',
         modifiers.disabled && 'text-muted-foreground opacity-50',
         className
       )}
       {...props}
-    />
+    >
+      {children}
+      {modifiers.hasTransaction ? (
+        <span
+          aria-hidden="true"
+          className={cn(
+            'absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full',
+            modifiers.selected && !modifiers.selectedWeek ? 'bg-primary-foreground' : 'bg-primary'
+          )}
+        />
+      ) : null}
+    </Button>
   );
 }
 

@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Ledger Filters**: Added searchable category and account filters, an amount range slider with precise inputs, and calendar filtering by day, week, month, year, or custom range. Filters combine consistently, and category selection supports both categories and subcategories.
+- **Ledger Toolbar and Search**: Moved search and type filters beside Export PDF, with compact mobile controls, expandable search, clear actions, and a multi-select type menu. Removed the net amount beneath the Ledger title.
+
+### Fixed
+- **Ledger Date Filtering**: Keep table headings visible for empty results, stabilize custom calendar placement, and improve date-range preview, entry, and selection spacing.
+
+### Testing
+- **Filter and Search Coverage**: Expanded browser coverage for Ledger filters, date selection, responsive toolbar search, and PDF export across desktop and phone layouts.
+- **Payment Method Reorder Coverage**: Verify that reordering remains unchanged before release and persists the final list order after drag completion.
+
 ---
 
 ## [0.11.0] - 2026-10-18

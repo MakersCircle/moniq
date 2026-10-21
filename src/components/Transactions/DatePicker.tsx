@@ -16,11 +16,28 @@ import { Calendar } from '@/components/ui/calendar';
 interface DatePickerProps {
   date: string;
   onChange: (date: string) => void;
+  fixedWeeks?: boolean;
+  rangeAnchor?: string;
+  rangeStart?: string;
+  rangeEnd?: string;
+  rangeSelectionRole?: 'from' | 'to';
+  onCompleteRange?: (firstDate: string, secondDate: string, role: 'from' | 'to') => void;
   tabIndex?: number;
   id?: string;
 }
 
-export function DatePicker({ date, onChange, tabIndex, id }: DatePickerProps) {
+export function DatePicker({
+  date,
+  onChange,
+  fixedWeeks,
+  rangeAnchor,
+  rangeStart,
+  rangeEnd,
+  rangeSelectionRole,
+  onCompleteRange,
+  tabIndex,
+  id,
+}: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
   const [inputValue, setInputValue] = React.useState(() => {
     const d = parseISO(date);
@@ -30,6 +47,8 @@ export function DatePicker({ date, onChange, tabIndex, id }: DatePickerProps) {
     const d = parseISO(date);
     return isValid(d) ? d : undefined;
   });
+  const [hoveredDate, setHoveredDate] = React.useState<Date>();
+  const [pendingRangeDate, setPendingRangeDate] = React.useState<Date>();
 
   // Track focus to prevent prop updates from clobbering user input
   const [isFocused, setIsFocused] = React.useState(false);
@@ -136,6 +155,23 @@ export function DatePicker({ date, onChange, tabIndex, id }: DatePickerProps) {
     const d = parseISO(date);
     return isValid(d) ? d : undefined;
   }, [date]);
+  const anchorDate = rangeAnchor ? parseISO(rangeAnchor) : pendingRangeDate || undefined;
+  const selectedRangeStart = rangeStart ? parseISO(rangeStart) : undefined;
+  const selectedRangeEnd = rangeEnd ? parseISO(rangeEnd) : undefined;
+  const previewStart =
+    anchorDate && hoveredDate ? (anchorDate < hoveredDate ? anchorDate : hoveredDate) : undefined;
+  const previewEnd =
+    anchorDate && hoveredDate ? (anchorDate > hoveredDate ? anchorDate : hoveredDate) : undefined;
+  const previewRange =
+    previewStart && previewEnd ? { from: previewStart, to: previewEnd } : undefined;
+  const selectedRange =
+    selectedRangeStart && selectedRangeEnd
+      ? { from: selectedRangeStart, to: selectedRangeEnd }
+      : undefined;
+  const activeRange = previewRange || selectedRange;
+  const activeRangeEndpoints = previewRange
+    ? [previewStart, previewEnd].filter((value): value is Date => Boolean(value))
+    : [selectedRangeStart, selectedRangeEnd].filter((value): value is Date => Boolean(value));
 
   return (
     <InputGroup>
@@ -159,21 +195,58 @@ export function DatePicker({ date, onChange, tabIndex, id }: DatePickerProps) {
       />
 
       <InputGroupAddon align="inline-end">
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover
+          open={open}
+          onOpenChange={nextOpen => {
+            setOpen(nextOpen);
+            setHoveredDate(undefined);
+            if (!nextOpen) setPendingRangeDate(undefined);
+          }}
+        >
           <PopoverTrigger asChild>
             <InputGroupButton variant="ghost" size="icon-xs" aria-label="Select date">
               <CalendarIcon />
             </InputGroupButton>
           </PopoverTrigger>
 
-          <PopoverContent className="w-auto p-0" align="end" alignOffset={-8} sideOffset={10}>
+          <PopoverContent
+            className="w-auto p-0"
+            align="end"
+            alignOffset={-8}
+            sideOffset={10}
+            onMouseLeave={() => setHoveredDate(undefined)}
+          >
             <Calendar
               mode="single"
+              fixedWeeks={fixedWeeks}
               selected={selectedDate}
+              modifiers={{
+                customRange: activeRange ? [activeRange] : [],
+                customRangeEndpoint: activeRangeEndpoints,
+              }}
               month={month}
               onMonthChange={setMonth}
+              onDayMouseEnter={day => setHoveredDate(day)}
               onSelect={d => {
                 if (d) {
+                  setHoveredDate(undefined);
+                  if (onCompleteRange && rangeSelectionRole && !rangeAnchor) {
+                    if (!pendingRangeDate) {
+                      setPendingRangeDate(d);
+                      onChange(format(d, 'yyyy-MM-dd'));
+                      return;
+                    }
+
+                    onCompleteRange(
+                      format(pendingRangeDate, 'yyyy-MM-dd'),
+                      format(d, 'yyyy-MM-dd'),
+                      rangeSelectionRole
+                    );
+                    setPendingRangeDate(undefined);
+                    setOpen(false);
+                    return;
+                  }
+
                   onChange(format(d, 'yyyy-MM-dd'));
                   setOpen(false);
                 }
