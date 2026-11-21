@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { deserializeTransaction } from '../src/schema/entities/transaction.schema';
 import { serializeAccount } from '../src/schema/entities/account.schema';
 import type { Account } from '../src/types';
 import type { DataState } from '../src/store/types';
@@ -117,5 +118,106 @@ test('AUTH-04: reload opens local data immediately and reconciles remote changes
   await page.locator('a[href="/settings/accounts"]').click();
   await expect(page.getByText('Edited During Pull')).toBeVisible();
   await expect(page.getByText('Remote Savings')).toBeVisible();
+  expect(google.unexpectedRequests).toEqual([]);
+});
+
+test('SYNC-06/#92: edits, deletes and creates during reconciliation upload survive commit and reload', async ({
+  page,
+}) => {
+  const google = await installFakeGoogle(page);
+  await page.goto('/');
+  await page.waitForFunction(
+    () => (window as unknown as { __fakeGoogleScopes?: string[] }).__fakeGoogleScopes?.length
+  );
+  await page.locator('.group > div.cursor-pointer').click();
+  await expect(page.getByRole('heading', { name: 'Welcome to Moniq' })).toBeVisible();
+  const ids = await page.evaluate(() => {
+    const store = (window as typeof window & { useDataStore: { getState: () => DataState } })
+      .useDataStore;
+    store.getState().expireSession();
+    const { accountId } = store.getState().addAccount({
+      name: 'Race Checking',
+      type: 'Asset',
+      initialBalance: 500,
+      isActive: true,
+      isSavings: false,
+    });
+    const { id: categoryId } = store
+      .getState()
+      .addCategory({ head: 'Race Food', group: 'Needs', isActive: true });
+    for (const note of ['Before edit', 'Before delete'])
+      store.getState().addTransaction({
+        date: '2026-11-21',
+        uiType: 'expense',
+        amount: 20,
+        accountId,
+        targetId: categoryId,
+        note,
+      });
+    return {
+      accountId,
+      categoryId,
+      editId: store.getState().transactions.find(transaction => transaction.note === 'Before edit')!
+        .id,
+      deleteId: store
+        .getState()
+        .transactions.find(transaction => transaction.note === 'Before delete')!.id,
+    };
+  });
+  const hold = google.holdNextAppend('Transactions');
+  await page.getByRole('button', { name: 'Reconnect Google' }).click();
+  await hold.requested;
+  // The engine has already captured local arrays and queue IDs at this point.
+  const createdId = await page.evaluate(({ accountId, categoryId, editId, deleteId }) => {
+    const store = (window as typeof window & { useDataStore: { getState: () => DataState } })
+      .useDataStore;
+    store.getState().updateTransaction(editId, { note: 'Edited during upload' });
+    store.getState().deleteTransaction(deleteId);
+    store.getState().addTransaction({
+      date: '2026-11-21',
+      uiType: 'expense',
+      amount: 30,
+      accountId,
+      targetId: categoryId,
+      note: 'Created during upload',
+    });
+    return store
+      .getState()
+      .transactions.find(transaction => transaction.note === 'Created during upload')!.id;
+  }, ids);
+  hold.release();
+  await expect
+    .poll(() => {
+      const rows = google.sheetRows('Transactions');
+      const transactions = rows.slice(1).map(row => deserializeTransaction(row, rows[0]));
+      return {
+        edited: transactions.find(transaction => transaction.id === ids.editId)?.note,
+        deleted: transactions.find(transaction => transaction.id === ids.deleteId)?.isDeleted,
+        created: transactions.find(transaction => transaction.id === createdId)?.note,
+      };
+    })
+    .toEqual({ edited: 'Edited during upload', deleted: true, created: 'Created during upload' });
+  await page.reload();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const store = (
+          window as typeof window & { useDataStore: { getState: () => DataState } }
+        ).useDataStore.getState();
+        return store.transactions.map(transaction => ({
+          note: transaction.note,
+          deleted: transaction.isDeleted,
+        }));
+      })
+    )
+    .toEqual(
+      expect.arrayContaining([
+        { note: 'Edited during upload', deleted: false },
+        { note: 'Before delete', deleted: true },
+        { note: 'Created during upload', deleted: false },
+      ])
+    );
+  const rows = google.sheetRows('Transactions').slice(1);
+  expect(new Set(rows.map(row => row[0])).size).toBe(rows.length);
   expect(google.unexpectedRequests).toEqual([]);
 });

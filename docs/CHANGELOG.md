@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ledger Date Filtering**: Keep table headings visible for empty results, stabilize custom calendar placement, and improve date-range preview, entry, and selection spacing.
 
 ### Testing
+- **Sync Race Regression (#92)**: Exercise transaction edits, deletions, and additions after reconciliation captures its snapshot and while its upload is paused, verifying cloud results and reload persistence.
 - **Filter and Search Coverage**: Expanded browser coverage for Ledger filters, date selection, responsive toolbar search, and PDF export across desktop and phone layouts.
 - **Payment Method Reorder Coverage**: Verify that reordering remains unchanged before release and persists the final list order after drag completion.
 

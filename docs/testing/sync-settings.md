@@ -280,6 +280,8 @@ These are planned cases. Local/demo cases need browser tests. Sync, backup, and 
 | E-23 | Expired session survives a browser reload (`auth-session-expiry.spec.ts`) | After expiry and reload, cached records and the reconnect affordance remain available. Explicit Sign Out still returns to the landing page without exposing the cached app. Configured for all six Chromium viewport profiles; this change is checked on desktop and iPhone portrait Chromium. |
 | E-24 | Reconnect selects a different Google account (`auth-session-expiry.spec.ts`) | Local records, original owner email and pending operations remain intact; the banner asks for the original account. Reconnecting that account uploads the queue. |
 
-Remaining gaps: real installed iOS/Android Google OAuth flows, edits during the upload/commit phase, and concurrent browser tabs require further acceptance/integration coverage. Chromium touch viewport checks do not establish real Safari/PWA compatibility.
+| E-25 | Transaction mutations during reconciliation upload (#92) | Pause the Transactions append after the local snapshot; edit, delete and create transactions; verify all changes reach Sheets without duplicates and survive reload. |
+
+Remaining gaps: real installed iOS/Android Google OAuth flows and concurrent browser tabs require further acceptance/integration coverage. Chromium touch viewport checks do not establish real Safari/PWA compatibility.
 
 The Accounts, Methods, and Categories Trash tables currently ignore the selected sort order. Add a desired-behavior case when fixing that control; do not lock the current inconsistency into a regression test.

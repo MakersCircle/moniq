@@ -171,7 +171,7 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | SYNC-03 | Sync Now pushes pending changes or pulls remote changes when nothing is pending. | Missing | — | Fake Google browser + unit/integration | Yes |
 | SYNC-04 | A second device reconnects to the existing Drive spreadsheet and receives the same data. | Missing | — | Fake Google browser + unit/integration | Yes |
 | SYNC-05 | A direct edit to a spreadsheet row is reflected back in the app on synchronization. | Missing | — | Fake Google browser + unit/integration | Yes |
-| SYNC-06 | Concurrent local and remote changes reconcile without duplicating rows. | Missing | — | Fake Google browser + unit/integration | Yes |
+| SYNC-06 | Concurrent local and remote changes reconcile without duplicating rows. | Partial | Returning-user browser #92: edit/delete/create during upload survive commit, flush and reload without duplicates | Cross-tab and true remote conflict cases | Yes |
 | SYNC-07 | Temporary API failures retain the pending queue, show a sync error when retries are exhausted, and allow recovery on a later load or sync. | Missing | — | Fake Google browser + unit/integration | Yes |
 | SYNC-08 | A missing or damaged sheet tab or header is repaired so existing data remains accessible. | Missing | — | Fake Google browser + unit/integration | Yes |
 | SYNC-09 | Opening older IndexedDB and Sheets data upgrades their schemas and preserves user data, including transaction order. | Partial | Schema entity/runner tests | Older-fixture migration + browser | Yes |

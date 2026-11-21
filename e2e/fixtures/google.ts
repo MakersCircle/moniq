@@ -12,6 +12,7 @@ type GoogleMock = {
   failSilentRefresh: () => Promise<void>;
   sheetRows: (name: string) => string[][];
   appendSheetRow: (name: string, row: string[]) => void;
+  holdNextAppend: (sheet: string) => { requested: Promise<void>; release: () => void };
   holdNextBatchGet: () => { requested: Promise<void>; release: () => void };
 };
 
@@ -26,6 +27,7 @@ function json(route: Route, body: unknown, status = 200) {
 export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
   const rows = new Map<string, string[][]>();
   let heldBatchGet: { requested: () => void; resume: Promise<void> } | null = null;
+  let heldAppend: { sheet: string; requested: () => void; resume: Promise<void> } | null = null;
   let failNextBatchGet = false;
   let sheetsUnavailable = false;
   let userEmail = 'browser@example.test';
@@ -55,6 +57,18 @@ export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
       const current = rows.get(name);
       if (!current?.length) throw new Error(`Sheet ${name} has no header`);
       current.push([...row]);
+    },
+    holdNextAppend: sheet => {
+      let requested!: () => void;
+      let release!: () => void;
+      const requestedPromise = new Promise<void>(resolve => {
+        requested = resolve;
+      });
+      const resume = new Promise<void>(resolve => {
+        release = resolve;
+      });
+      heldAppend = { sheet, requested, resume };
+      return { requested: requestedPromise, release };
     },
     holdNextBatchGet: () => {
       let requested!: () => void;
@@ -227,6 +241,12 @@ export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
         return json(route, { updatedRows: values.length });
       }
       if (method === 'POST' && range.endsWith(':append')) {
+        if (heldAppend?.sheet === name) {
+          const hold = heldAppend;
+          heldAppend = null;
+          hold.requested();
+          await hold.resume;
+        }
         const values = (request.postDataJSON() as { values: string[][] }).values;
         const current = rows.get(name) || [];
         const start = current.length + 1;
@@ -241,7 +261,18 @@ export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
     }
 
     if (path === `/v4/spreadsheets/${spreadsheetId}/values:batchUpdate` && method === 'POST') {
-      return json(route, { totalUpdatedRows: 0 });
+      const { data } = request.postDataJSON() as { data: { range: string; values: string[][] }[] };
+      let totalUpdatedRows = 0;
+      for (const update of data) {
+        const name = update.range.split('!')[0];
+        const rowNumber = Number(update.range.match(/!A(\d+)/)?.[1] || 1);
+        const current = rows.get(name) || [];
+        for (const [index, value] of update.values.entries())
+          current[rowNumber - 1 + index] = value;
+        rows.set(name, current);
+        totalUpdatedRows += update.values.length;
+      }
+      return json(route, { totalUpdatedRows });
     }
 
     mock.unexpectedRequests.push(`${method} ${path}`);
