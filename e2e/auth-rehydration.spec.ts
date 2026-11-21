@@ -4,7 +4,7 @@ import type { Account } from '../src/types';
 import type { DataState } from '../src/store/types';
 import { installFakeGoogle } from './fixtures/google';
 
-test('AUTH-04: reload restores local data and waits for remote changes before opening', async ({
+test('AUTH-04: reload opens local data immediately and reconciles remote changes in the background', async ({
   page,
 }) => {
   const google = await installFakeGoogle(page);
@@ -70,10 +70,7 @@ test('AUTH-04: reload restores local data and waits for remote changes before op
   await page.reload();
   await hold.requested;
 
-  await expect(
-    page.getByText(/Pulling your data from Google Drive|Connecting to Google Drive/)
-  ).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Welcome to Moniq' })).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'Welcome to Moniq' })).toBeVisible();
   const hydrated = await page.evaluate(() => {
     const store = (
       window as typeof window & { useDataStore: { getState: () => DataState } }
@@ -84,7 +81,23 @@ test('AUTH-04: reload restores local data and waits for remote changes before op
   expect(hydrated.names).not.toContain('Remote Savings');
   expect(hydrated.ready).toBe(false);
 
+  const addedDuringPull = await page.evaluate(() => {
+    const store = (
+      window as typeof window & { useDataStore: { getState: () => DataState } }
+    ).useDataStore.getState();
+    store.updateAccount(store.accounts[0].id, { name: 'Edited During Pull' });
+    return store.addAccount({
+      name: 'Added During Pull',
+      type: 'Asset',
+      initialBalance: 20,
+      isSavings: false,
+      isActive: true,
+    }).accountId;
+  });
   hold.release();
+  await expect
+    .poll(() => google.sheetRows('Accounts').some(row => row[0] === addedDuringPull))
+    .toBe(true);
   await expect(page.getByRole('heading', { name: 'Welcome to Moniq' })).toBeVisible();
   const reconciled = await page.evaluate(() => {
     const store = (
@@ -92,7 +105,9 @@ test('AUTH-04: reload restores local data and waits for remote changes before op
     ).useDataStore.getState();
     return store.accounts.map(account => account.name);
   });
-  expect(reconciled).toEqual(expect.arrayContaining(['Local Checking', 'Remote Savings']));
+  expect(reconciled).toEqual(
+    expect.arrayContaining(['Edited During Pull', 'Added During Pull', 'Remote Savings'])
+  );
 
   const settingsLink =
     (page.viewportSize()?.width ?? 0) >= 1024
@@ -100,7 +115,7 @@ test('AUTH-04: reload restores local data and waits for remote changes before op
       : page.locator('header a[href="/settings"]');
   await settingsLink.click();
   await page.locator('a[href="/settings/accounts"]').click();
-  await expect(page.getByText('Local Checking')).toBeVisible();
+  await expect(page.getByText('Edited During Pull')).toBeVisible();
   await expect(page.getByText('Remote Savings')).toBeVisible();
   expect(google.unexpectedRequests).toEqual([]);
 });

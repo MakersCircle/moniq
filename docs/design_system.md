@@ -158,6 +158,8 @@ Collapsible/expandable search field on the mobile TopBar, rather than a permanen
 
 `sonner` toasts (`components/ui/sonner.tsx`) are the standard channel for user-facing feedback — sync status, errors, confirmations. Never use blocking `alert()` or silent `console.error`.
 
+Returning-user Google authorization expiry and cloud outages use a compact inline status banner with the existing disconnected-state styling: “Google sync paused. Saved on this device.” Show pending change counts and a Reconnect Google or Retry Connection action. Keep the local workspace interactive, including after a reload. On phones, keep the icon, “Sync paused”, optional pending count, and short Reconnect or Retry button on one line; truncate the message before allowing the action to wrap. Desktop retains the detailed message. Banner entry uses a short fade only when reduced motion is not requested.
+
 ### 3.6 Motion
 
 - Radix-driven open/close transitions on dialogs/sheets/popovers use `tailwindcss-animate` `data-[state=open|closed]` utilities — fade + slight zoom + slide-from-bottom, roughly 300ms, ease-out cubic-bezier.

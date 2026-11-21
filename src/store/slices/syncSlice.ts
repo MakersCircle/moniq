@@ -1,5 +1,6 @@
 import type { StateCreator } from 'zustand';
-import type { DataState } from '../types';
+import { preserveLocalEdits } from '@/lib/localWorkspace';
+import type { ReconciledWorkspace, DataState } from '../types';
 import type { SyncStatus, Account, PaymentMethod, Category, Transaction, Budget } from '@/types';
 import { defaultSettings } from './settingsSlice';
 import { getCurrencySymbol } from '../../constants/currencies';
@@ -31,15 +32,8 @@ export interface SyncSlice {
   setLastSyncedAt: (timestamp: string) => void;
   setCloudInitialized: (initialized: boolean) => void;
 
-  hydrateFromSync: (data: {
-    accounts: Account[];
-    methods: PaymentMethod[];
-    categories: Category[];
-    transactions: Transaction[];
-    budgets: Budget[];
-    settings: Record<string, string>;
-  }) => void;
-  resetData: () => void;
+  hydrateFromSync: (data: ReconciledWorkspace) => void;
+  resetData: () => Promise<void>;
   initializeFromDB: () => Promise<void>;
 }
 
@@ -78,13 +72,29 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
   hydrateFromSync: data => {
     set(state => {
       const nextState: Partial<DataState> = {};
-      if (data.accounts.length > 0) nextState.accounts = data.accounts;
-      if (data.methods.length > 0) nextState.methods = data.methods;
-      if (data.categories.length > 0) nextState.categories = data.categories;
-      if (data.transactions.length > 0) nextState.transactions = data.transactions;
-      if (data.budgets.length > 0) nextState.budgets = data.budgets;
+      const merge = <T extends { id: string }>(
+        values: T[],
+        before: T[] | undefined,
+        current: T[]
+      ) => (before ? preserveLocalEdits(values, before, current) : values);
+      nextState.accounts = merge(data.accounts, data.localSnapshot?.accounts, state.accounts);
+      nextState.methods = merge(data.methods, data.localSnapshot?.methods, state.methods);
+      nextState.categories = merge(
+        data.categories,
+        data.localSnapshot?.categories,
+        state.categories
+      );
+      nextState.transactions = merge(
+        data.transactions,
+        data.localSnapshot?.transactions,
+        state.transactions
+      );
+      nextState.budgets = merge(data.budgets, data.localSnapshot?.budgets, state.budgets);
 
-      if (Object.keys(data.settings).length > 0) {
+      if (
+        Object.keys(data.settings).length > 0 &&
+        (!data.localSnapshot || data.localSnapshot.settings === state.settings)
+      ) {
         const current = { ...state.settings };
         for (const [key, value] of Object.entries(data.settings)) {
           if (key === 'currency') current.currency = value;
@@ -134,10 +144,9 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
     set({ isDemoMode: false });
   },
 
-  resetData: () => {
-    import('../../lib/db').then(({ clearLocalData }) => {
-      clearLocalData().catch(console.error);
-    });
+  resetData: async () => {
+    const { clearLocalData } = await import('../../lib/db');
+    await clearLocalData();
 
     set(() => ({
       accounts: [],

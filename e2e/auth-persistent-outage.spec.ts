@@ -54,8 +54,10 @@ test('E-21: cached data stays local while a returning user retries a persistent 
   google.setSheetsUnavailable(true);
   await page.reload();
 
-  await expect(page.getByRole('heading', { name: 'Connection Error' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Welcome to Moniq' })).toBeHidden();
+  await expect(
+    page.getByRole('status', { name: 'Google sync paused. Saved on this device.' })
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome to Moniq' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Retry Connection' })).toBeVisible();
   const cachedState = await page.evaluate(() => {
     const store = (
@@ -72,7 +74,9 @@ test('E-21: cached data stays local while a returning user retries a persistent 
 
   await page.getByRole('button', { name: 'Retry Connection' }).click();
   await expect.poll(() => google.failedBatchGets).toBeGreaterThanOrEqual(2);
-  await expect(page.getByRole('heading', { name: 'Connection Error' })).toBeVisible();
+  await expect(
+    page.getByRole('status', { name: 'Google sync paused. Saved on this device.' })
+  ).toBeVisible();
 
   google.setSheetsUnavailable(false);
   await page.getByRole('button', { name: 'Retry Connection' }).click();

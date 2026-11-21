@@ -99,11 +99,11 @@ export default function SettingsIndex() {
     };
   }, [pendingCount]);
 
-  const confirmAndLogout = () => {
+  const confirmAndLogout = async () => {
     googleLogout();
     SyncEngine.reset();
     const { resetData } = useDataStore.getState();
-    resetData();
+    await resetData();
     setIsLoggingOut(false);
     setLogoutConfirmOpen(false);
     sessionStorage.removeItem('skipOnboarding');
@@ -116,7 +116,7 @@ export default function SettingsIndex() {
         const engine = SyncEngine.getInstance();
         await engine.forceSync();
       }
-      confirmAndLogout();
+      await confirmAndLogout();
     } catch (_err) {
       toast.error('Failed to sync. Please try again.');
       setLogoutPendingCount(pendingCount);

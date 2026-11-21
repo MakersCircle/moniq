@@ -61,6 +61,7 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
     set(() => ({
       accessToken: token,
       tokenExpiresAt: expiresAt || null,
+      isCloudInitialized: false,
     }));
     if (token) {
       setMeta('accessToken', token);
@@ -75,11 +76,10 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
   },
 
   expireSession: () => {
-    set(state => ({
+    set(() => ({
       accessToken: null,
       tokenExpiresAt: null,
-      // A previously synced user can keep viewing cached records while reconnecting.
-      isCloudInitialized: !!state.lastSyncedAt,
+      isCloudInitialized: false,
     }));
     delMeta('accessToken');
     delMeta('tokenExpiresAt');

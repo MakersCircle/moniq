@@ -14,6 +14,12 @@ To prioritize privacy and simplicity, it leverages the user's personal Google Dr
 
 ---
 
+## Local workspace and Google authorization
+
+After the first successful sync, the stored profile, spreadsheet ID and last-sync timestamp identify a local workspace. Routes and transaction entry use that local readiness independently of the short-lived Google API token. Reloads render IndexedDB records immediately while cloud reconciliation runs in the background. Token expiry or HTTP 401 pauses Google access; renewal starts from the user's Reconnect Google action, without timer-driven OAuth popups.
+
+Reconnection verifies the original account email before accessing its spreadsheet. A different account leaves local records and queued edits intact. Reconciliation preserves changes made after its local snapshot, commits the merged records atomically, and acknowledges only captured queue operations. Pending settings are uploaded instead of replaced by stale remote preferences. Explicit sign-out waits for local cleanup before returning to the landing page.
+
 ## Database Schema (Google Sheets Outline)
 
 Instead of a traditional SQL/NoSQL database, `moniq` uses Tabs in a Google Sheet — six data tabs plus one internal metadata tab (`SHEET_NAMES` in `src/sync/types.ts`; column lists in `src/schema/entities/*.schema.ts`). Every data sheet ends with `Is Deleted`, `Created At`, `Updated At`, and `Checksum` columns (soft-delete, timestamps for conflict resolution, and a row-integrity hash), omitted below for brevity.

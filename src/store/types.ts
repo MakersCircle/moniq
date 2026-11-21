@@ -14,6 +14,21 @@ export interface UserProfile {
   picture: string;
 }
 
+export type WorkspaceSnapshot = Pick<
+  DataState,
+  'accounts' | 'methods' | 'categories' | 'transactions' | 'budgets' | 'settings'
+>;
+
+export interface ReconciledWorkspace {
+  accounts: Account[];
+  methods: PaymentMethod[];
+  categories: Category[];
+  transactions: Transaction[];
+  budgets: Budget[];
+  settings: Record<string, string>;
+  localSnapshot?: WorkspaceSnapshot;
+}
+
 export interface DataState {
   accounts: Account[];
   methods: PaymentMethod[];
@@ -99,15 +114,8 @@ export interface DataState {
   expireSession: () => void;
 
   // Sync Engine
-  hydrateFromSync: (data: {
-    accounts: Account[];
-    methods: PaymentMethod[];
-    categories: Category[];
-    transactions: Transaction[];
-    budgets: Budget[];
-    settings: Record<string, string>;
-  }) => void;
-  resetData: () => void;
+  hydrateFromSync: (data: ReconciledWorkspace) => void;
+  resetData: () => Promise<void>;
   clearZustandData: () => void;
   initializeFromDB: () => Promise<void>;
   isHydrated: boolean;

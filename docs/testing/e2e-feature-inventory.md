@@ -11,10 +11,10 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | AUTH-01 | A signed-out visitor sees the landing page and can open the Google sign-in flow. | 0.1.0 |
 | AUTH-02 | Successful Google sign-in opens the dashboard and provisions or reconnects to the user's Drive folder and spreadsheet. | 0.1.0, 0.7.0 |
 | AUTH-03 | A mobile redirect login consumes the returned access token and opens the dashboard. | 0.8.1 |
-| AUTH-04 | A returning user reloads with locally stored data rehydrated and cloud changes reconciled before the app opens. | 0.2.0 |
-| AUTH-05 | An expired session shows a reconnect banner; re-authentication resumes cloud access. | 0.2.8 |
+| AUTH-04 | A returning user opens locally stored data immediately while cloud changes reconcile in the background. | 0.2.0 |
+| AUTH-05 | Expired Google access preserves local recording across reloads; a sync-paused banner offers reconnect and uploads queued changes. | 0.2.8 |
 | AUTH-06 | A cloud initialization failure shows a connection error with Retry Connection and Sign Out actions. | 0.8.0 |
-| AUTH-07 | Signing in with a different Google account on the same browser clears the prior account's local data before connecting. | 0.7.0, 0.8.0 |
+| AUTH-07 | Reconnecting with a different Google account preserves local records and asks for the original account before syncing. | 0.7.0, 0.8.0 |
 | AUTH-08 | Signing out syncs pending changes first; a sync failure offers Cancel and Sign Out Anyway. | Code |
 | AUTH-09 | Signed-out access to an app route returns to the landing page; signed-in access to `/` opens the dashboard. | 0.1.0 |
 | AUTH-10 | Google sign-in requests access to files this app creates and to the user's basic profile and email. | 0.7.0 |

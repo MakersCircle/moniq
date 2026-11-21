@@ -12,6 +12,8 @@ import type {
  * Union of all entity types stored in the sync engine.
  */
 type AnyEntity = Account | PaymentMethod | Category | Transaction | Budget;
+import { preserveLocalEdits } from '@/lib/localWorkspace';
+import type { ReconciledWorkspace } from '@/store/types';
 import { SheetClient } from './SheetClient';
 import { reconcile, computeChecksum } from './ConflictResolver';
 import { uuid } from '@/store/helpers';
@@ -24,14 +26,7 @@ import {
   type RowIndexMap,
   type SyncStatus,
 } from './types';
-import {
-  putMany,
-  addToSyncQueue,
-  getAllSyncQueue,
-  clearSyncQueue,
-  setMeta,
-  putSetting,
-} from '@/lib/db';
+import { getDB, addToSyncQueue, getAllSyncQueue, removeSyncOp, setMeta } from '@/lib/db';
 import {
   serializeAccount,
   deserializeAccount,
@@ -82,6 +77,7 @@ export class SyncEngine {
   private static backupCheckedThisSession = false;
 
   private client: SheetClient | null = null;
+  private destroyed = false;
   private readonly config: SyncConfig;
   private rowIndexes: RowIndexMap;
   /**
@@ -169,6 +165,7 @@ export class SyncEngine {
     this.listeners.add(listener);
     // Notify immediately on subscription so the UI reflects current state
     listener(this._status, this._pendingCount, this._lastError);
+    void this.updatePendingCount();
     return () => this.listeners.delete(listener);
   }
 
@@ -226,14 +223,7 @@ export class SyncEngine {
    * Performs the initial full pull and reconciliation of data from Google Sheets.
    * Ensures all required sheets and headers exist before downloading data.
    */
-  async initialize(spreadsheetId: string): Promise<{
-    accounts: Account[];
-    methods: PaymentMethod[];
-    categories: Category[];
-    transactions: Transaction[];
-    budgets: Budget[];
-    settings: Record<string, string>;
-  } | null> {
+  async initialize(spreadsheetId: string): Promise<ReconciledWorkspace | null> {
     if (!(await this.ensureClient(spreadsheetId))) return null;
 
     try {
@@ -384,6 +374,7 @@ export class SyncEngine {
 
       // Read local data from Zustand store
       const { useDataStore } = await import('../store/dataStore');
+      const queue = await getAllSyncQueue();
       const state = useDataStore.getState();
 
       // De-duplicate remote data before reconciliation
@@ -447,33 +438,79 @@ export class SyncEngine {
       await this.pushReconciled('Categories', catResult.toUpload, serializeCategory);
       await this.pushReconciled('Budgets', budResult.toUpload, serializeBudget);
 
-      // PERSIST Reconciliation results to structured IndexedDB
-      // This is crucial now that we are removing the Zustand blob
-      await putMany('accounts', accResult.merged);
-      await putMany('methods', metResult.merged);
-      await putMany('categories', catResult.merged);
-      await putMany('transactions', txResult.merged);
-      await putMany('budgets', budResult.merged);
-
-      // Save settings to structured DB
-      for (const [key, value] of Object.entries(remoteSettings)) {
-        await putSetting(key, value);
+      // Pending local preferences take precedence over the downloaded settings.
+      const settings = queue.some(op => op.entity === 'settings')
+        ? Object.fromEntries(
+            Object.entries(state.settings).map(([key, value]) => [key, String(value)])
+          )
+        : remoteSettings;
+      if (queue.some(op => op.entity === 'settings')) {
+        await this.client!.overwriteSheet(
+          'Settings',
+          Object.entries(settings).map(([key, value]) => [
+            key,
+            value,
+            computeChecksum([key, value]),
+          ])
+        );
       }
 
-      await clearSyncQueue();
-      await this.updatePendingCount();
-
-      await setMeta('lastSyncedAt', new Date().toISOString());
-      this.setStatus('idle');
-
-      return {
-        accounts: accResult.merged,
-        methods: metResult.merged,
-        categories: catResult.merged,
-        transactions: txResult.merged,
-        budgets: budResult.merged,
-        settings: remoteSettings,
+      // Commit one snapshot atomically. Mutations queued after this transaction
+      // write later, and hydrateFromSync also preserves their in-memory values.
+      if (this.destroyed) return null;
+      const db = await getDB();
+      if (this.destroyed) return null;
+      const latest = useDataStore.getState();
+      const data: ReconciledWorkspace = {
+        accounts: preserveLocalEdits(accResult.merged, state.accounts, latest.accounts),
+        methods: preserveLocalEdits(metResult.merged, state.methods, latest.methods),
+        categories: preserveLocalEdits(catResult.merged, state.categories, latest.categories),
+        transactions: preserveLocalEdits(txResult.merged, state.transactions, latest.transactions),
+        budgets: preserveLocalEdits(budResult.merged, state.budgets, latest.budgets),
+        settings:
+          latest.settings !== state.settings
+            ? Object.fromEntries(
+                Object.entries(latest.settings).map(([key, value]) => [key, String(value)])
+              )
+            : settings,
+        localSnapshot: latest,
       };
+      const transaction = db.transaction(
+        [
+          'accounts',
+          'methods',
+          'categories',
+          'transactions',
+          'budgets',
+          'settings',
+          'sync_queue',
+          'meta',
+        ],
+        'readwrite'
+      );
+      for (const name of [
+        'accounts',
+        'methods',
+        'categories',
+        'transactions',
+        'budgets',
+      ] as const) {
+        for (const item of data[name]) void transaction.objectStore(name).put(item as never);
+      }
+      for (const [key, value] of Object.entries(data.settings)) {
+        void transaction.objectStore('settings').put({ key, value });
+      }
+      // Never clear operations added while reconciliation was in progress.
+      for (const op of queue) void transaction.objectStore('sync_queue').delete(op.id);
+      void transaction
+        .objectStore('meta')
+        .put({ key: 'lastSyncedAt', value: new Date().toISOString() });
+      await transaction.done;
+      if (this.destroyed) return null;
+      await this.updatePendingCount();
+      this.setStatus('idle');
+      this.scheduleDebouncedFlush();
+      return data;
     } catch (err) {
       this.setStatus(
         'error',
@@ -572,6 +609,9 @@ export class SyncEngine {
       return;
     }
     if (this._status === 'syncing' || this._status === 'pulling') return;
+    const { useDataStore } = await import('../store/dataStore');
+    const state = useDataStore.getState();
+    if (!state.accessToken || !state.isCloudInitialized) return;
     if (!(await this.ensureClient())) return;
 
     const queue = await getAllSyncQueue();
@@ -599,13 +639,17 @@ export class SyncEngine {
         await this.flushEntityOps(entityType, ops);
       }
 
-      // Clear the queue on success
+      if (this.destroyed) return;
+      // Acknowledge only the operations included in this upload
       const syncTime = new Date().toISOString();
-      await clearSyncQueue();
+      await Promise.all(queue.map(op => removeSyncOp(op.id)));
+      if (this.destroyed) return;
       await setMeta('lastSyncedAt', syncTime);
+      if (this.destroyed) return;
       await this.updatePendingCount();
       this.flushRetryCount = 0; // reset backoff counter on success
       this.setStatus('idle');
+      if (this._pendingCount > 0) this.scheduleDebouncedFlush();
 
       const { useDataStore } = await import('../store/dataStore');
       useDataStore.getState().setLastSyncedAt(syncTime);
@@ -891,6 +935,7 @@ export class SyncEngine {
   // ── Cleanup ────────────────────────────────────────────────────
 
   destroy() {
+    this.destroyed = true;
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     if (this.retryTimer) clearTimeout(this.retryTimer);
     if (this.backupPollingTimer) clearInterval(this.backupPollingTimer);
