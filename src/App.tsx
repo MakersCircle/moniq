@@ -43,6 +43,7 @@ export default function App() {
 
   const isHydrated = useDataStore(s => s.isHydrated);
   const isCloudInitialized = useDataStore(s => s.isCloudInitialized);
+  const isWorkspaceUnlocked = useDataStore(s => s.isWorkspaceUnlocked);
   const syncStatus = useDataStore(s => s.syncStatus);
   const initializeFromDB = useDataStore(s => s.initializeFromDB);
   const isDemoMode = useDataStore(s => s.isDemoMode);
@@ -215,7 +216,14 @@ export default function App() {
     );
   }
 
-  if (!isHydrated || (!canUseWorkspace && accessToken && !isCloudInitialized)) {
+  const isInitialCloudLoadPending =
+    !!accessToken &&
+    !isCloudInitialized &&
+    !initError &&
+    !isDemoMode &&
+    (isWorkspaceUnlocked || !storedWorkspace);
+
+  if (!isHydrated || isInitialCloudLoadPending) {
     if (initError) {
       return (
         <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center">

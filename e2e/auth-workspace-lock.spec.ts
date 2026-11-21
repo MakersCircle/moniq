@@ -49,6 +49,83 @@ test('#91: shared devices hide records and transaction entry until fresh profile
   expect(google.unexpectedRequests).toEqual([]);
 });
 
+test('verified unlock waits for the initial Sheets pull before showing the workspace', async ({
+  page,
+}) => {
+  const google = await establishWorkspace(page);
+  const transactionNote = 'Cloud transaction after unlock';
+  const transactionId = await page.evaluate(note => {
+    const store = (window as typeof window & { useDataStore: { getState: () => DataState } })
+      .useDataStore;
+    const { id: categoryId } = store
+      .getState()
+      .addCategory({ head: 'Unlock Test', group: 'Needs', isActive: true });
+    const accountId = store
+      .getState()
+      .accounts.find(account => account.name === 'Private Checking')!.id;
+    store.getState().addTransaction({
+      date: '2026-11-21',
+      uiType: 'expense',
+      amount: 25,
+      accountId,
+      targetId: categoryId,
+      note,
+    });
+    return store.getState().transactions.find(transaction => transaction.note === note)!.id;
+  }, transactionNote);
+  await expect
+    .poll(() => google.sheetRows('Transactions').some(row => row.includes(transactionNote)))
+    .toBe(true);
+
+  // Reproduce an installed device whose local cache missed a cloud transaction.
+  await page.evaluate(
+    id =>
+      new Promise<void>((resolve, reject) => {
+        const request = indexedDB.open('moniq-db');
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const transaction = db.transaction('transactions', 'readwrite');
+          transaction.objectStore('transactions').delete(id);
+          transaction.oncomplete = () => {
+            db.close();
+            resolve();
+          };
+          transaction.onerror = () => reject(transaction.error);
+        };
+      }),
+    transactionId
+  );
+  await page.evaluate(() => sessionStorage.clear());
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Unlock your workspace' })).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as typeof window & { useDataStore: { getState: () => DataState } }
+          ).useDataStore.getState().transactions.length
+      )
+    )
+    .toBe(0);
+  const hold = google.holdNextBatchGet();
+  await page.getByRole('button', { name: 'Unlock with Google' }).click();
+  await hold.requested;
+
+  await expect(page.getByText('Pulling your data from Google Drive...')).toBeVisible();
+  await expect(page.getByText(transactionNote)).toBeHidden();
+  hold.release();
+  await page.waitForFunction(
+    () =>
+      (
+        window as typeof window & { useDataStore: { getState: () => DataState } }
+      ).useDataStore.getState().isCloudInitialized
+  );
+  await page.goto('/transactions');
+  await expect(page.getByText(transactionNote)).toBeVisible();
+});
+
 test('#91: a failed profile verification keeps financial data locked and Retry recovers', async ({
   page,
 }) => {

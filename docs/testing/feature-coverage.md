@@ -27,7 +27,7 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | AUTH-09 | Signed-out access to an app route returns to the landing page; signed-in access to `/` opens the dashboard. | Missing | — | Fake Google browser + unit/integration | No |
 | AUTH-10 | Google sign-in requests access to files this app creates and to the user's basic profile and email. | Covered | Auth browser: Google token client scopes, six viewports | — | Yes |
 | AUTH-11 | Session-scoped Google credentials remove legacy durable tokens. | Covered | accessTokenStorage unit tests; auth-token-storage browser verifies reload, IndexedDB cleanup and a fresh tab without credentials | Browser session restoration policy varies by browser | Yes |
-| AUTH-12 | Shared-device verification and explicit trusted-device local access. | Covered | auth-workspace-lock browser: delayed/failed verification hides records, retry recovers, wrong-account unlock cannot grant trust, correct-account trust permits local access without a token, Settings revocation locks next launch; desktop and phone | Real installed-PWA and multi-user device acceptance | Yes |
+| AUTH-12 | Shared-device verification and explicit trusted-device local access. | Covered | auth-workspace-lock browser: delayed/failed verification hides records, missing local transaction stays hidden through the delayed initial Sheets pull then appears, retry recovers, wrong-account unlock cannot grant trust, correct-account trust permits local access without a token, Settings revocation locks next launch; desktop and phone | Real installed-PWA and multi-user device acceptance | Yes |
 
 ## 2. Use demo mode
 
