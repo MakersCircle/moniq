@@ -17,7 +17,8 @@ import LayoutShell from './components/Layout/LayoutShell';
 import { useDataStore } from './store/dataStore';
 import { fetchUserProfile, initializeDatabase } from './api/google';
 import { SyncEngine } from './sync/SyncEngine';
-import { hasLocalWorkspace } from './lib/localWorkspace';
+import AccountUnlockScreen from './components/AccountUnlockScreen';
+import { hasLocalWorkspace, hasStoredWorkspace } from './lib/localWorkspace';
 import { getMeta, setMeta } from './lib/db';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,8 @@ import type { Transaction, TransactionType } from './types';
 
 export default function App() {
   const localWorkspaceReady = useDataStore(hasLocalWorkspace);
+  const storedWorkspace = useDataStore(hasStoredWorkspace);
+  const trustOnUnlock = useRef(false);
   const accessToken = useDataStore(s => s.accessToken);
   const tokenExpiresAt = useDataStore(s => s.tokenExpiresAt);
   const setUserProfile = useDataStore(s => s.setUserProfile);
@@ -147,6 +150,10 @@ export default function App() {
 
         setUserProfile(profile);
         useDataStore.getState().setVerifiedAccessToken(accessToken!);
+        if (trustOnUnlock.current) {
+          trustOnUnlock.current = false;
+          await useDataStore.getState().setDeviceTrusted(true);
+        }
 
         const sheetId = await initializeDatabase(setInitPhase);
         setSpreadsheetId(sheetId);
@@ -192,6 +199,21 @@ export default function App() {
       window.openTransactionModal = { openNew, openEdit, openDuplicate };
     }
   }, [canUseWorkspace, openNew, openEdit, openDuplicate]);
+
+  if (isHydrated && storedWorkspace && !canUseWorkspace && !isDemoMode) {
+    return (
+      <>
+        <AccountUnlockScreen
+          error={initError}
+          onRetry={() => setRetryCount(count => count + 1)}
+          onTrustRequested={trusted => {
+            trustOnUnlock.current = trusted;
+          }}
+        />
+        <Toaster />
+      </>
+    );
+  }
 
   if (!isHydrated || (!canUseWorkspace && accessToken && !isCloudInitialized)) {
     if (initError) {

@@ -12,6 +12,8 @@ type GoogleMock = {
   failSilentRefresh: () => Promise<void>;
   sheetRows: (name: string) => string[][];
   appendSheetRow: (name: string, row: string[]) => void;
+  holdNextUserInfo: () => { requested: Promise<void>; release: () => void };
+  setProfileUnavailable: (unavailable: boolean) => void;
   holdNextAppend: (sheet: string) => { requested: Promise<void>; release: () => void };
   holdNextBatchGet: () => { requested: Promise<void>; release: () => void };
 };
@@ -27,6 +29,8 @@ function json(route: Route, body: unknown, status = 200) {
 export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
   const rows = new Map<string, string[][]>();
   let heldBatchGet: { requested: () => void; resume: Promise<void> } | null = null;
+  let heldUserInfo: { requested: () => void; resume: Promise<void> } | null = null;
+  let profileUnavailable = false;
   let heldAppend: { sheet: string; requested: () => void; resume: Promise<void> } | null = null;
   let failNextBatchGet = false;
   let sheetsUnavailable = false;
@@ -57,6 +61,21 @@ export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
       const current = rows.get(name);
       if (!current?.length) throw new Error(`Sheet ${name} has no header`);
       current.push([...row]);
+    },
+    setProfileUnavailable: unavailable => {
+      profileUnavailable = unavailable;
+    },
+    holdNextUserInfo: () => {
+      let requested!: () => void;
+      let release!: () => void;
+      const requestedPromise = new Promise<void>(resolve => {
+        requested = resolve;
+      });
+      const resume = new Promise<void>(resolve => {
+        release = resolve;
+      });
+      heldUserInfo = { requested, resume };
+      return { requested: requestedPromise, release };
     },
     holdNextAppend: sheet => {
       let requested!: () => void;
@@ -126,6 +145,13 @@ export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
     mock.authorizedRequests.push(`${method} ${path}`);
 
     if (method === 'GET' && path === '/oauth2/v3/userinfo') {
+      if (profileUnavailable) return json(route, { error: 'Simulated profile outage' }, 503);
+      if (heldUserInfo) {
+        const hold = heldUserInfo;
+        heldUserInfo = null;
+        hold.requested();
+        await hold.resume;
+      }
       return json(route, {
         name: 'Browser Tester',
         email: userEmail,

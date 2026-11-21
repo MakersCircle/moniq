@@ -39,6 +39,9 @@ export interface DataState {
   accessToken: string | null;
   tokenExpiresAt: number | null;
   verifiedAccessToken: string | null;
+  isWorkspaceUnlocked: boolean;
+  isDeviceTrusted: boolean;
+  setDeviceTrusted: (trusted: boolean) => Promise<void>;
   setVerifiedAccessToken: (token: string) => void;
 
   // Cloud Sync properties

@@ -1,10 +1,19 @@
 import type { DataState } from '@/store/types';
 
-/** Local access survives Google authorization expiry, until an explicit sign-out. */
-export function hasLocalWorkspace(
+/** Cached records identify the workspace, but do not unlock it on a shared device. */
+export function hasStoredWorkspace(
   state: Pick<DataState, 'userProfile' | 'spreadsheetId' | 'lastSyncedAt'>
 ): boolean {
   return !!(state.userProfile?.email && state.spreadsheetId && state.lastSyncedAt);
+}
+
+export function hasLocalWorkspace(
+  state: Pick<
+    DataState,
+    'userProfile' | 'spreadsheetId' | 'lastSyncedAt' | 'isWorkspaceUnlocked' | 'isDeviceTrusted'
+  >
+): boolean {
+  return hasStoredWorkspace(state) && (state.isWorkspaceUnlocked || state.isDeviceTrusted);
 }
 
 /** Preserve edits made after a background sync took its local snapshot. */

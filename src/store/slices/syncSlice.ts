@@ -139,6 +139,8 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
       accessToken: null,
       tokenExpiresAt: null,
       verifiedAccessToken: null,
+      isWorkspaceUnlocked: false,
+      isDeviceTrusted: false,
       spreadsheetId: null,
       folderId: null,
       backupFolderId: null,
@@ -183,6 +185,8 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
       userProfile: null,
       tokenExpiresAt: null,
       verifiedAccessToken: null,
+      isWorkspaceUnlocked: false,
+      isDeviceTrusted: false,
       isCloudInitialized: false,
       isDemoMode: false,
     }));
@@ -220,6 +224,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         backupFolderId,
         syncQueue,
         isDemoModeMeta,
+        trustedDeviceEmail,
       ] = await Promise.all([
         getAll<Account>('accounts'),
         getAll<PaymentMethod>('methods'),
@@ -234,6 +239,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         getMeta('backupFolderId'),
         getAllSyncQueue(),
         getMeta('isDemoMode'),
+        getMeta('trustedDeviceEmail'),
       ]);
 
       await Promise.all([delMeta('accessToken'), delMeta('tokenExpiresAt')]);
@@ -285,6 +291,8 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         accessToken: session?.accessToken ?? null,
         tokenExpiresAt: session?.expiresAt ?? null,
         verifiedAccessToken: null,
+        isWorkspaceUnlocked: false,
+        isDeviceTrusted: !!userProfile?.email && trustedDeviceEmail === userProfile.email,
         userProfile,
         pendingCount: syncQueue ? syncQueue.length : 0,
         isHydrated: true,
@@ -294,7 +302,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
       });
     } catch (err) {
       console.error('Failed to initialize from DB:', err);
-      set({ isHydrated: true, isCloudInitialized: true });
+      set({ isHydrated: true, isCloudInitialized: false });
     }
   },
 });

@@ -49,5 +49,5 @@ Let a single user define where their money lives, manually record financial acti
 ### 3.6 Offline & Cross-Device
 
 - **Local-first & PWA**: All logic runs against IndexedDB first. The app is installable as a PWA and its shell loads offline.
-- **Returning users**: Previously synced records open immediately from this device. Google authorization expiry pauses cloud sync while local recording continues; reconnecting the original account reconciles queued changes.
+- **Returning users**: On personal devices explicitly marked trusted, previously synced records open immediately. Other devices verify the original Google identity before showing saved financial data on a fresh launch. Google authorization expiry pauses cloud sync while local recording continues; reconnecting the original account reconciles queued changes.
 - **Demo Mode**: A local, no-login trial mode for evaluating the app before connecting a Google account.

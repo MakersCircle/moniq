@@ -7,8 +7,14 @@ describe('local workspace continuity', () => {
       userProfile: { name: 'User', email: 'user@example.test', picture: '' },
       spreadsheetId: 'sheet',
       lastSyncedAt: '2026-10-22',
+      isWorkspaceUnlocked: false,
+      isDeviceTrusted: true,
     };
     expect(hasLocalWorkspace(workspace)).toBe(true);
+    expect(hasLocalWorkspace({ ...workspace, isDeviceTrusted: false })).toBe(false);
+    expect(
+      hasLocalWorkspace({ ...workspace, isDeviceTrusted: false, isWorkspaceUnlocked: true })
+    ).toBe(true);
     expect(hasLocalWorkspace({ ...workspace, userProfile: null })).toBe(false);
     expect(hasLocalWorkspace({ ...workspace, lastSyncedAt: null })).toBe(false);
     expect(hasLocalWorkspace({ ...workspace, spreadsheetId: null })).toBe(false);

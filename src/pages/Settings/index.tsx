@@ -20,9 +20,11 @@ import type { BackupSnapshot } from '@/sync/BackupManager';
 import type { SyncOperation } from '@/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -58,6 +60,8 @@ export default function SettingsIndex() {
     categories,
     budgets,
     isDemoMode,
+    isDeviceTrusted,
+    setDeviceTrusted,
   } = useDataStore();
   const { t } = useTranslation();
 
@@ -68,6 +72,7 @@ export default function SettingsIndex() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isSavingTrust, setIsSavingTrust] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [logoutPendingCount, setLogoutPendingCount] = useState(0);
   const [pendingOps, setPendingOps] = useState<SyncOperation[]>([]);
@@ -259,6 +264,42 @@ export default function SettingsIndex() {
                     )}
                     {isLoggingOut ? t('settings.signingOut') : t('settings.signOut')}
                   </Button>
+                </CardContent>
+              </Card>
+            </section>
+
+            <section aria-label="Device privacy">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Device privacy</CardTitle>
+                  <CardDescription>
+                    Choose whether this browser can open your saved workspace without verifying
+                    Google on each launch.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Field>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="trust-device-settings"
+                        checked={isDeviceTrusted}
+                        disabled={isSavingTrust}
+                        aria-busy={isSavingTrust}
+                        onCheckedChange={checked => {
+                          setIsSavingTrust(true);
+                          void setDeviceTrusted(checked === true)
+                            .catch(() => toast.error('Could not update device privacy.'))
+                            .finally(() => setIsSavingTrust(false));
+                        }}
+                      />
+                      <FieldLabel htmlFor="trust-device-settings">Trust this device</FieldLabel>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Only on a personal device. Anyone using this browser can view your saved
+                      records, including offline. Turning this off requires verification on the next
+                      launch.
+                    </p>
+                  </Field>
                 </CardContent>
               </Card>
             </section>

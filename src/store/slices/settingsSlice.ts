@@ -15,6 +15,9 @@ export interface SettingsSlice {
   accessToken: string | null;
   tokenExpiresAt: number | null;
   verifiedAccessToken: string | null;
+  isWorkspaceUnlocked: boolean;
+  isDeviceTrusted: boolean;
+  setDeviceTrusted: (trusted: boolean) => Promise<void>;
   setVerifiedAccessToken: (token: string) => void;
   userProfile: UserProfile | null;
 
@@ -29,6 +32,8 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
   accessToken: null,
   tokenExpiresAt: null,
   verifiedAccessToken: null,
+  isWorkspaceUnlocked: false,
+  isDeviceTrusted: false,
   userProfile: null,
 
   updateSettings: patch => {
@@ -81,11 +86,29 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
   },
 
   setVerifiedAccessToken: token => {
-    if (get().accessToken === token) set({ verifiedAccessToken: token });
+    if (get().accessToken === token) set({ verifiedAccessToken: token, isWorkspaceUnlocked: true });
+  },
+
+  setDeviceTrusted: async trusted => {
+    const state = get();
+    if (trusted && (!state.isWorkspaceUnlocked || !state.userProfile?.email)) return;
+    set({ isDeviceTrusted: trusted });
+    try {
+      if (trusted) await setMeta('trustedDeviceEmail', state.userProfile!.email);
+      else await delMeta('trustedDeviceEmail');
+    } catch (error) {
+      if (get().userProfile?.email === state.userProfile?.email) {
+        set({ isDeviceTrusted: state.isDeviceTrusted });
+      }
+      throw error;
+    }
   },
 
   setUserProfile: profile => {
-    set({ userProfile: profile, ...(profile ? {} : { verifiedAccessToken: null }) });
+    set({
+      userProfile: profile,
+      ...(profile ? {} : { verifiedAccessToken: null, isWorkspaceUnlocked: false }),
+    });
     if (profile) setMeta('userProfile', JSON.stringify(profile));
     else delMeta('userProfile');
   },

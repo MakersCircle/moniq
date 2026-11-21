@@ -14,6 +14,11 @@ test('AUTH-05: an expired session allows local recording and Reconnect uploads q
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole('heading', { name: 'Welcome to Moniq' })).toBeVisible();
 
+  await page.evaluate(() =>
+    (window as typeof window & { useDataStore: { getState: () => DataState } }).useDataStore
+      .getState()
+      .setDeviceTrusted(true)
+  );
   const accountId = await page.evaluate(() => {
     const store = (
       window as typeof window & { useDataStore: { getState: () => DataState } }
@@ -169,6 +174,17 @@ test('E-23: an expired session reloads into cached data and can still sign out',
   await page.locator('.group > div.cursor-pointer').click();
   await expect(page).toHaveURL(/\/dashboard$/);
 
+  await page.waitForFunction(
+    () =>
+      (
+        window as typeof window & { useDataStore: { getState: () => DataState } }
+      ).useDataStore.getState().isWorkspaceUnlocked
+  );
+  await page.evaluate(() =>
+    (window as typeof window & { useDataStore: { getState: () => DataState } }).useDataStore
+      .getState()
+      .setDeviceTrusted(true)
+  );
   const accountId = await page.evaluate(() => {
     const store = (
       window as typeof window & { useDataStore: { getState: () => DataState } }
