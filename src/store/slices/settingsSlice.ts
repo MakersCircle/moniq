@@ -14,6 +14,8 @@ export interface SettingsSlice {
   settings: UserSettings;
   accessToken: string | null;
   tokenExpiresAt: number | null;
+  verifiedAccessToken: string | null;
+  setVerifiedAccessToken: (token: string) => void;
   userProfile: UserProfile | null;
 
   updateSettings: (patch: Partial<UserSettings>) => void;
@@ -22,10 +24,11 @@ export interface SettingsSlice {
   setUserProfile: (profile: UserProfile | null) => void;
 }
 
-export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice> = set => ({
+export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice> = (set, get) => ({
   settings: defaultSettings,
   accessToken: null,
   tokenExpiresAt: null,
+  verifiedAccessToken: null,
   userProfile: null,
 
   updateSettings: patch => {
@@ -56,6 +59,7 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
     set(() => ({
       accessToken: token,
       tokenExpiresAt: expiresAt || null,
+      verifiedAccessToken: null,
       isCloudInitialized: false,
     }));
     saveAccessTokenSession(token && expiresAt ? { accessToken: token, expiresAt } : null);
@@ -68,6 +72,7 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
     set(() => ({
       accessToken: null,
       tokenExpiresAt: null,
+      verifiedAccessToken: null,
       isCloudInitialized: false,
     }));
     saveAccessTokenSession(null);
@@ -75,8 +80,12 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
     void delMeta('tokenExpiresAt');
   },
 
+  setVerifiedAccessToken: token => {
+    if (get().accessToken === token) set({ verifiedAccessToken: token });
+  },
+
   setUserProfile: profile => {
-    set({ userProfile: profile });
+    set({ userProfile: profile, ...(profile ? {} : { verifiedAccessToken: null }) });
     if (profile) setMeta('userProfile', JSON.stringify(profile));
     else delMeta('userProfile');
   },

@@ -49,10 +49,16 @@ export class GoogleService {
 
   /** Google authorization is renewed only from an explicit user interaction. */
   async fetch(url: string, options: RequestInit = {}): Promise<Response> {
-    const { accessToken, tokenExpiresAt } = useDataStore.getState();
+    const { accessToken, tokenExpiresAt, verifiedAccessToken } = useDataStore.getState();
     if (!accessToken || (tokenExpiresAt && Date.now() >= tokenExpiresAt)) {
       useDataStore.getState().expireSession();
       throw new Error('Google sync paused. Reconnect to sync your changes.');
+    }
+
+    // A newly acquired token cannot access Drive/Sheets until its owner is
+    // verified against this workspace. The profile request performs that check.
+    if (url !== USERINFO_URL && verifiedAccessToken !== accessToken) {
+      throw new Error('Verify your Google account before syncing.');
     }
 
     const response = await fetch(url, {

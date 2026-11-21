@@ -136,7 +136,7 @@ export default function App() {
         // ── Account-switch detection ──────────────────────────────────
         // Reconnection must use the account that owns these local records.
         const storedEmail = await getMeta('userEmail');
-        if (cancelled) return;
+        if (cancelled || useDataStore.getState().accessToken !== accessToken) return;
         if (storedEmail && storedEmail !== profile.email) {
           useDataStore.getState().expireSession();
           toast.error(`Reconnect with ${storedEmail} to sync this device's records.`);
@@ -146,6 +146,7 @@ export default function App() {
         await setMeta('userEmail', profile.email);
 
         setUserProfile(profile);
+        useDataStore.getState().setVerifiedAccessToken(accessToken!);
 
         const sheetId = await initializeDatabase(setInitPhase);
         setSpreadsheetId(sheetId);

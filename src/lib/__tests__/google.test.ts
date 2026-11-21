@@ -1,13 +1,19 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 
 const { state } = vi.hoisted(() => ({
-  state: { accessToken: 'valid' as string | null, tokenExpiresAt: 0, expireSession: vi.fn() },
+  state: {
+    accessToken: 'valid' as string | null,
+    verifiedAccessToken: 'valid' as string | null,
+    tokenExpiresAt: 0,
+    expireSession: vi.fn(),
+  },
 }));
 vi.mock('@/store/dataStore', () => ({ useDataStore: { getState: () => state } }));
 import { googleService } from '../google';
 
 beforeEach(() => {
   state.accessToken = 'valid';
+  state.verifiedAccessToken = 'valid';
   state.tokenExpiresAt = Date.now() + 90_000;
   state.expireSession.mockClear();
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}')));
@@ -15,6 +21,15 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('Google sync authorization', () => {
+  it('blocks Drive and Sheets access until a new token has passed the owner check (#94)', async () => {
+    state.verifiedAccessToken = null;
+    await expect(
+      googleService.fetch('https://sheets.googleapis.com/v4/spreadsheets/previous-owner')
+    ).rejects.toThrow('Verify your Google account');
+    expect(fetch).not.toHaveBeenCalled();
+    await googleService.fetch('https://www.googleapis.com/oauth2/v3/userinfo');
+    expect(fetch).toHaveBeenCalledOnce();
+  });
   it('uses a near-expiry token without trying to authorize in the background', async () => {
     await googleService.fetch('https://example.test');
     expect(fetch).toHaveBeenCalledWith(

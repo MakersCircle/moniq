@@ -78,6 +78,7 @@ export class SyncEngine {
   private static backupCheckedThisSession = false;
 
   private client: SheetClient | null = null;
+  private clientSpreadsheetId: string | null = null;
   private destroyed = false;
   private readonly config: SyncConfig;
   private rowIndexes: RowIndexMap;
@@ -201,8 +202,6 @@ export class SyncEngine {
   }
 
   private async ensureClient(spreadsheetId?: string): Promise<boolean> {
-    if (this.client) return true;
-
     let sId = spreadsheetId;
 
     if (!sId) {
@@ -211,6 +210,10 @@ export class SyncEngine {
     }
 
     if (sId) {
+      if (this.client && this.clientSpreadsheetId === sId) return true;
+      this.clientSpreadsheetId = sId;
+      for (const index of Object.values(this.rowIndexes)) index.clear();
+      this.pendingAppendIds.clear();
       this.client = new SheetClient(sId);
       return true;
     }

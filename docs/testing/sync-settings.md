@@ -293,3 +293,7 @@ The Accounts, Methods, and Categories Trash tables currently ignore the selected
 ### Session-scoped OAuth tokens (#97)
 
 `accessTokenStorage.test.ts` checks valid/expired/malformed credentials, explicit removal, and blocked storage fallback. `auth-token-storage.spec.ts` checks tab reload, removal of old IndexedDB credentials and an independent tab with no inherited token. Browser session restore can retain sessionStorage; this is not a guarantee that closing a window instantly erases credentials from disk.
+
+### Reconnect account verification (#94)
+
+Google client unit coverage blocks Drive/Sheets before verification while allowing the profile lookup. The existing wrong-account reconnect browser check verifies local records, owner metadata and queued operations remain unchanged, followed by successful original-account recovery.

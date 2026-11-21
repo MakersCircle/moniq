@@ -38,6 +38,8 @@ export interface DataState {
   settings: UserSettings;
   accessToken: string | null;
   tokenExpiresAt: number | null;
+  verifiedAccessToken: string | null;
+  setVerifiedAccessToken: (token: string) => void;
 
   // Cloud Sync properties
   userProfile: UserProfile | null;

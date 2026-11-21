@@ -138,6 +138,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
       isHydrated: true,
       accessToken: null,
       tokenExpiresAt: null,
+      verifiedAccessToken: null,
       spreadsheetId: null,
       folderId: null,
       backupFolderId: null,
@@ -181,6 +182,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
       accessToken: null,
       userProfile: null,
       tokenExpiresAt: null,
+      verifiedAccessToken: null,
       isCloudInitialized: false,
       isDemoMode: false,
     }));
@@ -282,6 +284,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         lastSyncedAt: lastSyncedAt || null,
         accessToken: session?.accessToken ?? null,
         tokenExpiresAt: session?.expiresAt ?? null,
+        verifiedAccessToken: null,
         userProfile,
         pendingCount: syncQueue ? syncQueue.length : 0,
         isHydrated: true,
