@@ -27,6 +27,8 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | AUTH-09 | Signed-out access to an app route returns to the landing page; signed-in access to `/` opens the dashboard. | Missing | — | Fake Google browser + unit/integration | No |
 | AUTH-10 | Google sign-in requests access to files this app creates and to the user's basic profile and email. | Covered | Auth browser: Google token client scopes, six viewports | — | Yes |
 
+| AUTH-11 | Session-scoped Google credentials remove legacy durable tokens. | Covered | accessTokenStorage unit tests; auth-token-storage browser verifies reload, IndexedDB cleanup and a fresh tab without credentials | Browser session restoration policy varies by browser | Yes |
+
 ## 2. Use demo mode
 
 | ID | Feature | Status | Existing automated evidence | Next automated check | Live Google? |

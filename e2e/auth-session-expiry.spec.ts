@@ -187,24 +187,11 @@ test('E-23: an expired session reloads into cached data and can still sign out',
     .toBe(true);
 
   const expiredAt = Date.now() - 1000;
-  await page.evaluate(async expiresAt => {
-    (window as typeof window & { useDataStore: { getState: () => DataState } }).useDataStore
-      .getState()
-      .setAccessToken('fake-access-token', Date.now() + 60 * 60 * 1000);
-    await new Promise<void>((resolve, reject) => {
-      const request = indexedDB.open('moniq-db');
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        const db = request.result;
-        const transaction = db.transaction('meta', 'readwrite');
-        transaction.objectStore('meta').put({ key: 'tokenExpiresAt', value: String(expiresAt) });
-        transaction.oncomplete = () => {
-          db.close();
-          resolve();
-        };
-        transaction.onerror = () => reject(transaction.error);
-      };
-    });
+  await page.evaluate(expiresAt => {
+    sessionStorage.setItem(
+      'moniq.oauth-session',
+      JSON.stringify({ accessToken: 'fake-access-token', expiresAt })
+    );
   }, expiredAt);
 
   await page.reload();

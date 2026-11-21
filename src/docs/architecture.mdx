@@ -16,7 +16,7 @@ To prioritize privacy and simplicity, it leverages the user's personal Google Dr
 
 ## Local workspace and Google authorization
 
-After the first successful sync, the stored profile, spreadsheet ID and last-sync timestamp identify a local workspace. Routes and transaction entry use that local readiness independently of the short-lived Google API token. Reloads render IndexedDB records immediately while cloud reconciliation runs in the background. Token expiry or HTTP 401 pauses Google access; renewal starts from the user's Reconnect Google action, without timer-driven OAuth popups.
+After the first successful sync, the stored profile, spreadsheet ID and last-sync timestamp identify a local workspace. Routes and transaction entry use that local readiness independently of the short-lived Google API token. Reloads render IndexedDB records immediately while cloud reconciliation runs in the background. Google API tokens live in sessionStorage, with a document-memory fallback when it is unavailable. Startup removes legacy durable tokens from IndexedDB instead of migrating them into a new session. Browser session restoration may retain sessionStorage. Token expiry or HTTP 401 pauses Google access; renewal starts from the user's Reconnect Google action, without timer-driven OAuth popups.
 
 Reconnection verifies the original account email before accessing its spreadsheet. A different account leaves local records and queued edits intact. Reconciliation preserves changes made after its local snapshot, commits the merged records atomically, and acknowledges only captured queue operations. Pending settings are uploaded instead of replaced by stale remote preferences. Explicit sign-out waits for local cleanup before returning to the landing page.
 

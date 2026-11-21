@@ -5,6 +5,7 @@ import { markDirty } from '../helpers';
 import { getCurrencySymbol } from '@/constants/currencies';
 import { putSetting, setMeta, delMeta } from '@/lib/db';
 
+import { saveAccessTokenSession } from '@/lib/accessTokenStorage';
 import { createDefaultSettings } from '@/lib/userSettings';
 
 export const defaultSettings = createDefaultSettings();
@@ -57,16 +58,10 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
       tokenExpiresAt: expiresAt || null,
       isCloudInitialized: false,
     }));
-    if (token) {
-      setMeta('accessToken', token);
-      if (expiresAt) setMeta('tokenExpiresAt', String(expiresAt));
-    } else {
-      delMeta('accessToken');
-      delMeta('tokenExpiresAt');
-    }
-    if (!token) {
-      set({ isCloudInitialized: false });
-    }
+    saveAccessTokenSession(token && expiresAt ? { accessToken: token, expiresAt } : null);
+    // Remove durable credentials left by releases before session-scoped storage.
+    void delMeta('accessToken');
+    void delMeta('tokenExpiresAt');
   },
 
   expireSession: () => {
@@ -75,8 +70,9 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
       tokenExpiresAt: null,
       isCloudInitialized: false,
     }));
-    delMeta('accessToken');
-    delMeta('tokenExpiresAt');
+    saveAccessTokenSession(null);
+    void delMeta('accessToken');
+    void delMeta('tokenExpiresAt');
   },
 
   setUserProfile: profile => {

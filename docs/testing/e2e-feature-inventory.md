@@ -19,6 +19,8 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | AUTH-09 | Signed-out access to an app route returns to the landing page; signed-in access to `/` opens the dashboard. | 0.1.0 |
 | AUTH-10 | Google sign-in requests access to files this app creates and to the user's basic profile and email. | 0.7.0 |
 
+| AUTH-11 | OAuth credentials survive a tab reload without being saved to IndexedDB or inherited by an independently opened tab. | Unreleased |
+
 ## 2. Use demo mode
 
 | ID | Testable behavior | Recorded |

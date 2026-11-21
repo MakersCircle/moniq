@@ -289,3 +289,7 @@ The Accounts, Methods, and Categories Trash tables currently ignore the selected
 ### Regional preferences regression (#108)
 
 `src/lib/__tests__/userSettings.test.ts` covers locale/date-order detection, region hints, invalid tags, and canonical restoration. `e2e/settings-persistence.spec.ts` checks demo preference reload, queued preference reload before sync, and cloud default restoration under a different browser locale. First-run defaults are persisted without queuing an overwrite of an existing account's cloud preferences.
+
+### Session-scoped OAuth tokens (#97)
+
+`accessTokenStorage.test.ts` checks valid/expired/malformed credentials, explicit removal, and blocked storage fallback. `auth-token-storage.spec.ts` checks tab reload, removal of old IndexedDB credentials and an independent tab with no inherited token. Browser session restore can retain sessionStorage; this is not a guarantee that closing a window instantly erases credentials from disk.

@@ -1,4 +1,5 @@
 import type { StateCreator } from 'zustand';
+import { readAccessTokenSession, saveAccessTokenSession } from '@/lib/accessTokenStorage';
 import { preserveLocalEdits } from '@/lib/localWorkspace';
 import type { ReconciledWorkspace, DataState } from '../types';
 import type { SyncStatus, Account, PaymentMethod, Category, Transaction, Budget } from '@/types';
@@ -122,6 +123,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
 
   startDemoMode: async () => {
     const { clearLocalData } = await import('../../lib/db');
+    saveAccessTokenSession(null);
     await clearLocalData();
     await setMeta('isDemoMode', 'true');
     await Promise.all(
@@ -159,6 +161,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
 
   resetData: async () => {
     const { clearLocalData } = await import('../../lib/db');
+    saveAccessTokenSession(null);
     await clearLocalData();
 
     set(() => ({
@@ -209,8 +212,6 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         budgets,
         settings,
         lastSyncedAt,
-        accessToken,
-        tokenExpiresAt,
         userProfileStr,
         spreadsheetId,
         folderId,
@@ -225,8 +226,6 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         getAll<Budget>('budgets'),
         getAllSettings(),
         getMeta('lastSyncedAt'),
-        getMeta('accessToken'),
-        getMeta('tokenExpiresAt'),
         getMeta('userProfile'),
         getMeta('spreadsheetId'),
         getMeta('folderId'),
@@ -235,6 +234,8 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         getMeta('isDemoMode'),
       ]);
 
+      await Promise.all([delMeta('accessToken'), delMeta('tokenExpiresAt')]);
+      const session = readAccessTokenSession();
       const userSettings = restoreUserSettings(settings, defaultSettings);
       // Canonicalize defaults once on this device; cloud settings still take
       // precedence on first connection unless the user explicitly edited them.
@@ -279,8 +280,8 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         folderId: folderId || null,
         backupFolderId: backupFolderId || null,
         lastSyncedAt: lastSyncedAt || null,
-        accessToken: accessToken || null,
-        tokenExpiresAt: tokenExpiresAt ? Number(tokenExpiresAt) : null,
+        accessToken: session?.accessToken ?? null,
+        tokenExpiresAt: session?.expiresAt ?? null,
         userProfile,
         pendingCount: syncQueue ? syncQueue.length : 0,
         isHydrated: true,
