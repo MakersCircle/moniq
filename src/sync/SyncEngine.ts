@@ -12,6 +12,7 @@ import type {
  * Union of all entity types stored in the sync engine.
  */
 type AnyEntity = Account | PaymentMethod | Category | Transaction | Budget;
+import { restoreUserSettings, serializeSettings } from '@/lib/userSettings';
 import { preserveLocalEdits } from '@/lib/localWorkspace';
 import type { ReconciledWorkspace } from '@/store/types';
 import { SheetClient } from './SheetClient';
@@ -440,11 +441,12 @@ export class SyncEngine {
 
       // Pending local preferences take precedence over the downloaded settings.
       const settings = queue.some(op => op.entity === 'settings')
-        ? Object.fromEntries(
-            Object.entries(state.settings).map(([key, value]) => [key, String(value)])
-          )
-        : remoteSettings;
-      if (queue.some(op => op.entity === 'settings')) {
+        ? serializeSettings(state.settings)
+        : serializeSettings(restoreUserSettings(remoteSettings, state.settings));
+      const needsSettingsUpload =
+        queue.some(op => op.entity === 'settings') ||
+        Object.keys(settings).some(key => remoteSettings[key] === undefined);
+      if (needsSettingsUpload) {
         await this.client!.overwriteSheet(
           'Settings',
           Object.entries(settings).map(([key, value]) => [
@@ -468,11 +470,7 @@ export class SyncEngine {
         transactions: preserveLocalEdits(txResult.merged, state.transactions, latest.transactions),
         budgets: preserveLocalEdits(budResult.merged, state.budgets, latest.budgets),
         settings:
-          latest.settings !== state.settings
-            ? Object.fromEntries(
-                Object.entries(latest.settings).map(([key, value]) => [key, String(value)])
-              )
-            : settings,
+          latest.settings !== state.settings ? serializeSettings(latest.settings) : settings,
         localSnapshot: latest,
       };
       const transaction = db.transaction(

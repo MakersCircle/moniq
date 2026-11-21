@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ledger Toolbar and Search**: Moved search and type filters beside Export PDF, with compact mobile controls, expandable search, clear actions, and a multi-select type menu. Removed the net amount beneath the Ledger title.
 
 ### Fixed
+- **Regional Settings Persistence (#108)**: Restore demo preferences after reload, save first-run defaults locally and to Sheets, prefer regional browser language hints, and detect date order using the locale. Pending preferences and canonical cloud settings survive reloads on differently localized devices.
 - **Local Sessions and Google Reconnect**: Returning users open their saved workspace immediately and can keep recording after Google access expires, across browser and PWA reloads. Replaced background authorization attempts with a compact sync-paused banner (one line on mobile) and explicit reconnect, preserved queued edits and settings during reconciliation, protected local records from a different Google account, and made sign-out wait for local cleanup.
 - **Ledger Date Filtering**: Keep table headings visible for empty results, stabilize custom calendar placement, and improve date-range preview, entry, and selection spacing.
 

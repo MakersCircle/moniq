@@ -10,7 +10,7 @@ This matrix follows [the feature inventory](e2e-feature-inventory.md). Each row 
 
 Evidence names refer to these existing files: [Home auth hook](../../src/hooks/__tests__/useHomeAuth.test.ts), [OAuth session logic](../../src/lib/__tests__/authSession.test.ts), [Home component](../../src/pages/__tests__/Home.test.tsx), [Home browser](../../e2e/home.spec.ts), [auth browser](../../e2e/auth-flow.spec.ts), [returning-user browser](../../e2e/auth-rehydration.spec.ts), [connection-error browser](../../e2e/auth-connection-error.spec.ts), [session-expiry browser](../../e2e/auth-session-expiry.spec.ts), [persistent-outage browser](../../e2e/auth-persistent-outage.spec.ts), [demo/navigation browser](../../e2e/demo-navigation.spec.ts), [transaction creation browser](../../e2e/transaction-create.spec.ts), [transaction management browser](../../e2e/transaction-manage.spec.ts), [transaction read browser](../../e2e/transaction-read.spec.ts), [ledger math and selectors](../../src/lib/__tests__/ledger.test.ts), [transaction input logic](../../src/lib/__tests__/transactionInput.test.ts), [transaction mutation logic](../../src/lib/__tests__/transactionMutations.test.ts), and [schema tests](../../src/schema). The [case documents](README.md#planned-test-cases) are plans, not evidence. “Next automated check” gives the main missing layer; it does not exclude smaller unit tests needed to make a browser scenario reliable. The demo fixture seeds accounts and initial transactions through store actions; transaction creation browser tests use the form for the action under test.
 
-Known defects should get tests that describe the intended behavior once fixed: [#76](https://github.com/MakersCircle/moniq/issues/76) date format is saved but not applied, [#108](https://github.com/MakersCircle/moniq/issues/108) settings can reset after reload, [#91](https://github.com/MakersCircle/moniq/issues/91) auth gate, [#92](https://github.com/MakersCircle/moniq/issues/92) token refresh data loss, [#77](https://github.com/MakersCircle/moniq/issues/77) duplicate sync rows, [#94](https://github.com/MakersCircle/moniq/issues/94) reconnect account mismatch, [#95](https://github.com/MakersCircle/moniq/issues/95) backup migration safety, and [#96](https://github.com/MakersCircle/moniq/issues/96) cross-tab migration lock.
+Known defects should get tests that describe the intended behavior once fixed: [#76](https://github.com/MakersCircle/moniq/issues/76) date format is saved but not applied, [#91](https://github.com/MakersCircle/moniq/issues/91) auth gate, [#92](https://github.com/MakersCircle/moniq/issues/92) token refresh data loss, [#77](https://github.com/MakersCircle/moniq/issues/77) duplicate sync rows, [#94](https://github.com/MakersCircle/moniq/issues/94) reconnect account mismatch, [#95](https://github.com/MakersCircle/moniq/issues/95) backup migration safety, and [#96](https://github.com/MakersCircle/moniq/issues/96) cross-tab migration lock.
 
 ## 1. Enter and leave the application
 
@@ -162,6 +162,8 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | SETTINGS-06 | Reset Data requires the exact confirmation phrase before deleting local and cloud data and returning to the landing page. | Missing | — | Fake Google browser + component | Yes |
 | SETTINGS-07 | A failed reset shows an error and keeps the app available for another attempt. | Missing | — | Fake Google browser + component | Yes |
 
+| SETTINGS-08 | Regional defaults and preferences persist across reload and device locale changes. | Covered | userSettings unit tests and settings-persistence browser: demo, pending preferences, canonical cloud defaults, desktop and phone | Real multi-device acceptance | Yes |
+
 ## 10. Sync and recover data
 
 | ID | Feature | Status | Existing automated evidence | Next automated check | Live Google? |
@@ -191,3 +193,5 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | PWA-03 | Installed mobile app icons display correctly on iOS and Android home screens. | Missing | — | Installed/offline browser | No |
 
 Tracked: **122 features**; **7 partial**, **93 missing**, **22 covered end to end**. Recalculate these totals when adding tests.
+
+Regional preference persistence (#108): `userSettings.test.ts` and `settings-persistence.spec.ts` cover demo reload, pending changes, canonical defaults, and locale-dependent date order. Applying the date format throughout the UI remains separate issue #76.

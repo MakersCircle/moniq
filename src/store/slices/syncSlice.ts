@@ -3,8 +3,16 @@ import { preserveLocalEdits } from '@/lib/localWorkspace';
 import type { ReconciledWorkspace, DataState } from '../types';
 import type { SyncStatus, Account, PaymentMethod, Category, Transaction, Budget } from '@/types';
 import { defaultSettings } from './settingsSlice';
-import { getCurrencySymbol } from '../../constants/currencies';
-import { getAll, getAllSettings, getMeta, setMeta, delMeta, getAllSyncQueue } from '../../lib/db';
+import { restoreUserSettings, serializeSettings } from '@/lib/userSettings';
+import {
+  getAll,
+  getAllSettings,
+  getMeta,
+  setMeta,
+  delMeta,
+  getAllSyncQueue,
+  putSetting,
+} from '../../lib/db';
 
 export interface SyncSlice {
   spreadsheetId: string | null;
@@ -116,6 +124,11 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
     const { clearLocalData } = await import('../../lib/db');
     await clearLocalData();
     await setMeta('isDemoMode', 'true');
+    await Promise.all(
+      Object.entries(serializeSettings(defaultSettings)).map(([key, value]) =>
+        putSetting(key, value)
+      )
+    );
 
     set({
       isDemoMode: true,
@@ -222,6 +235,15 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         getMeta('isDemoMode'),
       ]);
 
+      const userSettings = restoreUserSettings(settings, defaultSettings);
+      // Canonicalize defaults once on this device; cloud settings still take
+      // precedence on first connection unless the user explicitly edited them.
+      await Promise.all(
+        Object.entries(serializeSettings(userSettings)).map(([key, value]) =>
+          settings[key] === undefined ? putSetting(key, value) : Promise.resolve()
+        )
+      );
+
       // If demo mode was active before reload, restore it immediately without
       // touching any Google APIs — just mark hydrated and let the router in.
       if (isDemoModeMeta === 'true') {
@@ -234,6 +256,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
           categories,
           transactions,
           budgets: budgets as Budget[],
+          settings: userSettings,
         });
         return;
       }
@@ -243,25 +266,6 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         if (userProfileStr) userProfile = JSON.parse(userProfileStr);
       } catch {
         // Ignore JSON parse errors for user profile
-      }
-
-      const userSettings = { ...defaultSettings };
-      if (Object.keys(settings).length > 0) {
-        if (settings.currency) userSettings.currency = settings.currency;
-        if (settings.numberLocale) userSettings.numberLocale = settings.numberLocale;
-
-        if (settings.currencySymbol) {
-          userSettings.currencySymbol = settings.currencySymbol;
-        } else if (settings.currency) {
-          userSettings.currencySymbol = getCurrencySymbol(
-            userSettings.currency,
-            userSettings.numberLocale
-          );
-        }
-
-        if (settings.fiscalYearStartMonth)
-          userSettings.fiscalYearStartMonth = Number(settings.fiscalYearStartMonth);
-        if (settings.dateFormat) userSettings.dateFormat = settings.dateFormat;
       }
 
       set({

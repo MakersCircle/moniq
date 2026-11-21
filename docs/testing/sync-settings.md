@@ -285,3 +285,7 @@ These are planned cases. Local/demo cases need browser tests. Sync, backup, and 
 Remaining gaps: real installed iOS/Android Google OAuth flows and concurrent browser tabs require further acceptance/integration coverage. Chromium touch viewport checks do not establish real Safari/PWA compatibility.
 
 The Accounts, Methods, and Categories Trash tables currently ignore the selected sort order. Add a desired-behavior case when fixing that control; do not lock the current inconsistency into a regression test.
+
+### Regional preferences regression (#108)
+
+`src/lib/__tests__/userSettings.test.ts` covers locale/date-order detection, region hints, invalid tags, and canonical restoration. `e2e/settings-persistence.spec.ts` checks demo preference reload, queued preference reload before sync, and cloud default restoration under a different browser locale. First-run defaults are persisted without queuing an overwrite of an existing account's cloud preferences.

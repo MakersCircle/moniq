@@ -154,6 +154,8 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | SETTINGS-06 | Reset Data requires the exact confirmation phrase before deleting local and cloud data and returning to the landing page. | 0.2.0, 0.8.0 |
 | SETTINGS-07 | A failed reset shows an error and keeps the app available for another attempt. | 0.8.0 |
 
+| SETTINGS-08 | Regional defaults and explicit preferences persist through demo reloads, pending cloud sync, and device locale changes. | Unreleased |
+
 ## 10. Sync and recover data
 
 | ID | Testable behavior | Recorded |

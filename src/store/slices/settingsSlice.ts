@@ -2,18 +2,12 @@ import type { StateCreator } from 'zustand';
 import type { DataState, UserProfile } from '../types';
 import type { UserSettings } from '@/types';
 import { markDirty } from '../helpers';
-import { detectLocalSettings, getCurrencySymbol } from '@/constants/currencies';
+import { getCurrencySymbol } from '@/constants/currencies';
 import { putSetting, setMeta, delMeta } from '@/lib/db';
 
-const detected = detectLocalSettings();
+import { createDefaultSettings } from '@/lib/userSettings';
 
-export const defaultSettings: UserSettings = {
-  currency: detected.currency,
-  currencySymbol: detected.symbol,
-  numberLocale: detected.locale,
-  fiscalYearStartMonth: detected.currency === 'INR' ? 4 : 1,
-  dateFormat: detected.currency === 'INR' ? 'dd/MM/yyyy' : 'MM/dd/yyyy',
-};
+export const defaultSettings = createDefaultSettings();
 
 export interface SettingsSlice {
   settings: UserSettings;
