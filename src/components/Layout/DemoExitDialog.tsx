@@ -39,8 +39,8 @@ function DemoExitDialog({ onClose }: DemoExitDialogProps) {
   });
 
   const loginWithFreshStart = useGoogleLogin({
-    onSuccess: tokenResponse => {
-      resetData(); // wipes IndexedDB + Zustand (also clears isDemoMode)
+    onSuccess: async tokenResponse => {
+      await resetData(); // wipes IndexedDB + Zustand (also clears isDemoMode)
       const expiresAt = Date.now() + (Number(tokenResponse.expires_in) || 3600) * 1000;
       setAccessToken(tokenResponse.access_token, expiresAt);
       navigate('/dashboard');

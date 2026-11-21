@@ -20,7 +20,7 @@ const currencies = currenciesData as Record<string, CurrencyData>;
 /**
  * Returns a list of all currencies supported by the browser with their names and symbols.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 export function getAllCurrencies(_locale: string = 'en-US'): CurrencyInfo[] {
   return Object.values(currencies).map(c => ({
     code: c.code,
@@ -32,26 +32,36 @@ export function getAllCurrencies(_locale: string = 'en-US'): CurrencyInfo[] {
 /**
  * Fetches the standard symbol for a given currency code and locale.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 export function getCurrencySymbol(code: string, _locale: string = 'en-US'): string {
   const c = currencies[code];
-  return c ? (c.symbolNative || c.symbol || code) : code;
+  return c ? c.symbolNative || c.symbol || code : code;
 }
 
 /**
  * Detects the user's localized settings (locale and currency).
  */
-export function detectLocalSettings() {
-  const locale = typeof navigator !== 'undefined' ? navigator.language : 'en-US';
-  const region = locale.split('-')[1]?.toUpperCase();
-
+export function detectLocalSettings(languages?: readonly string[]) {
+  const candidates =
+    languages ??
+    (typeof navigator !== 'undefined' ? [navigator.language, ...navigator.languages] : ['en-US']);
+  const parsed = candidates.flatMap(value => {
+    try {
+      return [new Intl.Locale(value)];
+    } catch {
+      return [];
+    }
+  });
+  const selected = parsed.find(value => value.region) ?? parsed[0] ?? new Intl.Locale('en-US');
+  const region = selected.region ?? selected.maximize().region;
+  const locale = selected.toString();
   const currency = (regionToCurrency as Record<string, string>)[region || ''] || 'USD';
-
-  return {
-    locale,
-    currency,
-    symbol: getCurrencySymbol(currency, locale),
-  };
+  const firstDatePart = new Intl.DateTimeFormat(locale)
+    .formatToParts(new Date(2006, 10, 22))
+    .find(part => ['day', 'month', 'year'].includes(part.type))?.type;
+  const dateFormat =
+    firstDatePart === 'year' ? 'yyyy-MM-dd' : firstDatePart === 'day' ? 'dd/MM/yyyy' : 'MM/dd/yyyy';
+  return { locale, currency, symbol: getCurrencySymbol(currency, locale), dateFormat };
 }
 
 /**

@@ -2,23 +2,23 @@ import type { StateCreator } from 'zustand';
 import type { DataState, UserProfile } from '../types';
 import type { UserSettings } from '@/types';
 import { markDirty } from '../helpers';
-import { detectLocalSettings, getCurrencySymbol } from '@/constants/currencies';
+import { getCurrencySymbol } from '@/constants/currencies';
 import { putSetting, setMeta, delMeta } from '@/lib/db';
 
-const detected = detectLocalSettings();
+import { saveAccessTokenSession } from '@/lib/accessTokenStorage';
+import { createDefaultSettings } from '@/lib/userSettings';
 
-export const defaultSettings: UserSettings = {
-  currency: detected.currency,
-  currencySymbol: detected.symbol,
-  numberLocale: detected.locale,
-  fiscalYearStartMonth: detected.currency === 'INR' ? 4 : 1,
-  dateFormat: detected.currency === 'INR' ? 'dd/MM/yyyy' : 'MM/dd/yyyy',
-};
+export const defaultSettings = createDefaultSettings();
 
 export interface SettingsSlice {
   settings: UserSettings;
   accessToken: string | null;
   tokenExpiresAt: number | null;
+  verifiedAccessToken: string | null;
+  isWorkspaceUnlocked: boolean;
+  isDeviceTrusted: boolean;
+  setDeviceTrusted: (trusted: boolean) => Promise<void>;
+  setVerifiedAccessToken: (token: string) => void;
   userProfile: UserProfile | null;
 
   updateSettings: (patch: Partial<UserSettings>) => void;
@@ -27,10 +27,13 @@ export interface SettingsSlice {
   setUserProfile: (profile: UserProfile | null) => void;
 }
 
-export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice> = set => ({
+export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice> = (set, get) => ({
   settings: defaultSettings,
   accessToken: null,
   tokenExpiresAt: null,
+  verifiedAccessToken: null,
+  isWorkspaceUnlocked: false,
+  isDeviceTrusted: false,
   userProfile: null,
 
   updateSettings: patch => {
@@ -61,32 +64,51 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
     set(() => ({
       accessToken: token,
       tokenExpiresAt: expiresAt || null,
+      verifiedAccessToken: null,
+      isCloudInitialized: false,
     }));
-    if (token) {
-      setMeta('accessToken', token);
-      if (expiresAt) setMeta('tokenExpiresAt', String(expiresAt));
-    } else {
-      delMeta('accessToken');
-      delMeta('tokenExpiresAt');
-    }
-    if (!token) {
-      set({ isCloudInitialized: false });
-    }
+    saveAccessTokenSession(token && expiresAt ? { accessToken: token, expiresAt } : null);
+    // Remove durable credentials left by releases before session-scoped storage.
+    void delMeta('accessToken');
+    void delMeta('tokenExpiresAt');
   },
 
   expireSession: () => {
-    set(state => ({
+    set(() => ({
       accessToken: null,
       tokenExpiresAt: null,
-      // A previously synced user can keep viewing cached records while reconnecting.
-      isCloudInitialized: !!state.lastSyncedAt,
+      verifiedAccessToken: null,
+      isCloudInitialized: false,
     }));
-    delMeta('accessToken');
-    delMeta('tokenExpiresAt');
+    saveAccessTokenSession(null);
+    void delMeta('accessToken');
+    void delMeta('tokenExpiresAt');
+  },
+
+  setVerifiedAccessToken: token => {
+    if (get().accessToken === token) set({ verifiedAccessToken: token, isWorkspaceUnlocked: true });
+  },
+
+  setDeviceTrusted: async trusted => {
+    const state = get();
+    if (trusted && (!state.isWorkspaceUnlocked || !state.userProfile?.email)) return;
+    set({ isDeviceTrusted: trusted });
+    try {
+      if (trusted) await setMeta('trustedDeviceEmail', state.userProfile!.email);
+      else await delMeta('trustedDeviceEmail');
+    } catch (error) {
+      if (get().userProfile?.email === state.userProfile?.email) {
+        set({ isDeviceTrusted: state.isDeviceTrusted });
+      }
+      throw error;
+    }
   },
 
   setUserProfile: profile => {
-    set({ userProfile: profile });
+    set({
+      userProfile: profile,
+      ...(profile ? {} : { verifiedAccessToken: null, isWorkspaceUnlocked: false }),
+    });
     if (profile) setMeta('userProfile', JSON.stringify(profile));
     else delMeta('userProfile');
   },

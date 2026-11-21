@@ -1,9 +1,19 @@
 import type { StateCreator } from 'zustand';
-import type { DataState } from '../types';
+import { readAccessTokenSession, saveAccessTokenSession } from '@/lib/accessTokenStorage';
+import { preserveLocalEdits } from '@/lib/localWorkspace';
+import type { ReconciledWorkspace, DataState } from '../types';
 import type { SyncStatus, Account, PaymentMethod, Category, Transaction, Budget } from '@/types';
 import { defaultSettings } from './settingsSlice';
-import { getCurrencySymbol } from '../../constants/currencies';
-import { getAll, getAllSettings, getMeta, setMeta, delMeta, getAllSyncQueue } from '../../lib/db';
+import { restoreUserSettings, serializeSettings } from '@/lib/userSettings';
+import {
+  getAll,
+  getAllSettings,
+  getMeta,
+  setMeta,
+  delMeta,
+  getAllSyncQueue,
+  putSetting,
+} from '../../lib/db';
 
 export interface SyncSlice {
   spreadsheetId: string | null;
@@ -31,15 +41,8 @@ export interface SyncSlice {
   setLastSyncedAt: (timestamp: string) => void;
   setCloudInitialized: (initialized: boolean) => void;
 
-  hydrateFromSync: (data: {
-    accounts: Account[];
-    methods: PaymentMethod[];
-    categories: Category[];
-    transactions: Transaction[];
-    budgets: Budget[];
-    settings: Record<string, string>;
-  }) => void;
-  resetData: () => void;
+  hydrateFromSync: (data: ReconciledWorkspace) => void;
+  resetData: () => Promise<void>;
   initializeFromDB: () => Promise<void>;
 }
 
@@ -78,13 +81,29 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
   hydrateFromSync: data => {
     set(state => {
       const nextState: Partial<DataState> = {};
-      if (data.accounts.length > 0) nextState.accounts = data.accounts;
-      if (data.methods.length > 0) nextState.methods = data.methods;
-      if (data.categories.length > 0) nextState.categories = data.categories;
-      if (data.transactions.length > 0) nextState.transactions = data.transactions;
-      if (data.budgets.length > 0) nextState.budgets = data.budgets;
+      const merge = <T extends { id: string }>(
+        values: T[],
+        before: T[] | undefined,
+        current: T[]
+      ) => (before ? preserveLocalEdits(values, before, current) : values);
+      nextState.accounts = merge(data.accounts, data.localSnapshot?.accounts, state.accounts);
+      nextState.methods = merge(data.methods, data.localSnapshot?.methods, state.methods);
+      nextState.categories = merge(
+        data.categories,
+        data.localSnapshot?.categories,
+        state.categories
+      );
+      nextState.transactions = merge(
+        data.transactions,
+        data.localSnapshot?.transactions,
+        state.transactions
+      );
+      nextState.budgets = merge(data.budgets, data.localSnapshot?.budgets, state.budgets);
 
-      if (Object.keys(data.settings).length > 0) {
+      if (
+        Object.keys(data.settings).length > 0 &&
+        (!data.localSnapshot || data.localSnapshot.settings === state.settings)
+      ) {
         const current = { ...state.settings };
         for (const [key, value] of Object.entries(data.settings)) {
           if (key === 'currency') current.currency = value;
@@ -104,8 +123,14 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
 
   startDemoMode: async () => {
     const { clearLocalData } = await import('../../lib/db');
+    saveAccessTokenSession(null);
     await clearLocalData();
     await setMeta('isDemoMode', 'true');
+    await Promise.all(
+      Object.entries(serializeSettings(defaultSettings)).map(([key, value]) =>
+        putSetting(key, value)
+      )
+    );
 
     set({
       isDemoMode: true,
@@ -113,6 +138,9 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
       isHydrated: true,
       accessToken: null,
       tokenExpiresAt: null,
+      verifiedAccessToken: null,
+      isWorkspaceUnlocked: false,
+      isDeviceTrusted: false,
       spreadsheetId: null,
       folderId: null,
       backupFolderId: null,
@@ -134,10 +162,10 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
     set({ isDemoMode: false });
   },
 
-  resetData: () => {
-    import('../../lib/db').then(({ clearLocalData }) => {
-      clearLocalData().catch(console.error);
-    });
+  resetData: async () => {
+    const { clearLocalData } = await import('../../lib/db');
+    saveAccessTokenSession(null);
+    await clearLocalData();
 
     set(() => ({
       accounts: [],
@@ -156,6 +184,9 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
       accessToken: null,
       userProfile: null,
       tokenExpiresAt: null,
+      verifiedAccessToken: null,
+      isWorkspaceUnlocked: false,
+      isDeviceTrusted: false,
       isCloudInitialized: false,
       isDemoMode: false,
     }));
@@ -187,14 +218,13 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         budgets,
         settings,
         lastSyncedAt,
-        accessToken,
-        tokenExpiresAt,
         userProfileStr,
         spreadsheetId,
         folderId,
         backupFolderId,
         syncQueue,
         isDemoModeMeta,
+        trustedDeviceEmail,
       ] = await Promise.all([
         getAll<Account>('accounts'),
         getAll<PaymentMethod>('methods'),
@@ -203,15 +233,25 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         getAll<Budget>('budgets'),
         getAllSettings(),
         getMeta('lastSyncedAt'),
-        getMeta('accessToken'),
-        getMeta('tokenExpiresAt'),
         getMeta('userProfile'),
         getMeta('spreadsheetId'),
         getMeta('folderId'),
         getMeta('backupFolderId'),
         getAllSyncQueue(),
         getMeta('isDemoMode'),
+        getMeta('trustedDeviceEmail'),
       ]);
+
+      await Promise.all([delMeta('accessToken'), delMeta('tokenExpiresAt')]);
+      const session = readAccessTokenSession();
+      const userSettings = restoreUserSettings(settings, defaultSettings);
+      // Canonicalize defaults once on this device; cloud settings still take
+      // precedence on first connection unless the user explicitly edited them.
+      await Promise.all(
+        Object.entries(serializeSettings(userSettings)).map(([key, value]) =>
+          settings[key] === undefined ? putSetting(key, value) : Promise.resolve()
+        )
+      );
 
       // If demo mode was active before reload, restore it immediately without
       // touching any Google APIs — just mark hydrated and let the router in.
@@ -225,6 +265,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
           categories,
           transactions,
           budgets: budgets as Budget[],
+          settings: userSettings,
         });
         return;
       }
@@ -234,25 +275,6 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         if (userProfileStr) userProfile = JSON.parse(userProfileStr);
       } catch {
         // Ignore JSON parse errors for user profile
-      }
-
-      const userSettings = { ...defaultSettings };
-      if (Object.keys(settings).length > 0) {
-        if (settings.currency) userSettings.currency = settings.currency;
-        if (settings.numberLocale) userSettings.numberLocale = settings.numberLocale;
-
-        if (settings.currencySymbol) {
-          userSettings.currencySymbol = settings.currencySymbol;
-        } else if (settings.currency) {
-          userSettings.currencySymbol = getCurrencySymbol(
-            userSettings.currency,
-            userSettings.numberLocale
-          );
-        }
-
-        if (settings.fiscalYearStartMonth)
-          userSettings.fiscalYearStartMonth = Number(settings.fiscalYearStartMonth);
-        if (settings.dateFormat) userSettings.dateFormat = settings.dateFormat;
       }
 
       set({
@@ -266,8 +288,11 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         folderId: folderId || null,
         backupFolderId: backupFolderId || null,
         lastSyncedAt: lastSyncedAt || null,
-        accessToken: accessToken || null,
-        tokenExpiresAt: tokenExpiresAt ? Number(tokenExpiresAt) : null,
+        accessToken: session?.accessToken ?? null,
+        tokenExpiresAt: session?.expiresAt ?? null,
+        verifiedAccessToken: null,
+        isWorkspaceUnlocked: false,
+        isDeviceTrusted: !!userProfile?.email && trustedDeviceEmail === userProfile.email,
         userProfile,
         pendingCount: syncQueue ? syncQueue.length : 0,
         isHydrated: true,
@@ -277,7 +302,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
       });
     } catch (err) {
       console.error('Failed to initialize from DB:', err);
-      set({ isHydrated: true, isCloudInitialized: true });
+      set({ isHydrated: true, isCloudInitialized: false });
     }
   },
 });

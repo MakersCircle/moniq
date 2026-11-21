@@ -17,7 +17,8 @@ import LayoutShell from './components/Layout/LayoutShell';
 import { useDataStore } from './store/dataStore';
 import { fetchUserProfile, initializeDatabase } from './api/google';
 import { SyncEngine } from './sync/SyncEngine';
-import { googleService } from './lib/google';
+import AccountUnlockScreen from './components/AccountUnlockScreen';
+import { hasLocalWorkspace, hasStoredWorkspace } from './lib/localWorkspace';
 import { getMeta, setMeta } from './lib/db';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,9 @@ import TransactionForm from './components/Transactions/TransactionForm';
 import type { Transaction, TransactionType } from './types';
 
 export default function App() {
+  const localWorkspaceReady = useDataStore(hasLocalWorkspace);
+  const storedWorkspace = useDataStore(hasStoredWorkspace);
+  const trustOnUnlock = useRef(false);
   const accessToken = useDataStore(s => s.accessToken);
   const tokenExpiresAt = useDataStore(s => s.tokenExpiresAt);
   const setUserProfile = useDataStore(s => s.setUserProfile);
@@ -42,6 +46,7 @@ export default function App() {
   const syncStatus = useDataStore(s => s.syncStatus);
   const initializeFromDB = useDataStore(s => s.initializeFromDB);
   const isDemoMode = useDataStore(s => s.isDemoMode);
+  const canUseWorkspace = localWorkspaceReady || isCloudInitialized || isDemoMode;
 
   const [initError, setInitError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -87,49 +92,28 @@ export default function App() {
     initializeFromDB();
   }, [initializeFromDB]);
 
-  // 2. Proactive token refresh (checks each minute near expiry)
+  // Expiry pauses Google sync; local access is independent of this token.
   useEffect(() => {
     if (!accessToken || isDemoMode) return;
-
-    const check = async () => {
-      const fiveMinutes = 5 * 60 * 1000;
-      const isAboutToExpire = tokenExpiresAt && Date.now() > tokenExpiresAt - fiveMinutes;
-
-      if (isAboutToExpire) {
-        try {
-          await googleService.silentRefresh();
-        } catch {
-          // The existing token remains usable until its actual expiry.
-        }
-        const state = useDataStore.getState();
-        if (state.accessToken && state.tokenExpiresAt && Date.now() >= state.tokenExpiresAt) {
-          state.expireSession();
-        }
-      }
+    const check = () => {
+      const state = useDataStore.getState();
+      if (state.tokenExpiresAt && Date.now() >= state.tokenExpiresAt) state.expireSession();
     };
-
-    void check(); // Check immediately on mount or dependency change
-    const interval = setInterval(() => void check(), 60 * 1000); // And then every minute
-
-    return () => clearInterval(interval);
+    check();
+    const interval = setInterval(check, 30_000);
+    window.addEventListener('focus', check);
+    document.addEventListener('visibilitychange', check);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', check);
+      document.removeEventListener('visibilitychange', check);
+    };
   }, [accessToken, tokenExpiresAt, isDemoMode]);
 
-  // 3. SyncEngine Subscription
   useEffect(() => {
-    if (!accessToken || isDemoMode) return;
-
-    const engine = SyncEngine.getInstance();
-    const unsubscribe = engine.subscribe((status, pendingCount, error) => {
-      setSyncStatus(status, pendingCount, error);
-    });
-
-    return () => {
-      unsubscribe();
-      if (!useDataStore.getState().accessToken) {
-        engine.destroy();
-      }
-    };
-  }, [accessToken, setSyncStatus, isDemoMode]);
+    if (isDemoMode || (!accessToken && !localWorkspaceReady)) return;
+    return SyncEngine.getInstance().subscribe(setSyncStatus);
+  }, [accessToken, localWorkspaceReady, setSyncStatus, isDemoMode]);
 
   // Stable ref for hydrateFromSync so it doesn't cause initCloud to re-run on every settings update
   const hydrateFromSyncRef = useRef(hydrateFromSync);
@@ -141,45 +125,42 @@ export default function App() {
   useEffect(() => {
     if (!accessToken || !isHydrated || isDemoMode) return;
 
+    let cancelled = false;
     async function initCloud() {
       setInitError(null);
       try {
-        // If token is expired or near expiry, try silent refresh first
-        if (tokenExpiresAt && Date.now() > tokenExpiresAt - 300000) {
-          const newToken = await googleService.silentRefresh();
-          if (!newToken) {
-            const isFullyExpired = Date.now() > tokenExpiresAt;
-            if (isFullyExpired) {
-              useDataStore.getState().expireSession();
-              return;
-            }
-          }
+        if (tokenExpiresAt && Date.now() >= tokenExpiresAt) {
+          useDataStore.getState().expireSession();
+          return;
         }
 
         const profile = await fetchUserProfile();
 
         // ── Account-switch detection ──────────────────────────────────
-        // If a different Google account logs in on this device, clear the
-        // stored Drive IDs so we don't accidentally connect them to a
-        // previous user's spreadsheet.
+        // Reconnection must use the account that owns these local records.
         const storedEmail = await getMeta('userEmail');
+        if (cancelled || useDataStore.getState().accessToken !== accessToken) return;
         if (storedEmail && storedEmail !== profile.email) {
-          const { clearLocalData } = await import('./lib/db');
-          await clearLocalData();
-
-          const store = useDataStore.getState();
-          store.clearZustandData();
+          useDataStore.getState().expireSession();
+          toast.error(`Reconnect with ${storedEmail} to sync this device's records.`);
+          return;
         }
         // Persist the current user's email for future account-switch checks.
         await setMeta('userEmail', profile.email);
 
         setUserProfile(profile);
+        useDataStore.getState().setVerifiedAccessToken(accessToken!);
+        if (trustOnUnlock.current) {
+          trustOnUnlock.current = false;
+          await useDataStore.getState().setDeviceTrusted(true);
+        }
 
         const sheetId = await initializeDatabase(setInitPhase);
         setSpreadsheetId(sheetId);
 
         const engine = SyncEngine.getInstance();
         const reconciledData = await engine.initialize(sheetId);
+        if (cancelled) return;
         if (reconciledData) {
           const wasAlreadyInitialized = useDataStore.getState().isCloudInitialized;
           hydrateFromSyncRef.current(reconciledData);
@@ -193,13 +174,17 @@ export default function App() {
           throw new Error('Could not reconcile data with Google Sheets');
         }
       } catch (err) {
+        if (cancelled) return;
         console.error('Failed to initialize cloud database:', err);
         setInitError(err instanceof Error ? err.message : 'Unknown connection error');
-        // Keep the app gated until a successful retry or sign-out.
+        // Returning users continue working locally while cloud access is unavailable.
       }
     }
 
-    initCloud();
+    void initCloud();
+    return () => {
+      cancelled = true;
+    };
   }, [
     accessToken,
     tokenExpiresAt,
@@ -210,12 +195,27 @@ export default function App() {
     isDemoMode,
   ]);
   useEffect(() => {
-    if (accessToken || isDemoMode) {
+    if (canUseWorkspace) {
       window.openTransactionModal = { openNew, openEdit, openDuplicate };
     }
-  }, [accessToken, isDemoMode, openNew, openEdit, openDuplicate]);
+  }, [canUseWorkspace, openNew, openEdit, openDuplicate]);
 
-  if (!isHydrated || (!isDemoMode && accessToken && !isCloudInitialized)) {
+  if (isHydrated && storedWorkspace && !canUseWorkspace && !isDemoMode) {
+    return (
+      <>
+        <AccountUnlockScreen
+          error={initError}
+          onRetry={() => setRetryCount(count => count + 1)}
+          onTrustRequested={trusted => {
+            trustOnUnlock.current = trusted;
+          }}
+        />
+        <Toaster />
+      </>
+    );
+  }
+
+  if (!isHydrated || (!canUseWorkspace && accessToken && !isCloudInitialized)) {
     if (initError) {
       return (
         <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center">
@@ -279,7 +279,9 @@ export default function App() {
           {/* Landing/Home page - No Sidebar/TopBar */}
           <Route
             path="/"
-            element={accessToken || isDemoMode ? <Navigate to="/dashboard" replace /> : <Home />}
+            element={
+              canUseWorkspace || accessToken ? <Navigate to="/dashboard" replace /> : <Home />
+            }
           />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
@@ -287,8 +289,12 @@ export default function App() {
           <Route
             path="/docs/*"
             element={
-              accessToken || isCloudInitialized ? (
-                <LayoutShell onNewTransaction={openNew}>
+              canUseWorkspace ? (
+                <LayoutShell
+                  onNewTransaction={openNew}
+                  syncError={initError}
+                  onRetrySync={() => setRetryCount(c => c + 1)}
+                >
                   <DocsPage />
                 </LayoutShell>
               ) : (
@@ -305,8 +311,12 @@ export default function App() {
           <Route
             path="*"
             element={
-              accessToken || isCloudInitialized || isDemoMode ? (
-                <LayoutShell onNewTransaction={openNew}>
+              canUseWorkspace || accessToken ? (
+                <LayoutShell
+                  onNewTransaction={openNew}
+                  syncError={initError}
+                  onRetrySync={() => setRetryCount(c => c + 1)}
+                >
                   <Routes>
                     <Route path="dashboard" element={<Dashboard />} />
                     <Route path="transactions" element={<Transactions />} />
@@ -328,7 +338,7 @@ export default function App() {
         </Routes>
       </Suspense>
 
-      {(accessToken || isDemoMode) && (
+      {canUseWorkspace && (
         <Dialog
           open={modalState.isOpen}
           onOpenChange={open => setModalState(prev => ({ ...prev, isOpen: open }))}

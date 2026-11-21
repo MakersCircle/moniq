@@ -11,13 +11,15 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | AUTH-01 | A signed-out visitor sees the landing page and can open the Google sign-in flow. | 0.1.0 |
 | AUTH-02 | Successful Google sign-in opens the dashboard and provisions or reconnects to the user's Drive folder and spreadsheet. | 0.1.0, 0.7.0 |
 | AUTH-03 | A mobile redirect login consumes the returned access token and opens the dashboard. | 0.8.1 |
-| AUTH-04 | A returning user reloads with locally stored data rehydrated and cloud changes reconciled before the app opens. | 0.2.0 |
-| AUTH-05 | An expired session shows a reconnect banner; re-authentication resumes cloud access. | 0.2.8 |
+| AUTH-04 | A returning user opens saved data after fresh identity verification, or immediately on an explicitly trusted device, while Sheets reconciles in the background. | 0.2.0 |
+| AUTH-05 | Expired Google access preserves local recording and trusted-device reloads; a sync-paused banner offers reconnect and uploads queued changes. | 0.2.8 |
 | AUTH-06 | A cloud initialization failure shows a connection error with Retry Connection and Sign Out actions. | 0.8.0 |
-| AUTH-07 | Signing in with a different Google account on the same browser clears the prior account's local data before connecting. | 0.7.0, 0.8.0 |
+| AUTH-07 | Reconnecting with a different Google account preserves local records and asks for the original account before syncing. | 0.7.0, 0.8.0 |
 | AUTH-08 | Signing out syncs pending changes first; a sync failure offers Cancel and Sign Out Anyway. | Code |
 | AUTH-09 | Signed-out access to an app route returns to the landing page; signed-in access to `/` opens the dashboard. | 0.1.0 |
 | AUTH-10 | Google sign-in requests access to files this app creates and to the user's basic profile and email. | 0.7.0 |
+| AUTH-11 | OAuth credentials survive a tab reload without being saved to IndexedDB or inherited by an independently opened tab. | Unreleased |
+| AUTH-12 | Fresh shared-device launches keep financial records locked until original-account verification; explicit device trust permits local/offline access and can be revoked in Settings. | Unreleased |
 
 ## 2. Use demo mode
 
@@ -153,6 +155,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | SETTINGS-05 | Pending-change count and tooltip identify unsynced local items. | 0.8.0 |
 | SETTINGS-06 | Reset Data requires the exact confirmation phrase before deleting local and cloud data and returning to the landing page. | 0.2.0, 0.8.0 |
 | SETTINGS-07 | A failed reset shows an error and keeps the app available for another attempt. | 0.8.0 |
+| SETTINGS-08 | Regional defaults and explicit preferences persist through demo reloads, pending cloud sync, and device locale changes. | Unreleased |
 
 ## 10. Sync and recover data
 
