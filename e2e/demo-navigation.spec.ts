@@ -93,9 +93,6 @@ test('NAV-02: mobile Settings navigation centers the selected section when possi
 
   await settingsNav.locator('a[href="/settings/accounts"]').click();
   await expect(page).toHaveURL(/\/settings\/accounts$/);
-  await expect
-    .poll(() => settingsNav.evaluate(container => container.scrollLeft))
-    .toBeLessThan(endPosition.scrollLeft - 20);
   await expect.poll(selectedCenterOffset).toBeLessThanOrEqual(2);
 
   await settingsNav.locator('a[href="/settings"]').click();

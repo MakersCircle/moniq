@@ -11,7 +11,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | AUTH-01 | A signed-out visitor sees the landing page and can open the Google sign-in flow. | 0.1.0 |
 | AUTH-02 | Successful Google sign-in opens the dashboard and provisions or reconnects to the user's Drive folder and spreadsheet. | 0.1.0, 0.7.0 |
 | AUTH-03 | A mobile redirect login consumes the returned access token and opens the dashboard. | 0.8.1 |
-| AUTH-04 | A returning user opens saved data after fresh identity verification, or immediately on an explicitly trusted device, while Sheets reconciles in the background. | 0.2.0 |
+| AUTH-04 | A returning user opens saved data after identity verification and initial Sheets reconciliation; explicitly trusted devices can open local data immediately. | 0.2.0, Unreleased |
 | AUTH-05 | Expired Google access preserves local recording and trusted-device reloads; a sync-paused banner offers reconnect and uploads queued changes. | 0.2.8 |
 | AUTH-06 | A cloud initialization failure shows a connection error with Retry Connection and Sign Out actions. | 0.8.0 |
 | AUTH-07 | Reconnecting with a different Google account preserves local records and asks for the original account before syncing. | 0.7.0, 0.8.0 |
