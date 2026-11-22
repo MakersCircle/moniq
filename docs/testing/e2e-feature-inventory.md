@@ -37,7 +37,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | ID | Testable behavior | Recorded |
 | --- | --- | --- |
 | NAV-01 | The main navigation opens Dashboard, Ledger, Insights, Budget, and Settings. | 0.1.0 |
-| NAV-02 | Settings navigation opens Accounts, Payment Methods, Categories, and Recently Deleted. | 0.2.0 |
+| NAV-02 | Settings navigation opens Accounts, Payment Methods, Categories, and Recently Deleted; on mobile, the selected section tab stays centered when space allows and clamps at the ends. | 0.2.0, Unreleased |
 | NAV-03 | Desktop navigation uses a sidebar; mobile navigation uses a bottom bar and a new-transaction button. | 0.9.0 |
 | NAV-04 | The mobile top bar opens Settings and expands its search field when focused; entered text can be cleared with an inline clear control. | Unreleased |
 | NAV-05 | A visitor can open Docs, Privacy Policy, and Terms of Service without signing in. | 0.6.1 |

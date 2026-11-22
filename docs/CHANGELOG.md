@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Mobile Settings Navigation**: Keep the active section tab centered in the horizontal Settings navigation when space allows, clamping the first and last tabs to the strip edges.
 - **Dynamic Mobile Viewport Sizing**: Use one `100vh` fallback that upgrades to `100dvh` for full-height app, legal, and recovery screens, plus sheets and height-based empty states, so layouts follow mobile browser chrome changes.
 - **Viewport-Safe Popovers and Menus**: Keep popovers, selects, and dropdown menus inside the viewport with collision padding, available-height limits, and scrolling for tall content. Restore collision handling for the Ledger type filter.
 - **Mobile Safe-Area Navigation**: Extend the fixed bottom navigation and its content clearance through the device safe area so the app controls stay above the home indicator.
@@ -26,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ledger Date Filtering**: Keep table headings visible for empty results, stabilize custom calendar placement, and improve date-range preview, entry, and selection spacing.
 
 ### Testing
+- **Mobile Settings Navigation Coverage**: Verify a middle Settings section centers after navigation and the first and last sections clamp to the strip edges on a narrow phone viewport.
 - **Mobile Settings Profile Coverage**: Verify profile name/email and Sign Out stay visible and do not overlap on phone portrait and landscape layouts.
 - **Mobile Input Focus Zoom Coverage**: Check computed font sizes for amount, date, notes, and split amount fields in the transaction form at phone portrait and landscape sizes.
 - **Dynamic Viewport Coverage**: Resize the phone browser viewport and override the shared height variable to verify the app shell tracks the available height.

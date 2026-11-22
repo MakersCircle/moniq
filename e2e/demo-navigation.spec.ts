@@ -56,6 +56,53 @@ test('NAV-02: settings navigation opens all management pages', async ({ demoPage
   }
 });
 
+test('NAV-02: mobile Settings navigation centers the selected section when possible', async ({
+  demoPage: page,
+}) => {
+  test.skip(test.info().project.name !== 'iphone-portrait', 'Checks the narrow phone navigation');
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.locator('header a[href="/settings"]').click();
+  await expect(page).toHaveURL(/\/settings$/);
+
+  const settingsNav = page.locator('#main-scroll-container aside').first();
+  await settingsNav.locator('a[href="/settings/categories"]').click();
+  await expect(page).toHaveURL(/\/settings\/categories$/);
+
+  const selectedCenterOffset = () =>
+    settingsNav.evaluate(container => {
+      const selected = container.querySelector('a[aria-current="page"]');
+      if (!selected) throw new Error('No Settings section is selected');
+      const containerBounds = container.getBoundingClientRect();
+      const selectedBounds = selected.getBoundingClientRect();
+      return Math.abs(
+        selectedBounds.left -
+          containerBounds.left +
+          selectedBounds.width / 2 -
+          container.clientWidth / 2
+      );
+    });
+  await expect.poll(selectedCenterOffset).toBeLessThanOrEqual(2);
+
+  await settingsNav.locator('a[href="/settings/trash"]').click();
+  await expect(page).toHaveURL(/\/settings\/trash$/);
+  const endPosition = await settingsNav.evaluate(container => ({
+    scrollLeft: container.scrollLeft,
+    maxScrollLeft: container.scrollWidth - container.clientWidth,
+  }));
+  expect(endPosition.scrollLeft).toBeGreaterThanOrEqual(endPosition.maxScrollLeft - 8);
+
+  await settingsNav.locator('a[href="/settings/accounts"]').click();
+  await expect(page).toHaveURL(/\/settings\/accounts$/);
+  await expect
+    .poll(() => settingsNav.evaluate(container => container.scrollLeft))
+    .toBeLessThan(endPosition.scrollLeft - 20);
+  await expect.poll(selectedCenterOffset).toBeLessThanOrEqual(2);
+
+  await settingsNav.locator('a[href="/settings"]').click();
+  await expect(page).toHaveURL(/\/settings$/);
+  await expect.poll(() => settingsNav.evaluate(container => container.scrollLeft)).toBe(0);
+});
+
 test('NAV-03/TXN-01: desktop sidebar or mobile bottom bar opens the transaction form', async ({
   demoPage: page,
 }) => {
