@@ -161,7 +161,7 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | SETTINGS-01 | Search and select a currency; its symbol and formatted amounts update across the app. | Missing | — | Component + browser | No |
 | SETTINGS-02 | Search and select a number locale; the live preview and formatted amounts update. | Missing | — | Component + browser | No |
 | SETTINGS-03 | Select a date format from the available previews and retain the preference after reload. | Missing | — | Component + browser | No |
-| SETTINGS-04 | Settings displays the signed-in profile, cloud sync state, last sync time, and any sync error. | Missing | — | Fake Google browser + component | Yes |
+| SETTINGS-04 | Settings displays the signed-in profile, cloud sync state, last sync time, and any sync error; on mobile, profile details and Sign Out remain visible without overlap. | Partial | `e2e/settings-persistence.spec.ts` verifies the signed-in name/email and Sign Out bounds do not overlap in phone portrait and landscape profiles. | Cloud status/profile detail checks and physical device verification | Yes |
 | SETTINGS-05 | Pending-change count and tooltip identify unsynced local items. | Missing | — | Fake Google browser + component | Yes |
 | SETTINGS-06 | Reset Data requires the exact confirmation phrase before deleting local and cloud data and returning to the landing page. | Missing | — | Fake Google browser + component | Yes |
 | SETTINGS-07 | A failed reset shows an error and keeps the app available for another attempt. | Missing | — | Fake Google browser + component | Yes |

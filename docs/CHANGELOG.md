@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ledger Toolbar and Search**: Moved search and type filters beside Export PDF, with compact mobile controls, expandable search, clear actions, and a multi-select type menu. Removed the net amount beneath the Ledger title.
 
 ### Fixed
+- **Mobile Settings Profile Layout**: Stack Sign Out below the signed-in profile at narrow widths and allow long names and email addresses to wrap without being covered.
 - **Mobile Input Focus Zoom**: Keep editable text controls at least 16 px on phone and tablet widths to prevent iOS Safari from zooming the page when a field receives focus.
 - **Reconnect Continuity**: Keep a previously unlocked local workspace visible during background reconnection, and retain its saved profile photo when Google omits the optional picture field.
 - **Verified Workspace Startup**: Keep the workspace in its loading state after account verification until the initial Google Sheets reconciliation completes, preventing an empty dashboard from appearing during the first pull.
@@ -25,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ledger Date Filtering**: Keep table headings visible for empty results, stabilize custom calendar placement, and improve date-range preview, entry, and selection spacing.
 
 ### Testing
+- **Mobile Settings Profile Coverage**: Verify profile name/email and Sign Out stay visible and do not overlap on phone portrait and landscape layouts.
 - **Mobile Input Focus Zoom Coverage**: Check computed font sizes for amount, date, notes, and split amount fields in the transaction form at phone portrait and landscape sizes.
 - **Dynamic Viewport Coverage**: Resize the phone browser viewport and override the shared height variable to verify the app shell tracks the available height.
 - **Floating Control Coverage**: Exercise the Ledger type filter and transaction form selectors at phone and desktop sizes after standardizing viewport collision and content sizing.

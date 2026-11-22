@@ -153,7 +153,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | SETTINGS-01 | Search and select a currency; its symbol and formatted amounts update across the app. | 0.1.1, 0.2.4 |
 | SETTINGS-02 | Search and select a number locale; the live preview and formatted amounts update. | 0.1.1, 0.2.4 |
 | SETTINGS-03 | Select a date format from the available previews and retain the preference after reload. | Code |
-| SETTINGS-04 | Settings displays the signed-in profile, cloud sync state, last sync time, and any sync error. | Code |
+| SETTINGS-04 | Settings displays the signed-in profile, cloud sync state, last sync time, and any sync error; on mobile, profile details and Sign Out remain visible without overlap. | Code, Unreleased |
 | SETTINGS-05 | Pending-change count and tooltip identify unsynced local items. | 0.8.0 |
 | SETTINGS-06 | Reset Data requires the exact confirmation phrase before deleting local and cloud data and returning to the landing page. | 0.2.0, 0.8.0 |
 | SETTINGS-07 | A failed reset shows an error and keeps the app available for another attempt. | 0.8.0 |

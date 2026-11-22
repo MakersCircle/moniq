@@ -238,16 +238,20 @@ export default function SettingsIndex() {
                 {t('settings.profile')}
               </h3>
               <Card className="border-border shadow-sm overflow-hidden">
-                <CardContent className="p-4 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
+                <CardContent className="p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-4">
                     <img
                       src={userProfile?.picture}
                       alt="Profile"
-                      className="h-14 w-14 rounded-xl ring-2 ring-primary/10 object-cover border border-border"
+                      className="h-14 w-14 shrink-0 rounded-xl ring-2 ring-primary/10 object-cover border border-border"
                     />
-                    <div>
-                      <p className="text-base font-bold tracking-tight">{userProfile?.name}</p>
-                      <p className="text-xs text-muted-foreground">{userProfile?.email}</p>
+                    <div className="min-w-0">
+                      <p className="break-words text-base font-bold tracking-tight">
+                        {userProfile?.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">
+                        {userProfile?.email}
+                      </p>
                     </div>
                   </div>
                   <Button
@@ -255,7 +259,7 @@ export default function SettingsIndex() {
                     size="sm"
                     onClick={handleLogout}
                     disabled={isLoggingOut}
-                    className="text-destructive hover:bg-destructive/10 border-destructive/20 h-9 gap-2"
+                    className="h-9 w-full shrink-0 gap-2 text-destructive hover:bg-destructive/10 border-destructive/20 sm:w-auto"
                   >
                     {isLoggingOut ? (
                       <RefreshCw className="h-4 w-4 animate-spin" />
