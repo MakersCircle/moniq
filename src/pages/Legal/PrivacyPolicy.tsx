@@ -6,7 +6,7 @@ export default function PrivacyPolicy() {
   const navigate = useNavigate();
 
   return (
-    <div className="relative min-h-screen w-full bg-[#09090b] text-slate-200 selection:bg-primary/30">
+    <div className="relative min-h-[var(--app-viewport-height)] w-full bg-[#09090b] text-slate-200 selection:bg-primary/30">
       <div className="absolute inset-0 z-0 opacity-40">
         <Grainient
           color1="#1e1e1e"

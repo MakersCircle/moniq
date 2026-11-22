@@ -137,7 +137,34 @@ test('NAV-03: mobile bottom navigation and content clearance honor the safe-area
 test('NAV-11: short mobile pages do not create a second vertical scroll area', async ({
   demoPage: page,
 }) => {
-  test.skip(test.info().project.name !== 'iphone-portrait', 'Checks the phone layout');
+  test.skip(
+    !['iphone-portrait', 'iphone-landscape'].includes(test.info().project.name),
+    'Checks phone layouts'
+  );
+
+  const initialViewport = page.viewportSize();
+  if (!initialViewport) throw new Error('The phone viewport is unavailable');
+  const appShell = page.locator('#main-scroll-container').locator('xpath=../..');
+  const viewportHeightDifference = () =>
+    page.evaluate(() => {
+      const main = document.querySelector('#main-scroll-container');
+      const appShell = main?.parentElement?.parentElement;
+      if (!appShell) throw new Error('Missing app shell');
+      return Math.abs(appShell.getBoundingClientRect().height - window.innerHeight);
+    });
+
+  await expect.poll(viewportHeightDifference).toBeLessThanOrEqual(1);
+  const viewportOverride = await page.addStyleTag({
+    content: ':root { --app-viewport-height: 510px !important; }',
+  });
+  await expect
+    .poll(() => appShell.evaluate(element => element.getBoundingClientRect().height))
+    .toBe(510);
+  await viewportOverride.evaluate(element => element.remove());
+
+  await page.setViewportSize({ width: initialViewport.width, height: 650 });
+  await expect.poll(viewportHeightDifference).toBeLessThanOrEqual(1);
+  await page.setViewportSize(initialViewport);
 
   for (const path of [
     '/dashboard',

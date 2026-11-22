@@ -54,7 +54,7 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | NAV-08 | An unexpected render failure shows the recovery screen with Reload Application and Clear Local Data actions. | Missing | — | Browser | No |
 | NAV-09 | The public landing page exposes its canonical and social-sharing metadata to the browser. | Missing | — | Browser | No |
 | NAV-10 | Pressing `/` outside a text field focuses the top-bar search input. | Missing | — | Browser | No |
-| NAV-11 | Mobile app pages scroll within their intended content area without an extra document scroll or blank space, including when a banner is visible. | Partial | Demo/navigation browser: short pages across app and Settings routes have no extra document/main scroll; populated Dashboard and Settings content scroll, and Ledger remains below banner on phone viewport | Physical phone check with browser chrome expanded/collapsed | No |
+| NAV-11 | Mobile app pages scroll within their intended content area without an extra document scroll or blank space, including when a banner is visible, and full-height surfaces follow dynamic viewport changes. | Partial | Demo/navigation browser: short pages across app and Settings routes have no extra document/main scroll; populated Dashboard and Settings content scroll, Ledger remains below banner on phone viewport, and the app shell follows an overridden height token and phone viewport resizing | Physical phone check with browser chrome expanded/collapsed | No |
 
 ## 4. Record transactions
 

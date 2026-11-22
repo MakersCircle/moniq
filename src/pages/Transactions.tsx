@@ -548,7 +548,7 @@ export default function Transactions() {
 
   if (transactions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50dvh] lg:h-[70vh] py-12 text-center px-4">
+      <div className="flex flex-col items-center justify-center min-h-[var(--app-viewport-half-height)] lg:h-[var(--app-viewport-height-70)] py-12 text-center px-4">
         <div className="h-16 w-16 lg:h-24 lg:w-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
           <List className="h-8 w-8 lg:h-12 lg:w-12 text-primary opacity-80" />
         </div>
@@ -706,7 +706,7 @@ export default function Transactions() {
                   side="bottom"
                   align="end"
                   sideOffset={-36}
-                  className="max-h-[calc(100dvh-1rem)] w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] overflow-y-auto p-0 duration-150 md:duration-200"
+                  className="max-h-[var(--app-viewport-height-minus-1rem)] w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] overflow-y-auto p-0 duration-150 md:duration-200"
                 >
                   <div
                     role="group"

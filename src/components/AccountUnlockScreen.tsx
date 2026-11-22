@@ -46,7 +46,7 @@ function AccountUnlockScreen({ error, onRetry, onTrustRequested }: AccountUnlock
     onNonOAuthError: () => setIsConnecting(false),
   });
   return (
-    <main className="min-h-[100dvh] flex items-center justify-center bg-background p-4">
+    <main className="min-h-[var(--app-viewport-height)] flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <LockKeyhole className="size-6 text-muted-foreground" aria-hidden="true" />

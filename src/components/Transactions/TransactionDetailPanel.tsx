@@ -65,7 +65,7 @@ export default function TransactionDetailPanel({
       className={cn(
         'fixed bg-background border-border z-50 shadow-2xl transition-transform duration-300 ease-in-out flex flex-col overflow-hidden',
         // Mobile (Bottom Drawer)
-        'bottom-0 left-0 right-0 top-auto w-full h-auto max-h-[calc(100dvh-4rem)] rounded-t-3xl border-t pb-safe',
+        'bottom-0 left-0 right-0 top-auto w-full h-auto max-h-[var(--app-viewport-height-minus-4rem)] rounded-t-3xl border-t pb-safe',
         transaction ? 'translate-y-0 translate-x-0' : 'translate-y-full translate-x-0',
         // Desktop (Right Panel)
         'md:top-16 md:bottom-0 md:left-auto md:right-0 md:w-[400px] md:h-auto md:max-h-none md:rounded-none md:border-t-0 md:border-l md:pb-0',

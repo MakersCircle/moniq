@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Dynamic Mobile Viewport Sizing**: Use one `100vh` fallback that upgrades to `100dvh` for full-height app, legal, and recovery screens, plus sheets and height-based empty states, so layouts follow mobile browser chrome changes.
 - **Viewport-Safe Popovers and Menus**: Keep popovers, selects, and dropdown menus inside the viewport with collision padding, available-height limits, and scrolling for tall content. Restore collision handling for the Ledger type filter.
 - **Mobile Safe-Area Navigation**: Extend the fixed bottom navigation and its content clearance through the device safe area so the app controls stay above the home indicator.
 - **Ledger Filters**: Added searchable category and account filters, an amount range slider with precise inputs, and calendar filtering by day, week, month, year, or custom range. Filters combine consistently, and category selection supports both categories and subcategories.
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ledger Date Filtering**: Keep table headings visible for empty results, stabilize custom calendar placement, and improve date-range preview, entry, and selection spacing.
 
 ### Testing
+- **Dynamic Viewport Coverage**: Resize the phone browser viewport and override the shared height variable to verify the app shell tracks the available height.
 - **Floating Control Coverage**: Exercise the Ledger type filter and transaction form selectors at phone and desktop sizes after standardizing viewport collision and content sizing.
 - **Mobile Safe-Area Navigation Coverage**: Simulate an iPhone bottom safe-area inset in the browser and verify the navigation, transaction action, and content boundary remain clear of it.
 - **Reconnect Continuity Coverage**: Hold the Sheets pull after reconnection and verify local records remain visible, no full-screen loader blocks the workspace, and a missing profile picture in the Google response does not erase the saved image across reload.

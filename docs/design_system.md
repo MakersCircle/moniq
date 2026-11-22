@@ -126,6 +126,8 @@ Transparent background, no visible border until focused; focus ring inherits `--
 
 Floating popovers, selects, and dropdown menus keep an 8 px viewport margin, use Radix collision handling to flip or shift around screen edges, and cap tall content to the available height so it can scroll.
 
+Full-height app surfaces use `--app-viewport-height`, which falls back to `100vh` and uses `100dvh` when supported so mobile layouts adapt to browser chrome changes.
+
 ### 2.7 Brand components
 
 `Grainient` (animated WebGL gradient background, built with `ogl`), `LogoParts` (wordmark), `BetaTag`, `dot-pattern`, `shiny-button`.
