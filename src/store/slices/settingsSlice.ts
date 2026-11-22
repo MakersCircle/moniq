@@ -24,7 +24,7 @@ export interface SettingsSlice {
   updateSettings: (patch: Partial<UserSettings>) => void;
   setAccessToken: (token: string | null, expiresAt?: number | null) => void;
   expireSession: () => void;
-  setUserProfile: (profile: UserProfile | null) => void;
+  setUserProfile: (profile: UserProfile | null) => Promise<void>;
 }
 
 export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice> = (set, get) => ({
@@ -104,12 +104,12 @@ export const createSettingsSlice: StateCreator<DataState, [], [], SettingsSlice>
     }
   },
 
-  setUserProfile: profile => {
+  setUserProfile: async profile => {
     set({
       userProfile: profile,
       ...(profile ? {} : { verifiedAccessToken: null, isWorkspaceUnlocked: false }),
     });
-    if (profile) setMeta('userProfile', JSON.stringify(profile));
-    else delMeta('userProfile');
+    if (profile) await setMeta('userProfile', JSON.stringify(profile));
+    else await delMeta('userProfile');
   },
 });

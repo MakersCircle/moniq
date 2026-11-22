@@ -57,7 +57,7 @@ export interface DataState {
   lastSyncError: string | undefined;
 
   // Cloud Actions
-  setUserProfile: (profile: UserProfile | null) => void;
+  setUserProfile: (profile: UserProfile | null) => Promise<void>;
   setSpreadsheetId: (id: string | null) => void;
   setFolderId: (id: string | null) => void;
   setBackupFolderId: (id: string | null) => void;
@@ -125,6 +125,8 @@ export interface DataState {
   initializeFromDB: () => Promise<void>;
   isHydrated: boolean;
   isCloudInitialized: boolean;
+  isInitialCloudLoadPending: boolean;
+  setInitialCloudLoadPending: (pending: boolean) => void;
 
   // Demo Mode
   isDemoMode: boolean;
