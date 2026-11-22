@@ -60,6 +60,36 @@ test('DEMO-01/TXN-02: expense saves through the form and survives reload', async
   );
 });
 
+test('TXN-20: mobile transaction text controls keep iOS-safe font sizes', async ({
+  seededDemoPage: page,
+}) => {
+  test.skip(
+    !['iphone-portrait', 'iphone-landscape'].includes(test.info().project.name),
+    'Checks phone input sizing'
+  );
+
+  const dialog = await openTransactionForm(page);
+  const textControls = [
+    dialog.getByPlaceholder('0.00'),
+    dialog.getByPlaceholder('DD/MM/YYYY'),
+    dialog.getByPlaceholder('What was this for?'),
+  ];
+
+  for (const control of textControls) {
+    await expect
+      .poll(() => control.evaluate(element => parseFloat(getComputedStyle(element).fontSize)))
+      .toBeGreaterThanOrEqual(16);
+  }
+
+  await dialog.getByRole('button', { name: 'Split this transaction' }).click();
+  const splitAmounts = await dialog.getByPlaceholder('Amt').all();
+  for (const splitAmount of splitAmounts) {
+    await expect
+      .poll(() => splitAmount.evaluate(element => parseFloat(getComputedStyle(element).fontSize)))
+      .toBeGreaterThanOrEqual(16);
+  }
+});
+
 test('TXN-03: income saves through the form and increases the linked account', async ({
   seededDemoPage: page,
 }) => {

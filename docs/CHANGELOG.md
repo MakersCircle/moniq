@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ledger Toolbar and Search**: Moved search and type filters beside Export PDF, with compact mobile controls, expandable search, clear actions, and a multi-select type menu. Removed the net amount beneath the Ledger title.
 
 ### Fixed
+- **Mobile Input Focus Zoom**: Keep editable text controls at least 16 px on phone and tablet widths to prevent iOS Safari from zooming the page when a field receives focus.
 - **Reconnect Continuity**: Keep a previously unlocked local workspace visible during background reconnection, and retain its saved profile photo when Google omits the optional picture field.
 - **Verified Workspace Startup**: Keep the workspace in its loading state after account verification until the initial Google Sheets reconciliation completes, preventing an empty dashboard from appearing during the first pull.
 - **Regional Settings Persistence (#108)**: Restore demo preferences after reload, save first-run defaults locally and to Sheets, prefer regional browser language hints, and detect date order using the locale. Pending preferences and canonical cloud settings survive reloads on differently localized devices.
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ledger Date Filtering**: Keep table headings visible for empty results, stabilize custom calendar placement, and improve date-range preview, entry, and selection spacing.
 
 ### Testing
+- **Mobile Input Focus Zoom Coverage**: Check computed font sizes for amount, date, notes, and split amount fields in the transaction form at phone portrait and landscape sizes.
 - **Dynamic Viewport Coverage**: Resize the phone browser viewport and override the shared height variable to verify the app shell tracks the available height.
 - **Floating Control Coverage**: Exercise the Ledger type filter and transaction form selectors at phone and desktop sizes after standardizing viewport collision and content sizing.
 - **Mobile Safe-Area Navigation Coverage**: Simulate an iPhone bottom safe-area inset in the browser and verify the navigation, transaction action, and content boundary remain clear of it.

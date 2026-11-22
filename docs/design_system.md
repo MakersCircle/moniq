@@ -128,6 +128,8 @@ Floating popovers, selects, and dropdown menus keep an 8 px viewport margin, use
 
 Full-height app surfaces use `--app-viewport-height`, which falls back to `100vh` and uses `100dvh` when supported so mobile layouts adapt to browser chrome changes.
 
+On phone and tablet widths, editable text inputs, textareas, and native selects use at least 16 px type to prevent iOS Safari focus zoom. Desktop input sizing remains component-specific.
+
 ### 2.7 Brand components
 
 `Grainient` (animated WebGL gradient background, built with `ogl`), `LogoParts` (wordmark), `BetaTag`, `dot-pattern`, `shiny-button`.
