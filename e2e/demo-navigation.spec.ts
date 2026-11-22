@@ -98,6 +98,42 @@ test('NAV-03: app shell fits desktop and mobile viewport widths', async ({ demoP
   }
 });
 
+test('NAV-03: mobile bottom navigation and content clearance honor the safe-area inset', async ({
+  demoPage: page,
+}) => {
+  test.skip(test.info().project.name !== 'iphone-portrait', 'Checks the phone layout');
+
+  await page.addStyleTag({
+    content: ':root { --safe-area-inset-bottom: 30px !important; }',
+  });
+
+  const layout = await page.evaluate(() => {
+    const navigation = document.querySelector('body > div aside')!;
+    const content = document.querySelector('#main-scroll-container')!;
+    const contentShell = content.parentElement!;
+    const action = navigation.querySelector('button')!;
+    const navBounds = navigation.getBoundingClientRect();
+    const contentBounds = content.getBoundingClientRect();
+    const actionBounds = action.getBoundingClientRect();
+
+    return {
+      navHeight: navBounds.height,
+      navTop: navBounds.top,
+      navPaddingBottom: getComputedStyle(navigation).paddingBottom,
+      contentBottom: contentBounds.bottom,
+      contentPaddingBottom: getComputedStyle(contentShell).paddingBottom,
+      actionBottom: actionBounds.bottom,
+      viewportBottom: window.innerHeight,
+    };
+  });
+
+  expect(layout.navHeight).toBeCloseTo(90, 0);
+  expect(layout.navPaddingBottom).toBe('30px');
+  expect(layout.contentPaddingBottom).toBe('90px');
+  expect(layout.contentBottom).toBeCloseTo(layout.navTop, 0);
+  expect(layout.actionBottom).toBeLessThanOrEqual(layout.viewportBottom - 30 + 2);
+});
+
 test('NAV-11: short mobile pages do not create a second vertical scroll area', async ({
   demoPage: page,
 }) => {

@@ -46,7 +46,7 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | --- | --- | --- | --- | --- | --- |
 | NAV-01 | The main navigation opens Dashboard, Ledger, Insights, Budget, and Settings. | Covered | Demo/navigation browser, six viewports | — | No |
 | NAV-02 | Settings navigation opens Accounts, Payment Methods, Categories, and Recently Deleted. | Covered | Demo/navigation browser, six viewports | — | No |
-| NAV-03 | Desktop navigation uses a sidebar; mobile navigation uses a bottom bar and a new-transaction button. | Covered | Demo/navigation browser, six viewports | — | No |
+| NAV-03 | Desktop navigation uses a sidebar; mobile navigation uses a bottom bar and a new-transaction button. | Covered | Demo/navigation browser, six viewports; iPhone profile simulates a 30px safe-area inset and checks the nav/action boundary and matching content clearance | Real installed iOS PWA acceptance | No |
 | NAV-04 | The mobile top bar opens Settings and expands its search field when focused; entered text can be cleared with an inline clear control. | Covered | `e2e/ledger-amount-filter.spec.ts` checks typed Top Bar search text and the inline clear control on desktop and phone. | — | No |
 | NAV-05 | A visitor can open Docs, Privacy Policy, and Terms of Service without signing in. | Partial | Home browser footer links | Browser page content | No |
 | NAV-06 | Docs navigation opens Getting Started, Keyboard Shortcuts, FAQ, Handling Scenarios, Architecture, and Changelog; internal document links stay in app navigation. | Missing | — | Browser | No |

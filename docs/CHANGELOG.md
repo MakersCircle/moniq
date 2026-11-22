@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Mobile Safe-Area Navigation**: Extend the fixed bottom navigation and its content clearance through the device safe area so the app controls stay above the home indicator.
 - **Ledger Filters**: Added searchable category and account filters, an amount range slider with precise inputs, and calendar filtering by day, week, month, year, or custom range. Filters combine consistently, and category selection supports both categories and subcategories.
 - **Ledger Toolbar and Search**: Moved search and type filters beside Export PDF, with compact mobile controls, expandable search, clear actions, and a multi-select type menu. Removed the net amount beneath the Ledger title.
 
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ledger Date Filtering**: Keep table headings visible for empty results, stabilize custom calendar placement, and improve date-range preview, entry, and selection spacing.
 
 ### Testing
+- **Mobile Safe-Area Navigation Coverage**: Simulate an iPhone bottom safe-area inset in the browser and verify the navigation, transaction action, and content boundary remain clear of it.
 - **Reconnect Continuity Coverage**: Hold the Sheets pull after reconnection and verify local records remain visible, no full-screen loader blocks the workspace, and a missing profile picture in the Google response does not erase the saved image across reload.
 - **Verified Unlock Startup**: Pause the first Sheets pull after Google verification and confirm cached workspace content stays hidden until cloud reconciliation finishes.
 - **Sync Race Regression (#92)**: Exercise transaction edits, deletions, and additions after reconciliation captures its snapshot and while its upload is paused, verifying cloud results and reload persistence.

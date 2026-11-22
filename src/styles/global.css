@@ -9,6 +9,11 @@
   font-style: normal;
 }
 
+:root {
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --mobile-nav-total-height: calc(60px + var(--safe-area-inset-bottom));
+}
+
 @theme {
   --color-background: #09090b;
   --color-foreground: #fafafa;

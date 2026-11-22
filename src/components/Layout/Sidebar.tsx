@@ -18,7 +18,7 @@ export default function Sidebar({ onNewTransaction }: { onNewTransaction?: () =>
   ];
 
   return (
-    <aside className="w-full h-[60px] lg:w-[220px] lg:h-screen flex flex-row lg:flex-col fixed bottom-0 lg:bottom-auto left-0 lg:top-0 border-t lg:border-t-0 lg:border-r border-border bg-background z-50">
+    <aside className="w-full h-[var(--mobile-nav-total-height)] pb-[var(--safe-area-inset-bottom)] lg:w-[220px] lg:h-screen lg:pb-0 flex flex-row lg:flex-col fixed bottom-0 lg:bottom-auto left-0 lg:top-0 border-t lg:border-t-0 lg:border-r border-border bg-background z-50">
       {/* Logo (Desktop Only) */}
       <div className="hidden lg:flex h-16 px-6 items-center">
         <NavLink to="/" className="flex items-center gap-2 group">
