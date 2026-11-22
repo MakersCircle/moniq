@@ -8,6 +8,7 @@ type GoogleMock = {
   failedBatchGets: number;
   failNextBatchGet: () => void;
   setUserEmail: (email: string) => void;
+  setProfilePicture: (picture: string | undefined) => void;
   setSheetsUnavailable: (unavailable: boolean) => void;
   failSilentRefresh: () => Promise<void>;
   sheetRows: (name: string) => string[][];
@@ -35,6 +36,7 @@ export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
   let failNextBatchGet = false;
   let sheetsUnavailable = false;
   let userEmail = 'browser@example.test';
+  let profilePicture: string | undefined = '/favicon.svg';
   const mock: GoogleMock = {
     createdFolders: [],
     createdSpreadsheets: [],
@@ -43,6 +45,9 @@ export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
     failedBatchGets: 0,
     setUserEmail: email => {
       userEmail = email;
+    },
+    setProfilePicture: picture => {
+      profilePicture = picture;
     },
     failNextBatchGet: () => {
       failNextBatchGet = true;
@@ -155,7 +160,7 @@ export async function installFakeGoogle(page: Page): Promise<GoogleMock> {
       return json(route, {
         name: 'Browser Tester',
         email: userEmail,
-        picture: '/favicon.svg',
+        ...(profilePicture ? { picture: profilePicture } : {}),
       });
     }
 

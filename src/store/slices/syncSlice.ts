@@ -27,6 +27,8 @@ export interface SyncSlice {
   lastSyncError: string | undefined;
   isHydrated: boolean;
   isCloudInitialized: boolean;
+  isInitialCloudLoadPending: boolean;
+  setInitialCloudLoadPending: (pending: boolean) => void;
 
   // Demo Mode
   isDemoMode: boolean;
@@ -56,7 +58,9 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
   lastSyncError: undefined,
   isHydrated: false,
   isCloudInitialized: false,
+  isInitialCloudLoadPending: false,
   isDemoMode: false,
+  setInitialCloudLoadPending: pending => set({ isInitialCloudLoadPending: pending }),
 
   setSpreadsheetId: id => {
     set({ spreadsheetId: id });
@@ -117,6 +121,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
 
       nextState.lastSyncedAt = new Date().toISOString();
       nextState.isCloudInitialized = true;
+      nextState.isInitialCloudLoadPending = false;
       return nextState;
     });
   },
@@ -135,6 +140,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
     set({
       isDemoMode: true,
       isCloudInitialized: true,
+      isInitialCloudLoadPending: false,
       isHydrated: true,
       accessToken: null,
       tokenExpiresAt: null,
@@ -188,6 +194,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
       isWorkspaceUnlocked: false,
       isDeviceTrusted: false,
       isCloudInitialized: false,
+      isInitialCloudLoadPending: false,
       isDemoMode: false,
     }));
   },
@@ -277,6 +284,9 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         // Ignore JSON parse errors for user profile
       }
 
+      const isStoredWorkspace = !!(userProfile?.email && spreadsheetId && lastSyncedAt);
+      const isTrustedDevice = !!userProfile?.email && trustedDeviceEmail === userProfile.email;
+
       set({
         accounts,
         methods,
@@ -292,7 +302,8 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
         tokenExpiresAt: session?.expiresAt ?? null,
         verifiedAccessToken: null,
         isWorkspaceUnlocked: false,
-        isDeviceTrusted: !!userProfile?.email && trustedDeviceEmail === userProfile.email,
+        isDeviceTrusted: isTrustedDevice,
+        isInitialCloudLoadPending: isStoredWorkspace && !isTrustedDevice,
         userProfile,
         pendingCount: syncQueue ? syncQueue.length : 0,
         isHydrated: true,
@@ -302,7 +313,7 @@ export const createSyncSlice: StateCreator<DataState, [], [], SyncSlice> = set =
       });
     } catch (err) {
       console.error('Failed to initialize from DB:', err);
-      set({ isHydrated: true, isCloudInitialized: false });
+      set({ isHydrated: true, isCloudInitialized: false, isInitialCloudLoadPending: false });
     }
   },
 });

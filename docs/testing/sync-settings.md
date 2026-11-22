@@ -304,3 +304,5 @@ Google client unit coverage blocks Drive/Sheets before verification while allowi
 The gate protects rendered application access; IndexedDB is not encrypted, and a profile lookup validates the Google credential rather than the physical person at the keyboard. Use explicit sign-out on shared devices; trusted-device opt-in intentionally permits offline access.
 
 The verified-unlock startup browser case pauses the first Sheets batch pull after the Google profile succeeds. It asserts the app remains on its loading state and does not show transaction content until reconciliation completes, covering the case where the local cache is empty or incomplete.
+
+The session-expiry reconnect browser case pauses the first Sheets pull after the user reconnects. It verifies that an already-unlocked workspace remains available during the background pull and that an omitted Google profile picture does not erase the locally saved image, including after reload.

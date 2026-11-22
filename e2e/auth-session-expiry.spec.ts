@@ -102,11 +102,18 @@ test('AUTH-05: an expired session allows local recording and Reconnect uploads q
     google.sheetRows('Transactions').some(row => row.includes('Recorded while disconnected'))
   ).toBe(false);
 
+  google.setProfilePicture(undefined);
+  const reconnectPull = google.holdNextBatchGet();
   await page.getByRole('button', { name: 'Reconnect Google' }).click();
+  await reconnectPull.requested;
   await expect(
     page.getByRole('status', { name: 'Google sync paused. Saved on this device.' })
   ).toBeHidden();
   await expect(page.getByText('Expiry Checking')).toBeVisible();
+  await expect(page.getByText('Pulling your data from Google Drive...')).toBeHidden();
+  await page.getByRole('link', { name: 'General', exact: true }).click();
+  await expect(page.locator('img[alt="Profile"]')).toHaveAttribute('src', '/favicon.svg');
+  reconnectPull.release();
   await expect
     .poll(
       () =>
@@ -118,6 +125,8 @@ test('AUTH-05: an expired session allows local recording and Reconnect uploads q
       google.sheetRows('Transactions').some(row => row.includes('Recorded while disconnected'))
     )
     .toBe(true);
+  await page.reload();
+  await expect(page.locator('img[alt="Profile"]')).toHaveAttribute('src', '/favicon.svg');
   expect(google.createdSpreadsheets.filter(name => name === 'Moniq Database')).toHaveLength(1);
   expect(google.unexpectedRequests).toEqual([]);
 });

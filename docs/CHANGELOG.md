@@ -14,12 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ledger Toolbar and Search**: Moved search and type filters beside Export PDF, with compact mobile controls, expandable search, clear actions, and a multi-select type menu. Removed the net amount beneath the Ledger title.
 
 ### Fixed
+- **Reconnect Continuity**: Keep a previously unlocked local workspace visible during background reconnection, and retain its saved profile photo when Google omits the optional picture field.
 - **Verified Workspace Startup**: Keep the workspace in its loading state after account verification until the initial Google Sheets reconciliation completes, preventing an empty dashboard from appearing during the first pull.
 - **Regional Settings Persistence (#108)**: Restore demo preferences after reload, save first-run defaults locally and to Sheets, prefer regional browser language hints, and detect date order using the locale. Pending preferences and canonical cloud settings survive reloads on differently localized devices.
 - **Local Sessions, Device Privacy and Google Reconnect (#91, #94, #97)**: Verify the original Google identity before showing saved records on fresh launches by default, with an explicit account-bound Trust this device option for immediate personal/offline access and revocation in Settings. Keep recording available when sync authorization expires, preserve queued edits and settings during reconciliation, use a compact single-line mobile sync banner and explicit reconnect, block Drive/Sheets until token ownership is verified, keep credentials in session storage while deleting legacy IndexedDB copies, rebuild sheet clients when their target changes, and wait for local cleanup on sign-out.
 - **Ledger Date Filtering**: Keep table headings visible for empty results, stabilize custom calendar placement, and improve date-range preview, entry, and selection spacing.
 
 ### Testing
+- **Reconnect Continuity Coverage**: Hold the Sheets pull after reconnection and verify local records remain visible, no full-screen loader blocks the workspace, and a missing profile picture in the Google response does not erase the saved image across reload.
 - **Verified Unlock Startup**: Pause the first Sheets pull after Google verification and confirm cached workspace content stays hidden until cloud reconciliation finishes.
 - **Sync Race Regression (#92)**: Exercise transaction edits, deletions, and additions after reconciliation captures its snapshot and while its upload is paused, verifying cloud results and reload persistence.
 - **Filter and Search Coverage**: Expanded browser coverage for Ledger filters, date selection, responsive toolbar search, and PDF export across desktop and phone layouts.

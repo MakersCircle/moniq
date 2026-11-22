@@ -43,7 +43,7 @@ export default function App() {
 
   const isHydrated = useDataStore(s => s.isHydrated);
   const isCloudInitialized = useDataStore(s => s.isCloudInitialized);
-  const isWorkspaceUnlocked = useDataStore(s => s.isWorkspaceUnlocked);
+  const isInitialCloudLoadPending = useDataStore(s => s.isInitialCloudLoadPending);
   const syncStatus = useDataStore(s => s.syncStatus);
   const initializeFromDB = useDataStore(s => s.initializeFromDB);
   const isDemoMode = useDataStore(s => s.isDemoMode);
@@ -53,10 +53,10 @@ export default function App() {
   const [retryCount, setRetryCount] = useState(0);
   const hydrationStarted = useRef(false);
 
-  const handleDisconnect = useCallback(() => {
+  const handleDisconnect = useCallback(async () => {
     googleLogout();
     useDataStore.getState().setAccessToken(null);
-    useDataStore.getState().setUserProfile(null);
+    await useDataStore.getState().setUserProfile(null);
     SyncEngine.reset();
   }, []);
 
@@ -135,7 +135,11 @@ export default function App() {
           return;
         }
 
+        const cachedProfile = useDataStore.getState().userProfile;
         const profile = await fetchUserProfile();
+        if (!profile.picture && cachedProfile?.email === profile.email) {
+          profile.picture = cachedProfile.picture;
+        }
 
         // ── Account-switch detection ──────────────────────────────────
         // Reconnection must use the account that owns these local records.
@@ -149,7 +153,7 @@ export default function App() {
         // Persist the current user's email for future account-switch checks.
         await setMeta('userEmail', profile.email);
 
-        setUserProfile(profile);
+        await setUserProfile(profile);
         useDataStore.getState().setVerifiedAccessToken(accessToken!);
         if (trustOnUnlock.current) {
           trustOnUnlock.current = false;
@@ -176,6 +180,7 @@ export default function App() {
         }
       } catch (err) {
         if (cancelled) return;
+        useDataStore.getState().setInitialCloudLoadPending(false);
         console.error('Failed to initialize cloud database:', err);
         setInitError(err instanceof Error ? err.message : 'Unknown connection error');
         // Returning users continue working locally while cloud access is unavailable.
@@ -216,14 +221,17 @@ export default function App() {
     );
   }
 
-  const isInitialCloudLoadPending =
+  const isBlockingCloudLoad =
     !!accessToken &&
     !isCloudInitialized &&
-    !initError &&
     !isDemoMode &&
-    (isWorkspaceUnlocked || !storedWorkspace);
+    (isInitialCloudLoadPending || !storedWorkspace);
 
-  if (!isHydrated || isInitialCloudLoadPending) {
+  if (
+    !isHydrated ||
+    (isBlockingCloudLoad && !initError) ||
+    (!canUseWorkspace && !!accessToken && !!initError)
+  ) {
     if (initError) {
       return (
         <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center">
