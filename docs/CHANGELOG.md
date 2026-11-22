@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-23
+
 ### Changed
 - **Mobile Recently Deleted Layout**: Keep the trash header and sort control usable on narrow screens, scroll the category tabs to the selected section, and show deleted records as readable cards with always-visible restore actions.
 - **Mobile Settings Navigation**: Keep the active section tab centered in the horizontal Settings navigation when space allows, clamping the first and last tabs to the strip edges.
