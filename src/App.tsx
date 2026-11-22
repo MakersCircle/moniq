@@ -286,7 +286,7 @@ export default function App() {
     <BrowserRouter>
       <Suspense
         fallback={
-          <div className="flex h-screen w-screen items-center justify-center text-muted-foreground">
+          <div className="flex h-[var(--app-viewport-height)] w-screen items-center justify-center text-muted-foreground">
             <div className="size-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
           </div>
         }
@@ -314,7 +314,7 @@ export default function App() {
                   <DocsPage />
                 </LayoutShell>
               ) : (
-                <div className="min-h-screen bg-[#09090b] text-slate-200 selection:bg-primary/30">
+                <div className="min-h-[var(--app-viewport-height)] bg-[#09090b] text-slate-200 selection:bg-primary/30">
                   <div className="max-w-[1248px] mx-auto p-6 md:p-12 pt-20">
                     <DocsPage />
                   </div>
@@ -359,7 +359,7 @@ export default function App() {
           open={modalState.isOpen}
           onOpenChange={open => setModalState(prev => ({ ...prev, isOpen: open }))}
         >
-          <DialogContent className="w-full max-w-none sm:w-[95vw] sm:max-w-[520px] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-t-2xl sm:rounded-2xl top-auto bottom-0 left-0 right-0 translate-x-0 translate-y-0 sm:top-[50%] sm:left-[50%] sm:bottom-auto sm:right-auto sm:translate-x-[-50%] sm:translate-y-[-50%] h-auto max-h-[calc(100dvh-2rem)] sm:max-h-[90vh]">
+          <DialogContent className="w-full max-w-none sm:w-[95vw] sm:max-w-[520px] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-t-2xl sm:rounded-2xl top-auto bottom-0 left-0 right-0 translate-x-0 translate-y-0 sm:top-[50%] sm:left-[50%] sm:bottom-auto sm:right-auto sm:translate-x-[-50%] sm:translate-y-[-50%] h-auto max-h-[var(--app-viewport-height-minus-2rem)] sm:max-h-[var(--app-viewport-height-90)]">
             <TransactionForm
               initialData={modalState.initialData}
               isDuplicate={modalState.isDuplicate}

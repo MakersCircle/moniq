@@ -79,5 +79,10 @@ test('LEDGER-08: deleting removes the active row and keeps it in Recently Delete
 
   await page.goto('/settings/trash');
   await expect(page.getByRole('heading', { name: 'Recently Deleted' })).toBeVisible();
-  await expect(page.getByRole('row', { name: /Fixture groceries/ })).toContainText('250');
+  if ((page.viewportSize()?.width ?? 0) < 640) {
+    await expect(page.locator('.sm\\:hidden').getByText('Fixture groceries')).toBeVisible();
+    await expect(page.locator('.sm\\:hidden').getByText(/250/)).toBeVisible();
+  } else {
+    await expect(page.getByRole('row', { name: /Fixture groceries/ })).toContainText('250');
+  }
 });

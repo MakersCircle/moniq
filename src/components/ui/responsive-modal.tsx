@@ -52,7 +52,7 @@ export function ResponsiveModal({
         <SheetContent
           side="bottom"
           className={cn(
-            'flex flex-col p-0 rounded-t-2xl border-t shadow-2xl overflow-hidden max-h-[calc(100dvh-3rem)] h-auto',
+            'flex flex-col p-0 rounded-t-2xl border-t shadow-2xl overflow-hidden max-h-[var(--app-viewport-height-minus-3rem)] h-auto',
             className
           )}
         >

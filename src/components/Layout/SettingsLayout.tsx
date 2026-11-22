@@ -1,7 +1,10 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Settings, Landmark, CreditCard, Tag, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDataStore } from '@/store/dataStore';
+import { useLayoutEffect, useRef } from 'react';
+
+let lastSettingsNavScrollLeft = 0;
 
 const SETTINGS_NAV = [
   { icon: Settings, label: 'General', to: '/settings' },
@@ -13,6 +16,42 @@ const SETTINGS_NAV = [
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   const { accounts, methods, categories, transactions } = useDataStore();
+  const { pathname } = useLocation();
+  const settingsNavRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    const container = settingsNavRef.current;
+    const selectedLink = container?.querySelector<HTMLAnchorElement>('a[aria-current="page"]');
+    if (!container || !selectedLink) return;
+
+    container.scrollLeft = lastSettingsNavScrollLeft;
+    const rememberScrollPosition = () => {
+      lastSettingsNavScrollLeft = container.scrollLeft;
+    };
+    container.addEventListener('scroll', rememberScrollPosition, { passive: true });
+
+    const containerBounds = container.getBoundingClientRect();
+    const selectedBounds = selectedLink.getBoundingClientRect();
+    const selectedCenter =
+      container.scrollLeft + selectedBounds.left - containerBounds.left + selectedBounds.width / 2;
+    const targetScrollLeft = Math.max(
+      0,
+      Math.min(
+        selectedCenter - container.clientWidth / 2,
+        container.scrollWidth - container.clientWidth
+      )
+    );
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 'auto'
+      : 'smooth';
+
+    container.scrollTo({ left: targetScrollLeft, behavior });
+
+    return () => {
+      lastSettingsNavScrollLeft = container.scrollLeft;
+      container.removeEventListener('scroll', rememberScrollPosition);
+    };
+  }, [pathname]);
 
   const getCount = (label: string) => {
     if (label === 'Accounts') return accounts.filter(s => s.isActive && !s.isDeleted).length;
@@ -30,7 +69,10 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   return (
     <div className="flex flex-col lg:flex-row gap-4 lg:gap-10 h-full min-h-0 overflow-hidden -mt-2">
       {/* Settings Internal Sidebar */}
-      <aside className="w-full lg:w-[200px] shrink-0 overflow-x-auto lg:overflow-y-auto custom-scrollbar lg:pr-2 pb-2 lg:pb-6 pt-2 border-b lg:border-b-0 border-border">
+      <aside
+        ref={settingsNavRef}
+        className="w-full lg:w-[200px] shrink-0 overflow-x-auto lg:overflow-y-auto custom-scrollbar lg:pr-2 pb-2 lg:pb-6 pt-2 border-b lg:border-b-0 border-border"
+      >
         <h2 className="hidden lg:block text-sm font-black uppercase tracking-[0.2em] text-muted-foreground mb-6 px-4">
           Settings
         </h2>

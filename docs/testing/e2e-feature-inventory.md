@@ -11,7 +11,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | AUTH-01 | A signed-out visitor sees the landing page and can open the Google sign-in flow. | 0.1.0 |
 | AUTH-02 | Successful Google sign-in opens the dashboard and provisions or reconnects to the user's Drive folder and spreadsheet. | 0.1.0, 0.7.0 |
 | AUTH-03 | A mobile redirect login consumes the returned access token and opens the dashboard. | 0.8.1 |
-| AUTH-04 | A returning user opens saved data after fresh identity verification, or immediately on an explicitly trusted device, while Sheets reconciles in the background. | 0.2.0 |
+| AUTH-04 | A returning user opens saved data after identity verification and initial Sheets reconciliation; explicitly trusted devices can open local data immediately. | 0.2.0, Unreleased |
 | AUTH-05 | Expired Google access preserves local recording and trusted-device reloads; a sync-paused banner offers reconnect and uploads queued changes. | 0.2.8 |
 | AUTH-06 | A cloud initialization failure shows a connection error with Retry Connection and Sign Out actions. | 0.8.0 |
 | AUTH-07 | Reconnecting with a different Google account preserves local records and asks for the original account before syncing. | 0.7.0, 0.8.0 |
@@ -37,7 +37,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | ID | Testable behavior | Recorded |
 | --- | --- | --- |
 | NAV-01 | The main navigation opens Dashboard, Ledger, Insights, Budget, and Settings. | 0.1.0 |
-| NAV-02 | Settings navigation opens Accounts, Payment Methods, Categories, and Recently Deleted. | 0.2.0 |
+| NAV-02 | Settings navigation opens Accounts, Payment Methods, Categories, and Recently Deleted; on mobile, the selected section tab stays centered when space allows and clamps at the ends. | 0.2.0, Unreleased |
 | NAV-03 | Desktop navigation uses a sidebar; mobile navigation uses a bottom bar and a new-transaction button. | 0.9.0 |
 | NAV-04 | The mobile top bar opens Settings and expands its search field when focused; entered text can be cleared with an inline clear control. | Unreleased |
 | NAV-05 | A visitor can open Docs, Privacy Policy, and Terms of Service without signing in. | 0.6.1 |
@@ -46,7 +46,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | NAV-08 | An unexpected render failure shows the recovery screen with Reload Application and Clear Local Data actions. | 0.1.0 |
 | NAV-09 | The public landing page exposes its canonical and social-sharing metadata to the browser. | 0.9.0 |
 | NAV-10 | Pressing `/` outside a text field focuses the top-bar search input. | Code |
-| NAV-11 | Mobile app pages scroll within their intended content area without an extra document scroll or blank space, including when a banner is visible. | Unreleased |
+| NAV-11 | Mobile app pages scroll within their intended content area without an extra document scroll or blank space, including when a banner is visible, and full-height surfaces follow dynamic viewport changes. | Unreleased |
 
 ## 4. Record transactions
 
@@ -71,6 +71,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | TXN-17 | Alt/Cmd+1, 2, and 3 switch the form between Expense, Income, and Transfer. | 0.5.0 |
 | TXN-18 | Alt+N opens a new transaction; Shift+E, I, or T opens the corresponding type from an app page when focus is outside a text field. | 0.5.0 |
 | TXN-19 | Keyboard typing can select matching payment methods and categories from their dropdowns. | 0.5.0 |
+| TXN-20 | Transaction text inputs remain at least 16 px on phone and tablet widths so focusing a field does not zoom the iOS page. | Unreleased |
 
 ## 5. Review and manage the ledger
 
@@ -90,6 +91,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | LEDGER-12 | Filter Ledger rows using a searchable, flat account checkbox list with multiple account selection and no expand controls. | Unreleased |
 | LEDGER-13 | Filter Ledger rows to an inclusive minimum and maximum transaction amount using a dual-ended slider or precise Min/Max fields; retain the global slider scale while constraining handles to the range left by other filters. | Unreleased |
 | LEDGER-14 | Keep borderless 40 px search, type-filter, and export touch targets with visually tight icon spacing on the same row as the Ledger title on mobile. The search field expands left with its icon retained, does not cover the title, collapses on outside click when empty, and stays expanded with text until the type filter opens. Search text can be cleared inline. The type filter opens a downward multi-select checkbox list with all types checked by default; selected types combine with OR, no checked types yields no results, and other filter groups combine with AND. On mobile, widen it leftward to reveal the checkboxes without a selected-types heading and shift search left. | Unreleased |
+| LEDGER-15 | Ledger popovers, selects, and menus flip or shift away from viewport edges and keep tall content scrollable within the available space. | Unreleased |
 
 ## 6. Manage accounts, methods, and categories
 
@@ -137,7 +139,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 
 | ID | Testable behavior | Recorded |
 | --- | --- | --- |
-| TRASH-01 | Recently Deleted separates transactions, accounts, methods, and categories into tabs with counts and empty states. | 0.2.0, 0.3.0 |
+| TRASH-01 | Recently Deleted separates transactions, accounts, methods, and categories into tabs with counts and empty states; on phones, its tabs scroll to the selected section and each type uses a readable card with a visible restore action. | 0.2.0, 0.3.0, Unreleased |
 | TRASH-02 | Deleted transactions can be sorted by deletion time or creation time. | 0.3.0 |
 | TRASH-03 | Restore a deleted account, method, category, or transaction and see it return to active views. | 0.2.0, 0.3.0 |
 | TRASH-04 | Restoring a method requires its linked account to be restored first. | 0.3.0, Code |
@@ -151,7 +153,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | SETTINGS-01 | Search and select a currency; its symbol and formatted amounts update across the app. | 0.1.1, 0.2.4 |
 | SETTINGS-02 | Search and select a number locale; the live preview and formatted amounts update. | 0.1.1, 0.2.4 |
 | SETTINGS-03 | Select a date format from the available previews and retain the preference after reload. | Code |
-| SETTINGS-04 | Settings displays the signed-in profile, cloud sync state, last sync time, and any sync error. | Code |
+| SETTINGS-04 | Settings displays the signed-in profile, cloud sync state, last sync time, and any sync error; on mobile, profile details and Sign Out remain visible without overlap. | Code, Unreleased |
 | SETTINGS-05 | Pending-change count and tooltip identify unsynced local items. | 0.8.0 |
 | SETTINGS-06 | Reset Data requires the exact confirmation phrase before deleting local and cloud data and returning to the landing page. | 0.2.0, 0.8.0 |
 | SETTINGS-07 | A failed reset shows an error and keeps the app available for another attempt. | 0.8.0 |

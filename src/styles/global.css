@@ -9,6 +9,38 @@
   font-style: normal;
 }
 
+:root {
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --mobile-nav-total-height: calc(60px + var(--safe-area-inset-bottom));
+  --app-viewport-height: 100vh;
+  --app-viewport-half-height: 50vh;
+  --app-viewport-height-70: 70vh;
+  --app-viewport-height-90: 90vh;
+  --app-viewport-height-62: 62vh;
+  --app-viewport-height-8: 8vh;
+  --app-viewport-height-1-5: 1.5vh;
+  --app-viewport-height-minus-1rem: calc(100vh - 1rem);
+  --app-viewport-height-minus-2rem: calc(100vh - 2rem);
+  --app-viewport-height-minus-3rem: calc(100vh - 3rem);
+  --app-viewport-height-minus-4rem: calc(100vh - 4rem);
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-viewport-height: 100dvh;
+    --app-viewport-half-height: 50dvh;
+    --app-viewport-height-70: 70dvh;
+    --app-viewport-height-90: 90dvh;
+    --app-viewport-height-62: 62dvh;
+    --app-viewport-height-8: 8dvh;
+    --app-viewport-height-1-5: 1.5dvh;
+    --app-viewport-height-minus-1rem: calc(100dvh - 1rem);
+    --app-viewport-height-minus-2rem: calc(100dvh - 2rem);
+    --app-viewport-height-minus-3rem: calc(100dvh - 3rem);
+    --app-viewport-height-minus-4rem: calc(100dvh - 4rem);
+  }
+}
+
 @theme {
   --color-background: #09090b;
   --color-foreground: #fafafa;
@@ -52,6 +84,17 @@
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/30;
     font-family: 'Inter', sans-serif;
+  }
+
+  @media (max-width: 1023px) {
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='button']):not(
+        [type='submit']
+      ):not([type='reset']):not([type='file']):not([type='hidden']),
+    textarea,
+    select {
+      /* iOS Safari zooms the page when a text control is smaller than 16px. */
+      font-size: 16px !important;
+    }
   }
 
   /* Hide number input spin buttons globally */

@@ -56,6 +56,98 @@ test('NAV-02: settings navigation opens all management pages', async ({ demoPage
   }
 });
 
+test('NAV-02: mobile Settings navigation centers the selected section when possible', async ({
+  demoPage: page,
+}) => {
+  test.skip(test.info().project.name !== 'iphone-portrait', 'Checks the narrow phone navigation');
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.locator('header a[href="/settings"]').click();
+  await expect(page).toHaveURL(/\/settings$/);
+
+  const settingsNav = page.locator('#main-scroll-container aside').first();
+  await settingsNav.locator('a[href="/settings/categories"]').click();
+  await expect(page).toHaveURL(/\/settings\/categories$/);
+
+  const selectedCenterOffset = () =>
+    settingsNav.evaluate(container => {
+      const selected = container.querySelector('a[aria-current="page"]');
+      if (!selected) throw new Error('No Settings section is selected');
+      const containerBounds = container.getBoundingClientRect();
+      const selectedBounds = selected.getBoundingClientRect();
+      return Math.abs(
+        selectedBounds.left -
+          containerBounds.left +
+          selectedBounds.width / 2 -
+          container.clientWidth / 2
+      );
+    });
+  await expect.poll(selectedCenterOffset).toBeLessThanOrEqual(2);
+
+  await settingsNav.locator('a[href="/settings/trash"]').click();
+  await expect(page).toHaveURL(/\/settings\/trash$/);
+  const endPosition = await settingsNav.evaluate(container => ({
+    scrollLeft: container.scrollLeft,
+    maxScrollLeft: container.scrollWidth - container.clientWidth,
+  }));
+  expect(endPosition.scrollLeft).toBeGreaterThanOrEqual(endPosition.maxScrollLeft - 8);
+
+  await settingsNav.locator('a[href="/settings/accounts"]').click();
+  await expect(page).toHaveURL(/\/settings\/accounts$/);
+  await expect.poll(selectedCenterOffset).toBeLessThanOrEqual(2);
+
+  await settingsNav.locator('a[href="/settings"]').click();
+  await expect(page).toHaveURL(/\/settings$/);
+  await expect.poll(() => settingsNav.evaluate(container => container.scrollLeft)).toBe(0);
+});
+
+test('TRASH-01: Recently Deleted remains usable across phone tabs', async ({
+  seededDemoPage: page,
+}) => {
+  test.skip(test.info().project.name !== 'iphone-portrait', 'Checks the narrow phone layout');
+  await page.setViewportSize({ width: 360, height: 800 });
+
+  await page.evaluate(() => {
+    const app = window as typeof window & {
+      useDataStore?: { getState: () => import('../../src/store/types').DataState };
+    };
+    const store = app.useDataStore?.getState();
+    if (!store) throw new Error('Trash setup requires the Vite dev store');
+    const txn = store.transactions.find(item => item.note === 'Fixture groceries');
+    const account = store.accounts.find(item => item.name === 'Fixture Checking');
+    const method = store.methods.find(item => item.name === 'Fixture Debit Card');
+    const category = store.categories.find(item => item.head === 'Fixture Food');
+    if (!txn || !account || !method || !category) throw new Error('Expected seeded demo items');
+    store.deleteTransaction(txn.id);
+    store.updateAccount(account.id, { isDeleted: true });
+    store.updateMethod(method.id, { isDeleted: true });
+    store.updateCategory(category.id, { isDeleted: true });
+  });
+
+  await page.goto('/settings/trash');
+  await expect(page.getByRole('heading', { name: 'Recently Deleted' })).toBeVisible();
+  await expect(page.locator('.sm\\:hidden').getByText('Fixture groceries')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Restore Fixture groceries' })).toBeVisible();
+
+  for (const [tab, item] of [
+    ['Accounts', 'Fixture Checking'],
+    ['Pay Methods', 'Fixture Debit Card'],
+    ['Categories', 'Fixture Food'],
+  ]) {
+    const tabButton = page.getByRole('tab', { name: new RegExp(tab) });
+    await tabButton.click();
+    await expect(tabButton).toHaveAttribute('data-state', 'active');
+    await expect(page.locator('.sm\\:hidden').getByText(item, { exact: false })).toBeVisible();
+    await expect(page.getByRole('button', { name: `Restore ${item}` })).toBeVisible();
+    const bounds = await tabButton.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(360);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      360
+    );
+  }
+});
+
 test('NAV-03/TXN-01: desktop sidebar or mobile bottom bar opens the transaction form', async ({
   demoPage: page,
 }) => {
@@ -98,10 +190,73 @@ test('NAV-03: app shell fits desktop and mobile viewport widths', async ({ demoP
   }
 });
 
-test('NAV-11: short mobile pages do not create a second vertical scroll area', async ({
+test('NAV-03: mobile bottom navigation and content clearance honor the safe-area inset', async ({
   demoPage: page,
 }) => {
   test.skip(test.info().project.name !== 'iphone-portrait', 'Checks the phone layout');
+
+  await page.addStyleTag({
+    content: ':root { --safe-area-inset-bottom: 30px !important; }',
+  });
+
+  const layout = await page.evaluate(() => {
+    const navigation = document.querySelector('body > div aside')!;
+    const content = document.querySelector('#main-scroll-container')!;
+    const contentShell = content.parentElement!;
+    const action = navigation.querySelector('button')!;
+    const navBounds = navigation.getBoundingClientRect();
+    const contentBounds = content.getBoundingClientRect();
+    const actionBounds = action.getBoundingClientRect();
+
+    return {
+      navHeight: navBounds.height,
+      navTop: navBounds.top,
+      navPaddingBottom: getComputedStyle(navigation).paddingBottom,
+      contentBottom: contentBounds.bottom,
+      contentPaddingBottom: getComputedStyle(contentShell).paddingBottom,
+      actionBottom: actionBounds.bottom,
+      viewportBottom: window.innerHeight,
+    };
+  });
+
+  expect(layout.navHeight).toBeCloseTo(90, 0);
+  expect(layout.navPaddingBottom).toBe('30px');
+  expect(layout.contentPaddingBottom).toBe('90px');
+  expect(layout.contentBottom).toBeCloseTo(layout.navTop, 0);
+  expect(layout.actionBottom).toBeLessThanOrEqual(layout.viewportBottom - 30 + 2);
+});
+
+test('NAV-11: short mobile pages do not create a second vertical scroll area', async ({
+  demoPage: page,
+}) => {
+  test.skip(
+    !['iphone-portrait', 'iphone-landscape'].includes(test.info().project.name),
+    'Checks phone layouts'
+  );
+
+  const initialViewport = page.viewportSize();
+  if (!initialViewport) throw new Error('The phone viewport is unavailable');
+  const appShell = page.locator('#main-scroll-container').locator('xpath=../..');
+  const viewportHeightDifference = () =>
+    page.evaluate(() => {
+      const main = document.querySelector('#main-scroll-container');
+      const appShell = main?.parentElement?.parentElement;
+      if (!appShell) throw new Error('Missing app shell');
+      return Math.abs(appShell.getBoundingClientRect().height - window.innerHeight);
+    });
+
+  await expect.poll(viewportHeightDifference).toBeLessThanOrEqual(1);
+  const viewportOverride = await page.addStyleTag({
+    content: ':root { --app-viewport-height: 510px !important; }',
+  });
+  await expect
+    .poll(() => appShell.evaluate(element => element.getBoundingClientRect().height))
+    .toBe(510);
+  await viewportOverride.evaluate(element => element.remove());
+
+  await page.setViewportSize({ width: initialViewport.width, height: 650 });
+  await expect.poll(viewportHeightDifference).toBeLessThanOrEqual(1);
+  await page.setViewportSize(initialViewport);
 
   for (const path of [
     '/dashboard',

@@ -9,11 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-23
+
 ### Changed
+- **Mobile Recently Deleted Layout**: Keep the trash header and sort control usable on narrow screens, scroll the category tabs to the selected section, and show deleted records as readable cards with always-visible restore actions.
+- **Mobile Settings Navigation**: Keep the active section tab centered in the horizontal Settings navigation when space allows, clamping the first and last tabs to the strip edges.
+- **Dynamic Mobile Viewport Sizing**: Use one `100vh` fallback that upgrades to `100dvh` for full-height app, legal, and recovery screens, plus sheets and height-based empty states, so layouts follow mobile browser chrome changes.
+- **Viewport-Safe Popovers and Menus**: Keep popovers, selects, and dropdown menus inside the viewport with collision padding, available-height limits, and scrolling for tall content. Restore collision handling for the Ledger type filter.
+- **Mobile Safe-Area Navigation**: Extend the fixed bottom navigation and its content clearance through the device safe area so the app controls stay above the home indicator.
 - **Ledger Filters**: Added searchable category and account filters, an amount range slider with precise inputs, and calendar filtering by day, week, month, year, or custom range. Filters combine consistently, and category selection supports both categories and subcategories.
 - **Ledger Toolbar and Search**: Moved search and type filters beside Export PDF, with compact mobile controls, expandable search, clear actions, and a multi-select type menu. Removed the net amount beneath the Ledger title.
 
 ### Fixed
+- **Mobile Settings Profile Layout**: Stack Sign Out below the signed-in profile at narrow widths and allow long names and email addresses to wrap without being covered.
+- **Mobile Input Focus Zoom**: Keep editable text controls at least 16 px on phone and tablet widths to prevent iOS Safari from zooming the page when a field receives focus.
 - **Reconnect Continuity**: Keep a previously unlocked local workspace visible during background reconnection, and retain its saved profile photo when Google omits the optional picture field.
 - **Verified Workspace Startup**: Keep the workspace in its loading state after account verification until the initial Google Sheets reconciliation completes, preventing an empty dashboard from appearing during the first pull.
 - **Regional Settings Persistence (#108)**: Restore demo preferences after reload, save first-run defaults locally and to Sheets, prefer regional browser language hints, and detect date order using the locale. Pending preferences and canonical cloud settings survive reloads on differently localized devices.
@@ -21,6 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ledger Date Filtering**: Keep table headings visible for empty results, stabilize custom calendar placement, and improve date-range preview, entry, and selection spacing.
 
 ### Testing
+- **Mobile Recently Deleted Coverage**: Check all four trash sections at phone width, including visible restore actions, selected tabs within the viewport, and no page-level horizontal overflow.
+- **Mobile Settings Navigation Coverage**: Verify a middle Settings section centers after navigation and the first and last sections clamp to the strip edges on a narrow phone viewport.
+- **Mobile Settings Profile Coverage**: Verify profile name/email and Sign Out stay visible and do not overlap on phone portrait and landscape layouts.
+- **Mobile Input Focus Zoom Coverage**: Check computed font sizes for amount, date, notes, and split amount fields in the transaction form at phone portrait and landscape sizes.
+- **Dynamic Viewport Coverage**: Resize the phone browser viewport and override the shared height variable to verify the app shell tracks the available height.
+- **Floating Control Coverage**: Exercise the Ledger type filter and transaction form selectors at phone and desktop sizes after standardizing viewport collision and content sizing.
+- **Mobile Safe-Area Navigation Coverage**: Simulate an iPhone bottom safe-area inset in the browser and verify the navigation, transaction action, and content boundary remain clear of it.
 - **Reconnect Continuity Coverage**: Hold the Sheets pull after reconnection and verify local records remain visible, no full-screen loader blocks the workspace, and a missing profile picture in the Google response does not erase the saved image across reload.
 - **Verified Unlock Startup**: Pause the first Sheets pull after Google verification and confirm cached workspace content stays hidden until cloud reconciliation finishes.
 - **Sync Race Regression (#92)**: Exercise transaction edits, deletions, and additions after reconciliation captures its snapshot and while its upload is paused, verifying cloud results and reload persistence.

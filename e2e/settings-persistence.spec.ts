@@ -71,6 +71,53 @@ test('#108: explicit demo preferences survive a hard reload', async ({ page }) =
     });
 });
 
+test('SETTINGS-04: signed-in profile and Sign Out do not overlap on phone', async ({ page }) => {
+  test.skip(
+    !['iphone-portrait', 'iphone-landscape'].includes(test.info().project.name),
+    'Checks phone profile layout'
+  );
+
+  await installFakeGoogle(page);
+  await signIn(page);
+  await page.goto('/settings');
+
+  const profileName = page.getByText('Browser Tester', { exact: true });
+  const profileEmail = page.getByText('browser@example.test', { exact: true });
+  const signOut = page.getByRole('button', { name: 'Sign out', exact: true });
+  await expect(profileName).toBeVisible();
+  await expect(profileEmail).toBeVisible();
+  await expect(signOut).toBeVisible();
+
+  const viewport = page.viewportSize();
+  const nameBounds = await profileName.boundingBox();
+  const emailBounds = await profileEmail.boundingBox();
+  const signOutBounds = await signOut.boundingBox();
+  expect(viewport).not.toBeNull();
+  expect(nameBounds).not.toBeNull();
+  expect(emailBounds).not.toBeNull();
+  expect(signOutBounds).not.toBeNull();
+
+  if (viewport && nameBounds && emailBounds && signOutBounds) {
+    expect(nameBounds.x).toBeGreaterThanOrEqual(0);
+    expect(emailBounds.x + emailBounds.width).toBeLessThanOrEqual(viewport.width);
+    expect(signOutBounds.x + signOutBounds.width).toBeLessThanOrEqual(viewport.width);
+    const profileRight = Math.max(
+      nameBounds.x + nameBounds.width,
+      emailBounds.x + emailBounds.width
+    );
+    const profileBottom = Math.max(
+      nameBounds.y + nameBounds.height,
+      emailBounds.y + emailBounds.height
+    );
+    const overlapsProfile =
+      signOutBounds.x < profileRight &&
+      signOutBounds.x + signOutBounds.width > Math.min(nameBounds.x, emailBounds.x) &&
+      signOutBounds.y < profileBottom &&
+      signOutBounds.y + signOutBounds.height > Math.min(nameBounds.y, emailBounds.y);
+    expect(overlapsProfile).toBe(false);
+  }
+});
+
 test('#108: pending preferences survive reload before their cloud upload', async ({ page }) => {
   const google = await installFakeGoogle(page);
   await signIn(page);

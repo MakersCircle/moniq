@@ -5,7 +5,7 @@ import type { Account } from '../src/types';
 import type { DataState } from '../src/store/types';
 import { installFakeGoogle } from './fixtures/google';
 
-test('AUTH-04: reload opens local data immediately and reconciles remote changes in the background', async ({
+test('AUTH-04: reload keeps the workspace gated until the initial Sheets pull completes', async ({
   page,
 }) => {
   const google = await installFakeGoogle(page);
@@ -71,7 +71,8 @@ test('AUTH-04: reload opens local data immediately and reconciles remote changes
   await page.reload();
   await hold.requested;
 
-  await expect(page.getByRole('heading', { name: 'Welcome to Moniq' })).toBeVisible();
+  await expect(page.getByText('Pulling your data from Google Drive...')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome to Moniq' })).toBeHidden();
   const hydrated = await page.evaluate(() => {
     const store = (
       window as typeof window & { useDataStore: { getState: () => DataState } }
@@ -96,10 +97,10 @@ test('AUTH-04: reload opens local data immediately and reconciles remote changes
     }).accountId;
   });
   hold.release();
+  await expect(page.getByRole('heading', { name: 'Welcome to Moniq' })).toBeVisible();
   await expect
     .poll(() => google.sheetRows('Accounts').some(row => row[0] === addedDuringPull))
     .toBe(true);
-  await expect(page.getByRole('heading', { name: 'Welcome to Moniq' })).toBeVisible();
   const reconciled = await page.evaluate(() => {
     const store = (
       window as typeof window & { useDataStore: { getState: () => DataState } }
