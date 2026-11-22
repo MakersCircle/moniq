@@ -139,7 +139,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 
 | ID | Testable behavior | Recorded |
 | --- | --- | --- |
-| TRASH-01 | Recently Deleted separates transactions, accounts, methods, and categories into tabs with counts and empty states. | 0.2.0, 0.3.0 |
+| TRASH-01 | Recently Deleted separates transactions, accounts, methods, and categories into tabs with counts and empty states; on phones, its tabs scroll to the selected section and each type uses a readable card with a visible restore action. | 0.2.0, 0.3.0, Unreleased |
 | TRASH-02 | Deleted transactions can be sorted by deletion time or creation time. | 0.3.0 |
 | TRASH-03 | Restore a deleted account, method, category, or transaction and see it return to active views. | 0.2.0, 0.3.0 |
 | TRASH-04 | Restoring a method requires its linked account to be restored first. | 0.3.0, Code |

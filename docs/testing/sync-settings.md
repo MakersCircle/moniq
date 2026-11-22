@@ -281,6 +281,7 @@ These are planned cases. Local/demo cases need browser tests. Sync, backup, and 
 | E-24 | Reconnect selects a different Google account (`auth-session-expiry.spec.ts`) | Local records, original owner email and pending operations remain intact; the banner asks for the original account. Reconnecting that account uploads the queue. |
 | E-25 | Transaction mutations during reconciliation upload (#92) | Pause the Transactions append after the local snapshot; edit, delete and create transactions; verify all changes reach Sheets without duplicates and survive reload. |
 | E-26 | Signed-in profile in mobile Settings ([`settings-persistence.spec.ts`](../../e2e/settings-persistence.spec.ts)) | Profile name and email remain visible without overlapping Sign Out on phone portrait and landscape layouts. |
+| E-27 | Recently Deleted on a phone ([`demo-navigation.spec.ts`](../../e2e/demo-navigation.spec.ts)) | At 360 px, all four tabs can be selected, each deleted record shows its details and a visible restore action, the selected tab remains in view, and the document has no horizontal overflow. |
 
 Remaining gaps: real installed iOS/Android Google OAuth flows and concurrent browser tabs require further acceptance/integration coverage. Chromium touch viewport checks do not establish real Safari/PWA compatibility.
 

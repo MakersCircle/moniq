@@ -103,6 +103,54 @@ test('NAV-02: mobile Settings navigation centers the selected section when possi
   await expect.poll(() => settingsNav.evaluate(container => container.scrollLeft)).toBe(0);
 });
 
+test('TRASH-01: Recently Deleted remains usable across phone tabs', async ({
+  seededDemoPage: page,
+}) => {
+  test.skip(test.info().project.name !== 'iphone-portrait', 'Checks the narrow phone layout');
+  await page.setViewportSize({ width: 360, height: 800 });
+
+  await page.evaluate(() => {
+    const app = window as typeof window & {
+      useDataStore?: { getState: () => import('../../src/store/types').DataState };
+    };
+    const store = app.useDataStore?.getState();
+    if (!store) throw new Error('Trash setup requires the Vite dev store');
+    const txn = store.transactions.find(item => item.note === 'Fixture groceries');
+    const account = store.accounts.find(item => item.name === 'Fixture Checking');
+    const method = store.methods.find(item => item.name === 'Fixture Debit Card');
+    const category = store.categories.find(item => item.head === 'Fixture Food');
+    if (!txn || !account || !method || !category) throw new Error('Expected seeded demo items');
+    store.deleteTransaction(txn.id);
+    store.updateAccount(account.id, { isDeleted: true });
+    store.updateMethod(method.id, { isDeleted: true });
+    store.updateCategory(category.id, { isDeleted: true });
+  });
+
+  await page.goto('/settings/trash');
+  await expect(page.getByRole('heading', { name: 'Recently Deleted' })).toBeVisible();
+  await expect(page.locator('.sm\\:hidden').getByText('Fixture groceries')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Restore Fixture groceries' })).toBeVisible();
+
+  for (const [tab, item] of [
+    ['Accounts', 'Fixture Checking'],
+    ['Pay Methods', 'Fixture Debit Card'],
+    ['Categories', 'Fixture Food'],
+  ]) {
+    const tabButton = page.getByRole('tab', { name: new RegExp(tab) });
+    await tabButton.click();
+    await expect(tabButton).toHaveAttribute('data-state', 'active');
+    await expect(page.locator('.sm\\:hidden').getByText(item, { exact: false })).toBeVisible();
+    await expect(page.getByRole('button', { name: `Restore ${item}` })).toBeVisible();
+    const bounds = await tabButton.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(360);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      360
+    );
+  }
+});
+
 test('NAV-03/TXN-01: desktop sidebar or mobile bottom bar opens the transaction form', async ({
   demoPage: page,
 }) => {

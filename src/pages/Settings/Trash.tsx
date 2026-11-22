@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Info, RotateCcw, Trash2, Landmark, CreditCard, ReceiptText, Tag } from 'lucide-react';
 import { useDataStore } from '@/store/dataStore';
 import { formatCurrency } from '@/utils/format';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -32,6 +33,39 @@ function InfoTooltip({ text, position = 'top' }: { text: string; position?: 'top
   );
 }
 
+function RestoreAction({
+  label,
+  onClick,
+  isRestoring,
+  compact = false,
+}: {
+  label: string;
+  onClick: () => void;
+  isRestoring: boolean;
+  compact?: boolean;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size={compact ? 'sm' : 'default'}
+      aria-label={`Restore ${label}`}
+      title={`Restore ${label}`}
+      disabled={isRestoring}
+      className={cn(
+        'text-primary',
+        compact
+          ? 'h-8 w-8 p-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100'
+          : 'h-9 w-full gap-2'
+      )}
+      onClick={onClick}
+    >
+      <RotateCcw className="h-4 w-4" />
+      {!compact && <span>Restore</span>}
+    </Button>
+  );
+}
+
 type SortOption = 'deleted' | 'created';
 
 export default function Trash() {
@@ -51,6 +85,18 @@ export default function Trash() {
   const [sortBy, setSortBy] = useState<SortOption>('deleted');
   const [activeTab, setActiveTab] = useState('transactions');
   const [error, setError] = useState<string | null>(null);
+  const tabScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const selectedTab = tabScrollRef.current?.querySelector<HTMLElement>('[data-state="active"]');
+    if (!selectedTab) return;
+
+    selectedTab.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'nearest',
+      inline: 'center',
+    });
+  }, [activeTab]);
 
   const deletedTxns = useMemo(() => transactions.filter(t => t.isDeleted), [transactions]);
   const deletedAccounts = useMemo(() => accounts.filter(a => a.isDeleted), [accounts]);
@@ -129,7 +175,7 @@ export default function Trash() {
     <SettingsLayout>
       <div className="space-y-6">
         <div className="sticky top-0 bg-background/95 backdrop-blur-md z-40 pb-4 pt-2 -mx-1 px-1">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold tracking-tight text-destructive">
@@ -141,12 +187,12 @@ export default function Trash() {
                 {t('trash.subtitle')}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mr-1">
+            <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+              <span className="mr-1 whitespace-nowrap text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
                 {t('trash.sortBy')}
               </span>
               <Select value={sortBy} onValueChange={val => setSortBy(val as SortOption)}>
-                <SelectTrigger className="h-8 w-[160px] text-[10px] font-bold uppercase tracking-widest">
+                <SelectTrigger className="h-9 w-[160px] text-[10px] font-bold uppercase tracking-widest">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -168,42 +214,47 @@ export default function Trash() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="bg-accent/30 p-1 h-10 w-full justify-start gap-2 border border-border/50 rounded-xl">
-              <TabsTrigger
-                value="transactions"
-                className="rounded-lg px-4 h-8 gap-2 text-[10px] font-bold uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                <ReceiptText className="h-3.5 w-3.5" />
-                {t('common.transactions')} ({deletedTxns.length})
-              </TabsTrigger>
-              <TabsTrigger
-                value="accounts"
-                className="rounded-lg px-4 h-8 gap-2 text-[10px] font-bold uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                <Landmark className="h-3.5 w-3.5" />
-                {t('common.accounts')} ({deletedAccounts.length})
-              </TabsTrigger>
-              <TabsTrigger
-                value="methods"
-                className="rounded-lg px-4 h-8 gap-2 text-[10px] font-bold uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                <CreditCard className="h-3.5 w-3.5" />
-                {t('trash.payMethods')} ({deletedMethods.length})
-              </TabsTrigger>
-              <TabsTrigger
-                value="categories"
-                className="rounded-lg px-4 h-8 gap-2 text-[10px] font-bold uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                <Tag className="h-3.5 w-3.5" />
-                {t('common.categories')} ({deletedCategories.length})
-              </TabsTrigger>
-            </TabsList>
+            <div
+              ref={tabScrollRef}
+              className="-mx-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              <TabsList className="h-10 w-max min-w-full flex-nowrap justify-start gap-2 rounded-xl border border-border/50 bg-accent/30 p-1">
+                <TabsTrigger
+                  value="transactions"
+                  className="h-8 flex-none gap-2 whitespace-nowrap rounded-lg px-3 text-[10px] font-bold uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  <ReceiptText className="h-3.5 w-3.5" />
+                  {t('common.transactions')} ({deletedTxns.length})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="accounts"
+                  className="h-8 flex-none gap-2 whitespace-nowrap rounded-lg px-3 text-[10px] font-bold uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  <Landmark className="h-3.5 w-3.5" />
+                  {t('common.accounts')} ({deletedAccounts.length})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="methods"
+                  className="h-8 flex-none gap-2 whitespace-nowrap rounded-lg px-3 text-[10px] font-bold uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  <CreditCard className="h-3.5 w-3.5" />
+                  {t('trash.payMethods')} ({deletedMethods.length})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="categories"
+                  className="h-8 flex-none gap-2 whitespace-nowrap rounded-lg px-3 text-[10px] font-bold uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  <Tag className="h-3.5 w-3.5" />
+                  {t('common.categories')} ({deletedCategories.length})
+                </TabsTrigger>
+              </TabsList>
+            </div>
           </Tabs>
         </div>
 
         {error && (
-          <div className="mx-1 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-[11px] font-bold uppercase tracking-wider flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
-            <Info className="h-4 w-4" />
+          <div className="mx-1 flex min-w-0 items-start gap-2 break-words rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-[11px] font-bold uppercase tracking-wider text-destructive animate-in fade-in slide-in-from-top-1">
+            <Info className="h-4 w-4 shrink-0" />
             {error}
           </div>
         )}
@@ -297,61 +348,111 @@ function TransactionsTable({
   });
 
   return (
-    <div className="rounded-xl border border-border overflow-hidden bg-card shadow-sm">
-      <table className="w-full text-sm text-left">
-        <thead className="bg-accent/30 text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
-          <tr>
-            <th className="px-5 py-3 border-b border-border">{t('common.date')}</th>
-            <th className="px-5 py-3 border-b border-border">{t('common.description')}</th>
-            <th className="px-5 py-3 border-b border-border">{t('common.accounts')}</th>
-            <th className="px-5 py-3 border-b border-border text-right">{t('common.amount')}</th>
-            <th className="px-5 py-3 border-b border-border w-10"></th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {sorted.map(txn => (
-            <tr
-              key={txn.id}
-              className={cn(
-                'group hover:bg-accent/20 transition-all',
-                restoring[txn.id] && 'opacity-0 scale-95'
-              )}
-            >
-              <td className="px-5 py-3 whitespace-nowrap text-xs font-bold">{txn.date}</td>
-              <td className="px-5 py-3">
-                <p className="font-bold text-xs">{txn.note || t('common.noDescriptionProvided')}</p>
-                <p className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter">
-                  {t('trash.deletedOn')} {txn.updatedAt.slice(0, 10)}
-                </p>
-              </td>
-              <td className="px-5 py-3 text-xs text-muted-foreground">
-                {accounts.find((a: Account) => a.id === txn.entries[0]?.accountId)?.name ||
-                  t('common.unknown')}
-              </td>
-              <td
+    <>
+      <div className="hidden rounded-xl border border-border bg-card shadow-sm sm:block sm:overflow-hidden">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-accent/30 text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
+            <tr>
+              <th className="px-5 py-3 border-b border-border">{t('common.date')}</th>
+              <th className="px-5 py-3 border-b border-border">{t('common.description')}</th>
+              <th className="px-5 py-3 border-b border-border">{t('common.accounts')}</th>
+              <th className="px-5 py-3 border-b border-border text-right">{t('common.amount')}</th>
+              <th className="px-5 py-3 border-b border-border w-10"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {sorted.map(txn => (
+              <tr
+                key={txn.id}
                 className={cn(
-                  'px-5 py-3 text-right mono font-bold',
-                  txn.uiType === 'income' ? 'text-income' : 'text-expense'
+                  'group hover:bg-accent/20 transition-all',
+                  restoring[txn.id] && 'opacity-0 scale-95'
                 )}
               >
-                {txn.uiType === 'income' ? '+' : ''}
-                {formatCurrency(txn.amount, settings)}
-              </td>
-              <td className="px-2 py-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 text-primary opacity-0 group-hover:opacity-100 p-0"
-                  onClick={() => onRestore(txn.id)}
+                <td className="px-5 py-3 whitespace-nowrap text-xs font-bold">{txn.date}</td>
+                <td className="px-5 py-3">
+                  <p className="font-bold text-xs">
+                    {txn.note || t('common.noDescriptionProvided')}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter">
+                    {t('trash.deletedOn')} {txn.updatedAt.slice(0, 10)}
+                  </p>
+                </td>
+                <td className="px-5 py-3 text-xs text-muted-foreground">
+                  {accounts.find((a: Account) => a.id === txn.entries[0]?.accountId)?.name ||
+                    t('common.unknown')}
+                </td>
+                <td
+                  className={cn(
+                    'px-5 py-3 text-right mono font-bold',
+                    txn.uiType === 'income' ? 'text-income' : 'text-expense'
+                  )}
                 >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+                  {txn.uiType === 'income' ? '+' : ''}
+                  {formatCurrency(txn.amount, settings)}
+                </td>
+                <td className="px-2 py-3">
+                  <RestoreAction
+                    label={txn.note || t('common.noDescriptionProvided')}
+                    isRestoring={Boolean(restoring[txn.id])}
+                    onClick={() => onRestore(txn.id)}
+                    compact
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="grid gap-2 sm:hidden">
+        {sorted.map(txn => {
+          const description = txn.note || t('common.noDescriptionProvided');
+          const accountName =
+            accounts.find(account => account.id === txn.entries[0]?.accountId)?.name ||
+            t('common.unknown');
+
+          return (
+            <Card
+              key={txn.id}
+              className={cn('border-border shadow-sm', restoring[txn.id] && 'opacity-0 scale-95')}
+            >
+              <CardContent className="space-y-3 p-3">
+                <div className="flex min-w-0 items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="break-words text-sm font-bold [overflow-wrap:anywhere]">
+                      {description}
+                    </p>
+                    <p className="mt-0.5 break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">
+                      {accountName}
+                    </p>
+                  </div>
+                  <p
+                    className={cn(
+                      'shrink-0 text-right mono text-sm font-bold',
+                      txn.uiType === 'income' ? 'text-income' : 'text-expense'
+                    )}
+                  >
+                    {txn.uiType === 'income' ? '+' : ''}
+                    {formatCurrency(txn.amount, settings)}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-2 text-[10px] font-medium text-muted-foreground">
+                  <span>{txn.date}</span>
+                  <span className="text-right">
+                    {t('trash.deletedOn')} {txn.updatedAt.slice(0, 10)}
+                  </span>
+                </div>
+                <RestoreAction
+                  label={description}
+                  isRestoring={Boolean(restoring[txn.id])}
+                  onClick={() => onRestore(txn.id)}
+                />
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -368,54 +469,82 @@ function AccountsTable({ accounts, settings, restoring, onRestore, t }: Accounts
   const sorted = [...accounts].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
   return (
-    <div className="rounded-xl border border-border overflow-hidden bg-card shadow-sm">
-      <table className="w-full text-sm text-left">
-        <thead className="bg-accent/30 text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
-          <tr>
-            <th className="px-5 py-3 border-b border-border">{t('common.name')}</th>
-            <th className="px-5 py-3 border-b border-border">{t('common.type')}</th>
-            <th className="px-5 py-3 border-b border-border text-right">
-              {t('account.openingBalance')}
-            </th>
-            <th className="px-5 py-3 border-b border-border w-10"></th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {sorted.map(a => (
-            <tr
-              key={a.id}
-              className={cn(
-                'group hover:bg-accent/20 transition-all',
-                restoring[a.id] && 'opacity-0 scale-95'
-              )}
-            >
-              <td className="px-5 py-3">
-                <p className="font-bold text-xs">{a.name}</p>
-                <p className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter">
-                  {t('trash.deletedOn')} {a.updatedAt.slice(0, 10)}
-                </p>
-              </td>
-              <td className="px-5 py-3 text-xs text-muted-foreground uppercase font-bold tracking-widest">
-                {a.type}
-              </td>
-              <td className="px-5 py-3 text-right mono font-bold text-xs">
-                {formatCurrency(a.initialBalance, settings)}
-              </td>
-              <td className="px-2 py-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 text-primary opacity-0 group-hover:opacity-100 p-0"
-                  onClick={() => onRestore(a.id)}
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-              </td>
+    <>
+      <div className="hidden rounded-xl border border-border bg-card shadow-sm sm:block sm:overflow-hidden">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-accent/30 text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
+            <tr>
+              <th className="px-5 py-3 border-b border-border">{t('common.name')}</th>
+              <th className="px-5 py-3 border-b border-border">{t('common.type')}</th>
+              <th className="px-5 py-3 border-b border-border text-right">
+                {t('account.openingBalance')}
+              </th>
+              <th className="px-5 py-3 border-b border-border w-10"></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {sorted.map(a => (
+              <tr
+                key={a.id}
+                className={cn(
+                  'group hover:bg-accent/20 transition-all',
+                  restoring[a.id] && 'opacity-0 scale-95'
+                )}
+              >
+                <td className="px-5 py-3">
+                  <p className="font-bold text-xs">{a.name}</p>
+                  <p className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter">
+                    {t('trash.deletedOn')} {a.updatedAt.slice(0, 10)}
+                  </p>
+                </td>
+                <td className="px-5 py-3 text-xs text-muted-foreground uppercase font-bold tracking-widest">
+                  {a.type}
+                </td>
+                <td className="px-5 py-3 text-right mono font-bold text-xs">
+                  {formatCurrency(a.initialBalance, settings)}
+                </td>
+                <td className="px-2 py-3">
+                  <RestoreAction
+                    label={a.name}
+                    isRestoring={Boolean(restoring[a.id])}
+                    onClick={() => onRestore(a.id)}
+                    compact
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="grid gap-2 sm:hidden">
+        {sorted.map(a => (
+          <Card
+            key={a.id}
+            className={cn('border-border shadow-sm', restoring[a.id] && 'opacity-0 scale-95')}
+          >
+            <CardContent className="space-y-3 p-3">
+              <div className="flex min-w-0 items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="break-words text-sm font-bold [overflow-wrap:anywhere]">{a.name}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{a.type}</p>
+                </div>
+                <p className="shrink-0 text-right mono text-sm font-bold">
+                  {formatCurrency(a.initialBalance, settings)}
+                </p>
+              </div>
+              <p className="border-t border-border/60 pt-2 text-[10px] font-medium text-muted-foreground">
+                {t('trash.deletedOn')} {a.updatedAt.slice(0, 10)}
+              </p>
+              <RestoreAction
+                label={a.name}
+                isRestoring={Boolean(restoring[a.id])}
+                onClick={() => onRestore(a.id)}
+              />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -432,49 +561,78 @@ function MethodsTable({ methods, accounts, restoring, onRestore, t }: MethodsTab
   const sorted = [...methods].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
   return (
-    <div className="rounded-xl border border-border overflow-hidden bg-card shadow-sm">
-      <table className="w-full text-sm text-left">
-        <thead className="bg-accent/30 text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
-          <tr>
-            <th className="px-5 py-3 border-b border-border">{t('trash.methodName')}</th>
-            <th className="px-5 py-3 border-b border-border">{t('method.linkedAccount')}</th>
-            <th className="px-5 py-3 border-b border-border w-10"></th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {sorted.map(m => (
-            <tr
+    <>
+      <div className="hidden rounded-xl border border-border bg-card shadow-sm sm:block sm:overflow-hidden">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-accent/30 text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
+            <tr>
+              <th className="px-5 py-3 border-b border-border">{t('trash.methodName')}</th>
+              <th className="px-5 py-3 border-b border-border">{t('method.linkedAccount')}</th>
+              <th className="px-5 py-3 border-b border-border w-10"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {sorted.map(m => (
+              <tr
+                key={m.id}
+                className={cn(
+                  'group hover:bg-accent/20 transition-all',
+                  restoring[m.id] && 'opacity-0 scale-95'
+                )}
+              >
+                <td className="px-5 py-3">
+                  <p className="font-bold text-xs">{m.name}</p>
+                  <p className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter">
+                    {t('trash.deletedOn')} {m.updatedAt.slice(0, 10)}
+                  </p>
+                </td>
+                <td className="px-5 py-3 text-xs text-muted-foreground font-bold">
+                  {accounts.find((a: Account) => a.id === m.linkedAccountId)?.name ||
+                    t('common.unknown')}
+                </td>
+                <td className="px-2 py-3">
+                  <RestoreAction
+                    label={m.name}
+                    isRestoring={Boolean(restoring[m.id])}
+                    onClick={() => onRestore(m.id)}
+                    compact
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="grid gap-2 sm:hidden">
+        {sorted.map(m => {
+          const accountName =
+            accounts.find(account => account.id === m.linkedAccountId)?.name || t('common.unknown');
+          return (
+            <Card
               key={m.id}
-              className={cn(
-                'group hover:bg-accent/20 transition-all',
-                restoring[m.id] && 'opacity-0 scale-95'
-              )}
+              className={cn('border-border shadow-sm', restoring[m.id] && 'opacity-0 scale-95')}
             >
-              <td className="px-5 py-3">
-                <p className="font-bold text-xs">{m.name}</p>
-                <p className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter">
+              <CardContent className="space-y-3 p-3">
+                <div className="min-w-0">
+                  <p className="break-words text-sm font-bold [overflow-wrap:anywhere]">{m.name}</p>
+                  <p className="mt-0.5 break-words text-xs font-medium text-muted-foreground [overflow-wrap:anywhere]">
+                    {t('method.linkedAccount')}: {accountName}
+                  </p>
+                </div>
+                <p className="border-t border-border/60 pt-2 text-[10px] font-medium text-muted-foreground">
                   {t('trash.deletedOn')} {m.updatedAt.slice(0, 10)}
                 </p>
-              </td>
-              <td className="px-5 py-3 text-xs text-muted-foreground font-bold">
-                {accounts.find((a: Account) => a.id === m.linkedAccountId)?.name ||
-                  t('common.unknown')}
-              </td>
-              <td className="px-2 py-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 text-primary opacity-0 group-hover:opacity-100 p-0"
+                <RestoreAction
+                  label={m.name}
+                  isRestoring={Boolean(restoring[m.id])}
                   onClick={() => onRestore(m.id)}
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+                />
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -490,49 +648,79 @@ function CategoriesTable({ categories, restoring, onRestore, t }: CategoriesTabl
   const sorted = [...categories].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
   return (
-    <div className="rounded-xl border border-border overflow-hidden bg-card shadow-sm">
-      <table className="w-full text-sm text-left">
-        <thead className="bg-accent/30 text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
-          <tr>
-            <th className="px-5 py-3 border-b border-border">{t('common.categories')}</th>
-            <th className="px-5 py-3 border-b border-border">{t('common.group')}</th>
-            <th className="px-5 py-3 border-b border-border w-10"></th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {sorted.map(c => (
-            <tr
+    <>
+      <div className="hidden rounded-xl border border-border bg-card shadow-sm sm:block sm:overflow-hidden">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-accent/30 text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
+            <tr>
+              <th className="px-5 py-3 border-b border-border">{t('common.categories')}</th>
+              <th className="px-5 py-3 border-b border-border">{t('common.group')}</th>
+              <th className="px-5 py-3 border-b border-border w-10"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {sorted.map(c => (
+              <tr
+                key={c.id}
+                className={cn(
+                  'group hover:bg-accent/20 transition-all',
+                  restoring[c.id] && 'opacity-0 scale-95'
+                )}
+              >
+                <td className="px-5 py-3">
+                  <p className="font-bold text-xs">
+                    {c.head} {c.subHead ? `· ${c.subHead}` : ''}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter">
+                    {t('trash.deletedOn')} {c.updatedAt.slice(0, 10)}
+                  </p>
+                </td>
+                <td className="px-5 py-3 text-xs text-muted-foreground uppercase font-black tracking-widest">
+                  {c.group}
+                </td>
+                <td className="px-2 py-3">
+                  <RestoreAction
+                    label={`${c.head}${c.subHead ? ` · ${c.subHead}` : ''}`}
+                    isRestoring={Boolean(restoring[c.id])}
+                    onClick={() => onRestore(c.id)}
+                    compact
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="grid gap-2 sm:hidden">
+        {sorted.map(c => {
+          const label = `${c.head}${c.subHead ? ` · ${c.subHead}` : ''}`;
+          return (
+            <Card
               key={c.id}
-              className={cn(
-                'group hover:bg-accent/20 transition-all',
-                restoring[c.id] && 'opacity-0 scale-95'
-              )}
+              className={cn('border-border shadow-sm', restoring[c.id] && 'opacity-0 scale-95')}
             >
-              <td className="px-5 py-3">
-                <p className="font-bold text-xs">
-                  {c.head} {c.subHead ? `· ${c.subHead}` : ''}
-                </p>
-                <p className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter">
+              <CardContent className="space-y-3 p-3">
+                <div className="flex min-w-0 items-start justify-between gap-3">
+                  <p className="min-w-0 break-words text-sm font-bold [overflow-wrap:anywhere]">
+                    {label}
+                  </p>
+                  <span className="shrink-0 rounded-full bg-accent px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground">
+                    {c.group}
+                  </span>
+                </div>
+                <p className="border-t border-border/60 pt-2 text-[10px] font-medium text-muted-foreground">
                   {t('trash.deletedOn')} {c.updatedAt.slice(0, 10)}
                 </p>
-              </td>
-              <td className="px-5 py-3 text-xs text-muted-foreground uppercase font-black tracking-widest">
-                {c.group}
-              </td>
-              <td className="px-2 py-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 text-primary opacity-0 group-hover:opacity-100 p-0"
+                <RestoreAction
+                  label={label}
+                  isRestoring={Boolean(restoring[c.id])}
                   onClick={() => onRestore(c.id)}
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+                />
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </>
   );
 }

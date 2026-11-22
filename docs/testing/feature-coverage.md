@@ -147,7 +147,7 @@ Known defects should get tests that describe the intended behavior once fixed: [
 
 | ID | Feature | Status | Existing automated evidence | Next automated check | Live Google? |
 | --- | --- | --- | --- | --- | --- |
-| TRASH-01 | Recently Deleted separates transactions, accounts, methods, and categories into tabs with counts and empty states. | Missing | — | Component + browser | No |
+| TRASH-01 | Recently Deleted separates transactions, accounts, methods, and categories into tabs with counts and empty states; phone layouts keep tabs, records, and restore actions usable without horizontal page overflow. | Partial | `e2e/demo-navigation.spec.ts` checks all four sections and restore controls at 360 px | Desktop restore behavior and empty states | No |
 | TRASH-02 | Deleted transactions can be sorted by deletion time or creation time. | Missing | — | Component + browser | No |
 | TRASH-03 | Restore a deleted account, method, category, or transaction and see it return to active views. | Missing | — | Component + browser | No |
 | TRASH-04 | Restoring a method requires its linked account to be restored first. | Missing | — | Component + browser | No |
