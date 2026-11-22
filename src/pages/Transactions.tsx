@@ -706,7 +706,6 @@ export default function Transactions() {
                   side="bottom"
                   align="end"
                   sideOffset={-36}
-                  avoidCollisions={false}
                   className="max-h-[calc(100dvh-1rem)] w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] overflow-y-auto p-0 duration-150 md:duration-200"
                 >
                   <div
