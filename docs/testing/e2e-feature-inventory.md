@@ -92,6 +92,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | LEDGER-13 | Filter Ledger rows to an inclusive minimum and maximum transaction amount using a dual-ended slider or precise Min/Max fields; retain the global slider scale while constraining handles to the range left by other filters. | Unreleased |
 | LEDGER-14 | Keep borderless 40 px search, type-filter, and export touch targets with visually tight icon spacing on the same row as the Ledger title on mobile. The search field expands left with its icon retained, does not cover the title, collapses on outside click when empty, and stays expanded with text until the type filter opens. Search text can be cleared inline. The type filter opens a downward multi-select checkbox list with all types checked by default; selected types combine with OR, no checked types yields no results, and other filter groups combine with AND. On mobile, widen it leftward to reveal the checkboxes without a selected-types heading and shift search left. | Unreleased |
 | LEDGER-15 | Ledger popovers, selects, and menus flip or shift away from viewport edges and keep tall content scrollable within the available space. | Unreleased |
+| LEDGER-16 | On mobile, open one common filter menu for type, account, and category, search account/category lists, and combine selections across all three groups. | Unreleased |
 
 ## 6. Manage accounts, methods, and categories
 

@@ -28,6 +28,7 @@ import { DatePicker } from '@/components/Transactions/DatePicker';
 import { CategoryFilterPopover } from '@/components/Transactions/CategoryFilterPopover';
 import { AccountFilterPopover } from '@/components/Transactions/AccountFilterPopover';
 import { AmountFilterPopover } from '@/components/Transactions/AmountFilterPopover';
+import { MobileLedgerFilters } from '@/components/Transactions/MobileLedgerFilters';
 import { cn } from '@/lib/utils';
 import { LedgerEngine } from '@/lib/ledger';
 import TransactionDetailPanel from '@/components/Transactions/TransactionDetailPanel';
@@ -671,6 +672,21 @@ export default function Transactions() {
                 )}
               </div>
 
+              <MobileLedgerFilters
+                accounts={accounts}
+                categories={categories}
+                selectedAccountIds={filter.accountIds || []}
+                selectedCategoryIds={filter.categoryIds || []}
+                selectedTypes={selectedTypes}
+                typeOptions={typeFilterOptions}
+                onAccountsChange={ids => updateFilter({ accountIds: ids.length ? ids : undefined })}
+                onCategoriesChange={ids =>
+                  updateFilter({ categoryIds: ids.length ? ids : undefined })
+                }
+                onTypeChange={toggleType}
+                t={t}
+              />
+
               <Popover
                 open={typeFilterOpen}
                 onOpenChange={open => {
@@ -689,7 +705,7 @@ export default function Transactions() {
                     aria-expanded={typeFilterOpen}
                     title={t('ledger.filterByType')}
                     className={cn(
-                      'h-10 w-10 shrink-0 justify-center border-0 bg-transparent px-2 shadow-none transition-[width] duration-150 hover:bg-accent md:h-9 md:w-[120px] md:justify-between md:border md:border-input md:bg-background md:px-3 md:shadow-sm md:hover:bg-accent/50 md:duration-200',
+                      'hidden h-10 w-10 shrink-0 justify-center border-0 bg-transparent px-2 shadow-none transition-[width] duration-150 hover:bg-accent md:flex md:h-9 md:w-[120px] md:justify-between md:border md:border-input md:bg-background md:px-3 md:shadow-sm md:hover:bg-accent/50 md:duration-200',
                       typeFilterOpen && 'w-36 opacity-0 md:opacity-0',
                       selectedTypes.length !== typeFilterOptions.length &&
                         'bg-secondary md:bg-background'
