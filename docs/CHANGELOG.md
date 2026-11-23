@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-11-23
+
+### Fixed
+- **Mobile Transaction Amount Size**: Preserve the primary amount field's 48 px display size while keeping the other transaction text controls at the 16 px minimum needed to prevent iOS focus zoom.
+- **Mobile Ledger Filtering**: Add one mobile filter menu for transaction type, account, and category so filters remain available when their table columns are hidden.
+
+### Testing
+- **Mobile Transaction Amount Coverage**: Verify the primary amount stays 48 px and date, note, and split-amount controls remain at least 16 px on phone viewports.
+- **Mobile Ledger Filter Coverage**: Verify the shared phone menu can combine account, type, and category selections to filter Ledger rows.
+
 ## [0.12.0] - 2026-11-23
 
 ### Changed

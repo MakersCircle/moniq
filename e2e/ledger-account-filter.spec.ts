@@ -67,3 +67,29 @@ test('LEDGER-12: account checkboxes filter matching Ledger rows', async ({
   await filter.getByPlaceholder('Search accounts...').fill('missing account');
   await expect(filter.getByText('No accounts found.')).toBeVisible();
 });
+
+test('LEDGER-16: mobile common filters include account, type, and category', async ({
+  seededDemoPage: page,
+}) => {
+  test.skip(
+    (page.viewportSize()?.width ?? 0) >= 768,
+    'The common filter menu is for phone layouts'
+  );
+  await page.getByRole('link', { name: 'Ledger', exact: true }).first().click();
+
+  await page.getByRole('button', { name: 'Filters' }).click();
+  const menu = page.locator('[data-radix-popper-content-wrapper]').filter({
+    has: page.getByPlaceholder('Search accounts...'),
+  });
+  await expect(menu.getByRole('group', { name: 'Filter by type' })).toBeVisible();
+  await menu.getByRole('checkbox', { name: 'Income', exact: true }).uncheck();
+  await menu.getByRole('checkbox', { name: 'Transfer', exact: true }).uncheck();
+  await menu.getByPlaceholder('Search accounts...').fill('Fixture Checking');
+  await menu.getByRole('checkbox', { name: 'Fixture Checking', exact: true }).check();
+  await menu.getByPlaceholder('Search categories...').fill('Fixture Food');
+  await menu.getByRole('checkbox', { name: 'Fixture Food', exact: true }).check();
+
+  await expect(page.getByText('Fixture groceries', { exact: true })).toBeVisible();
+  await expect(page.getByText('Fixture paycheck', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Filter by type' })).toBeHidden();
+});
