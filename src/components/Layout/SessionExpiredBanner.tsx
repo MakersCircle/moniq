@@ -1,51 +1,100 @@
+import { useState } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useDataStore } from '@/store/dataStore';
+import { createAccessTokenSession } from '@/lib/authSession';
 import { Button } from '@/components/ui/button';
-
+import { Alert } from '@/components/ui/alert';
 import { GoogleAuthProvider } from '@/components/GoogleAuthProvider';
 
-function SessionExpiredBanner() {
-  const setAccessToken = useDataStore(s => s.setAccessToken);
-  const setCloudInitialized = useDataStore(s => s.setCloudInitialized);
+interface SyncPausedBannerProps {
+  onRetry?: () => void;
+}
 
+function SessionExpiredBanner({ onRetry }: SyncPausedBannerProps) {
+  const pendingCount = useDataStore(s => s.pendingCount);
+  const email = useDataStore(s => s.userProfile?.email);
+  const [isConnecting, setIsConnecting] = useState(false);
   const login = useGoogleLogin({
-    onSuccess: tokenResponse => {
-      const expiresAt = Date.now() + (Number(tokenResponse.expires_in) || 3600) * 1000;
-      setCloudInitialized(false);
-      setAccessToken(tokenResponse.access_token, expiresAt);
+    hint: email,
+    onSuccess: response => {
+      setIsConnecting(false);
+      const session = createAccessTokenSession(
+        response.access_token,
+        response.expires_in,
+        Date.now()
+      );
+      if (session) useDataStore.getState().setAccessToken(session.accessToken, session.expiresAt);
     },
-    onError: () => toast.error('Re-auth Failed'),
+    onError: () => {
+      setIsConnecting(false);
+      toast.error('Could not reconnect Google. Your changes are still saved on this device.');
+    },
+    onNonOAuthError: () => setIsConnecting(false),
     scope:
       'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
   });
 
   return (
-    <div className="bg-destructive/10 border-b border-destructive/20 px-6 py-2 flex items-center justify-between animate-in fade-in slide-in-from-top duration-300">
-      <div className="flex items-center gap-2 text-destructive">
-        <AlertCircle className="h-4 w-4" />
-        <p className="text-xs font-medium">
-          Session expired. Your changes won't sync to Google Sheets until you reconnect.
-        </p>
+    <Alert
+      role="status"
+      aria-label="Google sync paused. Saved on this device."
+      variant="destructive"
+      className="rounded-none border-x-0 border-t-0 shrink-0 px-4 py-2 sm:px-6 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
+          <p className="min-w-0 truncate text-xs font-medium">
+            <span className="sm:hidden">Sync paused</span>
+            <span className="hidden sm:inline">Google sync paused. Saved on this device.</span>
+            {pendingCount > 0 && (
+              <>
+                <span aria-hidden="true"> · </span>
+                <span className="sm:hidden">{pendingCount} pending</span>
+                <span className="hidden sm:inline">
+                  {pendingCount} {pendingCount === 1 ? 'change' : 'changes'} waiting to sync.
+                </span>
+              </>
+            )}
+          </p>
+        </div>
+        <Button
+          variant="destructive"
+          size="sm"
+          className="h-7 shrink-0 whitespace-nowrap px-3"
+          aria-label={
+            onRetry ? 'Retry Connection' : isConnecting ? 'Connecting…' : 'Reconnect Google'
+          }
+          disabled={isConnecting}
+          onClick={() => {
+            if (onRetry) onRetry();
+            else {
+              setIsConnecting(true);
+              login();
+            }
+          }}
+        >
+          <RefreshCw data-icon="inline-start" />
+          {isConnecting ? (
+            'Connecting…'
+          ) : (
+            <span>
+              {onRetry ? 'Retry' : 'Reconnect'}
+              <span className="hidden sm:inline">{onRetry ? ' Connection' : ' Google'}</span>
+            </span>
+          )}
+        </Button>
       </div>
-      <Button
-        variant="destructive"
-        size="sm"
-        onClick={() => login()}
-        className="h-7 text-[10px] font-bold uppercase tracking-wider px-3"
-      >
-        <RefreshCw className="h-3 w-3 mr-1.5" />
-        Reconnect
-      </Button>
-    </div>
+    </Alert>
   );
 }
 
-export default function SessionExpiredBannerWithAuth() {
+export default function SessionExpiredBannerWithAuth(props: SyncPausedBannerProps) {
   return (
     <GoogleAuthProvider>
-      <SessionExpiredBanner />
+      <SessionExpiredBanner {...props} />
     </GoogleAuthProvider>
   );
 }

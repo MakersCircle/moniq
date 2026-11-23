@@ -20,9 +20,11 @@ import type { BackupSnapshot } from '@/sync/BackupManager';
 import type { SyncOperation } from '@/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -58,6 +60,8 @@ export default function SettingsIndex() {
     categories,
     budgets,
     isDemoMode,
+    isDeviceTrusted,
+    setDeviceTrusted,
   } = useDataStore();
   const { t } = useTranslation();
 
@@ -68,6 +72,7 @@ export default function SettingsIndex() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isSavingTrust, setIsSavingTrust] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [logoutPendingCount, setLogoutPendingCount] = useState(0);
   const [pendingOps, setPendingOps] = useState<SyncOperation[]>([]);
@@ -99,11 +104,11 @@ export default function SettingsIndex() {
     };
   }, [pendingCount]);
 
-  const confirmAndLogout = () => {
+  const confirmAndLogout = async () => {
     googleLogout();
     SyncEngine.reset();
     const { resetData } = useDataStore.getState();
-    resetData();
+    await resetData();
     setIsLoggingOut(false);
     setLogoutConfirmOpen(false);
     sessionStorage.removeItem('skipOnboarding');
@@ -116,7 +121,7 @@ export default function SettingsIndex() {
         const engine = SyncEngine.getInstance();
         await engine.forceSync();
       }
-      confirmAndLogout();
+      await confirmAndLogout();
     } catch (_err) {
       toast.error('Failed to sync. Please try again.');
       setLogoutPendingCount(pendingCount);
@@ -233,16 +238,20 @@ export default function SettingsIndex() {
                 {t('settings.profile')}
               </h3>
               <Card className="border-border shadow-sm overflow-hidden">
-                <CardContent className="p-4 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
+                <CardContent className="p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-4">
                     <img
                       src={userProfile?.picture}
                       alt="Profile"
-                      className="h-14 w-14 rounded-xl ring-2 ring-primary/10 object-cover border border-border"
+                      className="h-14 w-14 shrink-0 rounded-xl ring-2 ring-primary/10 object-cover border border-border"
                     />
-                    <div>
-                      <p className="text-base font-bold tracking-tight">{userProfile?.name}</p>
-                      <p className="text-xs text-muted-foreground">{userProfile?.email}</p>
+                    <div className="min-w-0">
+                      <p className="break-words text-base font-bold tracking-tight">
+                        {userProfile?.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">
+                        {userProfile?.email}
+                      </p>
                     </div>
                   </div>
                   <Button
@@ -250,7 +259,7 @@ export default function SettingsIndex() {
                     size="sm"
                     onClick={handleLogout}
                     disabled={isLoggingOut}
-                    className="text-destructive hover:bg-destructive/10 border-destructive/20 h-9 gap-2"
+                    className="h-9 w-full shrink-0 gap-2 text-destructive hover:bg-destructive/10 border-destructive/20 sm:w-auto"
                   >
                     {isLoggingOut ? (
                       <RefreshCw className="h-4 w-4 animate-spin" />
@@ -259,6 +268,42 @@ export default function SettingsIndex() {
                     )}
                     {isLoggingOut ? t('settings.signingOut') : t('settings.signOut')}
                   </Button>
+                </CardContent>
+              </Card>
+            </section>
+
+            <section aria-label="Device privacy">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Device privacy</CardTitle>
+                  <CardDescription>
+                    Choose whether this browser can open your saved workspace without verifying
+                    Google on each launch.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Field>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="trust-device-settings"
+                        checked={isDeviceTrusted}
+                        disabled={isSavingTrust}
+                        aria-busy={isSavingTrust}
+                        onCheckedChange={checked => {
+                          setIsSavingTrust(true);
+                          void setDeviceTrusted(checked === true)
+                            .catch(() => toast.error('Could not update device privacy.'))
+                            .finally(() => setIsSavingTrust(false));
+                        }}
+                      />
+                      <FieldLabel htmlFor="trust-device-settings">Trust this device</FieldLabel>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Only on a personal device. Anyone using this browser can view your saved
+                      records, including offline. Turning this off requires verification on the next
+                      launch.
+                    </p>
+                  </Field>
                 </CardContent>
               </Card>
             </section>

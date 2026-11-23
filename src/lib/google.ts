@@ -1,19 +1,8 @@
 import { useDataStore } from '../store/dataStore';
-import { createAccessTokenSession } from './authSession';
 
 const SHEETS_API_URL = 'https://sheets.googleapis.com/v4';
 const DRIVE_API_URL = 'https://www.googleapis.com/drive/v3';
 const USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo';
-
-/** Shape of the Google OAuth token response callback */
-interface GoogleOAuthResponse {
-  /** The actual Bearer token */
-  access_token?: string;
-  /** Seconds until token expires */
-  expires_in?: number | string;
-  /** Error message if authentication failed */
-  error?: string;
-}
 
 /**
  * Shape of a file returned by the Google Drive Files API.
@@ -41,14 +30,12 @@ export interface GoogleUserProfile {
 
 /**
  * Unified Google API Client & Auth Service.
- * Handles authentication, token refreshing, and raw requests to Drive and Sheets APIs.
+ * Handles authorization expiry and raw requests to Drive and Sheets APIs.
  *
  * @category Services
  */
 export class GoogleService {
   private static instance: GoogleService | null = null;
-  private isRefreshing = false;
-  private refreshPromise: Promise<string | null> | null = null;
 
   /**
    * Returns the singleton instance of the GoogleService.
@@ -60,135 +47,35 @@ export class GoogleService {
     return this.instance;
   }
 
-  // ── Auth Logic ──────────────────────────────────────────────────
-
-  /**
-   * Attempts a silent token refresh using prompt: 'none'.
-   * Requires that the user is already logged in to Google in the browser.
-   * This is used to maintain the session without interrupting the user.
-   *
-   * @returns The new access token or null if refresh failed.
-   */
-  async silentRefresh(): Promise<string | null> {
-    if (this.isRefreshing && this.refreshPromise) return this.refreshPromise;
-
-    this.isRefreshing = true;
-    this.refreshPromise = new Promise(resolve => {
-      const { VITE_GOOGLE_CLIENT_ID } = import.meta.env;
-
-      if (!window.google?.accounts?.oauth2) {
-        this.isRefreshing = false;
-        return resolve(null);
-      }
-
-      const timeoutId = setTimeout(() => {
-        this.isRefreshing = false;
-        resolve(null);
-      }, 10000);
-
-      const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: VITE_GOOGLE_CLIENT_ID,
-        scope:
-          'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
-        prompt: 'none',
-        callback: (response: GoogleOAuthResponse) => {
-          clearTimeout(timeoutId);
-          this.isRefreshing = false;
-          if (response.access_token) {
-            const session = createAccessTokenSession(
-              response.access_token,
-              response.expires_in,
-              Date.now()
-            );
-            if (session) {
-              useDataStore.getState().setAccessToken(session.accessToken, session.expiresAt);
-              resolve(session.accessToken);
-            } else {
-              resolve(null);
-            }
-          } else {
-            // An early refresh failure does not invalidate a still-usable access token.
-            if (
-              response.error &&
-              ['user_logged_out', 'immediate_failed'].includes(response.error)
-            ) {
-              const expiresAt = useDataStore.getState().tokenExpiresAt;
-              if (expiresAt && Date.now() >= expiresAt) useDataStore.getState().expireSession();
-            }
-            resolve(null);
-          }
-        },
-      });
-
-      client.requestAccessToken();
-    });
-
-    return this.refreshPromise;
-  }
-
-  // ── Unified Fetcher ─────────────────────────────────────────────
-
-  /**
-   * Centralized fetch for Google APIs.
-   * Handles Authorization header, 401 detection, and automatic silent refresh retry.
-   *
-   * @param url - The full URL to request.
-   * @param options - Standard RequestInit options.
-   * @returns The fetch Response object.
-   */
+  /** Google authorization is renewed only from an explicit user interaction. */
   async fetch(url: string, options: RequestInit = {}): Promise<Response> {
-    const { accessToken: token, tokenExpiresAt: expiresAt } = useDataStore.getState();
-
-    // Refresh if token is missing OR expiring in less than 5 minutes
-    const fiveMinutes = 5 * 60 * 1000;
-    const isAboutToExpire = expiresAt && Date.now() > expiresAt - fiveMinutes;
-
-    let currentToken = token;
-
-    if (!currentToken || isAboutToExpire) {
-      const newToken = await this.silentRefresh();
-
-      if (newToken) {
-        currentToken = newToken;
-      } else {
-        const isFullyExpired = expiresAt && Date.now() > expiresAt;
-        if (!currentToken || isFullyExpired) {
-          useDataStore.getState().expireSession();
-          throw new Error('Unauthenticated: Session expired');
-        }
-      }
+    const { accessToken, tokenExpiresAt, verifiedAccessToken } = useDataStore.getState();
+    if (!accessToken || (tokenExpiresAt && Date.now() >= tokenExpiresAt)) {
+      useDataStore.getState().expireSession();
+      throw new Error('Google sync paused. Reconnect to sync your changes.');
     }
 
-    let response = await fetch(url, {
+    // A newly acquired token cannot access Drive/Sheets until its owner is
+    // verified against this workspace. The profile request performs that check.
+    if (url !== USERINFO_URL && verifiedAccessToken !== accessToken) {
+      throw new Error('Verify your Google account before syncing.');
+    }
+
+    const response = await fetch(url, {
       ...options,
       headers: {
         ...options.headers,
-        Authorization: `Bearer ${currentToken}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
     });
-
-    // Handle 401 Unauthorized (fallback reactive refresh)
     if (response.status === 401) {
-      const newToken = await this.silentRefresh();
-
-      if (newToken) {
-        // Retry the request once with the new token
-        response = await fetch(url, {
-          ...options,
-          headers: {
-            ...options.headers,
-            Authorization: `Bearer ${newToken}`,
-            'Content-Type': 'application/json',
-          },
-        });
-      } else {
-        // Refresh failed, user needs to log in manually
+      // An older request must not invalidate a newly reconnected session.
+      if (useDataStore.getState().accessToken === accessToken) {
         useDataStore.getState().expireSession();
-        throw new Error('Unauthenticated: Session expired');
       }
+      throw new Error('Google sync paused. Reconnect to sync your changes.');
     }
-
     return response;
   }
 

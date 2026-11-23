@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures/demo';
+import { fillLedgerSearch } from './helpers/ledgerSearch';
 
 const inExportProfiles = () => ['desktop', 'iphone-portrait'].includes(test.info().project.name);
 
@@ -8,7 +9,7 @@ test('LEDGER-05: full-list PDF uses independent date and account filters', async
   test.skip(!inExportProfiles(), 'Checks desktop and phone export layouts');
   const desktop = (page.viewportSize()?.width ?? 0) >= 1024;
   await page.getByRole('link', { name: 'Ledger', exact: true }).click();
-  await page.getByPlaceholder('Search description...').fill('deliberately-no-match');
+  await fillLedgerSearch(page, 'deliberately-no-match');
 
   await page.getByRole('button', { name: desktop ? 'Export PDF' : 'Export' }).click();
   await expect(page.getByRole('heading', { name: 'Export Ledger Report' })).toBeVisible();

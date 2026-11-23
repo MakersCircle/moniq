@@ -67,7 +67,7 @@ This document details test cases covering `src/sync/SyncEngine.ts`, `src/sync/Co
 | U-36 | `initialize()` — tabs already verified, but `batchGetSheets` throws | Clears the verified flag, re-runs `ensureSheetTabs`/`ensureHeaders`, retries fetch |
 | U-37 | `initialize()` — migration step throws | Sets status `'error'` with migration error message, returns `null` (does not proceed to reconcile) |
 | U-38 | `initialize()` — header row mismatch detected for a sheet | Queues `overwriteSheet` repair call for that sheet; repairs run in parallel via `Promise.all` |
-| U-39 | `initialize()` success | Persists `accResult.merged`/`metResult.merged`/etc. via `putMany`, saves settings via `putSetting`, clears sync queue, updates `lastSyncedAt` meta, sets status `'idle'`, returns merged entity sets |
+| U-39 | `initialize()` success | Atomically persists merged records while preserving edits after the snapshot, restores/reconciles settings, removes only processed queue IDs, updates `lastSyncedAt` meta, sets status `'idle'`, returns merged entity sets |
 | U-40 | `buildIndex()` given sheet rows | Returns 1-based row-number map keyed by entity ID (skips header row, skips rows with empty ID) |
 | U-41 | `deduplicate()` given two entities with same `id` but different `updatedAt` | Keeps only the entity with the later `updatedAt` |
 | U-42 | `triggerBackupCycle()` called twice in the same session | `BackupManager.runBackupCycle()` invoked only once (guarded by static `backupCheckedThisSession` flag) |
@@ -271,12 +271,40 @@ These are planned cases. Local/demo cases need browser tests. Sync, backup, and 
 | ID | Scenario | Expected outcome |
 |---|---|---|
 | E-16 | Full push/pull sync through the UI | Browser with fake Google Sheets verifies queue flush, remote row update, pull after reload, and duplicate prevention. Live smoke verifies that the same flow works with a consented test account. |
-| E-17 | Returning signed-in user (`auth-rehydration.spec.ts`) | A local IndexedDB account rehydrates after reload; a paused Sheets pull keeps the dashboard closed; releasing it merges a remote-only account before the dashboard appears. Runs at all six Chromium viewport profiles. |
-| E-18 | Failed cloud initialization (`auth-connection-error.spec.ts`) | A failed Sheets pull shows Connection Error and keeps the dashboard closed; Retry Connection recovers after a one-time outage; Sign Out returns to the landing page and stays signed out after reload. Runs at all six Chromium viewport profiles. |
+| E-17 | Returning signed-in user (`auth-rehydration.spec.ts`) | A local IndexedDB account rehydrates after reload; while the initial Sheets pull is paused, the app keeps the workspace gated and shows its loading state; after release, local edits and additions made during reconciliation survive alongside a remote-only account. Configured for all six Chromium viewport profiles. |
+| E-18 | Failed cloud initialization (`auth-connection-error.spec.ts`) | A failed Sheets pull shows Connection Error and keeps the dashboard closed; Retry Connection recovers after a one-time outage; Sign Out returns to the landing page and stays signed out after reload. Configured for all six Chromium viewport profiles; this change is checked on desktop and iPhone portrait Chromium. |
 | E-19 | Tiered backup creation | Fake Drive browser/integration test advances the clock, checks due snapshots and retention, and verifies Backup Now. Live smoke verifies a new snapshot appears in Drive. |
 | E-20 | Sync Now pulls an externally changed row | Change the fake sheet between browser actions; Sync Now updates local data without losing pending changes. Live smoke repeats a minimal manual Sheet edit and pull. |
-| E-21 | Returning user hits a persistent Sheets outage (`auth-persistent-outage.spec.ts`) | After a successful prior sync and reload, repeated failed pulls keep the dashboard closed and local records intact; Retry Connection succeeds once service returns. Runs at all six Chromium viewport profiles. |
-| E-22 | Active session expires (`auth-session-expiry.spec.ts`) | A failed silent refresh keeps a still-valid token in place; after its actual expiry, cached records remain visible with the reconnect banner. Interactive Reconnect restores cloud access without creating another spreadsheet. Runs at all six Chromium viewport profiles. |
-| E-23 | Expired session survives a browser reload (`auth-session-expiry.spec.ts`) | After expiry and reload, cached records and the reconnect affordance remain available. Explicit Sign Out still returns to the landing page without exposing the cached app. Runs at all six Chromium viewport profiles. |
+| E-21 | Returning user hits a persistent Sheets outage (`auth-persistent-outage.spec.ts`) | After a successful prior sync and reload, repeated failed pulls leave the dashboard and local records available with a calm sync-paused banner; Retry Connection succeeds once service returns. Configured for all six Chromium viewport profiles; this change is checked on desktop and iPhone portrait Chromium. |
+| E-22 | Active session expires (`auth-session-expiry.spec.ts`) | A still-valid token remains usable without background authorization. After expiry, the expense form still saves locally; records and queued operations survive reload. Reconnect uploads those changes without creating another spreadsheet. A 320px mobile check verifies the message and action remain centered on a single row in a banner no taller than 48px. Configured for all six Chromium viewport profiles; this change is checked on desktop and iPhone portrait Chromium. |
+| E-23 | Expired session survives a browser reload (`auth-session-expiry.spec.ts`) | After expiry and reload on an explicitly trusted personal device, cached records and the reconnect affordance remain available. Explicit Sign Out still returns to the landing page without exposing the cached app. Configured for all six Chromium viewport profiles; this change is checked on desktop and iPhone portrait Chromium. |
+| E-24 | Reconnect selects a different Google account (`auth-session-expiry.spec.ts`) | Local records, original owner email and pending operations remain intact; the banner asks for the original account. Reconnecting that account uploads the queue. |
+| E-25 | Transaction mutations during reconciliation upload (#92) | Pause the Transactions append after the local snapshot; edit, delete and create transactions; verify all changes reach Sheets without duplicates and survive reload. |
+| E-26 | Signed-in profile in mobile Settings ([`settings-persistence.spec.ts`](../../e2e/settings-persistence.spec.ts)) | Profile name and email remain visible without overlapping Sign Out on phone portrait and landscape layouts. |
+| E-27 | Recently Deleted on a phone ([`demo-navigation.spec.ts`](../../e2e/demo-navigation.spec.ts)) | At 360 px, all four tabs can be selected, each deleted record shows its details and a visible restore action, the selected tab remains in view, and the document has no horizontal overflow. |
+
+Remaining gaps: real installed iOS/Android Google OAuth flows and concurrent browser tabs require further acceptance/integration coverage. Chromium touch viewport checks do not establish real Safari/PWA compatibility.
 
 The Accounts, Methods, and Categories Trash tables currently ignore the selected sort order. Add a desired-behavior case when fixing that control; do not lock the current inconsistency into a regression test.
+
+### Regional preferences regression (#108)
+
+`src/lib/__tests__/userSettings.test.ts` covers locale/date-order detection, region hints, invalid tags, and canonical restoration. `e2e/settings-persistence.spec.ts` checks demo preference reload, queued preference reload before sync, and cloud default restoration under a different browser locale. First-run defaults are persisted without queuing an overwrite of an existing account's cloud preferences.
+
+### Session-scoped OAuth tokens (#97)
+
+`accessTokenStorage.test.ts` checks valid/expired/malformed credentials, explicit removal, and blocked storage fallback. `auth-token-storage.spec.ts` checks tab reload, removal of old IndexedDB credentials and an independent tab with no inherited token. Browser session restore can retain sessionStorage; this is not a guarantee that closing a window instantly erases credentials from disk.
+
+### Reconnect account verification (#94)
+
+Google client unit coverage blocks Drive/Sheets before verification while allowing the profile lookup. The existing wrong-account reconnect browser check verifies local records, owner metadata and queued operations remain unchanged, followed by successful original-account recovery.
+
+### Shared-device access and explicit trust (#91)
+
+`auth-workspace-lock.spec.ts` pauses the profile response on reload and asserts that financial account names, transaction dialogs and navigation actions are absent until verification. A failed profile request remains locked with Retry. A wrong account cannot unlock or grant trust. A successful original-account unlock with explicit trust permits local access on a later launch without a Google token; revoking trust in Settings locks the next launch. Expiry coverage explicitly trusts the device for scenarios that reload without Google access.
+
+The gate protects rendered application access; IndexedDB is not encrypted, and a profile lookup validates the Google credential rather than the physical person at the keyboard. Use explicit sign-out on shared devices; trusted-device opt-in intentionally permits offline access.
+
+The verified-unlock startup browser case pauses the first Sheets batch pull after the Google profile succeeds. It asserts the app remains on its loading state and does not show transaction content until reconciliation completes, covering the case where the local cache is empty or incomplete.
+
+The session-expiry reconnect browser case pauses the first Sheets pull after the user reconnects. It verifies that an already-unlocked workspace remains available during the background pull and that an omitted Google profile picture does not erase the locally saved image, including after reload.

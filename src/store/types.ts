@@ -14,6 +14,21 @@ export interface UserProfile {
   picture: string;
 }
 
+export type WorkspaceSnapshot = Pick<
+  DataState,
+  'accounts' | 'methods' | 'categories' | 'transactions' | 'budgets' | 'settings'
+>;
+
+export interface ReconciledWorkspace {
+  accounts: Account[];
+  methods: PaymentMethod[];
+  categories: Category[];
+  transactions: Transaction[];
+  budgets: Budget[];
+  settings: Record<string, string>;
+  localSnapshot?: WorkspaceSnapshot;
+}
+
 export interface DataState {
   accounts: Account[];
   methods: PaymentMethod[];
@@ -23,6 +38,11 @@ export interface DataState {
   settings: UserSettings;
   accessToken: string | null;
   tokenExpiresAt: number | null;
+  verifiedAccessToken: string | null;
+  isWorkspaceUnlocked: boolean;
+  isDeviceTrusted: boolean;
+  setDeviceTrusted: (trusted: boolean) => Promise<void>;
+  setVerifiedAccessToken: (token: string) => void;
 
   // Cloud Sync properties
   userProfile: UserProfile | null;
@@ -37,7 +57,7 @@ export interface DataState {
   lastSyncError: string | undefined;
 
   // Cloud Actions
-  setUserProfile: (profile: UserProfile | null) => void;
+  setUserProfile: (profile: UserProfile | null) => Promise<void>;
   setSpreadsheetId: (id: string | null) => void;
   setFolderId: (id: string | null) => void;
   setBackupFolderId: (id: string | null) => void;
@@ -99,19 +119,14 @@ export interface DataState {
   expireSession: () => void;
 
   // Sync Engine
-  hydrateFromSync: (data: {
-    accounts: Account[];
-    methods: PaymentMethod[];
-    categories: Category[];
-    transactions: Transaction[];
-    budgets: Budget[];
-    settings: Record<string, string>;
-  }) => void;
-  resetData: () => void;
+  hydrateFromSync: (data: ReconciledWorkspace) => void;
+  resetData: () => Promise<void>;
   clearZustandData: () => void;
   initializeFromDB: () => Promise<void>;
   isHydrated: boolean;
   isCloudInitialized: boolean;
+  isInitialCloudLoadPending: boolean;
+  setInitialCloudLoadPending: (pending: boolean) => void;
 
   // Demo Mode
   isDemoMode: boolean;

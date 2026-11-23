@@ -14,7 +14,16 @@ Moniq requests the Google `drive.file` scope, not full Drive access. This scope 
 ## ⚙️ Synchronization
 
 ### Can I use Moniq offline?
-Yes! You can add, edit, or delete transactions while offline. Moniq will queue these changes and sync them automatically the next time you have an internet connection.
+Yes. An already unlocked workspace, or a personal device you explicitly marked trusted, lets you add, edit, or delete transactions while offline. Other devices require Google verification on a fresh launch. Moniq saves changes on this device and queues them for Google Sheets. If Google access has expired, tap **Reconnect Google** to resume syncing.
+
+### Why does Moniq ask me to reconnect Google?
+Google access expires independently of your local workspace. You can keep recording and editing while sync is paused, including after closing and reopening the app if you explicitly trust this personal device. Otherwise, a fresh launch verifies your Google identity before displaying records. The banner shows changes waiting to sync. Tap **Reconnect Google** and choose the same account to reconcile them with Sheets.
+
+### Should I trust this device?
+Enable **Trust this device** only on a personal phone or computer. It lets anyone using that browser open your locally saved records, including offline. Shared devices verify Google identity on fresh launches by default. You can turn trust off in **Settings > Device privacy**; the next launch requires verification. Sign out when you finish on a shared device. Local browser storage is not encrypted by this setting.
+
+### Does installing the PWA keep me connected?
+The installed app keeps its own local records across launches, but Google access can still expire. On iOS, the home screen app has separate storage from the browser; connect Google inside the installed app to load your synced records. Sync any browser-only changes before switching. Clearing site data can delete unsynced records.
 
 ### How do I sync across multiple devices?
 Just sign in with the same Google Account on any device. Moniq will automatically find your "Moniq Database" spreadsheet and pull your data.

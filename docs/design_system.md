@@ -124,6 +124,12 @@ Transparent background, no visible border until focused; focus ring inherits `--
 
 `select`, `dropdown-menu`, `popover`, `tabs`, `calendar`, `checkbox`, `avatar`, `label`, `field`, `info-tooltip`.
 
+Floating popovers, selects, and dropdown menus keep an 8 px viewport margin, use Radix collision handling to flip or shift around screen edges, and cap tall content to the available height so it can scroll.
+
+Full-height app surfaces use `--app-viewport-height`, which falls back to `100vh` and uses `100dvh` when supported so mobile layouts adapt to browser chrome changes.
+
+On phone and tablet widths, editable text inputs, textareas, and native selects use at least 16 px type to prevent iOS Safari focus zoom. Desktop input sizing remains component-specific.
+
 ### 2.7 Brand components
 
 `Grainient` (animated WebGL gradient background, built with `ogl`), `LogoParts` (wordmark), `BetaTag`, `dot-pattern`, `shiny-button`.
@@ -158,10 +164,15 @@ Collapsible/expandable search field on the mobile TopBar, rather than a permanen
 
 `sonner` toasts (`components/ui/sonner.tsx`) are the standard channel for user-facing feedback — sync status, errors, confirmations. Never use blocking `alert()` or silent `console.error`.
 
+Returning-user Google authorization expiry and cloud outages use a compact inline status banner with the existing disconnected-state styling: “Google sync paused. Saved on this device.” Show pending change counts and a Reconnect Google or Retry Connection action. Keep an unlocked workspace interactive; trusted devices retain local access across reloads. On phones, keep the icon, “Sync paused”, optional pending count, and short Reconnect or Retry button on one line; truncate the message before allowing the action to wrap. Desktop retains the detailed message. Banner entry uses a short fade only when reduced motion is not requested.
+
+Fresh launches on devices without explicit trust use a centered unlock card with the original-account verification action, an unchecked Trust this device option, and an explanation that trust permits anyone using the browser to view offline records. No financial data, app navigation or transaction dialogs are rendered before verification. Settings provides the same trust control; revocation applies on the next launch. This is an application access gate, not encryption of IndexedDB or a guarantee about the physical identity of the person using an already authorized browser session.
+
 ### 3.6 Motion
 
 - Radix-driven open/close transitions on dialogs/sheets/popovers use `tailwindcss-animate` `data-[state=open|closed]` utilities — fade + slight zoom + slide-from-bottom, roughly 300ms, ease-out cubic-bezier.
 - Hover/interaction transitions are short, plain CSS transitions (`transition-colors`), not spring physics.
+- Small disclosure interactions such as expanding a category's subcategories use a restrained height/opacity transition around 200ms, with a reduced-motion override. Keep the control responsive and the motion focused on communicating the state change.
 - `framer-motion`'s `Reorder` powers drag-to-reorder lists (Categories and Payment Methods in Settings, plus same-day transactions in the Ledger). Reordering starts only from the six-dot handle. Category rows stay inside their own group; Ledger rows stay inside their date group. Payment Method and Category order previews stay local and save on drop; Ledger row content is memoized while the group previews positions. On touch viewports, handles remain visible without hover and auto-scrolling during a drag stops at the active list or date group's bounds. Category and Payment Method action visibility stays stable while dragging. Short landscape viewports use compact shell, Settings, and Ledger spacing so list rows and handles remain reachable. Handle arrow keys move one position at a time.
 - The landing page background (`Grainient`) animates via WebGL (`ogl`), not CSS keyframes.
 

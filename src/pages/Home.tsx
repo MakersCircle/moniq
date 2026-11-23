@@ -20,7 +20,7 @@ function Home() {
   };
 
   return (
-    <div className="relative flex min-h-[100dvh] w-full bg-[#111111] overflow-hidden selection:bg-primary/30">
+    <div className="relative flex min-h-[var(--app-viewport-height)] w-full bg-[#111111] overflow-hidden selection:bg-primary/30">
       {/* Background */}
       <div className="absolute inset-0 z-0">
         <Grainient
@@ -59,7 +59,7 @@ function Home() {
           '[@media(orientation:landscape)_and_(max-height:500px)]:items-center',
           '[@media(orientation:landscape)_and_(max-height:500px)]:justify-between',
           '[@media(orientation:landscape)_and_(max-height:500px)]:right-8',
-          '[@media(orientation:landscape)_and_(max-height:500px)]:bottom-[8dvh]',
+          '[@media(orientation:landscape)_and_(max-height:500px)]:bottom-[var(--app-viewport-height-8)]',
           '[@media(orientation:landscape)_and_(max-height:500px)]:gap-8',
         ].join(' ')}
       >
@@ -116,7 +116,7 @@ function Home() {
             'relative select-none text-foreground',
             'w-[55vw] sm:w-[48vw] md:w-[42vw] lg:w-[400px] xl:w-[440px]',
             '[@media(orientation:landscape)_and_(max-height:500px)]:w-auto',
-            '[@media(orientation:landscape)_and_(max-height:500px)]:h-[62dvh]',
+            '[@media(orientation:landscape)_and_(max-height:500px)]:h-[var(--app-viewport-height-62)]',
           ].join(' ')}
           style={{ aspectRatio: '466 / 346' }}
         >
@@ -162,7 +162,7 @@ function Home() {
           'xl:bottom-12 xl:right-16',
           '[@media(orientation:landscape)_and_(max-height:500px)]:left-auto',
           '[@media(orientation:landscape)_and_(max-height:500px)]:right-8',
-          '[@media(orientation:landscape)_and_(max-height:500px)]:bottom-[1.5dvh]',
+          '[@media(orientation:landscape)_and_(max-height:500px)]:bottom-[var(--app-viewport-height-1-5)]',
           '[@media(orientation:landscape)_and_(max-height:500px)]:justify-end',
           '[@media(orientation:landscape)_and_(max-height:500px)]:gap-3',
         ].join(' ')}

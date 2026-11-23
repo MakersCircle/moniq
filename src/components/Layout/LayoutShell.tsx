@@ -3,18 +3,27 @@ import { type TransactionType } from '@/types';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import { useDataStore } from '@/store/dataStore';
+import { hasLocalWorkspace } from '@/lib/localWorkspace';
 import SessionExpiredBanner from './SessionExpiredBanner';
 import DemoBanner from './DemoBanner';
 
 interface LayoutShellProps {
   children: ReactNode;
   onNewTransaction: (type?: TransactionType) => void;
+  syncError?: string | null;
+  onRetrySync?: () => void;
 }
 
-export default function LayoutShell({ children, onNewTransaction }: LayoutShellProps) {
-  const { isCloudInitialized, accessToken, isDemoMode, lastSyncedAt } = useDataStore();
+export default function LayoutShell({
+  children,
+  onNewTransaction,
+  syncError,
+  onRetrySync,
+}: LayoutShellProps) {
+  const localWorkspaceReady = useDataStore(hasLocalWorkspace);
+  const { accessToken, isDemoMode } = useDataStore();
 
-  const isSessionExpired = !accessToken && isCloudInitialized && !isDemoMode && !!lastSyncedAt;
+  const isSessionExpired = (!accessToken || !!syncError) && localWorkspaceReady && !isDemoMode;
 
   // Global Keyboard Shortcuts
   useEffect(() => {
@@ -51,16 +60,18 @@ export default function LayoutShell({ children, onNewTransaction }: LayoutShellP
   }, [onNewTransaction]);
 
   return (
-    <div className="h-[100dvh] bg-background text-foreground overflow-hidden">
+    <div className="h-[var(--app-viewport-height)] bg-background text-foreground overflow-hidden">
       <Sidebar onNewTransaction={() => onNewTransaction()} />
       <TopBar onNewTransaction={() => onNewTransaction()} />
-      <div className="lg:pl-[220px] pt-14 lg:pt-16 pb-[60px] lg:pb-0 h-[100dvh]">
+      <div className="lg:pl-[220px] pt-14 lg:pt-16 pb-[var(--mobile-nav-total-height)] lg:pb-0 h-[var(--app-viewport-height)]">
         <main
           id="main-scroll-container"
           className="h-full w-full overflow-y-auto custom-scrollbar flex flex-col relative"
         >
           {isDemoMode && <DemoBanner />}
-          {isSessionExpired && <SessionExpiredBanner />}
+          {isSessionExpired && (
+            <SessionExpiredBanner onRetry={accessToken && syncError ? onRetrySync : undefined} />
+          )}
           <div className="relative flex-1 min-h-0 p-4 md:p-8 [@media(max-height:500px)]:p-3 max-w-[1248px] mx-auto flex flex-col w-full">
             {children}
           </div>
