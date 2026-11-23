@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Mobile Transaction Amount Size**: Preserve the primary amount field's 48 px display size while keeping the other transaction text controls at the 16 px minimum needed to prevent iOS focus zoom.
+
+### Testing
+- **Mobile Transaction Amount Coverage**: Verify the primary amount stays 48 px and date, note, and split-amount controls remain at least 16 px on phone viewports.
+
 ## [0.12.0] - 2026-11-23
 
 ### Changed

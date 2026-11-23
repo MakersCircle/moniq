@@ -79,7 +79,7 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | TXN-17 | Alt/Cmd+1, 2, and 3 switch the form between Expense, Income, and Transfer. | Missing | — | Component + browser | No |
 | TXN-18 | Alt+N opens a new transaction; Shift+E, I, or T opens the corresponding type from an app page when focus is outside a text field. | Missing | — | Component + browser | No |
 | TXN-19 | Keyboard typing can select matching payment methods and categories from their dropdowns. | Missing | — | Component + browser | No |
-| TXN-20 | Transaction text inputs remain at least 16 px on phone and tablet widths so focusing a field does not zoom the iOS page. | Covered | `e2e/transaction-create.spec.ts` verifies mobile computed font sizes for amount, date, note, and split amount fields in phone portrait and landscape profiles. | Physical iOS Safari focus/scale acceptance | No |
+| TXN-20 | On phone and tablet widths, the primary transaction amount remains 48 px while date, note, and split-amount fields stay at least 16 px to prevent iOS focus zoom. | Covered | `e2e/transaction-create.spec.ts` verifies the primary amount is 48 px and other mobile text controls are at least 16 px in phone portrait and landscape profiles. | Physical iOS Safari focus/scale acceptance | No |
 
 ## 5. Review and manage the ledger
 

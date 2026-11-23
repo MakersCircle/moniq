@@ -71,7 +71,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | TXN-17 | Alt/Cmd+1, 2, and 3 switch the form between Expense, Income, and Transfer. | 0.5.0 |
 | TXN-18 | Alt+N opens a new transaction; Shift+E, I, or T opens the corresponding type from an app page when focus is outside a text field. | 0.5.0 |
 | TXN-19 | Keyboard typing can select matching payment methods and categories from their dropdowns. | 0.5.0 |
-| TXN-20 | Transaction text inputs remain at least 16 px on phone and tablet widths so focusing a field does not zoom the iOS page. | Unreleased |
+| TXN-20 | On phone and tablet widths, the primary transaction amount remains 48 px while date, note, and split-amount fields stay at least 16 px to prevent iOS focus zoom. | Unreleased |
 
 ## 5. Review and manage the ledger
 
