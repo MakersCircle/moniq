@@ -404,6 +404,7 @@ export default function TransactionForm({
             </span>
             <input
               ref={amountRef}
+              data-transaction-amount
               type="text"
               autoFocus
               tabIndex={1}

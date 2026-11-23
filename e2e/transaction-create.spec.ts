@@ -60,7 +60,7 @@ test('DEMO-01/TXN-02: expense saves through the form and survives reload', async
   );
 });
 
-test('TXN-20: mobile transaction text controls keep iOS-safe font sizes', async ({
+test('TXN-20: mobile transaction amounts stay prominent and text controls keep iOS-safe font sizes', async ({
   seededDemoPage: page,
 }) => {
   test.skip(
@@ -69,6 +69,14 @@ test('TXN-20: mobile transaction text controls keep iOS-safe font sizes', async 
   );
 
   const dialog = await openTransactionForm(page);
+  await expect
+    .poll(() =>
+      dialog
+        .locator('[data-transaction-amount]')
+        .evaluate(element => parseFloat(getComputedStyle(element).fontSize))
+    )
+    .toBe(48);
+
   const textControls = [
     dialog.getByPlaceholder('0.00'),
     dialog.getByPlaceholder('DD/MM/YYYY'),
