@@ -639,7 +639,7 @@ export default function Transactions() {
                 </Button>
                 <Input
                   ref={mobileSearchRef}
-                  placeholder={t('ledger.searchDescription')}
+                  placeholder={t('common.search')}
                   aria-label={t('ledger.searchDescription')}
                   tabIndex={mobileSearchOpen ? 0 : -1}
                   className={cn(

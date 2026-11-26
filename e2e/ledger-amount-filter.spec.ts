@@ -124,7 +124,9 @@ test('LEDGER-14: ledger toolbar adapts type filter to desktop and mobile', async
 
   const width = page.viewportSize()?.width ?? 0;
   const searchIcon = page.getByRole('button', { name: 'Search description...' });
-  const searchInput = page.locator('input[placeholder="Search description..."]:visible');
+  const searchInput = page.locator(
+    'input[placeholder="Search description..."]:visible, input[aria-label="Search description..."]:visible'
+  );
   const typeFilter =
     width < 768
       ? page.getByRole('button', { name: /^Filters/ })
