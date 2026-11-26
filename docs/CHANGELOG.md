@@ -11,9 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Ledger Header Scrollbar**: Keep the sticky column header's row-alignment gutter without revealing an unnecessary scrollbar on hover.
+- **Ledger Transaction Order**: Show transactions newest first by date and by their saved order within each date, while keeping drag reordering intact.
 
 ### Testing
 - **Ledger Header Scrollbar Coverage**: Verify the sticky header reserves its stable gutter while the transaction list remains vertically scrollable, across desktop and mobile viewports.
+- **Ledger Transaction Order Coverage**: Verify descending date and within-day order, persisted drag reordering, and same-day phone list behavior.
 
 ## [0.12.1] - 2026-11-23
 

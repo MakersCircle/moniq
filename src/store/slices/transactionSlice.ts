@@ -89,7 +89,7 @@ export const createTransactionSlice: StateCreator<DataState, [], [], Transaction
       const next = state.transactions.map(t => {
         const idx = orderedIds.indexOf(t.id);
         if (idx === -1) return t;
-        return { ...t, sortOrder: idx, updatedAt };
+        return { ...t, sortOrder: orderedIds.length - idx, updatedAt };
       });
       // Persist + queue sync for each re-ordered record
       for (const id of orderedIds) {

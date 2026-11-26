@@ -107,6 +107,14 @@ test('LEDGER-09: the handle reorders transactions only within their date and sav
   const group = dayGroup(page);
   const rows = group.locator('.cursor-pointer');
   await expect(group.locator('button[aria-label^="Reorder "]')).toHaveCount(3);
+  await expect.poll(() => transactionNames(group)).toEqual(['Ledger C', 'Ledger B', 'Ledger A']);
+  await expect
+    .poll(() =>
+      page
+        .locator('[data-ledger-date-group]')
+        .evaluateAll(groups => groups.map(group => group.getAttribute('data-ledger-date-group')))
+    )
+    .toEqual(['2024-03-15', '2024-03-14']);
   const alpha = rows.filter({ hasText: 'Ledger A' });
   const charlie = rows.filter({ hasText: 'Ledger C' });
   const originalOrder = await transactionNames(group);
@@ -173,7 +181,7 @@ test('LEDGER-09: the handle reorders transactions only within their date and sav
                 resolve(
                   (records.result as DataState['transactions'])
                     .filter(transaction => transaction.date === date && !transaction.isDeleted)
-                    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                    .sort((a, b) => (b.sortOrder || 0) - (a.sortOrder || 0))
                     .map(transaction => transaction.note)
                 );
               };
@@ -202,9 +210,11 @@ test('LEDGER-09: phone scrolling stays within the dragged date group', async ({
   const startScroll = await scroller.evaluate(element => element.scrollTop);
   expect(startScroll).toBeGreaterThan(0);
 
-  const firstRow = group.locator('.cursor-pointer').first();
+  const firstNote = (await transactionNames(group))[0];
+  if (!firstNote) throw new Error('The Ledger date group has no transactions');
+  const firstRow = group.locator('.cursor-pointer').filter({ hasText: firstNote });
   const handle = firstRow.getByRole('button', {
-    name: 'Reorder Ledger A within this date. Drag or use arrow keys.',
+    name: `Reorder ${firstNote} within this date. Drag or use arrow keys.`,
   });
   const handleBox = await handle.boundingBox();
   expect(handleBox).not.toBeNull();
