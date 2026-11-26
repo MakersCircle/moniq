@@ -103,6 +103,7 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | LEDGER-16 | Open the mobile Filters bottom sheet with an upward slide and blurred backdrop; fit short lists to content, cap and scroll long lists, show search for larger lists, and combine type, account, and category selections. | Covered | `e2e/ledger-account-filter.spec.ts` verifies the bottom sheet slides in, shares a blurred backdrop with Export, opens Type by default, switches accordion sections, applies combined filters, and tracks active filters. | — | No |
 | LEDGER-17 | Keep the sticky Ledger column header aligned with the scrollable rows while hiding its unnecessary hover scrollbar. | Covered | `e2e/ledger-amount-filter.spec.ts` verifies the sticky header keeps a stable scrollbar gutter with hidden overflow and that the transaction list remains vertically scrollable across the configured viewports. | — | No |
 | LEDGER-18 | On phones, keep Ledger scrolling vertical and prevent the table frame from horizontally panning or overflowing the page. | Covered | `e2e/ledger-reorder.spec.ts` checks phone touch-action, clipped horizontal overflow, the vertical row scroller, and document width. | — | No |
+| LEDGER-19 | Keep phone Ledger rows visually separate after scrolling and list updates, even when row content heights differ. | Covered | `e2e/ledger-reorder.spec.ts` checks row spacing at the top and bottom of the scroll area and after a same-date transaction update. | — | No |
 
 ## 6. Manage accounts, methods, and categories
 

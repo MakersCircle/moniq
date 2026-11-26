@@ -250,7 +250,7 @@ function DateGroup({
 
   // Sync if external store changes, but ONLY if the store's data actually changed from what we last saw.
   // This completely insulates the local drag state from React re-render cycles.
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     const incomingIds = items.map(t => t.id).join(',');
     if (incomingIds !== lastStoreIdsRef.current) {
       setLocalIds(items.map(t => t.id));
@@ -330,6 +330,7 @@ function DateGroup({
             isDragging={draggedId !== null}
             isDragged={draggedId === txn.id}
             isSelected={selectedTxnId === txn.id}
+            isMobile={isMobile}
             accounts={accounts}
             categories={categories}
             settings={settings}
@@ -351,6 +352,7 @@ function LedgerReorderRow({
   isDragging,
   isDragged,
   isSelected,
+  isMobile,
   accounts,
   categories,
   settings,
@@ -361,6 +363,7 @@ function LedgerReorderRow({
   onSelect,
 }: Omit<TxnRowProps, 'onHandlePointerDown'> & {
   groupRef: React.RefObject<HTMLDivElement | null>;
+  isMobile: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
 }) {
@@ -374,8 +377,10 @@ function LedgerReorderRow({
 
   return (
     <Reorder.Item
+      data-ledger-row={txn.id}
       value={txn.id}
       as="div"
+      layout={isMobile ? 'position' : true}
       dragListener={false}
       dragControls={controls}
       dragConstraints={groupRef}

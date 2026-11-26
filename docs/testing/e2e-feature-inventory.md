@@ -95,6 +95,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | LEDGER-16 | Open the mobile Filters bottom sheet with an upward slide and blurred backdrop; show one Type, Account, or Category accordion at a time; fit short lists to content, cap and scroll long lists, show search only for larger lists, combine selections, and indicate active filters. | Unreleased |
 | LEDGER-17 | Keep the sticky Ledger column header aligned with the scrollable rows while hiding its unnecessary hover scrollbar. | Unreleased |
 | LEDGER-18 | On phones, keep Ledger scrolling vertical and prevent the table frame from horizontally panning or overflowing the page. | Unreleased |
+| LEDGER-19 | Keep phone Ledger rows visually separate after vertical scrolling and transaction-list updates, including rows with different content heights. | Unreleased |
 
 ## 6. Manage accounts, methods, and categories
 

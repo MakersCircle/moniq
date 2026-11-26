@@ -270,3 +270,69 @@ test('LEDGER-18: phone Ledger scrolling is vertical without horizontal panning',
     )
     .toBe(true);
 });
+
+test('LEDGER-19: phone Ledger rows stay separated after scroll and list updates', async ({
+  demoPage: page,
+}) => {
+  test.skip(test.info().project.name !== 'iphone-portrait', 'Checks phone Ledger row layout');
+  await seedLedger(page, 20);
+  await openLedger(page);
+
+  const scroller = page.locator('[data-ledger-scroll-body]');
+  const group = dayGroup(page);
+  const rows = group.locator('[data-ledger-row]');
+  await expect(rows).toHaveCount(20);
+
+  const addTransaction = async () => {
+    await page.evaluate(() => {
+      const app = window as typeof window & { useDataStore?: { getState: () => DataState } };
+      const store = app.useDataStore?.getState();
+      if (!store) throw new Error('Demo store is unavailable');
+      const accountId = store.accounts.find(
+        account => account.name === 'Ledger Reorder Account'
+      )?.id;
+      const methodId = store.methods.find(method => method.name === 'Ledger Reorder Method')?.id;
+      const targetId = store.categories.find(
+        category => category.head === 'Ledger Reorder Category'
+      )?.id;
+      if (!accountId || !methodId || !targetId) throw new Error('Ledger fixture is incomplete');
+      store.addTransaction({
+        date: '2024-03-15',
+        uiType: 'expense',
+        amount: 7,
+        accountId,
+        methodId,
+        targetId,
+        note: 'Layout update row',
+      });
+    });
+  };
+
+  const expectRowsSeparated = async () => {
+    await expect
+      .poll(() =>
+        group.evaluate(element => {
+          const rowRects = Array.from(
+            element.querySelectorAll<HTMLElement>('[data-ledger-row]')
+          ).map(row => row.getBoundingClientRect());
+          return Math.max(
+            0,
+            ...rowRects.slice(1).map((row, index) => Math.abs(row.top - rowRects[index].bottom))
+          );
+        })
+      )
+      .toBeLessThanOrEqual(1);
+  };
+
+  await expectRowsSeparated();
+  await scroller.evaluate(element => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expectRowsSeparated();
+  await scroller.evaluate(element => {
+    element.scrollTop = 0;
+  });
+  await addTransaction();
+  await expect(rows).toHaveCount(21);
+  await expectRowsSeparated();
+});
