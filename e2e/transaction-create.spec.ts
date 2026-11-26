@@ -10,6 +10,10 @@ async function openTransactionForm(page: Page): Promise<Locator> {
   }
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
+  const backdrop = page.locator('.fixed.inset-0.backdrop-blur-sm');
+  await expect(backdrop).toBeVisible();
+  await expect(backdrop).toHaveCSS('animation-delay', '0s');
+  await expect(dialog).toHaveCSS('animation-delay', '0s');
   return dialog;
 }
 
@@ -68,6 +72,24 @@ test('TXN-20: mobile transaction amounts stay prominent and text controls keep i
     'Checks phone input sizing'
   );
 
+  await page.evaluate(() => {
+    const app = window as typeof window & { useDataStore?: { getState: () => DataState } };
+    const store = app.useDataStore?.getState();
+    if (!store) throw new Error('Demo store is unavailable');
+    store.addCategory({
+      group: 'Needs',
+      head: 'Fixture Food',
+      subHead: 'Groceries',
+      isActive: true,
+    });
+    store.addCategory({
+      group: 'Needs',
+      head: 'Fixture Food',
+      subHead: 'Dining',
+      isActive: true,
+    });
+  });
+
   const dialog = await openTransactionForm(page);
   await expect
     .poll(() =>
@@ -88,6 +110,41 @@ test('TXN-20: mobile transaction amounts stay prominent and text controls keep i
       .poll(() => control.evaluate(element => parseFloat(getComputedStyle(element).fontSize)))
       .toBeGreaterThanOrEqual(16);
   }
+
+  const paymentMethod = dialog
+    .getByText('Payment Method', { exact: true })
+    .locator('..')
+    .getByRole('combobox');
+  await expect.poll(async () => (await paymentMethod.boundingBox())?.height ?? 0).toBe(44);
+  await paymentMethod.click();
+  await expect
+    .poll(async () => (await page.getByRole('option').first().boundingBox())?.height ?? 0)
+    .toBeGreaterThanOrEqual(44);
+  await page.keyboard.press('Escape');
+
+  const category = dialog
+    .getByText('Category', { exact: true })
+    .locator('..')
+    .getByRole('combobox');
+  await expect.poll(async () => (await category.boundingBox())?.height ?? 0).toBe(44);
+  await category.click();
+  const foodCategory = page.getByRole('option', { name: 'Fixture Food', exact: true });
+  await expect(foodCategory).toBeVisible();
+  await expect
+    .poll(async () => (await foodCategory.boundingBox())?.height ?? 0)
+    .toBeGreaterThanOrEqual(44);
+  await foodCategory.click();
+
+  const subcategory = dialog
+    .getByText('Sub-category', { exact: true })
+    .locator('..')
+    .getByRole('combobox');
+  await expect.poll(async () => (await subcategory.boundingBox())?.height ?? 0).toBe(44);
+  await subcategory.click();
+  await expect
+    .poll(async () => (await page.getByRole('option').first().boundingBox())?.height ?? 0)
+    .toBeGreaterThanOrEqual(44);
+  await page.keyboard.press('Escape');
 
   await dialog.getByRole('button', { name: 'Split this transaction' }).click();
   const splitAmounts = await dialog.getByPlaceholder('Amt').all();

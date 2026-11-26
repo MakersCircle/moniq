@@ -250,7 +250,7 @@ function DateGroup({
 
   // Sync if external store changes, but ONLY if the store's data actually changed from what we last saw.
   // This completely insulates the local drag state from React re-render cycles.
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     const incomingIds = items.map(t => t.id).join(',');
     if (incomingIds !== lastStoreIdsRef.current) {
       setLocalIds(items.map(t => t.id));
@@ -330,6 +330,7 @@ function DateGroup({
             isDragging={draggedId !== null}
             isDragged={draggedId === txn.id}
             isSelected={selectedTxnId === txn.id}
+            isMobile={isMobile}
             accounts={accounts}
             categories={categories}
             settings={settings}
@@ -351,6 +352,7 @@ function LedgerReorderRow({
   isDragging,
   isDragged,
   isSelected,
+  isMobile,
   accounts,
   categories,
   settings,
@@ -361,6 +363,7 @@ function LedgerReorderRow({
   onSelect,
 }: Omit<TxnRowProps, 'onHandlePointerDown'> & {
   groupRef: React.RefObject<HTMLDivElement | null>;
+  isMobile: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
 }) {
@@ -374,8 +377,10 @@ function LedgerReorderRow({
 
   return (
     <Reorder.Item
+      data-ledger-row={txn.id}
       value={txn.id}
       as="div"
+      layout={isMobile ? 'position' : true}
       dragListener={false}
       dragControls={controls}
       dragConstraints={groupRef}
@@ -440,14 +445,14 @@ export default function Transactions() {
   ] as const;
   const selectedTypes = filter.uiTypes ?? typeFilterOptions.map(option => option.value);
   const typeFilterSummary =
-    selectedTypes.length === typeFilterOptions.length
+    selectedTypes.length === 0 || selectedTypes.length === typeFilterOptions.length
       ? t('ledger.allTypes')
-      : selectedTypes.length === 0
-        ? t('ledger.noTypesSelected')
-        : selectedTypes.length === 1
-          ? typeFilterOptions.find(option => option.value === selectedTypes[0])?.label ||
-            t('ledger.noTypesSelected')
-          : t('ledger.selectedTypeCount', { count: selectedTypes.length });
+      : selectedTypes.length === 1
+        ? typeFilterOptions.find(option => option.value === selectedTypes[0])?.label ||
+          t('ledger.allTypes')
+        : t('ledger.selectedTypeCount', { count: selectedTypes.length });
+  const typeFilterActive =
+    selectedTypes.length > 0 && selectedTypes.length < typeFilterOptions.length;
 
   const toggleType = (value: (typeof typeFilterOptions)[number]['value'], checked: boolean) => {
     const next = new Set(selectedTypes);
@@ -639,7 +644,7 @@ export default function Transactions() {
                 </Button>
                 <Input
                   ref={mobileSearchRef}
-                  placeholder={t('ledger.searchDescription')}
+                  placeholder={t('common.search')}
                   aria-label={t('ledger.searchDescription')}
                   tabIndex={mobileSearchOpen ? 0 : -1}
                   className={cn(
@@ -684,6 +689,9 @@ export default function Transactions() {
                   updateFilter({ categoryIds: ids.length ? ids : undefined })
                 }
                 onTypeChange={toggleType}
+                onOpenChange={isOpen => {
+                  if (isOpen) setMobileSearchOpen(false);
+                }}
                 t={t}
               />
 
@@ -697,9 +705,7 @@ export default function Transactions() {
                 <PopoverTrigger asChild>
                   <Button
                     type="button"
-                    variant={
-                      selectedTypes.length !== typeFilterOptions.length ? 'secondary' : 'ghost'
-                    }
+                    variant={typeFilterActive ? 'secondary' : 'ghost'}
                     size="icon"
                     aria-label={t('ledger.filterByType')}
                     aria-expanded={typeFilterOpen}
@@ -707,8 +713,7 @@ export default function Transactions() {
                     className={cn(
                       'hidden h-10 w-10 shrink-0 justify-center border-0 bg-transparent px-2 shadow-none transition-[width] duration-150 hover:bg-accent md:flex md:h-9 md:w-[120px] md:justify-between md:border md:border-input md:bg-background md:px-3 md:shadow-sm md:hover:bg-accent/50 md:duration-200',
                       typeFilterOpen && 'w-36 opacity-0 md:opacity-0',
-                      selectedTypes.length !== typeFilterOptions.length &&
-                        'bg-secondary md:bg-background'
+                      typeFilterActive && 'bg-secondary md:bg-background'
                     )}
                   >
                     <ListFilter className="h-4 w-4 md:hidden" />
@@ -777,11 +782,15 @@ export default function Transactions() {
         {/* Results */}
         <div className="flex-1 flex flex-col pt-4 min-h-0 px-4 md:px-8 pb-4 md:pb-8 [@media(max-height:500px)]:pt-2 [@media(max-height:500px)]:pb-2">
           <div className="flex-1 rounded-xl border border-border bg-card shadow-sm w-full overflow-hidden flex flex-col min-h-0 relative">
-            <div className="w-full h-full overflow-x-auto flex flex-col custom-scrollbar">
+            <div
+              data-ledger-scroll-frame
+              className="w-full h-full overflow-x-clip touch-pan-y md:overflow-x-auto md:touch-auto flex flex-col custom-scrollbar"
+            >
               <div className="w-full md:min-w-[800px] flex flex-col h-full">
                 {/* ── Sticky Column Header ── */}
                 <div
-                  className="w-full overflow-y-scroll custom-scrollbar bg-accent/50 backdrop-blur-md shadow-sm border-b border-border z-10 sticky top-0"
+                  data-ledger-column-header
+                  className="w-full overflow-y-hidden bg-accent/50 backdrop-blur-md shadow-sm border-b border-border z-10 sticky top-0"
                   style={{ scrollbarGutter: 'stable' }}
                 >
                   <div className="pl-[6px] flex items-center text-muted-foreground uppercase text-[10px] font-bold tracking-wider">

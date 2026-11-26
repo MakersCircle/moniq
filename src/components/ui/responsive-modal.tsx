@@ -26,6 +26,7 @@ interface ResponsiveModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   className?: string;
+  overlayClassName?: string;
   /** Extra classes for the header section */
   headerClassName?: string;
 }
@@ -42,6 +43,7 @@ export function ResponsiveModal({
   children,
   footer,
   className,
+  overlayClassName,
   headerClassName,
 }: ResponsiveModalProps) {
   const isMobile = useIsMobile();
@@ -55,6 +57,7 @@ export function ResponsiveModal({
             'flex flex-col p-0 rounded-t-2xl border-t shadow-2xl overflow-hidden max-h-[var(--app-viewport-height-minus-3rem)] h-auto',
             className
           )}
+          overlayClassName={overlayClassName}
         >
           {(title || description) && (
             <SheetHeader
@@ -89,6 +92,7 @@ export function ResponsiveModal({
           'max-w-md flex flex-col p-0 overflow-hidden border-none shadow-2xl',
           className
         )}
+        overlayClassName={overlayClassName}
       >
         {(title || description) && (
           <DialogHeader

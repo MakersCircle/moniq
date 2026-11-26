@@ -71,7 +71,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | TXN-17 | Alt/Cmd+1, 2, and 3 switch the form between Expense, Income, and Transfer. | 0.5.0 |
 | TXN-18 | Alt+N opens a new transaction; Shift+E, I, or T opens the corresponding type from an app page when focus is outside a text field. | 0.5.0 |
 | TXN-19 | Keyboard typing can select matching payment methods and categories from their dropdowns. | 0.5.0 |
-| TXN-20 | On phone and tablet widths, the primary transaction amount remains 48 px while date, note, and split-amount fields stay at least 16 px to prevent iOS focus zoom. | Unreleased |
+| TXN-20 | On phone and tablet widths, the primary transaction amount remains 48 px, date/note/split fields stay at least 16 px, and payment method/category/subcategory controls and options have 44 px touch targets. | Unreleased |
 
 ## 5. Review and manage the ledger
 
@@ -85,14 +85,17 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | LEDGER-06 | Selecting a row opens its details with date, amount, source account, category or destination account, and note. | Code |
 | LEDGER-07 | Edit from the detail panel changes a transaction in place and updates the ledger and balances. | 0.9.6 |
 | LEDGER-08 | Delete from the detail panel removes the transaction from active views and places it in Recently Deleted. | 0.3.0 |
-| LEDGER-09 | Reorder transactions within one date using only the six-dot handle; keep mobile scrolling within that date group and persist order after drop. | Unreleased |
+| LEDGER-09 | Show dates and transactions within each date newest first; allow manual reordering within one date using only the six-dot handle, keep mobile scrolling within that date group, and persist the chosen order after drop. | Unreleased |
 | LEDGER-10 | On mobile, category and account appear beneath the description and details open as a bottom drawer. | 0.9.6 |
 | LEDGER-11 | Filter Ledger rows using expandable category checkboxes; selecting a category includes all its subcategories, individual subcategories can be selected, search focuses on desktop without summoning the mobile keyboard, and multiple matching entries still show one transaction row. | Unreleased |
 | LEDGER-12 | Filter Ledger rows using a searchable, flat account checkbox list with multiple account selection and no expand controls. | Unreleased |
 | LEDGER-13 | Filter Ledger rows to an inclusive minimum and maximum transaction amount using a dual-ended slider or precise Min/Max fields; retain the global slider scale while constraining handles to the range left by other filters. | Unreleased |
-| LEDGER-14 | Keep borderless 40 px search, type-filter, and export touch targets with visually tight icon spacing on the same row as the Ledger title on mobile. The search field expands left with its icon retained, does not cover the title, collapses on outside click when empty, and stays expanded with text until the type filter opens. Search text can be cleared inline. The type filter opens a downward multi-select checkbox list with all types checked by default; selected types combine with OR, no checked types yields no results, and other filter groups combine with AND. On mobile, widen it leftward to reveal the checkboxes without a selected-types heading and shift search left. | Unreleased |
+| LEDGER-14 | Keep compact search, filter, and export touch targets with aligned icons on mobile; expand and clear search without obscuring the title. Type selections combine with OR and other filter groups combine with AND. Selecting all or no types leaves all transactions visible. The mobile filter menu opens with Type expanded and uses a single-open accordion, a blurred animated backdrop, and an active-filter indicator. | Unreleased |
 | LEDGER-15 | Ledger popovers, selects, and menus flip or shift away from viewport edges and keep tall content scrollable within the available space. | Unreleased |
-| LEDGER-16 | On mobile, open one common filter menu for type, account, and category, search account/category lists, and combine selections across all three groups. | Unreleased |
+| LEDGER-16 | Open the mobile Filters bottom sheet with an upward slide and blurred backdrop; show one Type, Account, or Category accordion at a time; fit short lists to content, cap and scroll long lists, show search only for larger lists, combine selections, and indicate active filters. | Unreleased |
+| LEDGER-17 | Keep the sticky Ledger column header aligned with the scrollable rows while hiding its unnecessary hover scrollbar. | Unreleased |
+| LEDGER-18 | On phones, keep Ledger scrolling vertical and prevent the table frame from horizontally panning or overflowing the page. | Unreleased |
+| LEDGER-19 | Keep phone Ledger rows visually separate after vertical scrolling and transaction-list updates, including rows with different content heights. | Unreleased |
 
 ## 6. Manage accounts, methods, and categories
 

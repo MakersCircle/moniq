@@ -107,6 +107,14 @@ test('LEDGER-09: the handle reorders transactions only within their date and sav
   const group = dayGroup(page);
   const rows = group.locator('.cursor-pointer');
   await expect(group.locator('button[aria-label^="Reorder "]')).toHaveCount(3);
+  await expect.poll(() => transactionNames(group)).toEqual(['Ledger C', 'Ledger B', 'Ledger A']);
+  await expect
+    .poll(() =>
+      page
+        .locator('[data-ledger-date-group]')
+        .evaluateAll(groups => groups.map(group => group.getAttribute('data-ledger-date-group')))
+    )
+    .toEqual(['2024-03-15', '2024-03-14']);
   const alpha = rows.filter({ hasText: 'Ledger A' });
   const charlie = rows.filter({ hasText: 'Ledger C' });
   const originalOrder = await transactionNames(group);
@@ -173,7 +181,7 @@ test('LEDGER-09: the handle reorders transactions only within their date and sav
                 resolve(
                   (records.result as DataState['transactions'])
                     .filter(transaction => transaction.date === date && !transaction.isDeleted)
-                    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                    .sort((a, b) => (b.sortOrder || 0) - (a.sortOrder || 0))
                     .map(transaction => transaction.note)
                 );
               };
@@ -202,9 +210,11 @@ test('LEDGER-09: phone scrolling stays within the dragged date group', async ({
   const startScroll = await scroller.evaluate(element => element.scrollTop);
   expect(startScroll).toBeGreaterThan(0);
 
-  const firstRow = group.locator('.cursor-pointer').first();
+  const firstNote = (await transactionNames(group))[0];
+  if (!firstNote) throw new Error('The Ledger date group has no transactions');
+  const firstRow = group.locator('.cursor-pointer').filter({ hasText: firstNote });
   const handle = firstRow.getByRole('button', {
-    name: 'Reorder Ledger A within this date. Drag or use arrow keys.',
+    name: `Reorder ${firstNote} within this date. Drag or use arrow keys.`,
   });
   const handleBox = await handle.boundingBox();
   expect(handleBox).not.toBeNull();
@@ -238,4 +248,91 @@ test('LEDGER-09: phone scrolling stays within the dragged date group', async ({
     })
     .toBeLessThanOrEqual(2);
   await page.mouse.up();
+});
+
+test('LEDGER-18: phone Ledger scrolling is vertical without horizontal panning', async ({
+  demoPage: page,
+}) => {
+  test.skip(test.info().project.name !== 'iphone-portrait', 'Checks phone Ledger scrolling');
+  await seedLedger(page, 20);
+  await openLedger(page);
+
+  const frame = page.locator('[data-ledger-scroll-frame]');
+  const rows = page.locator('[data-ledger-scroll-body]');
+  await expect(frame).toHaveCSS('overflow-x', 'clip');
+  await expect(frame).toHaveCSS('touch-action', 'pan-y');
+  await expect(rows).toHaveCSS('overflow-y', 'scroll');
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+      )
+    )
+    .toBe(true);
+});
+
+test('LEDGER-19: phone Ledger rows stay separated after scroll and list updates', async ({
+  demoPage: page,
+}) => {
+  test.skip(test.info().project.name !== 'iphone-portrait', 'Checks phone Ledger row layout');
+  await seedLedger(page, 20);
+  await openLedger(page);
+
+  const scroller = page.locator('[data-ledger-scroll-body]');
+  const group = dayGroup(page);
+  const rows = group.locator('[data-ledger-row]');
+  await expect(rows).toHaveCount(20);
+
+  const addTransaction = async () => {
+    await page.evaluate(() => {
+      const app = window as typeof window & { useDataStore?: { getState: () => DataState } };
+      const store = app.useDataStore?.getState();
+      if (!store) throw new Error('Demo store is unavailable');
+      const accountId = store.accounts.find(
+        account => account.name === 'Ledger Reorder Account'
+      )?.id;
+      const methodId = store.methods.find(method => method.name === 'Ledger Reorder Method')?.id;
+      const targetId = store.categories.find(
+        category => category.head === 'Ledger Reorder Category'
+      )?.id;
+      if (!accountId || !methodId || !targetId) throw new Error('Ledger fixture is incomplete');
+      store.addTransaction({
+        date: '2024-03-15',
+        uiType: 'expense',
+        amount: 7,
+        accountId,
+        methodId,
+        targetId,
+        note: 'Layout update row',
+      });
+    });
+  };
+
+  const expectRowsSeparated = async () => {
+    await expect
+      .poll(() =>
+        group.evaluate(element => {
+          const rowRects = Array.from(
+            element.querySelectorAll<HTMLElement>('[data-ledger-row]')
+          ).map(row => row.getBoundingClientRect());
+          return Math.max(
+            0,
+            ...rowRects.slice(1).map((row, index) => Math.abs(row.top - rowRects[index].bottom))
+          );
+        })
+      )
+      .toBeLessThanOrEqual(1);
+  };
+
+  await expectRowsSeparated();
+  await scroller.evaluate(element => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expectRowsSeparated();
+  await scroller.evaluate(element => {
+    element.scrollTop = 0;
+  });
+  await addTransaction();
+  await expect(rows).toHaveCount(21);
+  await expectRowsSeparated();
 });

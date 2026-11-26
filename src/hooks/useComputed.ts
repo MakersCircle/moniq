@@ -170,7 +170,7 @@ export function useFilteredTransactions(filter: TxnFilter) {
           const rangeEnd = filter.dateFrom > filter.dateTo ? filter.dateFrom : filter.dateTo;
           if (t.date < rangeStart || t.date > rangeEnd) return false;
         }
-        if (filter.uiTypes && !filter.uiTypes.includes(t.uiType)) return false;
+        if (filter.uiTypes?.length && !filter.uiTypes.includes(t.uiType)) return false;
 
         if (filter.minAmount !== undefined && t.amount < filter.minAmount) return false;
         if (filter.maxAmount !== undefined && t.amount > filter.maxAmount) return false;
@@ -193,12 +193,11 @@ export function useFilteredTransactions(filter: TxnFilter) {
       .sort((a, b) => {
         const dateDiff = b.date.localeCompare(a.date);
         if (dateDiff !== 0) return dateDiff;
-        // Within same date: sortOrder ascending (explicit user order)
-        const aOrder = a.sortOrder ?? Infinity;
-        const bOrder = b.sortOrder ?? Infinity;
-        if (aOrder !== bOrder) return aOrder - bOrder;
-        // Final fallback: createdAt ascending (for records pre-dating migration)
-        return a.createdAt.localeCompare(b.createdAt);
+        // Within same date: newest explicit order first; use creation time for legacy records.
+        if (a.sortOrder !== undefined && b.sortOrder !== undefined && a.sortOrder !== b.sortOrder) {
+          return b.sortOrder - a.sortOrder;
+        }
+        return b.createdAt.localeCompare(a.createdAt);
       });
   }, [transactions, filter]);
 }

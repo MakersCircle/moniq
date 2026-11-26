@@ -6,9 +6,7 @@ export async function fillLedgerSearch(page: Page, query: string) {
     return;
   }
 
-  const search = page.locator(
-    'input[placeholder="Search description..."][aria-label="Search description..."]'
-  );
+  const search = page.locator('input[aria-label="Search description..."]');
   if (!(await search.isVisible())) {
     await page.getByRole('button', { name: 'Search description...' }).click();
   }
