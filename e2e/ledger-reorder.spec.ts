@@ -249,3 +249,24 @@ test('LEDGER-09: phone scrolling stays within the dragged date group', async ({
     .toBeLessThanOrEqual(2);
   await page.mouse.up();
 });
+
+test('LEDGER-18: phone Ledger scrolling is vertical without horizontal panning', async ({
+  demoPage: page,
+}) => {
+  test.skip(test.info().project.name !== 'iphone-portrait', 'Checks phone Ledger scrolling');
+  await seedLedger(page, 20);
+  await openLedger(page);
+
+  const frame = page.locator('[data-ledger-scroll-frame]');
+  const rows = page.locator('[data-ledger-scroll-body]');
+  await expect(frame).toHaveCSS('overflow-x', 'clip');
+  await expect(frame).toHaveCSS('touch-action', 'pan-y');
+  await expect(rows).toHaveCSS('overflow-y', 'scroll');
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= document.documentElement.clientWidth
+      )
+    )
+    .toBe(true);
+});

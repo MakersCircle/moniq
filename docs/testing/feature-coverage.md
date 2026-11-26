@@ -102,6 +102,7 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | LEDGER-15 | Ledger popovers, selects, and menus flip or shift away from viewport edges and keep tall content scrollable within the available space. | Partial | Shared Radix wrappers apply 8 px collision padding and available-height sizing; the Ledger type filter no longer disables collision avoidance. | Browser placement checks for top, bottom, left, and right edges, including short landscape viewport | No |
 | LEDGER-16 | On mobile, open one common filter menu for type, account, and category, search account/category lists, and combine selections across all three groups. | Covered | `e2e/ledger-account-filter.spec.ts` checks the mobile menu exposes all three filter groups and combined type, account, and category selections filter the Ledger rows together. | — | No |
 | LEDGER-17 | Keep the sticky Ledger column header aligned with the scrollable rows while hiding its unnecessary hover scrollbar. | Covered | `e2e/ledger-amount-filter.spec.ts` verifies the sticky header keeps a stable scrollbar gutter with hidden overflow and that the transaction list remains vertically scrollable across the configured viewports. | — | No |
+| LEDGER-18 | On phones, keep Ledger scrolling vertical and prevent the table frame from horizontally panning or overflowing the page. | Covered | `e2e/ledger-reorder.spec.ts` checks phone touch-action, clipped horizontal overflow, the vertical row scroller, and document width. | — | No |
 
 ## 6. Manage accounts, methods, and categories
 

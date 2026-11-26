@@ -777,7 +777,10 @@ export default function Transactions() {
         {/* Results */}
         <div className="flex-1 flex flex-col pt-4 min-h-0 px-4 md:px-8 pb-4 md:pb-8 [@media(max-height:500px)]:pt-2 [@media(max-height:500px)]:pb-2">
           <div className="flex-1 rounded-xl border border-border bg-card shadow-sm w-full overflow-hidden flex flex-col min-h-0 relative">
-            <div className="w-full h-full overflow-x-auto flex flex-col custom-scrollbar">
+            <div
+              data-ledger-scroll-frame
+              className="w-full h-full overflow-x-clip touch-pan-y md:overflow-x-auto md:touch-auto flex flex-col custom-scrollbar"
+            >
               <div className="w-full md:min-w-[800px] flex flex-col h-full">
                 {/* ── Sticky Column Header ── */}
                 <div

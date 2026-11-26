@@ -94,6 +94,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | LEDGER-15 | Ledger popovers, selects, and menus flip or shift away from viewport edges and keep tall content scrollable within the available space. | Unreleased |
 | LEDGER-16 | On mobile, open one common filter menu for type, account, and category, search account/category lists, and combine selections across all three groups. | Unreleased |
 | LEDGER-17 | Keep the sticky Ledger column header aligned with the scrollable rows while hiding its unnecessary hover scrollbar. | Unreleased |
+| LEDGER-18 | On phones, keep Ledger scrolling vertical and prevent the table frame from horizontally panning or overflowing the page. | Unreleased |
 
 ## 6. Manage accounts, methods, and categories
 
