@@ -10,6 +10,10 @@ async function openTransactionForm(page: Page): Promise<Locator> {
   }
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
+  const backdrop = page.locator('.fixed.inset-0.backdrop-blur-sm');
+  await expect(backdrop).toBeVisible();
+  await expect(backdrop).toHaveCSS('animation-delay', '0s');
+  await expect(dialog).toHaveCSS('animation-delay', '0s');
   return dialog;
 }
 

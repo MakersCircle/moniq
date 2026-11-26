@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mobile Ledger Scrolling**: Prevent horizontal panning in the phone Ledger viewport so vertical scrolling does not drift sideways.
 - **Ledger Dialog Backdrops**: Give Export and the mobile filter bottom sheet the same dark blurred backdrop. The filter sheet slides up, grows to fit expanded lists within a comfortable viewport limit, and scrolls longer lists; search appears only for larger lists. Type, Account, and Category use a single-open accordion with an active-filter dot; all or no selected types show every transaction.
 - **Mobile Ledger Search**: Use a shorter placeholder inside the expanded search field so it fits beside the search and clear controls.
+- **Dialog Animation**: Start Filter, Export, and Add Transaction dialog animations immediately on open and prepare their panels and blurred backdrops for smooth compositing. Add Transaction now uses the same blurred backdrop as Filter and Export.
 
 ### Testing
 - **Ledger Header Scrollbar Coverage**: Verify the sticky header reserves its stable gutter while the transaction list remains vertically scrollable, across desktop and mobile viewports.

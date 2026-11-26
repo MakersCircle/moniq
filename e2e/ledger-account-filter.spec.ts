@@ -81,8 +81,10 @@ test('LEDGER-16: mobile common filters include account, type, and category', asy
   await filterButton.click();
   const backdrop = page.locator('.fixed.inset-0.backdrop-blur-sm');
   await expect(backdrop).toBeVisible();
+  await expect(backdrop).toHaveCSS('animation-delay', '0s');
   const menu = page.getByRole('dialog', { name: 'Filters' });
   await expect(menu).toBeVisible();
+  await expect(menu).toHaveCSS('animation-delay', '0s');
   await expect(menu).toHaveClass(/slide-in-from-bottom/);
   const typeSection = menu.getByRole('button', { name: 'Filter by type' });
   const accountSection = menu.getByRole('button', { name: 'Filter by account' });

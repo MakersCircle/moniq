@@ -13,7 +13,9 @@ test('LEDGER-05: full-list PDF uses independent date and account filters', async
 
   await page.getByRole('button', { name: desktop ? 'Export PDF' : 'Export' }).click();
   await expect(page.getByRole('heading', { name: 'Export Ledger Report' })).toBeVisible();
-  await expect(page.locator('.fixed.inset-0.backdrop-blur-sm')).toBeVisible();
+  const backdrop = page.locator('.fixed.inset-0.backdrop-blur-sm');
+  await expect(backdrop).toBeVisible();
+  await expect(backdrop).toHaveCSS('animation-delay', '0s');
   await expect(page.getByRole('radio', { name: 'Current month' })).toBeChecked();
   await expect(page.getByRole('group', { name: 'Report type' })).toBeVisible();
   await expect(page.getByRole('combobox', { name: 'Account' })).toContainText('All Accounts');
