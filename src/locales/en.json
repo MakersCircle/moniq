@@ -95,6 +95,7 @@
     "filterByAmount": "Filter by amount",
     "filterByType": "Filter by type",
     "filters": "Filters",
+    "filtersApplied": "filters applied",
     "selectedTypeCount": "{{count}} types",
     "noTypesSelected": "No types",
     "minimumAmount": "Minimum amount",

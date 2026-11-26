@@ -170,7 +170,7 @@ export function useFilteredTransactions(filter: TxnFilter) {
           const rangeEnd = filter.dateFrom > filter.dateTo ? filter.dateFrom : filter.dateTo;
           if (t.date < rangeStart || t.date > rangeEnd) return false;
         }
-        if (filter.uiTypes && !filter.uiTypes.includes(t.uiType)) return false;
+        if (filter.uiTypes?.length && !filter.uiTypes.includes(t.uiType)) return false;
 
         if (filter.minAmount !== undefined && t.amount < filter.minAmount) return false;
         if (filter.maxAmount !== undefined && t.amount > filter.maxAmount) return false;

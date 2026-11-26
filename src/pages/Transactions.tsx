@@ -440,14 +440,14 @@ export default function Transactions() {
   ] as const;
   const selectedTypes = filter.uiTypes ?? typeFilterOptions.map(option => option.value);
   const typeFilterSummary =
-    selectedTypes.length === typeFilterOptions.length
+    selectedTypes.length === 0 || selectedTypes.length === typeFilterOptions.length
       ? t('ledger.allTypes')
-      : selectedTypes.length === 0
-        ? t('ledger.noTypesSelected')
-        : selectedTypes.length === 1
-          ? typeFilterOptions.find(option => option.value === selectedTypes[0])?.label ||
-            t('ledger.noTypesSelected')
-          : t('ledger.selectedTypeCount', { count: selectedTypes.length });
+      : selectedTypes.length === 1
+        ? typeFilterOptions.find(option => option.value === selectedTypes[0])?.label ||
+          t('ledger.allTypes')
+        : t('ledger.selectedTypeCount', { count: selectedTypes.length });
+  const typeFilterActive =
+    selectedTypes.length > 0 && selectedTypes.length < typeFilterOptions.length;
 
   const toggleType = (value: (typeof typeFilterOptions)[number]['value'], checked: boolean) => {
     const next = new Set(selectedTypes);
@@ -684,6 +684,9 @@ export default function Transactions() {
                   updateFilter({ categoryIds: ids.length ? ids : undefined })
                 }
                 onTypeChange={toggleType}
+                onOpenChange={isOpen => {
+                  if (isOpen) setMobileSearchOpen(false);
+                }}
                 t={t}
               />
 
@@ -697,9 +700,7 @@ export default function Transactions() {
                 <PopoverTrigger asChild>
                   <Button
                     type="button"
-                    variant={
-                      selectedTypes.length !== typeFilterOptions.length ? 'secondary' : 'ghost'
-                    }
+                    variant={typeFilterActive ? 'secondary' : 'ghost'}
                     size="icon"
                     aria-label={t('ledger.filterByType')}
                     aria-expanded={typeFilterOpen}
@@ -707,8 +708,7 @@ export default function Transactions() {
                     className={cn(
                       'hidden h-10 w-10 shrink-0 justify-center border-0 bg-transparent px-2 shadow-none transition-[width] duration-150 hover:bg-accent md:flex md:h-9 md:w-[120px] md:justify-between md:border md:border-input md:bg-background md:px-3 md:shadow-sm md:hover:bg-accent/50 md:duration-200',
                       typeFilterOpen && 'w-36 opacity-0 md:opacity-0',
-                      selectedTypes.length !== typeFilterOptions.length &&
-                        'bg-secondary md:bg-background'
+                      typeFilterActive && 'bg-secondary md:bg-background'
                     )}
                   >
                     <ListFilter className="h-4 w-4 md:hidden" />

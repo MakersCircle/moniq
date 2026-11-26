@@ -159,6 +159,7 @@ export function LedgerExportDialog({
       onOpenChange={onOpenChange}
       title={t('ledger.exportReport')}
       description={t('ledger.exportReportDescription')}
+      overlayClassName="bg-black/45 backdrop-blur-sm"
       className="max-w-xl"
       footer={
         <>

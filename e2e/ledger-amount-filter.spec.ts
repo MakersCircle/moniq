@@ -125,13 +125,16 @@ test('LEDGER-14: ledger toolbar adapts type filter to desktop and mobile', async
   const width = page.viewportSize()?.width ?? 0;
   const searchIcon = page.getByRole('button', { name: 'Search description...' });
   const searchInput = page.locator('input[placeholder="Search description..."]:visible');
-  const typeFilter = page.getByRole('button', { name: 'Filter by type' });
+  const typeFilter =
+    width < 768
+      ? page.getByRole('button', { name: /^Filters/ })
+      : page.getByRole('button', { name: 'Filter by type' });
   const exportButton = page.getByRole('button', { name: 'Export PDF' });
   const ledgerHeading = page.getByRole('heading', { name: 'Ledger' });
 
   await expect(typeFilter).toBeVisible();
+  if (width < 768) await expect(typeFilter).toHaveJSProperty('clientWidth', 40);
   await expect(exportButton).toBeVisible();
-  const closedSearchBox = width < 768 ? await searchIcon.boundingBox() : null;
   await typeFilter.click();
   const typeOptions = page.getByRole('group', { name: 'Filter by type' });
   const incomeOption = typeOptions.getByRole('checkbox', { name: 'Income', exact: true });
@@ -142,16 +145,16 @@ test('LEDGER-14: ledger toolbar adapts type filter to desktop and mobile', async
   await expect(transferOption).toBeChecked();
   if (width >= 768) await expect(typeOptions.getByText('All Types', { exact: true })).toBeVisible();
   await expect(typeOptions.getByRole('checkbox', { name: 'All Types' })).toHaveCount(0);
-  await expect(typeFilter).toHaveCSS('opacity', '0');
-  const filterButtonBox = await typeFilter.boundingBox();
-  const menuBox = await typeOptions.boundingBox();
-  if (!filterButtonBox || !menuBox) throw new Error('Type filter options are not positioned');
-  expect(menuBox.y).toBeGreaterThanOrEqual(filterButtonBox.y);
+  if (width >= 768) await expect(typeFilter).toHaveCSS('opacity', '0');
+  if (width >= 768) {
+    const filterButtonBox = await typeFilter.boundingBox();
+    const menuBox = await typeOptions.boundingBox();
+    if (!filterButtonBox || !menuBox) throw new Error('Type filter options are not positioned');
+    expect(menuBox.y).toBeGreaterThanOrEqual(filterButtonBox.y);
+  }
   if (width < 768) {
-    await expect(typeFilter).toHaveJSProperty('clientWidth', 144);
-    const expandedSearchBox = await searchIcon.boundingBox();
-    if (!closedSearchBox || !expandedSearchBox) throw new Error('Search icon is not positioned');
-    expect(expandedSearchBox.x).toBeLessThan(closedSearchBox.x);
+    await expect(page.getByRole('dialog', { name: 'Filters' })).toBeVisible();
+    await expect(page.locator('.fixed.inset-0.backdrop-blur-sm')).toBeVisible();
   }
   await transferOption.uncheck();
   await expect(expensesOption).toBeChecked();
@@ -165,13 +168,17 @@ test('LEDGER-14: ledger toolbar adapts type filter to desktop and mobile', async
   await expensesOption.check();
   await incomeOption.uncheck();
   await expensesOption.uncheck();
-  await expect(page.getByText('No transactions found matching your filters.')).toBeVisible();
+  await expect(page.getByText('No transactions found matching your filters.')).toHaveCount(0);
+  await expect(page.getByText('Fixture groceries', { exact: true })).toBeVisible();
+  await expect(page.getByText('Fixture paycheck', { exact: true })).toBeVisible();
+  if (width >= 768) await expect(typeOptions.getByText('All Types', { exact: true })).toBeVisible();
   await incomeOption.check();
   await expensesOption.check();
   await transferOption.check();
   await expect(page.getByText('Fixture paycheck', { exact: true })).toBeVisible();
   await expect(page.getByText('Boundary low', { exact: true })).toBeVisible();
-  await page.getByRole('heading', { name: 'Ledger' }).click();
+  if (width < 768) await page.keyboard.press('Escape');
+  else await page.getByRole('heading', { name: 'Ledger' }).click();
 
   if (width < 768) {
     await page.setViewportSize({ width: 360, height: 800 });
@@ -224,7 +231,7 @@ test('LEDGER-14: ledger toolbar adapts type filter to desktop and mobile', async
     await expect(typeOptions).toBeVisible();
     await expect(searchInput).toBeHidden();
     await expect(page.getByText('Fixture paycheck', { exact: true })).toBeVisible();
-    await ledgerHeading.click();
+    await page.keyboard.press('Escape');
 
     await searchIcon.click();
     await expect(searchInput).toHaveValue('Fixture');

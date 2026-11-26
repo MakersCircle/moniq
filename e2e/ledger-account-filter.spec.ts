@@ -77,19 +77,49 @@ test('LEDGER-16: mobile common filters include account, type, and category', asy
   );
   await page.getByRole('link', { name: 'Ledger', exact: true }).first().click();
 
-  await page.getByRole('button', { name: 'Filters' }).click();
-  const menu = page.locator('[data-radix-popper-content-wrapper]').filter({
-    has: page.getByPlaceholder('Search accounts...'),
-  });
+  const filterButton = page.getByRole('button', { name: 'Filters' });
+  await filterButton.click();
+  const backdrop = page.locator('.fixed.inset-0.backdrop-blur-sm');
+  await expect(backdrop).toBeVisible();
+  const menu = page.getByRole('dialog', { name: 'Filters' });
+  await expect(menu).toBeVisible();
+  await expect(menu).toHaveClass(/slide-in-from-bottom/);
+  const typeSection = menu.getByRole('button', { name: 'Filter by type' });
+  const accountSection = menu.getByRole('button', { name: 'Filter by account' });
+  const categorySection = menu.getByRole('button', { name: 'Filter by category' });
+  await expect(typeSection).toHaveAttribute('aria-expanded', 'true');
+  await expect(accountSection).toHaveAttribute('aria-expanded', 'false');
+  await expect(categorySection).toHaveAttribute('aria-expanded', 'false');
   await expect(menu.getByRole('group', { name: 'Filter by type' })).toBeVisible();
   await menu.getByRole('checkbox', { name: 'Income', exact: true }).uncheck();
   await menu.getByRole('checkbox', { name: 'Transfer', exact: true }).uncheck();
-  await menu.getByPlaceholder('Search accounts...').fill('Fixture Checking');
+  await accountSection.click();
+  await expect(accountSection).toHaveAttribute('aria-expanded', 'true');
+  await expect(typeSection).toHaveAttribute('aria-expanded', 'false');
+  const accountSearch = menu.getByPlaceholder('Search accounts...');
+  if (await accountSearch.count()) await accountSearch.fill('Fixture Checking');
   await menu.getByRole('checkbox', { name: 'Fixture Checking', exact: true }).check();
-  await menu.getByPlaceholder('Search categories...').fill('Fixture Food');
+  await categorySection.click();
+  await expect(categorySection).toHaveAttribute('aria-expanded', 'true');
+  await expect(accountSection).toHaveAttribute('aria-expanded', 'false');
+  const categorySearch = menu.getByPlaceholder('Search categories...');
+  if (await categorySearch.count()) await categorySearch.fill('Fixture Food');
   await menu.getByRole('checkbox', { name: 'Fixture Food', exact: true }).check();
 
   await expect(page.getByText('Fixture groceries', { exact: true })).toBeVisible();
   await expect(page.getByText('Fixture paycheck', { exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Filter by type' })).toBeHidden();
+  await expect(page.locator('[data-ledger-filter-indicator]')).toBeVisible();
+  await expect(typeSection).toBeVisible();
+  await expect(typeSection).toHaveAttribute('aria-expanded', 'false');
+
+  await typeSection.click();
+  await menu.getByRole('checkbox', { name: 'Expenses', exact: true }).uncheck();
+  await expect(page.getByText('Fixture groceries', { exact: true })).toBeVisible();
+  await categorySection.click();
+  await menu.getByRole('checkbox', { name: 'Fixture Food', exact: true }).uncheck();
+  await accountSection.click();
+  await menu.getByRole('checkbox', { name: 'Fixture Checking', exact: true }).uncheck();
+  await expect(page.locator('[data-ledger-filter-indicator]')).toHaveCount(0);
+  await expect(page.getByText('Fixture paycheck', { exact: true })).toBeVisible();
+  await expect(page.getByText('Fixture groceries', { exact: true })).toBeVisible();
 });

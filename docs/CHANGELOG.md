@@ -13,11 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ledger Header Scrollbar**: Keep the sticky column header's row-alignment gutter without revealing an unnecessary scrollbar on hover.
 - **Ledger Transaction Order**: Show transactions newest first by date and by their saved order within each date, while keeping drag reordering intact.
 - **Mobile Ledger Scrolling**: Prevent horizontal panning in the phone Ledger viewport so vertical scrolling does not drift sideways.
+- **Ledger Dialog Backdrops**: Give Export and the mobile filter bottom sheet the same dark blurred backdrop. The filter sheet slides up, grows to fit expanded lists within a comfortable viewport limit, and scrolls longer lists; search appears only for larger lists. Type, Account, and Category use a single-open accordion with an active-filter dot; all or no selected types show every transaction.
 
 ### Testing
 - **Ledger Header Scrollbar Coverage**: Verify the sticky header reserves its stable gutter while the transaction list remains vertically scrollable, across desktop and mobile viewports.
 - **Ledger Transaction Order Coverage**: Verify descending date and within-day order, persisted drag reordering, and same-day phone list behavior.
 - **Mobile Ledger Scrolling Coverage**: Verify phone Ledger gestures are constrained to vertical panning and the document has no horizontal overflow.
+- **Ledger Dialog and Filter Coverage**: Verify Export and the mobile filter sheet use a consistent blurred backdrop; check the sheet animation, single-open accordion, active-filter dot, and all-or-none type behavior.
 
 ## [0.12.1] - 2026-11-23
 
