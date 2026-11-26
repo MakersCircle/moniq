@@ -351,6 +351,9 @@ export default function TransactionForm({
   };
 
   const inputClasses = 'h-9 bg-muted/40 border-transparent focus:border-primary/30 transition-all';
+  const selectTriggerClasses =
+    'h-11 bg-muted/40 border-transparent text-base focus:border-primary/30 transition-all sm:h-9 sm:text-sm';
+  const selectItemClasses = 'min-h-11 text-base sm:min-h-0 sm:text-sm';
 
   return (
     <form
@@ -496,7 +499,7 @@ export default function TransactionForm({
                     if (val === toMethodId) setToMethodId('');
                   }}
                 >
-                  <SelectTrigger className={inputClasses} tabIndex={3}>
+                  <SelectTrigger className={selectTriggerClasses} tabIndex={3}>
                     <SelectValue placeholder={t('common.selectMethod')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -507,13 +510,21 @@ export default function TransactionForm({
                           ? `${acct.name} · ${m.name}`
                           : m.name;
                       return (
-                        <SelectItem key={m.id} value={m.id} textValue={displayName}>
+                        <SelectItem
+                          key={m.id}
+                          value={m.id}
+                          textValue={displayName}
+                          className={selectItemClasses}
+                        >
                           {displayName}
                         </SelectItem>
                       );
                     })}
                     <SelectSeparator />
-                    <SelectItem value="NEW_METHOD" className="text-primary font-bold">
+                    <SelectItem
+                      value="NEW_METHOD"
+                      className={cn(selectItemClasses, 'text-primary font-bold')}
+                    >
                       <Plus className="h-4 w-4 inline-block mr-2" />
                       {t('common.createAccountMethod')}
                     </SelectItem>
@@ -558,7 +569,7 @@ export default function TransactionForm({
                     setToMethodId(val);
                   }}
                 >
-                  <SelectTrigger className={inputClasses} tabIndex={4}>
+                  <SelectTrigger className={selectTriggerClasses} tabIndex={4}>
                     <SelectValue placeholder={t('common.selectMethod')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -569,13 +580,21 @@ export default function TransactionForm({
                           ? `${acct.name} · ${m.name}`
                           : m.name;
                       return (
-                        <SelectItem key={m.id} value={m.id} textValue={displayName}>
+                        <SelectItem
+                          key={m.id}
+                          value={m.id}
+                          textValue={displayName}
+                          className={selectItemClasses}
+                        >
                           {displayName}
                         </SelectItem>
                       );
                     })}
                     <SelectSeparator />
-                    <SelectItem value="NEW_METHOD" className="text-primary font-bold">
+                    <SelectItem
+                      value="NEW_METHOD"
+                      className={cn(selectItemClasses, 'text-primary font-bold')}
+                    >
                       <Plus className="h-4 w-4 inline-block mr-2" />
                       {t('common.createAccountMethod')}
                     </SelectItem>
@@ -632,7 +651,7 @@ export default function TransactionForm({
                     setMethodId(val);
                   }}
                 >
-                  <SelectTrigger className={inputClasses} tabIndex={3}>
+                  <SelectTrigger className={selectTriggerClasses} tabIndex={3}>
                     <SelectValue placeholder={t('common.selectMethod')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -643,13 +662,21 @@ export default function TransactionForm({
                           ? `${acct.name} · ${m.name}`
                           : m.name;
                       return (
-                        <SelectItem key={m.id} value={m.id} textValue={displayName}>
+                        <SelectItem
+                          key={m.id}
+                          value={m.id}
+                          textValue={displayName}
+                          className={selectItemClasses}
+                        >
                           {displayName}
                         </SelectItem>
                       );
                     })}
                     <SelectSeparator />
-                    <SelectItem value="NEW_METHOD" className="text-primary font-bold">
+                    <SelectItem
+                      value="NEW_METHOD"
+                      className={cn(selectItemClasses, 'text-primary font-bold')}
+                    >
                       <Plus className="h-4 w-4 inline-block mr-2" />
                       {t('common.createAccountMethod')}
                     </SelectItem>
@@ -701,17 +728,20 @@ export default function TransactionForm({
                       setTargetId(subs.length === 1 ? subs[0].id : '');
                     }}
                   >
-                    <SelectTrigger className={inputClasses} tabIndex={4}>
+                    <SelectTrigger className={selectTriggerClasses} tabIndex={4}>
                       <SelectValue placeholder={t('common.selectCategory')} />
                     </SelectTrigger>
                     <SelectContent>
                       {categoryHeads.map(h => (
-                        <SelectItem key={h} value={h} textValue={h}>
+                        <SelectItem key={h} value={h} textValue={h} className={selectItemClasses}>
                           {h}
                         </SelectItem>
                       ))}
                       <SelectSeparator />
-                      <SelectItem value="NEW_CATEGORY" className="text-primary font-bold">
+                      <SelectItem
+                        value="NEW_CATEGORY"
+                        className={cn(selectItemClasses, 'text-primary font-bold')}
+                      >
                         <Plus className="h-4 w-4 inline-block mr-2" />
                         {t('common.createCategory')}
                       </SelectItem>
@@ -742,12 +772,17 @@ export default function TransactionForm({
                     </div>
                   ) : (
                     <Select value={targetId} onValueChange={setTargetId}>
-                      <SelectTrigger className={inputClasses} tabIndex={5}>
+                      <SelectTrigger className={selectTriggerClasses} tabIndex={5}>
                         <SelectValue placeholder={t('common.selectSubCategory')} />
                       </SelectTrigger>
                       <SelectContent>
                         {subCategories.map(c => (
-                          <SelectItem key={c.id} value={c.id} textValue={c.subHead || c.head}>
+                          <SelectItem
+                            key={c.id}
+                            value={c.id}
+                            textValue={c.subHead || c.head}
+                            className={selectItemClasses}
+                          >
                             {c.subHead || c.head}
                           </SelectItem>
                         ))}
