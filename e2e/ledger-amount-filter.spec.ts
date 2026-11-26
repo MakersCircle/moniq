@@ -251,3 +251,26 @@ test('NAV-04: top bar search text can be cleared', async ({ demoPage: page }) =>
   await expect(search).toHaveValue('');
   await expect(page.getByRole('button', { name: 'Clear search' })).toHaveCount(0);
 });
+
+test('LEDGER-17: sticky Ledger header keeps its scrollbar gutter without showing a scrollbar', async ({
+  seededDemoPage: page,
+}) => {
+  await page.getByRole('link', { name: 'Ledger', exact: true }).first().click();
+
+  const header = page.locator('[data-ledger-column-header]');
+  const rows = page.locator('[data-ledger-scroll-body]');
+  await expect(header).toBeVisible();
+
+  await header.hover({ position: { x: 8, y: 8 } });
+  await expect
+    .poll(() =>
+      header.evaluate(element => ({
+        overflowY: getComputedStyle(element).overflowY,
+        scrollbarGutter: getComputedStyle(element).scrollbarGutter,
+      }))
+    )
+    .toEqual({ overflowY: 'hidden', scrollbarGutter: 'stable' });
+  await expect
+    .poll(() => rows.evaluate(element => getComputedStyle(element).overflowY))
+    .toBe('scroll');
+});

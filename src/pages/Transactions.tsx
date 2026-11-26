@@ -781,7 +781,8 @@ export default function Transactions() {
               <div className="w-full md:min-w-[800px] flex flex-col h-full">
                 {/* ── Sticky Column Header ── */}
                 <div
-                  className="w-full overflow-y-scroll custom-scrollbar bg-accent/50 backdrop-blur-md shadow-sm border-b border-border z-10 sticky top-0"
+                  data-ledger-column-header
+                  className="w-full overflow-y-hidden bg-accent/50 backdrop-blur-md shadow-sm border-b border-border z-10 sticky top-0"
                   style={{ scrollbarGutter: 'stable' }}
                 >
                   <div className="pl-[6px] flex items-center text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
