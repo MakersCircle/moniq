@@ -2,7 +2,7 @@
 
 This document details the test cases covering `src/pages/Dashboard.tsx`, `src/pages/Budget.tsx`, `src/pages/Insights.tsx`, the calculation hooks in `src/hooks/useComputed.ts` (`useMonthSummary`, `useCategorySpend`, `useHistoricalData`, `useBudgetSummary`, `useAllBalances`), and `src/store/slices/budgetSlice.ts`.
 
-## 1. Unit Tests (`useComputed.test.ts`, `budgetSlice.test.ts`)
+## 1. Unit Tests (`useComputed.test.ts`, `budgetSlice.test.ts`, `insightsSankey.test.ts`)
 Focuses purely on the calculation formulas driving the stat cards, spending breakdowns, and budget math, isolated from any rendering.
 
 | ID | Scenario | Expected Outcome |
@@ -41,6 +41,8 @@ Focuses purely on the calculation formulas driving the stat cards, spending brea
 | U-32 | `updateBudget` — update existing budget | Existing non-deleted budget found → replaces `amount` and `updatedAt`, calls `put('budgets', ...)`, calls `markDirty('budget', id, 'update')` |
 | U-33 | `updateBudget` — ignores soft-deleted budget | A matching but `isDeleted: true` budget is not reused; a new budget is created instead |
 | U-34 | `updateBudget` — persists to store | `budgets` array in state reflects the new/updated entry after the call |
+| U-35 | Sankey transaction scope and balancing | Excludes transfers, deleted records, and out-of-range transactions; category flows balance with unspent income |
+| U-36 | Mobile Sankey stages | Removes income and expense subcategory nodes, remaps links to the reduced node list, and preserves the remaining flow values |
 
 ## 2. Component Tests (`Dashboard.test.tsx`, `Budget.test.tsx`, `Insights.test.tsx`)
 Focuses on rendering given mocked store/hook state, without hitting real calculation logic or network calls. Uses `@testing-library/react`.
@@ -102,16 +104,26 @@ Focuses on rendering given mocked store/hook state, without hitting real calcula
 | ID | Scenario | Expected Outcome |
 |---|---|---|
 | C-46 | Empty state (no transactions) | Renders "Nothing here yet" instead of charts |
-| C-47 | Donut chart — empty month | Shows "No spending data for this month" when `categorySpend` is `[]` |
+| C-47 | Donut chart — empty selected range | Shows "No spending data in this date range" when `categorySpend` is `[]` |
 | C-48 | Donut chart — all slices render | Every entry in `categorySpend` (not just top 5) is rendered as a `<Cell>` in the `<Pie>` |
 | C-49 | Donut chart — color cycling | With more than 7 categories, colors repeat via `CATEGORY_COLORS[i % CATEGORY_COLORS.length]` |
 | C-50 | Legend — top 5 only | Only the first 5 entries of `categorySpend` (sorted by amount desc) appear in the legend list, even if more categories exist |
 | C-51 | Legend — percent calculation | Each legend row's percent is `(amount / totalExpense) * 100`, rounded to 0 decimals |
 | C-52 | Legend color dot | Each legend swatch color matches its corresponding pie `<Cell>` color at the same index |
-| C-53 | Trend chart — 6 fixed buckets | `useHistoricalData(6)` always feeds exactly 6 bars/bar-groups to both bar charts, even for a brand-new account with 1 month of data |
-| C-54 | Trend chart — zero-data buckets still render | Months with no transactions render as zero-height bars rather than being omitted |
+| C-53 | Trend chart — selected-range buckets | Both monthly charts show one bucket per month in the selected range; the default current-month range shows only that month |
+| C-54 | Trend chart — zero-data buckets still render | Months without transactions inside the selected range render as zero-height bars rather than being omitted |
 | C-55 | Income vs Expenses legend | Legend shows "Income" and "Expenses" labels matching their `dataKey` |
 | C-56 | Tooltip currency formatting | Donut tooltip formatter converts the raw value via `formatCurrencyShort` and labels it "Spent" |
+| C-57 | Sankey hierarchy | Income flows from subcategory (when present) to category to total income; expenses flow from total expenses through group and category, then optional subcategory |
+| C-58 | Sankey date range and transaction scope | Includes only non-deleted income and expense transactions inside the selected inclusive range; transfers are excluded and split expenses appear under their recorded categories |
+| C-59 | Sankey balancing | When income exceeds expenses, the remainder flows to Unspent income; when expenses exceed income, the difference flows from Existing funds |
+| C-60 | Sankey with one-sided activity | Income-only and expense-only months render a balanced flow; months with only transfers show the no income or expense activity message |
+| C-61 | Insights date-range presets | Current month is selected by default; current month, previous month, and all time update every Insights chart and close the selector |
+| C-62 | Custom range boundaries and dismissal | Custom range stays open until both inclusive endpoints form a valid range, rejects a start date after the end date, updates all Insights charts, and then closes |
+| C-63 | Insights title row | Shows the Insights title and date-range selector on one row without the previous subtitle |
+| C-64 | Optional subcategories | Categories without a subcategory end their flow at the category node and do not show a placeholder subcategory label |
+| C-65 | Sankey header | Shows the Money flow title and an info button for transfer/balance methodology; period appears in the page-level date selector, with no duplicate subtitle or Sankey badge |
+| C-66 | Sankey label density and touch details | Major flows keep inline labels; endpoint labels remain within the chart bounds; overlapping labels are suppressed; phones collapse subcategories and fit all stages to viewport width, showing expense types and largest categories inline with more vertical spacing, while smaller flows expose their label and currency value through a tooltip on tap |
 
 ## 3. End-to-End Tests (`dashboard-budget-insights.spec.ts`)
 Uses seeded/demo-mode local data (no live Google Sheets dependency) to drive real user flows across pages.
@@ -141,5 +153,8 @@ Uses seeded/demo-mode local data (no live Google Sheets dependency) to drive rea
 |---|---|---|
 | E-13 | Load insights with seeded multi-category data | Donut chart renders with a legend limited to 5 rows even when more than 5 categories have spend |
 | E-14 | Hover a donut slice | Tooltip shows the category's short-formatted currency amount and "Spent" label |
-| E-15 | Trend chart shows 6 months on a fresh account | A newly created account with only the current month's transactions still shows 6 bars/groups on both trend charts, with prior months at zero |
+| E-15 | Trend chart follows selected range | Current month shows one monthly bucket; selecting a longer range shows each included month, including zero-activity months |
 | E-16 | Insights empty state | Brand-new account with zero transactions shows "Nothing here yet" instead of any chart |
+| E-17 | Selected-range money flow | Seeded income and expense transactions render the Sankey hierarchy for the selected range, with transfer rows omitted and the income/expense difference labeled |
+| E-18 | Insights date range | Current month is selected on first load; preset selection closes the selector; custom stays open until both valid endpoints are selected, then updates charts and closes |
+| E-19 | Insights title row | The Insights title and date-range selector stay on one responsive row, and the old explanatory subtitle is absent |

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Money Flow Insights**: Add a Sankey chart showing income subcategories and categories flowing into income totals, then expenses flowing through category groups, categories, and optional subcategories. Keep labels visible for major flows and place endpoint labels inside the chart area; hide colliding labels and reveal smaller flow labels and values in a hover or tap tooltip that stays readable briefly. On phones, collapse subcategories, fit all stages to the viewport width, show expense types and the largest categories inline, use extra vertical space for nodes, and extend the chart to the card edges. Tighten the card spacing and move its transfer and balance explanation into an info popover beside the title. Default to the current month, with previous month, all-time, and custom date ranges available across Insights; close the selector after choosing a preset or completing both custom dates. Keep the chart header compact, with the active range shown only in the page selector. Exclude transfers and show unspent income or existing funds when period totals differ; clarify that the chart does not trace individual income to individual purchases.
+
 ### Fixed
 - **Ledger Header Scrollbar**: Keep the sticky column header's row-alignment gutter without revealing an unnecessary scrollbar on hover.
 - **Ledger Transaction Order**: Show transactions newest first by date and by their saved order within each date, while keeping drag reordering intact.

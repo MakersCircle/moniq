@@ -43,7 +43,7 @@ Let a single user define where their money lives, manually record financial acti
 ### 3.5 Dashboards & Analytics
 
 - **Dashboard**: Net liquid assets, income, expenses, and savings-rate stats, with detail views for accounts and spending. Uses a bottom-nav/FAB layout on mobile and a sidebar layout on desktop.
-- **Insights**: A dedicated analytics page with category distribution, monthly trends, and income-vs-expense comparisons.
+- **Insights**: A dedicated analytics page that starts with a Sankey flow, defaulting to the current month, from income subcategories (when present) → income categories → total income → total expenses → expense groups → categories → subcategories (when present). Users can choose the current month, previous month, all time, or a custom date range. Transfers are excluded. Any difference between income and expenses is labeled as unspent income or existing funds; the chart describes period totals and does not claim to trace specific income to specific purchases. Category distribution and trend views use the same selected range.
 - **Ledger**: A transaction log with a detail panel (side panel on desktop, bottom sheet on mobile) and inline filtering.
 
 ### 3.6 Offline & Cross-Device

@@ -144,8 +144,9 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | BUDGET-03 | Editing a category's monthly budget updates its budgeted, spent, remaining, and progress displays. | Missing | — | Component + browser | No |
 | BUDGET-04 | Over-allocation and category overspending are distinguished in the displayed totals and progress. | Missing | — | Component + browser | No |
 | INSIGHT-01 | Insights shows an empty state before transactions exist. | Missing | — | Component + browser | No |
-| INSIGHT-02 | Current-month category spending appears as a donut chart with a ranked percentage breakdown. | Missing | — | Component + browser | No |
-| INSIGHT-03 | Historical expense and income-versus-expense charts reflect recorded transactions. | Missing | — | Component + browser | No |
+| INSIGHT-02 | Spending in the selected date range appears as a donut chart with a ranked percentage breakdown. | Missing | — | Component + browser | No |
+| INSIGHT-03 | Monthly expense and income-versus-expense charts show the months and values inside the selected date range. | Missing | — | Component + browser | No |
+| INSIGHT-04 | A date-range selector defaults to the current month, dismisses on preset selection or after both valid custom endpoints, and updates Sankey, category, and trend charts; the info button explains transfer and balance methodology. The Sankey shows category hierarchies without placeholder subcategory nodes, excludes transfers, labels the income/expense difference, keeps endpoint labels within chart bounds, hides overlapping labels, collapses subcategories to fit all Sankey stages on phone-width screens, and uses more vertical space. Smaller-flow labels and currency values remain available on hover or tap. | Partial | `src/lib/__tests__/insightsSankey.test.ts` covers Sankey transaction filtering, balance, and mobile-stage collapse. | Component + browser checks for date selection, info popover, responsive layout, and hover/tap tooltips | No |
 
 ## 8. Restore deleted data
 

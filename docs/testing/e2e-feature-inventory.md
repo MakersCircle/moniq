@@ -136,8 +136,9 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | BUDGET-03 | Editing a category's monthly budget updates its budgeted, spent, remaining, and progress displays. | Code |
 | BUDGET-04 | Over-allocation and category overspending are distinguished in the displayed totals and progress. | Code |
 | INSIGHT-01 | Insights shows an empty state before transactions exist. | Code |
-| INSIGHT-02 | Current-month category spending appears as a donut chart with a ranked percentage breakdown. | Code |
-| INSIGHT-03 | Historical expense and income-versus-expense charts reflect recorded transactions. | Code |
+| INSIGHT-02 | Spending in the selected date range appears as a donut chart with a ranked percentage breakdown. | Code |
+| INSIGHT-03 | Monthly expense and income-versus-expense charts show the months and values inside the selected date range. | Code |
+| INSIGHT-04 | A date-range selector defaults to the current month, closes after preset selection or a valid custom range, and updates the Sankey, category breakdown, and monthly trends; its info button explains transfer and balance methodology. The Sankey excludes transfers, omits placeholder nodes for absent subcategories, makes period-total differences explicit, hides overlapping labels, collapses subcategories and fits all stages to viewport width on phones, and reveals smaller-flow labels and currency values on hover or tap. | Unreleased |
 
 ## 8. Restore deleted data
 
