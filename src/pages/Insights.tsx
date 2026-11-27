@@ -16,6 +16,7 @@ import { useDataStore } from '../store/dataStore';
 import { formatCurrencyShort } from '../utils/format';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import IncomeExpenseSankey from '@/components/Insights/IncomeExpenseSankey';
+import DailyCashflowHeatmap from '@/components/Insights/DailyCashflowHeatmap';
 import { ContributionsCard, SpendingPaceCard } from '@/components/Insights/InsightTrendWidgets';
 
 import { CalendarRange, ChevronDown, LineChart } from 'lucide-react';
@@ -257,6 +258,8 @@ export default function Insights() {
           currencySymbol={settings.currencySymbol}
         />
       </div>
+
+      <DailyCashflowHeatmap transactions={transactions} currencySymbol={settings.currencySymbol} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Category Breakdown Donut */}

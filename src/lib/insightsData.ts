@@ -19,6 +19,89 @@ export interface InsightsMonthSummary {
   net: number;
 }
 
+export interface DailyCashflowDay {
+  date: string;
+  day: number;
+  income: number;
+  spent: number;
+  net: number;
+}
+
+export interface DailyCashflowWeek {
+  index: number;
+  days: (DailyCashflowDay | null)[];
+}
+
+export interface DailyCashflowMonthLabel {
+  label: string;
+  weekIndex: number;
+}
+
+export interface DailyCashflowCalendar {
+  year: number;
+  weeks: DailyCashflowWeek[];
+  monthLabels: DailyCashflowMonthLabel[];
+  days: DailyCashflowDay[];
+}
+
+/** Builds a Sunday-first, year-wide heatmap calendar from income and expense activity. */
+export function buildDailyCashflowHeatmapData(
+  transactions: Transaction[],
+  year: number
+): DailyCashflowCalendar {
+  const yearStart = `${year}-01-01`;
+  const yearEnd = `${year}-12-31`;
+  const totals = new Map<string, { income: number; spent: number }>();
+  for (const transaction of transactions) {
+    if (
+      transaction.isDeleted ||
+      transaction.date < yearStart ||
+      transaction.date > yearEnd ||
+      (transaction.uiType !== 'income' && transaction.uiType !== 'expense')
+    ) {
+      continue;
+    }
+    const day = totals.get(transaction.date) || { income: 0, spent: 0 };
+    if (transaction.uiType === 'income') day.income += transaction.amount;
+    else day.spent += transaction.amount;
+    totals.set(transaction.date, day);
+  }
+
+  const firstWeekday = new Date(year, 0, 1).getDay();
+  const dayCount = (Date.UTC(year + 1, 0, 1) - Date.UTC(year, 0, 1)) / 86_400_000;
+  const weekCount = Math.ceil((firstWeekday + dayCount) / 7);
+  const weeks = Array.from({ length: weekCount }, (_, index) => ({
+    index,
+    days: Array.from({ length: 7 }, () => null as DailyCashflowDay | null),
+  }));
+  const monthLabels: DailyCashflowMonthLabel[] = [];
+  const days: DailyCashflowDay[] = [];
+
+  for (let dayIndex = 0; dayIndex < dayCount; dayIndex++) {
+    const cursor = new Date(year, 0, dayIndex + 1);
+    const date = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
+    const weekIndex = Math.floor((firstWeekday + dayIndex) / 7);
+    if (cursor.getDate() === 1) {
+      monthLabels.push({
+        label: cursor.toLocaleDateString('en-US', { month: 'short' }),
+        weekIndex,
+      });
+    }
+    const values = totals.get(date) || { income: 0, spent: 0 };
+    const value = {
+      date,
+      day: cursor.getDate(),
+      income: values.income,
+      spent: values.spent,
+      net: values.income - values.spent,
+    };
+    weeks[weekIndex].days[cursor.getDay()] = value;
+    days.push(value);
+  }
+
+  return { year, weeks, monthLabels, days };
+}
+
 export function buildInsightsPeriodData(
   transactions: Transaction[],
   categories: Category[],
