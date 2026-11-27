@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Browser Tab Title**: Show the concise app name, Moniq, in the browser tab.
 - **Ledger Header Scrollbar**: Keep the sticky column header's row-alignment gutter without revealing an unnecessary scrollbar on hover.
 - **Ledger Transaction Order**: Show transactions newest first by date and by their saved order within each date, while keeping drag reordering intact.
 - **Mobile Ledger Scrolling**: Prevent horizontal panning in the phone Ledger viewport so vertical scrolling does not drift sideways.
