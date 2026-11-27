@@ -22,7 +22,12 @@ const transaction = (
   updatedAt: 'updated',
 });
 
-const makeAccount = (id: string, isSavings: boolean, initialBalance = 0): Account => ({
+const makeAccount = (
+  id: string,
+  isSavings: boolean,
+  initialBalance = 0,
+  createdAt = '2025-01-01T00:00:00.000Z'
+): Account => ({
   id,
   name: id,
   type: 'Asset',
@@ -30,17 +35,23 @@ const makeAccount = (id: string, isSavings: boolean, initialBalance = 0): Accoun
   initialBalance,
   isActive: true,
   isDeleted: false,
-  createdAt: 'created',
+  createdAt,
   updatedAt: 'updated',
 });
 
-const makeCategory = (id: string, group: Category['group']): Category => ({
+const makeCategory = (
+  id: string,
+  group: Category['group'],
+  initialBalance = 0,
+  createdAt = '2025-01-01T00:00:00.000Z'
+): Category => ({
   id,
   group,
   head: id,
+  initialBalance,
   isActive: true,
   isDeleted: false,
-  createdAt: 'created',
+  createdAt,
   updatedAt: 'updated',
 });
 
@@ -90,10 +101,20 @@ describe('Insights contribution trend data', () => {
     const accounts = [
       makeAccount('checking', false),
       makeAccount('savings-a', true, 5000),
-      makeAccount('savings-b', true),
+      makeAccount('savings-b', true, 250),
     ];
-    const categories = [makeCategory('invest', 'Invest'), makeCategory('food', 'Needs')];
+    const categories = [
+      makeCategory('invest', 'Invest', 1200),
+      makeCategory('invest-b', 'Invest', 300),
+      makeCategory('food', 'Needs'),
+    ];
     const transactions = [
+      transaction('prior-savings', '2026-09-20', 'transfer', 300, [
+        { accountId: 'savings-a', type: 'DEBIT', amount: 300 },
+      ]),
+      transaction('prior-invest', '2026-09-22', 'expense', 40, [
+        { accountId: 'invest', type: 'DEBIT', amount: 40 },
+      ]),
       transaction('to-savings', '2026-10-05', 'transfer', 100, [
         { accountId: 'savings-a', type: 'DEBIT', amount: 100 },
         { accountId: 'checking', type: 'CREDIT', amount: 100 },
@@ -144,23 +165,26 @@ describe('Insights contribution trend data', () => {
     expect(data).toHaveLength(2);
     expect(data[0]).toMatchObject({
       month: '2026-10',
+      openingSavings: 5550,
+      openingInvestments: 1540,
+      openingTotal: 7090,
       savingsMonthly: 40,
       investmentMonthly: 35,
-      savings: 40,
-      investments: 35,
-      total: 75,
+      savings: 5590,
+      investments: 1575,
+      total: 7165,
     });
     expect(data[1]).toMatchObject({
       month: '2026-11',
       savingsMonthly: 25,
       investmentMonthly: 0,
-      savings: 65,
-      investments: 35,
-      total: 100,
+      savings: 5615,
+      investments: 1575,
+      total: 7190,
     });
   });
 
-  it('fills quiet months with zero contributions and returns a 12-month window by default', () => {
+  it('fills quiet months with zero balances and returns a 12-month window by default', () => {
     const data = buildContributionTrendData([], [], [], new Date(2026, 10, 15));
 
     expect(data).toHaveLength(12);
@@ -168,7 +192,7 @@ describe('Insights contribution trend data', () => {
     expect(data[data.length - 1]).toMatchObject({ savings: 0, investments: 0, total: 0 });
   });
 
-  it('extends the contribution chart from its earliest activity in all-time mode', () => {
+  it('extends the balance chart from its earliest activity in all-time mode', () => {
     const accounts = [makeAccount('savings', true)];
     const transactions = [
       transaction('old', '2025-05-05', 'transfer', 500, [
@@ -204,6 +228,44 @@ describe('Insights contribution trend data', () => {
       month: '2026-11',
       savings: 600,
       total: 600,
+    });
+  });
+
+  it('shows opening balances even without transactions and starts all-time at the earliest opening balance', () => {
+    const accounts = [makeAccount('savings', true, 900, '2025-06-15T00:00:00.000Z')];
+    const categories = [makeCategory('fund', 'Invest', 400, '2025-08-02T00:00:00.000Z')];
+
+    const allTime = buildContributionTrendData(
+      [],
+      accounts,
+      categories,
+      new Date(2026, 10, 15),
+      'all'
+    );
+    const lastTwelveMonths = buildContributionTrendData(
+      [],
+      accounts,
+      categories,
+      new Date(2026, 10, 15),
+      12
+    );
+
+    expect(allTime).toHaveLength(18);
+    expect(allTime[0]).toMatchObject({ month: '2025-06', savings: 900, investments: 0 });
+    expect(allTime[2]).toMatchObject({ month: '2025-08', savings: 900, investments: 400 });
+    expect(allTime[allTime.length - 1]).toMatchObject({
+      savings: 900,
+      investments: 400,
+      total: 1300,
+    });
+    expect(lastTwelveMonths[0]).toMatchObject({
+      month: '2025-12',
+      openingSavings: 900,
+      openingInvestments: 400,
+      openingTotal: 1300,
+      savings: 900,
+      investments: 400,
+      total: 1300,
     });
   });
 });

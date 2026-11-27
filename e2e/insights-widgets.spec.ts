@@ -55,14 +55,14 @@ test('INSIGHT-06: contribution card distinguishes savings from investments and e
 
   await page.getByRole('link', { name: 'Insights', exact: true }).click();
   await expect(
-    page.getByText('No savings or investment contributions recorded in the last 12 months.')
+    page.getByText('No savings or investment balance history recorded in the last 12 months.')
   ).toBeVisible();
   const contributionCard = page
     .getByRole('heading', { name: 'Savings and investments' })
     .locator('xpath=../../..');
   await contributionCard.getByRole('button', { name: 'All' }).click();
   await expect(
-    page.getByText('No savings or investment contributions recorded in all available history.')
+    page.getByText('No savings or investment balance history recorded in all available history.')
   ).toBeVisible();
 
   await page.evaluate(() => {
@@ -76,6 +76,8 @@ test('INSIGHT-06: contribution card distinguishes savings from investments and e
             methodName?: string
           ) => { accountId: string; methodId: string };
           addCategory: (category: object) => { id: string };
+          updateAccount: (id: string, patch: object) => void;
+          updateCategory: (id: string, patch: object) => void;
           addTransaction: (transaction: object) => void;
         };
       };
@@ -97,8 +99,16 @@ test('INSIGHT-06: contribution card distinguishes savings from investments and e
       },
       'Fixture Savings Method'
     );
-    const investment = store.addCategory({ group: 'Invest', head: 'Fixture Fund', isActive: true });
     const now = new Date();
+    const openingDate = new Date(now.getFullYear(), now.getMonth() - 24, 1).toISOString();
+    store.updateAccount(savings.accountId, { createdAt: openingDate });
+    const investment = store.addCategory({
+      group: 'Invest',
+      head: 'Fixture Fund',
+      initialBalance: 1200,
+      isActive: true,
+    });
+    store.updateCategory(investment.id, { createdAt: openingDate });
     const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     store.addTransaction({
@@ -136,7 +146,7 @@ test('INSIGHT-06: contribution card distinguishes savings from investments and e
     .getByRole('heading', { name: 'Savings and investments' })
     .locator('xpath=../../..');
   await expect(contributionsCard).toBeVisible();
-  const rangeGroup = contributionsCard.getByRole('group', { name: 'Contribution chart range' });
+  const rangeGroup = contributionsCard.getByRole('group', { name: 'Balance chart range' });
   await rangeGroup.getByRole('button', { name: '12M' }).click();
   await expect(rangeGroup.getByRole('button', { name: '12M' })).toHaveAttribute(
     'aria-pressed',
@@ -148,20 +158,31 @@ test('INSIGHT-06: contribution card distinguishes savings from investments and e
   );
   await expect(
     contributionsCard.getByRole('img', {
-      name: 'Cumulative net savings and investment contributions over the last 12 months',
+      name: 'Savings and investment balances over the last 12 months',
     })
   ).toBeVisible();
+  await expect(contributionsCard.getByTestId('contribution-chart')).toHaveAttribute(
+    'data-y-axis-min',
+    '1200'
+  );
+  await expect(
+    contributionsCard.getByTestId('contribution-chart').locator('.recharts-line')
+  ).toHaveCount(3);
   await expect(contributionsCard.getByText('Savings', { exact: true })).toBeVisible();
   await expect(contributionsCard.getByText('Investments', { exact: true })).toBeVisible();
-  await expect(contributionsCard.getByText('Net total', { exact: true })).toBeVisible();
-  await expect(contributionsCard.getByText('$300', { exact: true }).first()).toBeVisible();
-  await expect(contributionsCard.getByText('$150', { exact: true }).first()).toBeVisible();
-  await expect(contributionsCard.getByText('$450', { exact: true }).first()).toBeVisible();
+  await expect(contributionsCard.getByText('Total balance', { exact: true })).toBeVisible();
+  await expect(contributionsCard.getByText('$8.3K', { exact: true }).first()).toBeVisible();
+  await expect(contributionsCard.getByText('$1.4K', { exact: true }).first()).toBeVisible();
+  await expect(contributionsCard.getByText('$9.7K', { exact: true }).first()).toBeVisible();
   await rangeGroup.getByRole('button', { name: 'All' }).click();
-  await expect(contributionsCard.getByText('$3.3K', { exact: true }).first()).toBeVisible();
+  await expect(contributionsCard.getByText('$8.3K', { exact: true }).first()).toBeVisible();
+  await expect(contributionsCard.getByTestId('contribution-chart')).toHaveAttribute(
+    'data-y-axis-min',
+    '1200'
+  );
   await expect(
     contributionsCard.getByRole('img', {
-      name: 'Cumulative net savings and investment contributions over all available history',
+      name: 'Savings and investment balances over all available history',
     })
   ).toBeVisible();
   await contributionsCard.getByRole('button', { name: 'Info' }).click();
@@ -169,7 +190,7 @@ test('INSIGHT-06: contribution card distinguishes savings from investments and e
     page
       .getByRole('dialog')
       .getByText(
-        /over all available history.*does not represent investment returns or market value/i
+        /over all available history.*including opening balances.*does not represent investment returns or market value/i
       )
   ).toBeVisible();
 });
@@ -225,7 +246,7 @@ test('INSIGHT-05/06: income-only history shows the empty state for both progress
   await page.getByRole('link', { name: 'Insights', exact: true }).click();
   await expect(page.getByText('No spending history to compare yet.')).toBeVisible();
   await expect(
-    page.getByText('No savings or investment contributions recorded in the last 12 months.')
+    page.getByText('No savings or investment balance history recorded in the last 12 months.')
   ).toBeVisible();
   await expect(
     page.getByRole('img', {
@@ -234,7 +255,7 @@ test('INSIGHT-05/06: income-only history shows the empty state for both progress
   ).toHaveCount(0);
   await expect(
     page.getByRole('img', {
-      name: 'Cumulative net savings and investment contributions over the last 12 months',
+      name: 'Savings and investment balances over the last 12 months',
     })
   ).toHaveCount(0);
 });

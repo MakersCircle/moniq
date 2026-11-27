@@ -11,6 +11,9 @@ export interface SpendingPacePoint {
 export interface ContributionMonthPoint {
   month: string;
   label: string;
+  openingSavings: number;
+  openingInvestments: number;
+  openingTotal: number;
   savingsMonthly: number;
   investmentMonthly: number;
   savings: number;
@@ -93,9 +96,9 @@ export function buildSpendingPaceData(
 }
 
 /**
- * Builds a rolling monthly view of net money set aside. Savings follows the
- * ledger balance changes of savings-tagged accounts; investments follow the
- * normal balance changes of Invest categories. Opening balances are excluded.
+ * Builds a rolling monthly view of savings and investment balances. Opening
+ * balances enter in the month each account/category was created, and earlier
+ * activity seeds the first visible point in the 12-month view.
  */
 export function buildContributionTrendData(
   transactions: Transaction[],
@@ -104,36 +107,90 @@ export function buildContributionTrendData(
   currentDate = new Date(),
   monthCount: number | 'all' = 12
 ): ContributionMonthPoint[] {
-  const savingsAccounts = new Set(accounts.filter(account => account.isSavings).map(a => a.id));
-  const investmentCategories = new Set(
-    categories.filter(category => category.group === 'Invest').map(category => category.id)
+  const savingsAccounts = new Map(
+    accounts.filter(account => account.isSavings).map(account => [account.id, account])
   );
-  const firstActivity =
-    monthCount === 'all'
-      ? transactions
-          .filter(
-            transaction =>
-              !transaction.isDeleted &&
-              transaction.date <= toISODate(currentDate) &&
-              transaction.entries.some(
-                entry =>
-                  entry.amount > 0 &&
-                  (savingsAccounts.has(entry.accountId) ||
-                    investmentCategories.has(entry.accountId))
-              )
-          )
-          .reduce(
-            (first, transaction) =>
-              first === null || transaction.date < first ? transaction.date : first,
-            null as string | null
-          )
-      : null;
+  const investmentCategories = new Map(
+    categories
+      .filter(category => category.group === 'Invest')
+      .map(category => [category.id, category])
+  );
+  const endDate = toISODate(currentDate);
+  const openingBalances = new Map<string, { savings: number; investments: number }>();
+  const monthlyChanges = new Map<string, { savings: number; investments: number }>();
+  let firstActivity: string | null = null;
+  const monthlyValues = (
+    source: Map<string, { savings: number; investments: number }>,
+    month: string
+  ) => {
+    let total = source.get(month);
+    if (!total) {
+      total = { savings: 0, investments: 0 };
+      source.set(month, total);
+    }
+    return total;
+  };
+  const recordActivityDate = (date: string) => {
+    if (firstActivity === null || date < firstActivity) firstActivity = date;
+  };
+  const creationDate = (createdAt: string) => {
+    const parsed = new Date(createdAt);
+    return Number.isNaN(parsed.getTime()) ? endDate : toISODate(parsed);
+  };
+
+  for (const account of savingsAccounts.values()) {
+    if (account.initialBalance === 0) continue;
+    const date = creationDate(account.createdAt);
+    if (date > endDate) continue;
+    monthlyValues(openingBalances, date.slice(0, 7)).savings += account.initialBalance;
+    recordActivityDate(date);
+  }
+  for (const category of investmentCategories.values()) {
+    const initialBalance = category.initialBalance || 0;
+    if (initialBalance === 0) continue;
+    const date = creationDate(category.createdAt);
+    if (date > endDate) continue;
+    monthlyValues(openingBalances, date.slice(0, 7)).investments += initialBalance;
+    recordActivityDate(date);
+  }
+
+  for (const transaction of transactions) {
+    if (
+      transaction.isDeleted ||
+      transaction.date > endDate ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(transaction.date)
+    ) {
+      continue;
+    }
+
+    const relevantEntries = transaction.entries.filter(
+      entry =>
+        entry.amount > 0 &&
+        (savingsAccounts.has(entry.accountId) || investmentCategories.has(entry.accountId))
+    );
+    if (!relevantEntries.length) continue;
+    recordActivityDate(transaction.date);
+    const monthTotal = monthlyValues(monthlyChanges, transaction.date.slice(0, 7));
+
+    for (const entry of relevantEntries) {
+      const account = savingsAccounts.get(entry.accountId);
+      if (account) {
+        const debitSign = account.type === 'Liability' ? -1 : 1;
+        monthTotal.savings += (entry.type === 'DEBIT' ? debitSign : -debitSign) * entry.amount;
+      }
+      if (investmentCategories.has(entry.accountId)) {
+        monthTotal.investments += (entry.type === 'DEBIT' ? 1 : -1) * entry.amount;
+      }
+    }
+  }
+
+  const earliestActivity = firstActivity as string | null;
   const count =
     monthCount === 'all'
-      ? firstActivity
-        ? (currentDate.getFullYear() - Number(firstActivity.slice(0, 4))) * 12 +
+      ? earliestActivity
+        ? (currentDate.getFullYear() - Number(earliestActivity.slice(0, 4))) * 12 +
           currentDate.getMonth() -
-          (Number(firstActivity.slice(5, 7)) - 1) +
+          (Number(earliestActivity.slice(5, 7)) - 1) +
           1
         : 12
       : Math.max(1, Math.floor(monthCount));
@@ -141,39 +198,51 @@ export function buildContributionTrendData(
   const monthKeys = Array.from({ length: count }, (_, index) =>
     toMonthKey(new Date(firstMonth.getFullYear(), firstMonth.getMonth() + index, 1))
   );
-  const startDate = `${monthKeys[0]}-01`;
-  const endDate = toISODate(currentDate);
-  const totals = new Map(monthKeys.map(month => [month, { savings: 0, investments: 0 }]));
-
-  for (const transaction of transactions) {
-    if (transaction.isDeleted || transaction.date < startDate || transaction.date > endDate) {
-      continue;
-    }
-
-    const monthTotal = totals.get(transaction.date.slice(0, 7));
-    if (!monthTotal) continue;
-
-    for (const entry of transaction.entries) {
-      if (entry.amount <= 0) continue;
-      const sign = entry.type === 'DEBIT' ? 1 : -1;
-      if (savingsAccounts.has(entry.accountId)) monthTotal.savings += sign * entry.amount;
-      if (investmentCategories.has(entry.accountId)) monthTotal.investments += sign * entry.amount;
-    }
-  }
-
+  const firstVisibleMonth = monthKeys[0];
   let savings = 0;
   let investments = 0;
+  for (const [month, value] of openingBalances) {
+    if (month < firstVisibleMonth) {
+      savings += value.savings;
+      investments += value.investments;
+    }
+  }
+  for (const [month, value] of monthlyChanges) {
+    if (month < firstVisibleMonth) {
+      savings += value.savings;
+      investments += value.investments;
+    }
+  }
+  const firstMonthOpening = openingBalances.get(firstVisibleMonth) || {
+    savings: 0,
+    investments: 0,
+  };
+  savings += firstMonthOpening.savings;
+  investments += firstMonthOpening.investments;
+  const openingSavings = savings;
+  const openingInvestments = investments;
+  const openingTotal = openingSavings + openingInvestments;
+
   return monthKeys.map(month => {
-    const value = totals.get(month) || { savings: 0, investments: 0 };
-    savings += value.savings;
-    investments += value.investments;
+    const monthOpening =
+      month === firstVisibleMonth
+        ? { savings: 0, investments: 0 }
+        : openingBalances.get(month) || { savings: 0, investments: 0 };
+    const monthChange = monthlyChanges.get(month) || { savings: 0, investments: 0 };
+    const savingsChange = monthOpening.savings + monthChange.savings;
+    const investmentChange = monthOpening.investments + monthChange.investments;
+    savings += savingsChange;
+    investments += investmentChange;
     const [year, monthNumber] = month.split('-').map(Number);
     const date = new Date(year, monthNumber - 1, 1);
     return {
       month,
       label: `${date.toLocaleDateString('en-IN', { month: 'short' })}${monthNumber === 1 ? ` '${String(year).slice(-2)}` : ''}`,
-      savingsMonthly: value.savings,
-      investmentMonthly: value.investments,
+      openingSavings,
+      openingInvestments,
+      openingTotal,
+      savingsMonthly: savingsChange,
+      investmentMonthly: investmentChange,
       savings,
       investments,
       total: savings + investments,

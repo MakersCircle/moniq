@@ -1,7 +1,5 @@
 import { useMemo, useState } from 'react';
 import {
-  Area,
-  AreaChart,
   CartesianGrid,
   Line,
   LineChart,
@@ -70,17 +68,25 @@ function InsightTooltip({
 }: {
   active?: boolean;
   label?: string | number;
-  payload?: { name?: string; value?: number }[];
+  payload?: { name?: string; value?: number; payload?: Record<string, unknown> }[];
   seriesLabels: Record<string, string>;
   currencySymbol: string;
 }) {
   if (!active || !payload?.length) return null;
+  const point = payload[0].payload;
+  const tooltipItems =
+    payload[0].name === 'total' && point
+      ? (['savings', 'investments', 'total'] as const).map(name => ({
+          name,
+          value: Number(point[name] || 0),
+        }))
+      : payload;
 
   return (
     <div className="rounded-md border border-border bg-popover px-3 py-2 text-xs shadow-lg">
       <p className="mb-1 font-medium text-foreground">{label}</p>
       <div className="flex flex-col gap-1">
-        {payload.map((item, index) => {
+        {tooltipItems.map((item, index) => {
           const key = item.name || String(index);
           return (
             <div key={key} className="flex items-center justify-between gap-4">
@@ -117,7 +123,6 @@ export function SpendingPaceCard({
   const hasData = data.some(
     point => point.thisMonth > 0 || point.lastMonth > 0 || point.typicalMonth > 0
   );
-
   return (
     <Card className="border-border shadow-sm">
       <CardHeader className="gap-1 px-5 pb-3 pt-5 sm:px-6">
@@ -232,7 +237,20 @@ export function ContributionsCard({
     [transactions, accounts, categories, range]
   );
   const latest = data[data.length - 1];
-  const hasData = data.some(point => point.savingsMonthly !== 0 || point.investmentMonthly !== 0);
+  const openingBalances = data[0]
+    ? [data[0].openingSavings, data[0].openingInvestments, data[0].openingTotal]
+    : [0];
+  const chartMinimum = Math.min(
+    ...openingBalances,
+    ...data.flatMap(point => [point.savings, point.investments, point.total])
+  );
+  const hasData = data.some(
+    point =>
+      point.savingsMonthly !== 0 ||
+      point.investmentMonthly !== 0 ||
+      point.savings !== 0 ||
+      point.investments !== 0
+  );
   const seriesLabels = {
     savings: t('insights.savings'),
     investments: t('insights.investments'),
@@ -314,12 +332,14 @@ export function ContributionsCard({
             <div
               className="h-52 min-w-0 sm:h-60"
               role="img"
+              data-testid="contribution-chart"
+              data-y-axis-min={chartMinimum}
               aria-label={t(
                 range === 'all' ? 'insights.contributionChartAll' : 'insights.contributionChart'
               )}
             >
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid
                     stroke="var(--color-border)"
                     vertical={false}
@@ -336,6 +356,7 @@ export function ContributionsCard({
                     axisLine={false}
                     tickLine={false}
                     width={48}
+                    domain={[chartMinimum, 'auto']}
                     tick={{ fontSize: 10, fill: 'var(--color-muted-foreground)' }}
                     tickFormatter={value =>
                       formatSignedCurrencyShort(Number(value), currencySymbol)
@@ -347,22 +368,24 @@ export function ContributionsCard({
                     }
                     labelFormatter={(_, payload) => payload?.[0]?.payload?.month || ''}
                   />
-                  <Area
+                  <Line
                     type="monotone"
                     dataKey="savings"
                     name="savings"
                     stroke="var(--color-income)"
-                    fill="var(--color-income)"
-                    fillOpacity={0.3}
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 4, strokeWidth: 0 }}
                     isAnimationActive={false}
                   />
-                  <Area
+                  <Line
                     type="monotone"
                     dataKey="investments"
                     name="investments"
                     stroke="var(--color-primary)"
-                    fill="var(--color-primary)"
-                    fillOpacity={0.28}
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 4, strokeWidth: 0 }}
                     isAnimationActive={false}
                   />
                   <Line
@@ -375,7 +398,7 @@ export function ContributionsCard({
                     activeDot={{ r: 4, strokeWidth: 0 }}
                     isAnimationActive={false}
                   />
-                </AreaChart>
+                </LineChart>
               </ResponsiveContainer>
             </div>
           </>
