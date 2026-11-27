@@ -111,6 +111,7 @@ export default function IncomeExpenseSankey({
             >
               <div className="w-full min-w-0" style={{ height: chartHeight }}>
                 <EChartsSankeyChart
+                  animation={false}
                   data={chartData}
                   config={chartConfig}
                   className="h-full w-full"

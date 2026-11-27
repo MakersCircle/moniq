@@ -187,7 +187,7 @@ Uses `@testing-library/react` with a mocked `useDataStore`.
 | ID | Scenario | Expected Outcome |
 |---|---|---|
 | C-78 | Empty state | When `transactions.length === 0`, renders "Nothing here yet" empty-state message instead of the table |
-| C-79 | Populated ledger table | Renders transactions newest date first in date groups; each row shows date, note, category or destination, account, and type-colored amount |
+| C-79 | Populated ledger table | Renders the newest date groups first, then adds all remaining groups in date order; each row shows date, note, category or destination, account, and type-colored amount |
 | C-80 | Ledger header summary | Shows the filtered transaction count beneath the title without a net amount summary |
 | C-81 | Search filter | Desktop shows the search input in the Ledger toolbar; mobile search expands left into an inline field with the icon at its left, does not cover the title, collapses on outside click when empty, and stays expanded with text until the type filter opens. Typing updates `filter.search`; an inline clear control removes the query |
 | C-82 | Date column day, week, month, year, and custom filters | Day mode allows multiple selected dates; Week mode toggles multiple Sunday-to-Saturday weeks and previews a full row on hover; Month mode navigates by year and toggles months; Year mode navigates by decade and toggles years; Custom mode previews and highlights the inclusive range in both calendars, lets the user select both endpoints in one calendar session, and filters correctly when endpoints are entered in reverse order. All filters can be cleared |

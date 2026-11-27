@@ -3,6 +3,7 @@ import type { Category, Transaction } from '../../types';
 import {
   buildDailyCashflowHeatmapData,
   buildInsightsCategoryBarData,
+  buildInsightsMonthlyTrendData,
   buildInsightsPeriodData,
 } from '../insightsData';
 
@@ -102,6 +103,33 @@ describe('Insights category spending data', () => {
     ]);
     expect(chart.rows[2].amount).toBe(210);
     expect(new Set(chart.series.map(series => series.color)).size).toBeGreaterThan(2);
+    for (const row of chart.rows) {
+      const activeSegments = chart.series.filter(series => Number(row[series.key]) > 0);
+      expect(activeSegments.length).toBeGreaterThan(0);
+      expect(activeSegments.reduce((sum, series) => sum + Number(row[series.key]), 0)).toBe(
+        row.amount
+      );
+    }
+  });
+});
+
+describe('Insights monthly income and expense trend', () => {
+  it('returns twelve chronological months, fills quiet months with zero, and excludes transfers, deleted, and out-of-range records', () => {
+    const data = buildInsightsMonthlyTrendData(
+      [
+        makeTransaction('income', '2025-12-05', 'income', 1200),
+        makeTransaction('expense', '2026-11-02', 'expense', 450),
+        makeTransaction('transfer', '2026-11-03', 'transfer', 900),
+        makeTransaction('deleted', '2026-11-04', 'income', 700, true),
+        makeTransaction('outside', '2025-11-30', 'income', 800),
+      ],
+      { startDate: '2025-12-01', endDate: '2026-11-30' }
+    );
+
+    expect(data).toHaveLength(12);
+    expect(data[0]).toMatchObject({ month: '2025-12', income: 1200, expenses: 0 });
+    expect(data[10]).toMatchObject({ month: '2026-10', income: 0, expenses: 0 });
+    expect(data[11]).toMatchObject({ month: '2026-11', income: 0, expenses: 450, net: -450 });
   });
 });
 

@@ -1,31 +1,16 @@
-import { useMemo, useState } from 'react';
-import {
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Legend,
-} from 'recharts';
+import { lazy, memo, Suspense, useMemo, useState } from 'react';
 import { useDataStore } from '../store/dataStore';
-import { formatCurrencyShort } from '../utils/format';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import IncomeExpenseSankey from '@/components/Insights/IncomeExpenseSankey';
-import DailyCashflowHeatmap from '@/components/Insights/DailyCashflowHeatmap';
-import CategorySpendingChart from '@/components/Insights/CategorySpendingChart';
-import { ContributionsCard, SpendingPaceCard } from '@/components/Insights/InsightTrendWidgets';
-
 import { CalendarRange, ChevronDown, LineChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/Transactions/DatePicker';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useTranslation } from '@/hooks/useTranslation';
-import { buildInsightsPeriodData, type InsightsDateRange } from '@/lib/insightsData';
+import type { InsightsDateRange } from '@/lib/insightsData';
 import { normalizeDateRange } from '@/lib/dateRange';
 import type { Transaction } from '@/types';
+
+const InsightsCharts = memo(lazy(() => import('@/components/Insights/InsightsCharts')));
 
 type DatePreset = 'current' | 'previous' | 'all' | 'custom';
 
@@ -84,20 +69,14 @@ export default function Insights() {
   const [dateRange, setDateRange] = useState<InsightsDateRange>(() => monthRange());
   const [isDateRangeOpen, setIsDateRangeOpen] = useState(false);
   const [customRangeNeedsBothDates, setCustomRangeNeedsBothDates] = useState(false);
-  const allRange = useMemo(() => allTimeRange(transactions), [transactions]);
-  const effectiveRange = normalizeDateRange(datePreset === 'all' ? allRange : dateRange);
-  const validRange = effectiveRange;
-  const insightsData = useMemo(
-    () => buildInsightsPeriodData(transactions, categories, validRange),
-    [transactions, categories, validRange]
+  const effectiveRange = useMemo(
+    () => normalizeDateRange(datePreset === 'all' ? allTimeRange(transactions) : dateRange),
+    [datePreset, dateRange, transactions]
   );
-  const { categorySpend, historicalData } = insightsData;
   const selectedRangeLabel = rangeLabel(datePreset, effectiveRange, t);
   const customRangeStart =
     normalizeDateRange(dateRange)?.startDate || dateRange.startDate || dateRange.endDate;
   const customRangeEnd = normalizeDateRange(dateRange)?.endDate;
-  const historicalChartMinWidth =
-    historicalData.length > 6 ? `${historicalData.length * 72}px` : undefined;
 
   const chooseDatePreset = (preset: DatePreset) => {
     setDatePreset(preset);
@@ -141,7 +120,7 @@ export default function Insights() {
 
   return (
     <div className="space-y-8 pb-10">
-      <div className="flex min-w-0 flex-row items-center justify-between gap-3">
+      <header className="sticky top-0 z-20 -mx-4 -mt-2 flex min-w-0 items-center justify-between gap-3 bg-background px-4 py-2 md:-mx-8 md:px-8 [@media(max-height:500px)]:-mx-3 [@media(max-height:500px)]:px-3">
         <h1 className="min-w-0 truncate text-2xl font-bold tracking-tight">Insights</h1>
         <Popover open={isDateRangeOpen} onOpenChange={setIsDateRangeOpen}>
           <PopoverTrigger asChild>
@@ -226,153 +205,23 @@ export default function Insights() {
             </fieldset>
           </PopoverContent>
         </Popover>
-      </div>
+      </header>
 
-      <IncomeExpenseSankey
-        transactions={transactions}
-        categories={categories}
-        currencySymbol={settings.currencySymbol}
-        range={validRange}
-      />
-
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <SpendingPaceCard transactions={transactions} currencySymbol={settings.currencySymbol} />
-        <ContributionsCard
+      <Suspense
+        fallback={
+          <p role="status" className="py-8 text-center text-sm text-muted-foreground">
+            Loading charts…
+          </p>
+        }
+      >
+        <InsightsCharts
           transactions={transactions}
           accounts={accounts}
           categories={categories}
           currencySymbol={settings.currencySymbol}
+          range={effectiveRange}
         />
-      </div>
-
-      <DailyCashflowHeatmap transactions={transactions} currencySymbol={settings.currencySymbol} />
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <CategorySpendingChart
-          categorySpend={categorySpend}
-          currencySymbol={settings.currencySymbol}
-          rangeLabel={selectedRangeLabel}
-        />
-
-        {/* Monthly Trend Bar Chart */}
-        <Card className="border-border shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
-              Expense Trend
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="h-[350px] pt-4">
-            <div className="h-full overflow-x-auto">
-              <div
-                className="h-full"
-                style={historicalChartMinWidth ? { minWidth: historicalChartMinWidth } : undefined}
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={historicalData}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      vertical={false}
-                      stroke="hsl(var(--border))"
-                    />
-                    <XAxis
-                      dataKey="label"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                      dy={10}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                      tickFormatter={val => formatCurrencyShort(val, settings.currencySymbol)}
-                    />
-                    <Tooltip
-                      cursor={{ fill: 'hsl(var(--accent)/0.2)' }}
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        borderColor: 'hsl(var(--border))',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                      }}
-                    />
-                    <Bar dataKey="expenses" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={24} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Income vs Expenses Stacked Grid */}
-      <Card className="border-border shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
-            Income vs Expenses
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="h-[350px] pt-6">
-          <div className="h-full overflow-x-auto">
-            <div
-              className="h-full"
-              style={historicalChartMinWidth ? { minWidth: historicalChartMinWidth } : undefined}
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={historicalData} barGap={8}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="hsl(var(--border))"
-                  />
-                  <XAxis
-                    dataKey="label"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                    dy={10}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                    tickFormatter={val => formatCurrencyShort(val, settings.currencySymbol)}
-                  />
-                  <Tooltip
-                    cursor={{ fill: 'hsl(var(--accent)/0.2)' }}
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      borderColor: 'hsl(var(--border))',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                    }}
-                  />
-                  <Legend
-                    verticalAlign="top"
-                    align="right"
-                    iconType="circle"
-                    wrapperStyle={{ paddingBottom: '20px', fontSize: '11px' }}
-                  />
-                  <Bar
-                    name="Income"
-                    dataKey="income"
-                    fill="#10b981"
-                    radius={[4, 4, 0, 0]}
-                    barSize={20}
-                  />
-                  <Bar
-                    name="Expenses"
-                    dataKey="expenses"
-                    fill="#f43f5e"
-                    radius={[4, 4, 0, 0]}
-                    barSize={20}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      </Suspense>
     </div>
   );
 }

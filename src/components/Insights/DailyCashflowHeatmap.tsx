@@ -13,6 +13,16 @@ import type { Transaction } from '@/types';
 import { formatCurrencyShort } from '@/utils/format';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const dayFormatter = new Intl.DateTimeFormat('en-IN', {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric',
+});
+
+function formatDate(date: string) {
+  return dayFormatter.format(new Date(`${date}T00:00:00`));
+}
 
 function colorForNet(net: number, income: number, spent: number) {
   if (income === 0 && spent === 0) return 'bg-muted/60';
@@ -75,13 +85,6 @@ export default function DailyCashflowHeatmap({
   );
   const activeDay = calendar.days.find(day => day.date === activeDate) ?? null;
   const money = (amount: number) => formatCurrencyShort(amount, currencySymbol);
-  const formatDate = (date: string) =>
-    new Date(`${date}T00:00:00`).toLocaleDateString('en-IN', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
 
   useLayoutEffect(() => {
     const scrollContainer = calendarScrollRef.current;

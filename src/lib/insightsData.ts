@@ -33,11 +33,61 @@ export interface InsightsCategoryBarData {
 }
 
 export interface InsightsMonthSummary {
+  [key: string]: string | number;
   label: string;
   month: string;
   income: number;
   expenses: number;
   net: number;
+}
+
+/** Builds inclusive monthly income/expense totals, retaining months with no activity. */
+export function buildInsightsMonthlyTrendData(
+  transactions: Transaction[],
+  range: InsightsDateRange | null
+): InsightsMonthSummary[] {
+  if (!range || !range.startDate || !range.endDate || range.startDate > range.endDate) return [];
+
+  const totals = new Map<string, { income: number; expenses: number }>();
+  for (const transaction of transactions) {
+    if (
+      transaction.isDeleted ||
+      transaction.date < range.startDate ||
+      transaction.date > range.endDate ||
+      (transaction.uiType !== 'income' && transaction.uiType !== 'expense')
+    )
+      continue;
+    const month = transaction.date.slice(0, 7);
+    const value = totals.get(month) || { income: 0, expenses: 0 };
+    if (transaction.uiType === 'income') value.income += transaction.amount;
+    else value.expenses += transaction.amount;
+    totals.set(month, value);
+  }
+
+  const start = new Date(
+    Number(range.startDate.slice(0, 4)),
+    Number(range.startDate.slice(5, 7)) - 1,
+    1
+  );
+  const end = new Date(Number(range.endDate.slice(0, 4)), Number(range.endDate.slice(5, 7)) - 1, 1);
+  const spansYears = start.getFullYear() !== end.getFullYear();
+  const result: InsightsMonthSummary[] = [];
+  while (start <= end) {
+    const month = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
+    const value = totals.get(month) || { income: 0, expenses: 0 };
+    result.push({
+      label: start.toLocaleDateString('en-IN', {
+        month: 'short',
+        ...(spansYears ? { year: '2-digit' } : {}),
+      }),
+      month,
+      income: value.income,
+      expenses: value.expenses,
+      net: value.income - value.expenses,
+    });
+    start.setMonth(start.getMonth() + 1);
+  }
+  return result;
 }
 
 export interface DailyCashflowDay {
@@ -131,16 +181,12 @@ export function buildInsightsPeriodData(
   if (!range || !range.startDate || !range.endDate || range.startDate > range.endDate) {
     return {
       categorySpend: [] as InsightsCategorySpend[],
-      historicalData: [] as InsightsMonthSummary[],
     };
   }
 
   const categoryById = new Map(categories.map(category => [category.id, category]));
   const categoryAmounts = new Map<string, InsightsCategorySpend>();
   const subcategoryAmounts = new Map<string, Map<string, number>>();
-  const monthAmounts = new Map<string, Omit<InsightsMonthSummary, 'label' | 'month' | 'net'>>();
-  const startMonth = range.startDate.slice(0, 7);
-  const endMonth = range.endDate.slice(0, 7);
 
   for (const transaction of transactions) {
     if (
@@ -151,12 +197,6 @@ export function buildInsightsPeriodData(
     ) {
       continue;
     }
-
-    const month = transaction.date.slice(0, 7);
-    const summary = monthAmounts.get(month) || { income: 0, expenses: 0 };
-    if (transaction.uiType === 'income') summary.income += transaction.amount;
-    else summary.expenses += transaction.amount;
-    monthAmounts.set(month, summary);
 
     if (transaction.uiType !== 'expense') continue;
 
@@ -187,29 +227,6 @@ export function buildInsightsPeriodData(
     }
   }
 
-  const startParts = startMonth.split('-').map(Number);
-  const endParts = endMonth.split('-').map(Number);
-  const cursor = new Date(startParts[0], startParts[1] - 1, 1);
-  const lastMonth = new Date(endParts[0], endParts[1] - 1, 1);
-  const spansYears = startParts[0] !== endParts[0];
-  const historicalData: InsightsMonthSummary[] = [];
-
-  while (cursor <= lastMonth) {
-    const month = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
-    const values = monthAmounts.get(month) || { income: 0, expenses: 0 };
-    historicalData.push({
-      label: cursor.toLocaleDateString('en-IN', {
-        month: 'short',
-        ...(spansYears ? { year: '2-digit' } : {}),
-      }),
-      month,
-      income: values.income,
-      expenses: values.expenses,
-      net: values.income - values.expenses,
-    });
-    cursor.setMonth(cursor.getMonth() + 1);
-  }
-
   const categorySpend = Array.from(categoryAmounts.entries())
     .map(([key, category]) => ({
       ...category,
@@ -221,7 +238,6 @@ export function buildInsightsPeriodData(
 
   return {
     categorySpend,
-    historicalData,
   };
 }
 
