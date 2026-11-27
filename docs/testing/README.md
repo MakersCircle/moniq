@@ -2,7 +2,15 @@
 
 The [feature inventory](e2e-feature-inventory.md) is the list of user-visible behaviors to protect. The [feature-to-test matrix](feature-coverage.md) records actual automated evidence for **every inventory ID**, the next test layer, and where a live Google check is useful. A case in a planning document is not an implemented test.
 
-Treat the planned cases as an incremental backlog. When changing a feature or component, review its related cases and add the small, relevant tests alongside the implementation where practical. Use the test layer that fits the behavior, avoid duplicating coverage without a clear benefit, and update the matrix and case document so remaining gaps stay visible. The long-term goal is component-level coverage across the app, built up as areas are touched.
+Use this workflow for each feature or fix:
+
+1. Before coding, identify the existing components and user-facing features the change touches. Review their inventory entries, coverage status, and relevant planned cases.
+2. Identify the behaviors planned for the new feature and find or add a test case for each. Plan tests for touched existing features too; a pre-existing case remains in scope when the change affects that behavior.
+3. Implement the feature and the applicable tests. Choose the layer that directly checks the behavior: unit tests for pure rules, component tests for rendered interactions, and Playwright for important user journeys and responsive behavior.
+4. After implementation, revisit the related planned cases and implement applicable missing tests that the change can cover. Avoid unrelated tests and duplicate assertions; document only genuine out-of-scope or impractical gaps.
+5. Run focused tests while developing. Update the inventory, case documents, and feature-to-test matrix with implemented evidence and honest coverage status.
+
+There are more uncovered cases in these documents than should be implemented in one large effort. The goal is to close those gaps gradually as feature work reaches each area, not to pause feature development for a project-wide test rewrite. Do not leave a related planned case unimplemented merely because it predates the current feature. The long-term goal is component-level coverage across the app, built up as areas are touched.
 
 ## Current test setup
 
