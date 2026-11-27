@@ -1,24 +1,108 @@
 import { describe, expect, it } from 'vitest';
-import type { Transaction } from '../../types';
-import { buildDailyCashflowHeatmapData } from '../insightsData';
+import type { Category, Transaction } from '../../types';
+import {
+  buildDailyCashflowHeatmapData,
+  buildInsightsCategoryBarData,
+  buildInsightsPeriodData,
+} from '../insightsData';
 
 const makeTransaction = (
   id: string,
   date: string,
   uiType: Transaction['uiType'],
   amount: number,
-  isDeleted = false
+  isDeleted = false,
+  entries: Transaction['entries'] = []
 ): Transaction => ({
   id,
   groupId: id,
   date,
   uiType,
   amount,
-  entries: [],
+  entries,
   note: id,
   isDeleted,
   createdAt: 'created',
   updatedAt: 'updated',
+});
+
+const makeCategory = (id: string, head: string, subHead?: string): Category => ({
+  id,
+  group: 'Needs',
+  head,
+  subHead,
+  isActive: true,
+  isDeleted: false,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+});
+
+describe('Insights category spending data', () => {
+  it('groups expense amounts by category and subcategory inside the selected range', () => {
+    const categories = [
+      makeCategory('food-grocery', 'Food', 'Groceries'),
+      makeCategory('food-dining', 'Food', 'Dining'),
+      makeCategory('food-other', 'Food'),
+      makeCategory('rent', 'Rent'),
+    ];
+    const data = buildInsightsPeriodData(
+      [
+        makeTransaction('grocery', '2026-11-02', 'expense', 80, false, [
+          { accountId: 'food-grocery', type: 'DEBIT', amount: 80 },
+        ]),
+        makeTransaction('dining', '2026-11-03', 'expense', 20, false, [
+          { accountId: 'food-dining', type: 'DEBIT', amount: 20 },
+        ]),
+        makeTransaction('direct-food', '2026-11-04', 'expense', 10, false, [
+          { accountId: 'food-other', type: 'DEBIT', amount: 10 },
+        ]),
+        makeTransaction('rent', '2026-11-05', 'expense', 50, false, [
+          { accountId: 'rent', type: 'DEBIT', amount: 50 },
+        ]),
+        makeTransaction('transfer', '2026-11-06', 'transfer', 500, false, [
+          { accountId: 'food-grocery', type: 'DEBIT', amount: 500 },
+        ]),
+        makeTransaction('deleted', '2026-11-07', 'expense', 700, true, [
+          { accountId: 'food-dining', type: 'DEBIT', amount: 700 },
+        ]),
+      ],
+      categories,
+      { startDate: '2026-11-01', endDate: '2026-11-30' }
+    );
+
+    expect(data.categorySpend).toEqual([
+      {
+        label: 'Food',
+        group: 'Needs',
+        amount: 110,
+        subcategories: [
+          { label: 'Groceries', amount: 80 },
+          { label: 'Dining', amount: 20 },
+        ],
+      },
+      { label: 'Rent', group: 'Needs', amount: 50, subcategories: [] },
+    ]);
+  });
+
+  it('limits category bars to width capacity and groups overflow by category in Other', () => {
+    const categorySpend = Array.from({ length: 5 }, (_, index) => ({
+      label: `Category ${index + 1}`,
+      group: 'Needs',
+      amount: 100 - index * 10,
+      subcategories: [],
+    }));
+    const chart = buildInsightsCategoryBarData(categorySpend, 3);
+
+    expect(chart.rows.map(row => row.label)).toEqual(['Category 1', 'Category 2', 'Other']);
+    expect(chart.rows[0].details).toEqual([{ label: 'Category 1', amount: 100 }]);
+    expect(chart.rows[2].details).toEqual([
+      { label: 'Category 3 · Needs', amount: 80 },
+      { label: 'Category 4 · Needs', amount: 70 },
+      { label: 'Category 5 · Needs', amount: 60 },
+    ]);
+    expect(chart.rows[2].amount).toBe(210);
+    expect(new Set(chart.series.map(series => series.color)).size).toBeGreaterThan(2);
+  });
 });
 
 describe('buildDailyCashflowHeatmapData', () => {

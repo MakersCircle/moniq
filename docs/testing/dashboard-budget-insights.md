@@ -104,12 +104,12 @@ Focuses on rendering given mocked store/hook state, without hitting real calcula
 | ID | Scenario | Expected Outcome |
 |---|---|---|
 | C-46 | Empty state (no transactions) | Renders "Nothing here yet" instead of charts |
-| C-47 | Donut chart — empty selected range | Shows "No spending data in this date range" when `categorySpend` is `[]` |
-| C-48 | Donut chart — all slices render | Every entry in `categorySpend` (not just top 5) is rendered as a `<Cell>` in the `<Pie>` |
-| C-49 | Donut chart — color cycling | With more than 7 categories, colors repeat via `CATEGORY_COLORS[i % CATEGORY_COLORS.length]` |
-| C-50 | Legend — top 5 only | Only the first 5 entries of `categorySpend` (sorted by amount desc) appear in the legend list, even if more categories exist |
-| C-51 | Legend — percent calculation | Each legend row's percent is `(amount / totalExpense) * 100`, rounded to 0 decimals |
-| C-52 | Legend color dot | Each legend swatch color matches its corresponding pie `<Cell>` color at the same index |
+| C-47 | Category chart — empty selected range | Shows "No spending data in this date range" when `categorySpend` is `[]` |
+| C-48 | Category chart — fit categories to width | Renders as many category bars as fit the responsive chart width; when categories exceed capacity, the final bar is Other and includes the remaining categories |
+| C-49 | Category chart — subcategory segments | Stacks subcategory spending inside its category bar using distinct colors for the visible segments; categories without subcategories show a single bar segment |
+| C-50 | Category chart — Other segments | Splits the Other bar into the remaining categories and preserves each category amount in the tooltip |
+| C-51 | Category chart — range and expense scope | Includes non-deleted expense entries in the selected inclusive date range; excludes income and transfers and keeps split expenses under their recorded categories |
+| C-52 | Category chart — tooltip values | Hover or touch shows category/subcategory names and their currency amounts; values sum to the parent category total |
 | C-53 | Trend chart — selected-range buckets | Both monthly charts show one bucket per month in the selected range; the default current-month range shows only that month |
 | C-54 | Trend chart — zero-data buckets still render | Months without transactions inside the selected range render as zero-height bars rather than being omitted |
 | C-55 | Income vs Expenses legend | Legend shows "Income" and "Expenses" labels matching their `dataKey` |
@@ -156,8 +156,8 @@ Uses seeded/demo-mode local data (no live Google Sheets dependency) to drive rea
 ### Insights Flow
 | ID | Scenario | Expected Outcome |
 |---|---|---|
-| E-13 | Load insights with seeded multi-category data | Donut chart renders with a legend limited to 5 rows even when more than 5 categories have spend |
-| E-14 | Hover a donut slice | Tooltip shows the category's short-formatted currency amount and "Spent" label |
+| E-13 | Load insights with seeded multi-category data | Compact vertical stacked bars show as many categories as fit the available width; subcategories are represented within each category bar, and remaining categories combine into an Other bar |
+| E-14 | Inspect a category bar | Hover or touch shows the parent category, each subcategory (or category within Other), and its short-formatted currency amount |
 | E-15 | Trend chart follows selected range | Current month shows one monthly bucket; selecting a longer range shows each included month, including zero-activity months |
 | E-16 | Insights empty state | Brand-new account with zero transactions shows "Nothing here yet" instead of any chart |
 | E-17 | Selected-range money flow | Seeded income and expense transactions render the Sankey hierarchy for the selected range, with transfer rows omitted and the income/expense difference labeled |
@@ -168,4 +168,4 @@ Uses seeded/demo-mode local data (no live Google Sheets dependency) to drive rea
 | E-22 | Insights progress-widget empty states | With income but no expense, nonzero savings balance, or Invest-category balance/activity, both widgets show their helpful empty messages instead of empty charts; the balance message updates for 12M and All |
 | E-23 | Daily cashflow heatmap | Shows a year-at-a-glance calendar with Jan–Dec labels, weekday rows, and week columns; the year selector switches years independently of the page date range; cells encode daily net cashflow red-to-green, and hover/focus or tap reveals that date's income and spent amounts; on phones the grid scrolls inside its own viewport, opens with today visible, and does not overflow the page |
 
-`e2e/insights-widgets.spec.ts` covers E-20–22 on desktop and iPhone portrait, including empty states in both contribution ranges, chart labels and colors, totals, range toggling, info-button content, and page-filter independence. `e2e/insights-heatmap.spec.ts` covers E-23 on desktop and iPhone portrait, including annual month/week layout, year selection, net color states, daily totals on hover/focus/tap, today visibility, and phone overflow containment. `src/lib/__tests__/insightsWidgets.test.ts` covers the pace and contribution calculations; `src/lib/__tests__/insightsData.test.ts` covers daily heatmap aggregation, year boundaries, leap years, and calendar alignment.
+`e2e/insights-category-spending.spec.ts` covers E-13–14 on desktop and iPhone portrait, including responsive category capacity, Other aggregation, subcategory segments, and tooltip amounts. `e2e/insights-widgets.spec.ts` covers E-20–22 on desktop and iPhone portrait, including empty states in both balance ranges, chart labels and colors, totals, range toggling, info-button content, and page-filter independence. `e2e/insights-heatmap.spec.ts` covers E-23 on desktop and iPhone portrait, including annual month/week layout, year selection, net color states, daily totals on hover/focus/tap, today visibility, and phone overflow containment. `src/lib/__tests__/insightsWidgets.test.ts` covers the pace and balance calculations; `src/lib/__tests__/insightsData.test.ts` covers category/subcategory aggregation and daily heatmap aggregation, year boundaries, leap years, and calendar alignment.

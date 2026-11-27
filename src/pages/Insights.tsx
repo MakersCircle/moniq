@@ -1,8 +1,5 @@
 import { useMemo, useState } from 'react';
 import {
-  PieChart,
-  Pie,
-  Cell,
   Tooltip,
   ResponsiveContainer,
   BarChart,
@@ -17,6 +14,7 @@ import { formatCurrencyShort } from '../utils/format';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import IncomeExpenseSankey from '@/components/Insights/IncomeExpenseSankey';
 import DailyCashflowHeatmap from '@/components/Insights/DailyCashflowHeatmap';
+import CategorySpendingChart from '@/components/Insights/CategorySpendingChart';
 import { ContributionsCard, SpendingPaceCard } from '@/components/Insights/InsightTrendWidgets';
 
 import { CalendarRange, ChevronDown, LineChart } from 'lucide-react';
@@ -28,16 +26,6 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { buildInsightsPeriodData, type InsightsDateRange } from '@/lib/insightsData';
 import { normalizeDateRange } from '@/lib/dateRange';
 import type { Transaction } from '@/types';
-
-const CATEGORY_COLORS = [
-  '#863bff', // Primary
-  '#10b981', // Emerald
-  '#3b82f6', // Blue
-  '#f59e0b', // Amber
-  '#f43f5e', // Rose
-  '#8b5cf6', // Violet
-  '#06b6d4', // Cyan
-];
 
 type DatePreset = 'current' | 'previous' | 'all' | 'custom';
 
@@ -136,8 +124,6 @@ export default function Insights() {
       setIsDateRangeOpen(false);
     }
   };
-
-  const totalExpense = categorySpend.reduce((sum, category) => sum + category.amount, 0);
 
   if (transactions.length === 0) {
     return (
@@ -261,88 +247,12 @@ export default function Insights() {
 
       <DailyCashflowHeatmap transactions={transactions} currencySymbol={settings.currencySymbol} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Category Breakdown Donut */}
-        <Card className="border-border shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center justify-between">
-              Spending by Category
-              <span className="max-w-[46%] truncate rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium lowercase">
-                {selectedRangeLabel}
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="h-[350px]">
-            {categorySpend.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-muted-foreground italic text-sm">
-                No spending data in this date range
-              </div>
-            ) : (
-              <div className="flex h-full items-center">
-                <div className="w-[55%] h-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={categorySpend}
-                        dataKey="amount"
-                        nameKey="label"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={70}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        stroke="transparent"
-                      >
-                        {categorySpend.map((_, i) => (
-                          <Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--card))',
-                          borderColor: 'hsl(var(--border))',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                        }}
-                        formatter={val => {
-                          const numericVal = typeof val === 'number' ? val : Number(val);
-                          return [
-                            formatCurrencyShort(
-                              isNaN(numericVal) ? 0 : numericVal,
-                              settings.currencySymbol
-                            ),
-                            'Spent',
-                          ];
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="w-[45%] flex flex-col justify-center space-y-3 pl-4">
-                  {categorySpend.slice(0, 5).map((c, i) => (
-                    <div
-                      key={`${c.group}:${c.label}`}
-                      className="flex items-center justify-between group"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="h-2 w-2 rounded-full"
-                          style={{ backgroundColor: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }}
-                        />
-                        <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                          {c.label}
-                        </span>
-                      </div>
-                      <span className="text-[11px] font-bold mono">
-                        {((c.amount / totalExpense) * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <CategorySpendingChart
+          categorySpend={categorySpend}
+          currencySymbol={settings.currencySymbol}
+          rangeLabel={selectedRangeLabel}
+        />
 
         {/* Monthly Trend Bar Chart */}
         <Card className="border-border shadow-sm">
