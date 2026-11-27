@@ -1,7 +1,39 @@
+import { format } from 'date-fns';
 import { test, expect } from './fixtures/demo';
 import { fillLedgerSearch } from './helpers/ledgerSearch';
 
 const inExportProfiles = () => ['desktop', 'iphone-portrait'].includes(test.info().project.name);
+const calendarLabel = (date: Date) => format(date, 'EEEE, MMMM do, yyyy');
+
+test('LEDGER-05: custom range uses one calendar with range preview and reverse endpoint support', async ({
+  seededDemoPage: page,
+}) => {
+  test.skip(!inExportProfiles(), 'Checks custom range selection on desktop and phone layouts');
+  const desktop = (page.viewportSize()?.width ?? 0) >= 1024;
+  const today = new Date();
+  const firstDate = new Date(today.getFullYear(), today.getMonth(), 28);
+  const secondDate = new Date(today.getFullYear(), today.getMonth(), 1);
+  const middleDate = new Date(today.getFullYear(), today.getMonth(), 15);
+
+  await page.getByRole('link', { name: 'Ledger', exact: true }).click();
+  await page.getByRole('button', { name: desktop ? 'Export PDF' : 'Export' }).click();
+  await page.getByRole('radio', { name: 'Custom range' }).check();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Select date' }).first().click();
+
+  const calendar = page.locator('[data-radix-popper-content-wrapper]').last();
+  await calendar.getByRole('button', { name: calendarLabel(firstDate) }).click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await calendar.getByRole('button', { name: calendarLabel(secondDate) }).hover();
+  await expect(calendar.getByRole('button', { name: calendarLabel(middleDate) })).toHaveClass(
+    /bg-primary\/25/
+  );
+  await calendar.getByRole('button', { name: calendarLabel(secondDate) }).click();
+
+  await expect(page.getByLabel('From date')).toHaveValue(format(firstDate, 'dd/MM/yyyy'));
+  await expect(page.getByLabel('To date')).toHaveValue(format(secondDate, 'dd/MM/yyyy'));
+  await expect(page.getByText(/transactions will be included\./)).toBeVisible();
+});
 
 test('LEDGER-05: full-list PDF uses independent date and account filters', async ({
   seededDemoPage: page,

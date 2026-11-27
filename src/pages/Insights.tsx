@@ -24,6 +24,7 @@ import { Field, FieldLabel } from '@/components/ui/field';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useTranslation } from '@/hooks/useTranslation';
 import { buildInsightsPeriodData, type InsightsDateRange } from '@/lib/insightsData';
+import { normalizeDateRange } from '@/lib/dateRange';
 import type { Transaction } from '@/types';
 
 const CATEGORY_COLORS = [
@@ -94,20 +95,17 @@ export default function Insights() {
   const [isDateRangeOpen, setIsDateRangeOpen] = useState(false);
   const [customRangeNeedsBothDates, setCustomRangeNeedsBothDates] = useState(false);
   const allRange = useMemo(() => allTimeRange(transactions), [transactions]);
-  const effectiveRange = datePreset === 'all' ? allRange : dateRange;
-  const validRange =
-    effectiveRange?.startDate &&
-    effectiveRange.endDate &&
-    effectiveRange.startDate <= effectiveRange.endDate
-      ? effectiveRange
-      : null;
-  const rangeIsValid = validRange !== null;
+  const effectiveRange = normalizeDateRange(datePreset === 'all' ? allRange : dateRange);
+  const validRange = effectiveRange;
   const insightsData = useMemo(
     () => buildInsightsPeriodData(transactions, categories, validRange),
     [transactions, categories, validRange]
   );
   const { categorySpend, historicalData } = insightsData;
   const selectedRangeLabel = rangeLabel(datePreset, effectiveRange, t);
+  const customRangeStart =
+    normalizeDateRange(dateRange)?.startDate || dateRange.startDate || dateRange.endDate;
+  const customRangeEnd = normalizeDateRange(dateRange)?.endDate;
   const historicalChartMinWidth =
     historicalData.length > 6 ? `${historicalData.length * 72}px` : undefined;
 
@@ -131,12 +129,7 @@ export default function Insights() {
     setDatePreset('custom');
     const nextRange = { ...dateRange, ...patch };
     setDateRange(nextRange);
-    if (
-      customRangeNeedsBothDates &&
-      nextRange.startDate &&
-      nextRange.endDate &&
-      nextRange.startDate <= nextRange.endDate
-    ) {
+    if (customRangeNeedsBothDates && normalizeDateRange(nextRange)) {
       setCustomRangeNeedsBothDates(false);
       setIsDateRangeOpen(false);
     }
@@ -214,6 +207,14 @@ export default function Insights() {
                       id="insights-start-date"
                       date={dateRange.startDate}
                       onChange={startDate => updateCustomRange({ startDate })}
+                      fixedWeeks
+                      rangeAnchor={dateRange.endDate}
+                      rangeStart={customRangeStart}
+                      rangeEnd={customRangeEnd}
+                      rangeSelectionRole="from"
+                      onCompleteRange={(firstDate, secondDate) =>
+                        updateCustomRange({ startDate: firstDate, endDate: secondDate })
+                      }
                     />
                   </Field>
                   <Field>
@@ -222,13 +223,16 @@ export default function Insights() {
                       id="insights-end-date"
                       date={dateRange.endDate}
                       onChange={endDate => updateCustomRange({ endDate })}
+                      fixedWeeks
+                      rangeAnchor={dateRange.startDate}
+                      rangeStart={customRangeStart}
+                      rangeEnd={customRangeEnd}
+                      rangeSelectionRole="to"
+                      onCompleteRange={(firstDate, secondDate) =>
+                        updateCustomRange({ endDate: firstDate, startDate: secondDate })
+                      }
                     />
                   </Field>
-                  {!rangeIsValid && (
-                    <p role="alert" className="col-span-2 text-xs text-destructive">
-                      {t('ledger.invalidDateRange')}
-                    </p>
-                  )}
                 </div>
               )}
             </fieldset>

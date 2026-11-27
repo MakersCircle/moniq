@@ -119,7 +119,7 @@ Focuses on rendering given mocked store/hook state, without hitting real calcula
 | C-59 | Sankey balancing | When income exceeds expenses, the remainder flows to Unspent income; when expenses exceed income, the difference flows from Existing funds |
 | C-60 | Sankey with one-sided activity | Income-only and expense-only months render a balanced flow; months with only transfers show the no income or expense activity message |
 | C-61 | Insights date-range presets | Current month is selected by default; current month, previous month, and all time update every Insights chart and close the selector |
-| C-62 | Custom range boundaries and dismissal | Custom range stays open until both inclusive endpoints form a valid range, rejects a start date after the end date, updates all Insights charts, and then closes |
+| C-62 | Custom range boundaries and dismissal | Custom range stays open until both inclusive endpoints are selected without showing an invalid-range alert while incomplete, previews the range on hover, accepts endpoints in either order, updates all Insights charts, and then closes |
 | C-63 | Insights title row | Shows the Insights title and date-range selector on one row without the previous subtitle |
 | C-64 | Optional subcategories | Categories without a subcategory end their flow at the category node and do not show a placeholder subcategory label |
 | C-65 | Sankey header | Shows the Money flow title and an info button for transfer/balance methodology; period appears in the page-level date selector, with no duplicate subtitle or Sankey badge |
@@ -156,5 +156,5 @@ Uses seeded/demo-mode local data (no live Google Sheets dependency) to drive rea
 | E-15 | Trend chart follows selected range | Current month shows one monthly bucket; selecting a longer range shows each included month, including zero-activity months |
 | E-16 | Insights empty state | Brand-new account with zero transactions shows "Nothing here yet" instead of any chart |
 | E-17 | Selected-range money flow | Seeded income and expense transactions render the Sankey hierarchy for the selected range, with transfer rows omitted and the income/expense difference labeled |
-| E-18 | Insights date range | Current month is selected on first load; preset selection closes the selector; custom stays open until both valid endpoints are selected, then updates charts and closes |
+| E-18 | Insights date range | Current month is selected on first load; preset selection closes the selector; custom stays open without an invalid-range alert until both endpoints are selected in one calendar session, previews the range on hover, accepts either endpoint order, then updates charts and closes |
 | E-19 | Insights title row | The Insights title and date-range selector stay on one responsive row, and the old explanatory subtitle is absent |

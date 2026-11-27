@@ -16,6 +16,7 @@ import {
 import { useTranslation } from '@/hooks/useTranslation';
 import { buildLedgerReport } from '@/lib/ledgerReport';
 import { downloadLedgerPdf } from '@/lib/ledgerPdf';
+import { normalizeDateRange, type DateRange } from '@/lib/dateRange';
 
 type DatePreset = 'current' | 'previous' | 'all' | 'custom';
 type ReportLayout = 'full' | 'category';
@@ -48,11 +49,6 @@ function RadioChoice<T extends string>({
       <span>{label}</span>
     </label>
   );
-}
-
-interface DateRange {
-  startDate: string;
-  endDate: string;
 }
 
 interface LedgerExportDialogProps {
@@ -106,10 +102,11 @@ export function LedgerExportDialog({
   const [layout, setLayout] = useState<ReportLayout>('full');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const effectiveRange =
+  const effectiveRange = normalizeDateRange(
     datePreset === 'all'
       ? allTimeRange(transactions, accountId === 'all' ? '' : accountId)
-      : dateRange;
+      : dateRange
+  );
   const reportStartDate = effectiveRange?.startDate;
   const reportEndDate = effectiveRange?.endDate;
   const report = useMemo(() => {
@@ -122,17 +119,20 @@ export function LedgerExportDialog({
     });
   }, [transactions, accounts, categories, reportStartDate, reportEndDate, accountId, layout]);
 
-  const rangeIsValid =
-    !!effectiveRange &&
-    effectiveRange.startDate.length > 0 &&
-    effectiveRange.startDate <= effectiveRange.endDate;
+  const rangeIsValid = effectiveRange !== null;
+  const customRangeStart =
+    normalizeDateRange(dateRange)?.startDate || dateRange.startDate || dateRange.endDate;
+  const customRangeEnd = normalizeDateRange(dateRange)?.endDate;
   const hasReportRows = !!report && report.rows.length > 0;
 
   const choosePreset = (value: DatePreset) => {
     setDatePreset(value);
     if (value === 'current') setDateRange(monthRange());
     if (value === 'previous') setDateRange(monthRange(-1));
-    if (value === 'custom') return;
+    if (value === 'custom') {
+      if (datePreset !== 'custom') setDateRange({ startDate: '', endDate: '' });
+      return;
+    }
   };
 
   const updateCustomRange = (patch: Partial<DateRange>) => {
@@ -261,24 +261,35 @@ export function LedgerExportDialog({
                 <FieldLabel htmlFor="export-start-date">{t('ledger.fromDate')}</FieldLabel>
                 <DatePicker
                   id="export-start-date"
-                  date={effectiveRange?.startDate ?? ''}
+                  date={dateRange.startDate}
                   onChange={startDate => updateCustomRange({ startDate })}
+                  fixedWeeks
+                  rangeAnchor={dateRange.endDate}
+                  rangeStart={customRangeStart}
+                  rangeEnd={customRangeEnd}
+                  rangeSelectionRole="from"
+                  onCompleteRange={(firstDate, secondDate) =>
+                    updateCustomRange({ startDate: firstDate, endDate: secondDate })
+                  }
                 />
               </Field>
               <Field>
                 <FieldLabel htmlFor="export-end-date">{t('ledger.toDate')}</FieldLabel>
                 <DatePicker
                   id="export-end-date"
-                  date={effectiveRange?.endDate ?? ''}
+                  date={dateRange.endDate}
                   onChange={endDate => updateCustomRange({ endDate })}
+                  fixedWeeks
+                  rangeAnchor={dateRange.startDate}
+                  rangeStart={customRangeStart}
+                  rangeEnd={customRangeEnd}
+                  rangeSelectionRole="to"
+                  onCompleteRange={(firstDate, secondDate) =>
+                    updateCustomRange({ endDate: firstDate, startDate: secondDate })
+                  }
                 />
               </Field>
             </div>
-          )}
-          {!rangeIsValid && (
-            <p role="alert" className="pt-2 text-xs text-destructive">
-              {t('ledger.invalidDateRange')}
-            </p>
           )}
         </fieldset>
 
