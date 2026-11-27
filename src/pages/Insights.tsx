@@ -16,6 +16,7 @@ import { useDataStore } from '../store/dataStore';
 import { formatCurrencyShort } from '../utils/format';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import IncomeExpenseSankey from '@/components/Insights/IncomeExpenseSankey';
+import { ContributionsCard, SpendingPaceCard } from '@/components/Insights/InsightTrendWidgets';
 
 import { CalendarRange, ChevronDown, LineChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -88,7 +89,7 @@ function rangeLabel(
 }
 
 export default function Insights() {
-  const { settings, transactions, categories } = useDataStore();
+  const { settings, transactions, accounts, categories } = useDataStore();
   const { t } = useTranslation();
   const [datePreset, setDatePreset] = useState<DatePreset>('current');
   const [dateRange, setDateRange] = useState<InsightsDateRange>(() => monthRange());
@@ -246,6 +247,16 @@ export default function Insights() {
         currencySymbol={settings.currencySymbol}
         range={validRange}
       />
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <SpendingPaceCard transactions={transactions} currencySymbol={settings.currencySymbol} />
+        <ContributionsCard
+          transactions={transactions}
+          accounts={accounts}
+          categories={categories}
+          currencySymbol={settings.currencySymbol}
+        />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Category Breakdown Donut */}
