@@ -2,7 +2,7 @@
 
 This document details the test cases covering `src/pages/Dashboard.tsx`, `src/pages/Budget.tsx`, `src/pages/Insights.tsx`, the calculation hooks in `src/hooks/useComputed.ts` (`useMonthSummary`, `useCategorySpend`, `useHistoricalData`, `useBudgetSummary`, `useAllBalances`), and `src/store/slices/budgetSlice.ts`.
 
-## 1. Unit Tests (`useComputed.test.ts`, `budgetSlice.test.ts`)
+## 1. Unit Tests (`useComputed.test.ts`, `budgetSlice.test.ts`, `insightsSankey.test.ts`)
 Focuses purely on the calculation formulas driving the stat cards, spending breakdowns, and budget math, isolated from any rendering.
 
 | ID | Scenario | Expected Outcome |
@@ -41,6 +41,8 @@ Focuses purely on the calculation formulas driving the stat cards, spending brea
 | U-32 | `updateBudget` — update existing budget | Existing non-deleted budget found → replaces `amount` and `updatedAt`, calls `put('budgets', ...)`, calls `markDirty('budget', id, 'update')` |
 | U-33 | `updateBudget` — ignores soft-deleted budget | A matching but `isDeleted: true` budget is not reused; a new budget is created instead |
 | U-34 | `updateBudget` — persists to store | `budgets` array in state reflects the new/updated entry after the call |
+| U-35 | Sankey transaction scope and balancing | Excludes transfers, deleted records, and out-of-range transactions; category flows balance with unspent income |
+| U-36 | Mobile Sankey stages | Removes income and expense subcategory nodes, remaps links to the reduced node list, and preserves the remaining flow values |
 
 ## 2. Component Tests (`Dashboard.test.tsx`, `Budget.test.tsx`, `Insights.test.tsx`)
 Focuses on rendering given mocked store/hook state, without hitting real calculation logic or network calls. Uses `@testing-library/react`.
@@ -102,16 +104,31 @@ Focuses on rendering given mocked store/hook state, without hitting real calcula
 | ID | Scenario | Expected Outcome |
 |---|---|---|
 | C-46 | Empty state (no transactions) | Renders "Nothing here yet" instead of charts |
-| C-47 | Donut chart — empty month | Shows "No spending data for this month" when `categorySpend` is `[]` |
-| C-48 | Donut chart — all slices render | Every entry in `categorySpend` (not just top 5) is rendered as a `<Cell>` in the `<Pie>` |
-| C-49 | Donut chart — color cycling | With more than 7 categories, colors repeat via `CATEGORY_COLORS[i % CATEGORY_COLORS.length]` |
-| C-50 | Legend — top 5 only | Only the first 5 entries of `categorySpend` (sorted by amount desc) appear in the legend list, even if more categories exist |
-| C-51 | Legend — percent calculation | Each legend row's percent is `(amount / totalExpense) * 100`, rounded to 0 decimals |
-| C-52 | Legend color dot | Each legend swatch color matches its corresponding pie `<Cell>` color at the same index |
-| C-53 | Trend chart — 6 fixed buckets | `useHistoricalData(6)` always feeds exactly 6 bars/bar-groups to both bar charts, even for a brand-new account with 1 month of data |
-| C-54 | Trend chart — zero-data buckets still render | Months with no transactions render as zero-height bars rather than being omitted |
+| C-47 | Category chart — empty selected range | Shows "No spending data in this date range" when `categorySpend` is `[]` |
+| C-48 | Category chart — fit categories to width | Renders as many category bars as fit the responsive chart width; when categories exceed capacity, the final bar is Other and includes the remaining categories; labels are angled for dense charts, shortened with an ellipsis when needed, and never automatically skipped |
+| C-49 | Category chart — subcategory segments | Uses distinct colors and rounded corners for each segment, with gaps only between visible segments. Every bar starts at zero. |
+| C-50 | Category chart — Other segments | Splits the Other bar into the remaining categories and preserves each category amount in the tooltip |
+| C-51 | Category chart — range and expense scope | Includes non-deleted expense entries in the selected inclusive date range; excludes income and transfers and keeps split expenses under their recorded categories |
+| C-52 | Category chart — tooltip values | Hover or touch shows category/subcategory names and their currency amounts; values sum to the parent category total |
+| C-53 | Income vs Expenses chart — rolling 12-month buckets | Shows 12 chronological months ending in the current month, regardless of the Insights page date filter |
+| C-54 | Income vs Expenses chart — zero-data buckets still render | Months without transactions in the rolling 12-month window remain visible with zero values |
 | C-55 | Income vs Expenses legend | Legend shows "Income" and "Expenses" labels matching their `dataKey` |
-| C-56 | Tooltip currency formatting | Donut tooltip formatter converts the raw value via `formatCurrencyShort` and labels it "Spent" |
+| C-56 | Category chart tooltip currency formatting | Category and subcategory tooltip amounts use `formatCurrencyShort` and include the parent total |
+| C-57 | Sankey hierarchy | Income flows from subcategory (when present) to category to total income; expenses flow from total expenses through group and category, then optional subcategory |
+| C-58 | Sankey date range and transaction scope | Includes only non-deleted income and expense transactions inside the selected inclusive range; transfers are excluded and split expenses appear under their recorded categories |
+| C-59 | Sankey balancing | When income exceeds expenses, the remainder flows to Unspent income; when expenses exceed income, the difference flows from Existing funds |
+| C-60 | Sankey with one-sided activity | Income-only and expense-only months render a balanced flow; months with only transfers show the no income or expense activity message |
+| C-61 | Insights date-range presets | Current month is selected by default; current month, previous month, and all time update date-filtered charts and close the selector; the daily cashflow calendar keeps its independent calendar year; spending pace and savings/investment balance cards retain their own comparison windows, explained in info buttons |
+| C-62 | Custom range boundaries and dismissal | Custom range stays open until both inclusive endpoints are selected without showing an invalid-range alert while incomplete, previews the range on hover, accepts endpoints in either order, updates date-filtered charts, and then closes; the daily cashflow calendar keeps its independent calendar year |
+| C-63 | Insights title row | Shows the Insights title and date-range selector on one row without the previous subtitle |
+| C-64 | Optional subcategories | Categories without a subcategory end their flow at the category node and do not show a placeholder subcategory label |
+| C-65 | Sankey header | Shows the Money flow title and an info button for transfer/balance methodology; period appears in the page-level date selector, with no duplicate subtitle or Sankey badge |
+| C-66 | Sankey label density and touch details | Major flows keep inline labels; endpoint labels remain within the chart bounds; overlapping labels are suppressed; phones collapse subcategories and fit all stages to viewport width, showing expense types and largest categories inline with more vertical spacing, while smaller flows expose their label and currency value through a tooltip on tap |
+| C-67 | Spending pace comparison data | Produces day-by-day cumulative expense totals for this month, the same days of last month, and the average of the previous three complete months; ignores deleted transactions, transfers, and future days, and clamps short months to their final day |
+| C-68 | Savings and investment balance data | Produces monthly closing balances from savings-tagged accounts and Invest categories, including opening balances and prior activity needed to seed the visible period; transfers between savings accounts net to zero, savings withdrawals reduce the balance, and deleted or future transactions are excluded; All begins at the earliest eligible opening balance or activity |
+| C-69 | Spending pace and savings/investment balance widgets | Keeps widget headers compact without subtitle rows; title-row info buttons explain each chart's date window and calculation; balance controls switch between the latest 12 months and all history; three lines show savings, investment, and total balances; the graph's lower Y-axis bound is the lowest of their opening balances (or lower if a later balance falls below it); empty states match the selected window |
+| C-70 | Daily cashflow heatmap data | Produces one cell for every date in the selected calendar year, sums non-deleted income and expense transactions by day, ignores transfers and other years, and sets net to income minus spending; dates with no activity remain neutral; leap years include February 29 |
+| C-71 | Daily cashflow heatmap interaction and colors | Negative net days shade red, balanced days use a distinct neutral tone, and positive net days shade green; hover, keyboard focus, or tap reveals the exact date's income and spent totals; year selection changes the annual grid independently of the page date range, and on phones the contained scroller positions today in view without overflowing the page |
 
 ## 3. End-to-End Tests (`dashboard-budget-insights.spec.ts`)
 Uses seeded/demo-mode local data (no live Google Sheets dependency) to drive real user flows across pages.
@@ -139,7 +156,16 @@ Uses seeded/demo-mode local data (no live Google Sheets dependency) to drive rea
 ### Insights Flow
 | ID | Scenario | Expected Outcome |
 |---|---|---|
-| E-13 | Load insights with seeded multi-category data | Donut chart renders with a legend limited to 5 rows even when more than 5 categories have spend |
-| E-14 | Hover a donut slice | Tooltip shows the category's short-formatted currency amount and "Spent" label |
-| E-15 | Trend chart shows 6 months on a fresh account | A newly created account with only the current month's transactions still shows 6 bars/groups on both trend charts, with prior months at zero |
+| E-13 | Load Insights with both single segment and stacked categories | The card heading shows only Spending by Category. The rendered bars both reach the zero line. Each segment has rounded corners and only visible segments have gaps between them. Category labels angle and shorten as needed, and overflow categories appear in Other. |
+| E-14 | Inspect a category bar | Hover or touch shows the parent category, each subcategory (or category within Other), and its short-formatted currency amount |
+| E-15 | Income vs Expenses chart uses a rolling 12-month window | Shows income and expense areas across 12 months, including zero-activity months, regardless of the page date filter; sits beside Savings and Investments on desktop and stacks on phones; there is no separate Expense Trend chart |
 | E-16 | Insights empty state | Brand-new account with zero transactions shows "Nothing here yet" instead of any chart |
+| E-17 | Selected-range money flow | Seeded income and expense transactions render the Sankey hierarchy for the selected range, with transfer rows omitted and the income/expense difference labeled |
+| E-18 | Insights date range | The title and date selector are usable while the chart module loads and while the main content scrolls. Chart code starts loading in the background after the workspace opens. Spending by Category and Spending Pace render first. The page adds Money Flow next, then Income vs Expenses alongside Savings and Investments, and Daily Cash Flow last. The page and header controls keep their horizontal positions as the page fills in. Selecting a preset during loading applies it to the charts. Current month is selected on first load; preset selection closes the selector; custom stays open without an invalid-range alert until both endpoints are selected in one calendar session, previews the range on hover, accepts either endpoint order, then updates date-filtered charts and closes; the daily cashflow calendar retains its independent selected year; spending pace and contribution cards retain their separate comparison windows |
+| E-19 | Insights title row | The Insights title and date-range selector stay on one responsive row, and the old explanatory subtitle is absent |
+| E-20 | Spending pace widget | On desktop and phone, shows daily cumulative expenses for this month, last month to the same day, and the recent completed-month average, with green for last month, gray for the average, and methodology in the title-row info button |
+| E-21 | Savings and investment balance widget | On desktop and phone, defaults to 12M and can switch to All beside the title; three lines show Savings, Investments, and Total, with each opening balance and prior activity seeding its line; the Y-axis starts at the lowest of the three opening balances; All includes eligible history from the earliest opening balance or transaction; the title-row info button explains the selected range |
+| E-22 | Insights progress-widget empty states | With income but no expense, nonzero savings balance, or Invest-category balance/activity, both widgets show their helpful empty messages instead of empty charts; the balance message updates for 12M and All |
+| E-23 | Daily cashflow heatmap | Shows a year-at-a-glance calendar with Jan–Dec labels, weekday rows, and week columns; the year selector switches years independently of the page date range; cells encode daily net cashflow red-to-green, and hover/focus or tap reveals that date's income and spent amounts; on phones the grid scrolls inside its own viewport, opens with today visible, and does not overflow the page |
+
+`e2e/insights-category-spending.spec.ts` covers E-13–15 on desktop and iPhone portrait, including responsive category capacity, Other aggregation, subcategory segments, tooltip amounts, the fixed 12-month Income vs Expenses series, and the full widget order on desktop and iPhone portrait without a separate Expense Trend chart. `e2e/insights-widgets.spec.ts` covers E-20–22 on desktop and iPhone portrait, including empty states in both balance ranges, chart labels and colors, totals, range toggling, info-button content, and page-filter independence. `e2e/insights-heatmap.spec.ts` covers E-23 on desktop and iPhone portrait, including annual month/week layout, year selection, net color states, daily totals on hover/focus/tap, today visibility, and phone overflow containment. `src/lib/__tests__/insightsWidgets.test.ts` covers the pace and balance calculations; `src/lib/__tests__/insightsData.test.ts` covers category/subcategory aggregation, monthly income/expense aggregation, quiet months, and daily heatmap aggregation, year boundaries, leap years, and calendar alignment.

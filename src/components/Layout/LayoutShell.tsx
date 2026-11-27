@@ -66,7 +66,7 @@ export default function LayoutShell({
       <div className="lg:pl-[220px] pt-14 lg:pt-16 pb-[var(--mobile-nav-total-height)] lg:pb-0 h-[var(--app-viewport-height)]">
         <main
           id="main-scroll-container"
-          className="h-full w-full overflow-y-auto custom-scrollbar flex flex-col relative"
+          className="h-full w-full overflow-y-auto custom-scrollbar flex flex-col relative [scrollbar-gutter:stable]"
         >
           {isDemoMode && <DemoBanner />}
           {isSessionExpired && (

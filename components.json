@@ -17,5 +17,8 @@
     "lib": "src/lib",
     "hooks": "src/hooks"
   },
-  "iconLibrary": "lucide"
+  "iconLibrary": "lucide",
+  "registries": {
+    "@evilcharts": "https://evilcharts.com/r/{name}.json"
+  }
 }

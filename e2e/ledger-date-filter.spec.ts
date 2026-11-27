@@ -79,6 +79,22 @@ async function openLedger(page: import('@playwright/test').Page) {
 
 const desktopAndPhone = () => ['desktop', 'iphone-portrait'].includes(test.info().project.name);
 
+test('LEDGER-02: Ledger renders all date groups in order after the first batch', async ({
+  seededDemoPage: page,
+}) => {
+  test.skip(!desktopAndPhone(), 'Checks Ledger batches on desktop and phone layouts');
+  await seedFilterTransactions(page);
+  await openLedger(page);
+
+  const groups = page.locator('[data-ledger-date-group]');
+  await expect(groups).toHaveCount(8);
+  const dates = await groups.evaluateAll(nodes =>
+    nodes.map(node => node.getAttribute('data-ledger-date-group')!)
+  );
+  expect(dates).toEqual([...dates].sort().reverse());
+  await expect(page.getByText('10 transactions', { exact: true })).toBeVisible();
+});
+
 test('LEDGER-03: day, week, month, and year filters select multiple periods', async ({
   seededDemoPage: page,
 }) => {
@@ -118,10 +134,11 @@ test('LEDGER-03: day, week, month, and year filters select multiple periods', as
   await expect(hoveredWeekRow).toHaveClass(/group\/week/);
   if (test.info().project.name === 'desktop') {
     await hoveredWeekButton.hover();
+    const sameWeekDay = addDays(unselectedWeekDay, unselectedWeekDay.getDay() === 6 ? -1 : 1);
     await expect
       .poll(() =>
         hoveredWeekRow
-          .getByRole('button', { name: calendarLabel(addDays(unselectedWeekDay, 1)) })
+          .getByRole('button', { name: calendarLabel(sameWeekDay) })
           .evaluate(button => getComputedStyle(button).backgroundColor)
       )
       .toBe('rgb(39, 39, 42)');
@@ -179,13 +196,17 @@ test('LEDGER-03: day, week, month, and year filters select multiple periods', as
   await filter.getByRole('button', { name: 'Day', exact: true }).click();
   await filter.getByRole('button', { name: calendarLabel(dates.today) }).click();
   await fillLedgerSearch(page, 'Filter today');
-  await page.getByRole('button', { name: 'Filter by type' }).click();
+  const typeFilterButton =
+    test.info().project.name === 'iphone-portrait'
+      ? page.getByRole('button', { name: /^Filters/ })
+      : page.getByRole('button', { name: 'Filter by type' });
+  await typeFilterButton.click();
   const typeFilter = page.getByRole('group', { name: 'Filter by type' });
   await typeFilter.getByRole('checkbox', { name: 'Income', exact: true }).uncheck();
   await typeFilter.getByRole('checkbox', { name: 'Transfer', exact: true }).uncheck();
   await page.keyboard.press('Escape');
   const accountFilterButton = page.getByRole('button', { name: 'Filter by account' });
-  if (await accountFilterButton.isVisible()) {
+  if (test.info().project.name === 'desktop') {
     await accountFilterButton.click();
     const accountFilter = page
       .locator('[data-radix-popper-content-wrapper]')
@@ -195,7 +216,7 @@ test('LEDGER-03: day, week, month, and year filters select multiple periods', as
     await expect(page.getByText('Fixture paycheck', { exact: true })).toHaveCount(0);
 
     await fillLedgerSearch(page, '');
-    await page.getByRole('button', { name: 'Filter by type' }).click();
+    await typeFilterButton.click();
     await typeFilter.getByRole('checkbox', { name: 'Income', exact: true }).check();
     await typeFilter.getByRole('checkbox', { name: 'Transfer', exact: true }).check();
     await page.keyboard.press('Escape');
@@ -205,7 +226,7 @@ test('LEDGER-03: day, week, month, and year filters select multiple periods', as
     await expect(page.getByText('Filter today', { exact: true })).toBeVisible();
     await expect(page.getByText('Fixture paycheck', { exact: true })).toHaveCount(0);
     await fillLedgerSearch(page, '');
-    await page.getByRole('button', { name: 'Filter by type' }).click();
+    await typeFilterButton.click();
     await typeFilter.getByRole('checkbox', { name: 'Income', exact: true }).check();
     await typeFilter.getByRole('checkbox', { name: 'Transfer', exact: true }).check();
     await page.keyboard.press('Escape');

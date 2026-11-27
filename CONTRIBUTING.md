@@ -58,11 +58,12 @@ Planned work, bugs, and feature ideas are tracked as [GitHub Issues](../../issue
 
 1. Ensure your code strictly adheres to the [Design System](docs/design_system.md).
 2. Create a clean branch (`feat/your-feature` or `fix/issue-description`).
-3. Before adding a user-visible feature or modifying an existing one, review the [E2E feature inventory](docs/testing/e2e-feature-inventory.md), its row in the [feature-to-test matrix](docs/testing/feature-coverage.md), and the relevant cases in the [testing docs](docs/testing/README.md). Add or update planned cases for the behavior being changed.
-4. Add tests at the layer that best checks the behavior: keep business rules in testable pure functions or hooks where practical, cover component interactions with component tests, and use Playwright for important user journeys. Check responsive features at desktop and mobile sizes; the browser suite defines six viewport profiles.
-5. Run focused tests while developing.
-6. In the same change, update the E2E feature inventory, feature-to-test matrix with test evidence and status, relevant testing case documents, and `[Unreleased]` in [CHANGELOG.md](docs/CHANGELOG.md). Mark a feature covered only when its stated behavior is checked by an implemented test.
-7. Use [Conventional Commits](https://www.conventionalcommits.org/) for commit messages (`feat:`, `fix:`, `chore:`, `refactor:`, `docs:`, `perf:`, `style:`).
+3. Before implementation, list the existing components and user-facing features the change will touch. Review their entries in the [E2E feature inventory](docs/testing/e2e-feature-inventory.md), [feature-to-test matrix](docs/testing/feature-coverage.md), and relevant [testing case documents](docs/testing/README.md).
+4. Identify test cases for every new behavior planned, as well as existing cases for the touched features. Add missing inventory entries and planned cases before or alongside implementation so new behavior has an explicit test plan.
+5. Add tests at the layer that best checks the behavior: keep business rules in testable pure functions or hooks where practical, cover component interactions with component tests, and use Playwright for important user journeys. Check responsive features at desktop and mobile sizes; the browser suite defines six viewport profiles.
+6. The testing docs contain a larger backlog of uncovered cases than should be tackled all at once. Close it incrementally during feature work: after implementation, sweep the relevant cases for the new behavior and touched features, then implement applicable missing tests. Do not skip a related case just because it predates the change. Run focused tests while developing.
+7. In the same change, update the E2E feature inventory, feature-to-test matrix with actual test evidence and status, relevant testing case documents, and `[Unreleased]` in [CHANGELOG.md](docs/CHANGELOG.md). Record remaining gaps with a reason, and mark a feature covered only when its stated behavior is checked by an implemented test.
+8. Use [Conventional Commits](https://www.conventionalcommits.org/) for commit messages (`feat:`, `fix:`, `chore:`, `refactor:`, `docs:`, `perf:`, `style:`).
 
 ## Pull Request Process
 

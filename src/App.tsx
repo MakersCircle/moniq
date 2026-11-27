@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useState, useCallback, useRef, Suspense, lazy } from 'react';
+import Insights from './pages/Insights';
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Transactions = lazy(() => import('./pages/Transactions'));
-const Insights = lazy(() => import('./pages/Insights'));
 const Budget = lazy(() => import('./pages/Budget'));
 const SettingsIndex = lazy(() => import('./pages/Settings/index'));
 const Accounts = lazy(() => import('./pages/Settings/Accounts'));
@@ -206,6 +206,30 @@ export default function App() {
     }
   }, [canUseWorkspace, openNew, openEdit, openDuplicate]);
 
+  useEffect(() => {
+    if (!canUseWorkspace) return;
+
+    const warmTabs = () => {
+      // A failed background load can surface through the normal route error
+      // handling if the user actually opens the tab.
+      void import('./pages/Transactions').catch(() => {});
+      void import('./components/Insights/InsightsCharts').catch(() => {});
+    };
+    let idleId: number | undefined;
+    const timer = window.setTimeout(() => {
+      if (typeof window.requestIdleCallback === 'function') {
+        idleId = window.requestIdleCallback(warmTabs);
+      } else {
+        warmTabs();
+      }
+    }, 750);
+
+    return () => {
+      window.clearTimeout(timer);
+      if (idleId !== undefined) window.cancelIdleCallback(idleId);
+    };
+  }, [canUseWorkspace]);
+
   if (isHydrated && storedWorkspace && !canUseWorkspace && !isDemoMode) {
     return (
       <>
@@ -333,18 +357,28 @@ export default function App() {
                   syncError={initError}
                   onRetrySync={() => setRetryCount(c => c + 1)}
                 >
-                  <Routes>
-                    <Route path="dashboard" element={<Dashboard />} />
-                    <Route path="transactions" element={<Transactions />} />
-                    <Route path="insights" element={<Insights />} />
-                    <Route path="budget" element={<Budget />} />
-                    <Route path="settings" element={<SettingsIndex />} />
-                    <Route path="settings/accounts" element={<Accounts />} />
-                    <Route path="settings/methods" element={<Methods />} />
-                    <Route path="settings/categories" element={<Categories />} />
-                    <Route path="settings/trash" element={<SettingsTrash />} />
-                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                  </Routes>
+                  <Suspense
+                    fallback={
+                      <div
+                        role="status"
+                        aria-label="Loading page"
+                        className="mx-auto mt-8 size-5 motion-safe:animate-spin rounded-full border-2 border-primary border-t-transparent"
+                      />
+                    }
+                  >
+                    <Routes>
+                      <Route path="dashboard" element={<Dashboard />} />
+                      <Route path="transactions" element={<Transactions />} />
+                      <Route path="insights" element={<Insights />} />
+                      <Route path="budget" element={<Budget />} />
+                      <Route path="settings" element={<SettingsIndex />} />
+                      <Route path="settings/accounts" element={<Accounts />} />
+                      <Route path="settings/methods" element={<Methods />} />
+                      <Route path="settings/categories" element={<Categories />} />
+                      <Route path="settings/trash" element={<SettingsTrash />} />
+                      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                    </Routes>
+                  </Suspense>
                 </LayoutShell>
               ) : (
                 <Navigate to="/" replace />

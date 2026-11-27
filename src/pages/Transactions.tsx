@@ -14,7 +14,7 @@ import {
 import { motion, Reorder, useDragControls } from 'framer-motion';
 import { useDataStore } from '../store/dataStore';
 import { useFilteredTransactions } from '../hooks/useComputed';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, formatDate, formatDateShort, formatDateYear } from '../utils/format';
 import type { TxnFilter } from '../hooks/useComputed';
 import type { Transaction, Account, Category, UserSettings } from '../types';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -33,6 +33,7 @@ import { cn } from '@/lib/utils';
 import { LedgerEngine } from '@/lib/ledger';
 import TransactionDetailPanel from '@/components/Transactions/TransactionDetailPanel';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { useProgressiveRender } from '@/hooks/useProgressiveRender';
 import { boundDragScroll } from '@/lib/boundedDragScroll';
 import { LedgerExportDialog } from '@/components/Transactions/LedgerExportDialog';
 
@@ -87,6 +88,7 @@ function TxnGridRow({
   isDragging,
   isDragged,
 }: TxnRowProps) {
+  const date = new Date(txn.date);
   return (
     <div
       onClick={() => onSelect(txn.id)}
@@ -125,24 +127,11 @@ function TxnGridRow({
       {/* Date — exactly absorbs original left-padding for the drag handle */}
       <div className="pr-3 md:pr-5 py-3 whitespace-nowrap text-muted-foreground shrink-0 w-[60px] md:w-[96px]">
         {/* Desktop */}
-        <span className="hidden md:block text-xs">
-          {new Date(txn.date).toLocaleDateString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-          })}
-        </span>
+        <span className="hidden md:block text-xs">{formatDate(date)}</span>
         {/* Mobile */}
         <div className="md:hidden flex flex-col text-xs">
-          <span>
-            {new Date(txn.date).toLocaleDateString('en-IN', {
-              day: '2-digit',
-              month: 'short',
-            })}
-          </span>
-          <span className="text-[10px] opacity-70">
-            {new Date(txn.date).toLocaleDateString('en-IN', { year: 'numeric' })}
-          </span>
+          <span>{formatDateShort(date)}</span>
+          <span className="text-[10px] opacity-70">{formatDateYear(date)}</span>
         </div>
       </div>
 
@@ -408,6 +397,20 @@ function LedgerReorderRow({
   );
 }
 
+const MemoDateGroup = React.memo(DateGroup);
+
+function LedgerDateGroups({
+  groups,
+  ...groupProps
+}: Omit<React.ComponentProps<typeof DateGroup>, 'items'> & {
+  groups: { date: string; items: Transaction[] }[];
+}) {
+  const visibleGroups = useProgressiveRender(groups.length, 6);
+  return groups
+    .slice(0, visibleGroups)
+    .map(({ date, items }) => <MemoDateGroup key={date} items={items} {...groupProps} />);
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function Transactions() {
@@ -419,7 +422,7 @@ export default function Transactions() {
   const [datePeriod, setDatePeriod] = useState<'day' | 'week' | 'month' | 'year' | 'custom'>('day');
   const [dateCalendarMonth, setDateCalendarMonth] = useState(new Date());
   const [selectedTxnId, setSelectedTxnId] = useState<string | null>(null);
-  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState<boolean | null>(null);
   const [typeFilterOpen, setTypeFilterOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const mobileSearchRef = useRef<HTMLInputElement>(null);
@@ -461,12 +464,20 @@ export default function Transactions() {
     updateFilter({ uiTypes: [...next] });
   };
 
-  const txns = useFilteredTransactions(filter);
   const filterWithoutAmount = useMemo(
     () => ({ ...filter, minAmount: undefined, maxAmount: undefined }),
     [filter]
   );
   const amountContextTransactions = useFilteredTransactions(filterWithoutAmount);
+  const { minAmount, maxAmount } = filter;
+  const txns = useMemo(() => {
+    if (minAmount === undefined && maxAmount === undefined) return amountContextTransactions;
+    return amountContextTransactions.filter(
+      transaction =>
+        (minAmount === undefined || transaction.amount >= minAmount) &&
+        (maxAmount === undefined || transaction.amount <= maxAmount)
+    );
+  }, [amountContextTransactions, minAmount, maxAmount]);
   const amountBounds = useMemo(() => {
     let min = Infinity;
     let max = -Infinity;
@@ -1250,19 +1261,16 @@ export default function Transactions() {
                       {t('ledger.noFilteredTransactions')}
                     </p>
                   ) : (
-                    groupedByDate.map(({ date, items }) => (
-                      <DateGroup
-                        key={date}
-                        items={items}
-                        selectedTxnId={selectedTxnId}
-                        accounts={accounts}
-                        categories={categories}
-                        settings={settings}
-                        t={t}
-                        onSelect={setSelectedTxnId}
-                        onCommitOrder={reorderTransactions}
-                      />
-                    ))
+                    <LedgerDateGroups
+                      groups={groupedByDate}
+                      selectedTxnId={selectedTxnId}
+                      accounts={accounts}
+                      categories={categories}
+                      settings={settings}
+                      t={t}
+                      onSelect={setSelectedTxnId}
+                      onCommitOrder={reorderTransactions}
+                    />
                   )}
                 </div>
               </div>
@@ -1272,14 +1280,16 @@ export default function Transactions() {
       </div>
 
       {/* Slide-in Detail Panel */}
-      <LedgerExportDialog
-        open={exportDialogOpen}
-        onOpenChange={setExportDialogOpen}
-        transactions={transactions}
-        accounts={accounts}
-        categories={categories}
-        settings={settings}
-      />
+      {exportDialogOpen !== null && (
+        <LedgerExportDialog
+          open={exportDialogOpen}
+          onOpenChange={setExportDialogOpen}
+          transactions={transactions}
+          accounts={accounts}
+          categories={categories}
+          settings={settings}
+        />
+      )}
       <TransactionDetailPanel
         transaction={selectedTxn}
         onClose={() => setSelectedTxnId(null)}
