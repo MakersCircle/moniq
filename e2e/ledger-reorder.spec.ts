@@ -78,6 +78,116 @@ async function seedLedger(page: import('@playwright/test').Page, count = 3) {
   );
 }
 
+async function seedBalanceLedger(page: import('@playwright/test').Page) {
+  await page.evaluate(sameDay => {
+    const app = window as typeof window & {
+      useDataStore?: {
+        getState: () => DataState;
+        setState: (updater: (state: DataState) => Partial<DataState>) => void;
+      };
+    };
+    const ledgerStore = app.useDataStore;
+    const store = ledgerStore?.getState();
+    if (!store) throw new Error('Demo store is unavailable');
+    const { accountId, methodId } = store.addAccount(
+      {
+        name: 'Ledger Test Account',
+        type: 'Asset',
+        initialBalance: 1000,
+        isSavings: false,
+        excludeFromNet: false,
+        isActive: true,
+      },
+      'Ledger Test Method'
+    );
+    const otherAccount = store.addAccount(
+      {
+        name: 'Unrelated Ledger Account',
+        type: 'Asset',
+        initialBalance: 0,
+        isSavings: false,
+        excludeFromNet: false,
+        isActive: true,
+      },
+      'Unrelated Ledger Method'
+    );
+    const categoryId = store.addCategory({
+      group: 'Needs',
+      head: 'Ledger Test Category',
+      isActive: true,
+    }).id;
+
+    for (const [note, amount, uiType] of [
+      ['Balance A', 100, 'income'],
+      ['Balance B', 51, 'expense'],
+      ['Balance C', 50, 'expense'],
+    ] as const) {
+      store.addTransaction({
+        date: sameDay,
+        uiType,
+        amount,
+        accountId,
+        targetId: categoryId,
+        methodId,
+        note,
+      });
+    }
+    store.addTransaction({
+      date: sameDay,
+      uiType: 'transfer',
+      amount: 500,
+      accountId,
+      targetId: otherAccount.accountId,
+      methodId,
+      note: 'Balance D',
+    });
+    store.addTransaction({
+      date: sameDay,
+      uiType: 'expense',
+      amount: 500,
+      accountId: otherAccount.accountId,
+      targetId: categoryId,
+      methodId: otherAccount.methodId,
+      note: 'Unrelated account legacy row',
+    });
+
+    // Model a legacy row between explicitly reordered records. The whole date
+    // group should use creation order until every row has a saved sort order.
+    ledgerStore?.setState(state => ({
+      transactions: state.transactions.map(transaction => {
+        if (transaction.note === 'Balance A') {
+          return {
+            ...transaction,
+            sortOrder: 2,
+            createdAt: `${sameDay}T08:00:00.000Z`,
+          };
+        }
+        if (transaction.note === 'Balance B') {
+          return {
+            ...transaction,
+            sortOrder: undefined,
+            createdAt: `${sameDay}T09:00:00.000Z`,
+          };
+        }
+        if (transaction.note === 'Balance C') {
+          return {
+            ...transaction,
+            sortOrder: 0,
+            createdAt: `${sameDay}T10:00:00.000Z`,
+          };
+        }
+        if (transaction.note === 'Balance D') {
+          return { ...transaction, createdAt: `${sameDay}T11:00:00.000Z` };
+        }
+        if (transaction.note === 'Unrelated account legacy row') {
+          return { ...transaction, sortOrder: undefined };
+        }
+        return transaction;
+      }),
+    }));
+  }, sameDay);
+}
+
 async function openLedger(page: import('@playwright/test').Page) {
   await page.getByRole('link', { name: 'Ledger', exact: true }).click();
   await expect(page).toHaveURL(/\/transactions$/);
@@ -195,6 +305,60 @@ test('LEDGER-09: the handle reorders transactions only within their date and sav
   await page.reload();
   await expect.poll(() => transactionNames(dayGroup(page))).toEqual(previewOrder);
   await expect(transactionNames(dayGroup(page, '2024-03-14'))).resolves.toEqual(['Other Day']);
+});
+
+test('LEDGER-20: account balances match descending rows and update after reorder', async ({
+  demoPage: page,
+}) => {
+  test.skip(test.info().project.name !== 'iphone-portrait', 'Checks the optional Balance column');
+  await seedBalanceLedger(page);
+  await openLedger(page);
+
+  const filterMenu = page.getByRole('button', { name: 'Filters' });
+  await filterMenu.click();
+  const filters = page.getByRole('dialog', { name: 'Filters' });
+  await filters.getByRole('button', { name: 'Account' }).click();
+  await filters.getByRole('checkbox', { name: 'Ledger Test Account' }).check();
+  await page.keyboard.press('Escape');
+
+  await page.getByRole('button', { name: 'Columns' }).click();
+  const columns = page.getByRole('dialog', { name: 'Columns' });
+  await columns.getByRole('checkbox', { name: 'Balance' }).check();
+  await page.keyboard.press('Escape');
+
+  const group = dayGroup(page);
+  await expect
+    .poll(() => transactionNames(group))
+    .toEqual(['Balance D', 'Balance C', 'Balance B', 'Balance A']);
+  const row = (note: string) => group.locator('[data-ledger-row]').filter({ hasText: note });
+  const balance = (note: string) => row(note).locator('div.mono.text-xs.truncate');
+  await expect(balance('Balance D')).toContainText('499');
+  await expect(balance('Balance C')).toContainText('999');
+  await expect(balance('Balance B')).toContainText('1,049');
+  await expect(balance('Balance A')).toContainText('1,100');
+
+  const balanceAHandle = row('Balance A').getByRole('button', {
+    name: 'Reorder Balance A within this date. Drag or use arrow keys.',
+  });
+  await balanceAHandle.press('ArrowUp');
+  await balanceAHandle.press('ArrowUp');
+  await balanceAHandle.press('ArrowUp');
+
+  await expect
+    .poll(() => transactionNames(group))
+    .toEqual(['Balance A', 'Balance D', 'Balance C', 'Balance B']);
+  await expect(balance('Balance A')).toContainText('499');
+  await expect(balance('Balance D')).toContainText('399');
+  await expect(balance('Balance C')).toContainText('899');
+  await expect(balance('Balance B')).toContainText('949');
+
+  await page.getByRole('button', { name: 'Columns' }).click();
+  const columnsToReset = page.getByRole('dialog', { name: 'Columns' });
+  const activeIndicator = page.locator('[data-testid="columns-active-indicator"]:visible');
+  await expect(activeIndicator).toBeVisible();
+  await columnsToReset.getByRole('button', { name: 'Reset columns' }).click();
+  await expect(columnsToReset.getByRole('checkbox', { name: /^Balance/ })).not.toBeChecked();
+  await expect(activeIndicator).toHaveCount(0);
 });
 
 test('LEDGER-09: phone scrolling stays within the dragged date group', async ({
@@ -335,4 +499,83 @@ test('LEDGER-19: phone Ledger rows stay separated after scroll and list updates'
   await addTransaction();
   await expect(rows).toHaveCount(21);
   await expectRowsSeparated();
+});
+
+test('LEDGER-21: mobile Columns lists fixed and optional Ledger columns', async ({
+  seededDemoPage: page,
+}) => {
+  test.skip((page.viewportSize()?.width ?? 0) >= 768, 'Checks the phone Columns sheet');
+  await openLedger(page);
+
+  await page.getByRole('button', { name: 'Columns' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Columns' });
+  await expect(sheet).toBeVisible();
+
+  for (const column of ['Date', 'Description', 'Amount']) {
+    const checkbox = sheet.getByRole('checkbox', { name: column, exact: true });
+    await expect(checkbox).toBeChecked();
+    await expect(checkbox).toBeDisabled();
+  }
+
+  for (const column of ['Category', 'Account']) {
+    const checkbox = sheet.getByRole('checkbox', { name: column, exact: true });
+    await expect(checkbox).toBeEnabled();
+    await expect(checkbox).not.toBeChecked();
+  }
+
+  const row = page.locator('[data-ledger-row]').first();
+  const description = row.locator('[data-ledger-description-cell]');
+  const initialDescriptionWidth = (await description.boundingBox())?.width;
+  expect(initialDescriptionWidth).toBeDefined();
+
+  await sheet.getByRole('checkbox', { name: 'Category', exact: true }).click();
+  await sheet.getByRole('checkbox', { name: 'Account', exact: true }).click();
+  const expandedDescriptionWidth = (await description.boundingBox())?.width;
+  expect(expandedDescriptionWidth).toBeDefined();
+  expect(Math.abs(expandedDescriptionWidth! - initialDescriptionWidth!)).toBeLessThanOrEqual(1);
+  const scrollFrame = page.locator('[data-ledger-scroll-frame]');
+  const frameClientWidth = await scrollFrame.evaluate(element => element.clientWidth);
+  await expect
+    .poll(() => scrollFrame.evaluate(element => element.scrollWidth))
+    .toBeGreaterThan(frameClientWidth);
+
+  const activeIndicator = page.locator('[data-testid="columns-active-indicator"]:visible');
+  await expect(activeIndicator).toBeVisible();
+  const resetButton = sheet.getByRole('button', { name: 'Reset columns' });
+  await expect(resetButton).toBeEnabled();
+  await resetButton.click();
+  await expect(sheet.getByRole('checkbox', { name: 'Category', exact: true })).not.toBeChecked();
+  await expect(sheet.getByRole('checkbox', { name: 'Account', exact: true })).not.toBeChecked();
+  await expect(resetButton).toBeDisabled();
+  await expect(activeIndicator).toHaveCount(0);
+
+  const balanceCheckbox = sheet.getByRole('checkbox', { name: /^Balance/ });
+  await expect(balanceCheckbox).not.toBeChecked();
+  await expect(balanceCheckbox).toBeDisabled();
+});
+
+test('LEDGER-22: desktop Columns indicator and reset reflect optional Balance', async ({
+  seededDemoPage: page,
+}) => {
+  test.skip(test.info().project.name !== 'desktop', 'Checks the desktop Columns menu');
+  await openLedger(page);
+
+  await page.getByRole('button', { name: 'Filter by account' }).click();
+  const accountFilter = page
+    .locator('[data-radix-popper-content-wrapper]')
+    .filter({ has: page.getByPlaceholder('Search accounts...') });
+  await accountFilter.getByRole('checkbox', { name: 'Fixture Checking', exact: true }).click();
+
+  await page.getByRole('button', { name: 'Columns' }).click();
+  const columns = page
+    .locator('[data-radix-popper-content-wrapper]')
+    .filter({ has: page.getByRole('checkbox', { name: 'Balance', exact: true }) });
+  const balanceCheckbox = columns.getByRole('checkbox', { name: 'Balance', exact: true });
+  await balanceCheckbox.check();
+  const activeIndicator = page.locator('[data-testid="columns-active-indicator"]:visible');
+  await expect(activeIndicator).toBeVisible();
+
+  await columns.getByRole('button', { name: 'Reset columns' }).click();
+  await expect(balanceCheckbox).not.toBeChecked();
+  await expect(activeIndicator).toHaveCount(0);
 });

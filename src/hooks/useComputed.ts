@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useDataStore } from '../store/dataStore';
 import { LedgerEngine } from '../lib/ledger';
+import { sortLedgerTransactionsNewestFirst } from '../lib/ledgerOrdering';
 import type { Category } from '../types';
 
 /**
@@ -157,48 +158,47 @@ export function useFilteredTransactions(filter: TxnFilter) {
   const { transactions } = useDataStore();
 
   return useMemo(() => {
-    return transactions
-      .filter(t => {
-        if (t.isDeleted) return false;
-        if (filter.dates?.length && !filter.dates.includes(t.date)) return false;
-        if (filter.months?.length && !filter.months.some(month => t.date.startsWith(month)))
-          return false;
-        if (filter.years?.length && !filter.years.some(year => t.date.startsWith(year)))
-          return false;
-        if (filter.dateFrom && filter.dateTo) {
-          const rangeStart = filter.dateFrom < filter.dateTo ? filter.dateFrom : filter.dateTo;
-          const rangeEnd = filter.dateFrom > filter.dateTo ? filter.dateFrom : filter.dateTo;
-          if (t.date < rangeStart || t.date > rangeEnd) return false;
-        }
-        if (filter.uiTypes?.length && !filter.uiTypes.includes(t.uiType)) return false;
+    const activeTransactions = transactions.filter(t => !t.isDeleted);
+    const filteredTransactions = activeTransactions.filter(t => {
+      if (filter.dates?.length && !filter.dates.includes(t.date)) return false;
+      if (filter.months?.length && !filter.months.some(month => t.date.startsWith(month)))
+        return false;
+      if (filter.years?.length && !filter.years.some(year => t.date.startsWith(year))) return false;
+      if (filter.dateFrom && filter.dateTo) {
+        const rangeStart = filter.dateFrom < filter.dateTo ? filter.dateFrom : filter.dateTo;
+        const rangeEnd = filter.dateFrom > filter.dateTo ? filter.dateFrom : filter.dateTo;
+        if (t.date < rangeStart || t.date > rangeEnd) return false;
+      }
+      if (filter.uiTypes?.length && !filter.uiTypes.includes(t.uiType)) return false;
 
-        if (filter.minAmount !== undefined && t.amount < filter.minAmount) return false;
-        if (filter.maxAmount !== undefined && t.amount > filter.maxAmount) return false;
+      if (filter.minAmount !== undefined && t.amount < filter.minAmount) return false;
+      if (filter.maxAmount !== undefined && t.amount > filter.maxAmount) return false;
 
-        if (
-          filter.accountIds?.length &&
-          !t.entries.some(entry => filter.accountIds?.includes(entry.accountId))
-        )
-          return false;
-        if (
-          filter.categoryIds?.length &&
-          !t.entries.some(entry => filter.categoryIds?.includes(entry.accountId))
-        )
-          return false;
+      if (
+        filter.accountIds?.length &&
+        !t.entries.some(entry => filter.accountIds?.includes(entry.accountId))
+      )
+        return false;
+      if (
+        filter.categoryIds?.length &&
+        !t.entries.some(entry => filter.categoryIds?.includes(entry.accountId))
+      )
+        return false;
 
-        if (filter.search && !t.note.toLowerCase().includes(filter.search.toLowerCase()))
-          return false;
-        return true;
-      })
-      .sort((a, b) => {
-        const dateDiff = b.date.localeCompare(a.date);
-        if (dateDiff !== 0) return dateDiff;
-        // Within same date: newest explicit order first; use creation time for legacy records.
-        if (a.sortOrder !== undefined && b.sortOrder !== undefined && a.sortOrder !== b.sortOrder) {
-          return b.sortOrder - a.sortOrder;
-        }
-        return b.createdAt.localeCompare(a.createdAt);
-      });
+      if (filter.search && !t.note.toLowerCase().includes(filter.search.toLowerCase()))
+        return false;
+      return true;
+    });
+    // Balance rows are only enabled for a single account. Use that account's
+    // complete date groups to order visible rows, even when another filter hides
+    // some of its transactions or unrelated legacy rows share the same date.
+    const orderingContext =
+      filter.accountIds?.length === 1
+        ? activeTransactions.filter(transaction =>
+            transaction.entries.some(entry => entry.accountId === filter.accountIds?.[0])
+          )
+        : activeTransactions;
+    return sortLedgerTransactionsNewestFirst(filteredTransactions, orderingContext);
   }, [transactions, filter]);
 }
 

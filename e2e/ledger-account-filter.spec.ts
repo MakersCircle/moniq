@@ -57,12 +57,15 @@ test('LEDGER-12: account checkboxes filter matching Ledger rows', async ({
   const savingsCheckbox = filter.getByRole('checkbox', { name: 'Fixture Savings', exact: true });
   await savingsCheckbox.click();
 
+  const accountFilterButton = page.getByRole('button', { name: 'Filter by account' });
+  await expect(accountFilterButton.locator('span[aria-hidden="true"]')).toBeVisible();
   await expect(filter.getByText('2 selected', { exact: true })).toBeVisible();
   await expect(page.getByText('Fixture paycheck', { exact: true })).toBeVisible();
   await expect(page.getByText('Fixture groceries', { exact: true })).toBeVisible();
   await expect(page.getByText('Account savings transaction', { exact: true })).toBeVisible();
 
   await filter.getByRole('button', { name: 'Clear account filter' }).click();
+  await expect(accountFilterButton.locator('span[aria-hidden="true"]')).toHaveCount(0);
   await expect(page.getByText('Fixture paycheck', { exact: true })).toBeVisible();
   await filter.getByPlaceholder('Search accounts...').fill('missing account');
   await expect(filter.getByText('No accounts found.')).toBeVisible();
@@ -86,13 +89,13 @@ test('LEDGER-16: mobile common filters include account, type, and category', asy
   await expect(menu).toBeVisible();
   await expect(menu).toHaveCSS('animation-delay', '0s');
   await expect(menu).toHaveClass(/slide-in-from-bottom/);
-  const typeSection = menu.getByRole('button', { name: 'Filter by type' });
-  const accountSection = menu.getByRole('button', { name: 'Filter by account' });
-  const categorySection = menu.getByRole('button', { name: 'Filter by category' });
+  const typeSection = menu.getByRole('button', { name: 'Type' });
+  const accountSection = menu.getByRole('button', { name: 'Account' });
+  const categorySection = menu.getByRole('button', { name: 'Category' });
   await expect(typeSection).toHaveAttribute('aria-expanded', 'true');
   await expect(accountSection).toHaveAttribute('aria-expanded', 'false');
   await expect(categorySection).toHaveAttribute('aria-expanded', 'false');
-  await expect(menu.getByRole('group', { name: 'Filter by type' })).toBeVisible();
+  await expect(menu.getByRole('group', { name: 'Type' })).toBeVisible();
   await menu.getByRole('checkbox', { name: 'Income', exact: true }).uncheck();
   await menu.getByRole('checkbox', { name: 'Transfer', exact: true }).uncheck();
   await accountSection.click();
@@ -113,14 +116,8 @@ test('LEDGER-16: mobile common filters include account, type, and category', asy
   await expect(page.locator('[data-ledger-filter-indicator]')).toBeVisible();
   await expect(typeSection).toBeVisible();
   await expect(typeSection).toHaveAttribute('aria-expanded', 'false');
-
-  await typeSection.click();
-  await menu.getByRole('checkbox', { name: 'Expenses', exact: true }).uncheck();
-  await expect(page.getByText('Fixture groceries', { exact: true })).toBeVisible();
-  await categorySection.click();
-  await menu.getByRole('checkbox', { name: 'Fixture Food', exact: true }).uncheck();
-  await accountSection.click();
-  await menu.getByRole('checkbox', { name: 'Fixture Checking', exact: true }).uncheck();
+  await expect(menu.getByLabel('Filter active')).toHaveCount(3);
+  await menu.getByRole('button', { name: 'Clear filters' }).click();
   await expect(page.locator('[data-ledger-filter-indicator]')).toHaveCount(0);
   await expect(page.getByText('Fixture paycheck', { exact: true })).toBeVisible();
   await expect(page.getByText('Fixture groceries', { exact: true })).toBeVisible();
