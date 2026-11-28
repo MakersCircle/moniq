@@ -492,3 +492,30 @@ test('LEDGER-19: phone Ledger rows stay separated after scroll and list updates'
   await expect(rows).toHaveCount(21);
   await expectRowsSeparated();
 });
+
+test('LEDGER-21: mobile Columns lists fixed and optional Ledger columns', async ({
+  seededDemoPage: page,
+}) => {
+  test.skip((page.viewportSize()?.width ?? 0) >= 768, 'Checks the phone Columns sheet');
+  await openLedger(page);
+
+  await page.getByRole('button', { name: 'Columns' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Columns' });
+  await expect(sheet).toBeVisible();
+
+  for (const column of ['Date', 'Description', 'Amount']) {
+    const checkbox = sheet.getByRole('checkbox', { name: column, exact: true });
+    await expect(checkbox).toBeChecked();
+    await expect(checkbox).toBeDisabled();
+  }
+
+  for (const column of ['Category', 'Account']) {
+    const checkbox = sheet.getByRole('checkbox', { name: column, exact: true });
+    await expect(checkbox).toBeEnabled();
+    await expect(checkbox).not.toBeChecked();
+  }
+
+  const balanceCheckbox = sheet.getByRole('checkbox', { name: /^Balance/ });
+  await expect(balanceCheckbox).not.toBeChecked();
+  await expect(balanceCheckbox).toBeDisabled();
+});

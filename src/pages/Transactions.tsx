@@ -807,17 +807,25 @@ export default function Transactions() {
               >
                 <div role="group" aria-label="Columns" className="space-y-1 px-5 pb-5">
                   {[
-                    ['category', 'Category'],
-                    ['account', 'Account'],
-                    ['balanceAfter', 'Balance'],
-                  ].map(([key, label]) => (
+                    { key: 'date', label: 'Date', fixed: true },
+                    { key: 'description', label: 'Description', fixed: true },
+                    { key: 'category', label: 'Category', fixed: false },
+                    { key: 'account', label: 'Account', fixed: false },
+                    { key: 'amount', label: 'Amount', fixed: true },
+                    { key: 'balanceAfter', label: 'Balance', fixed: false },
+                  ].map(({ key, label, fixed }) => (
                     <label
                       key={key}
-                      className="flex min-h-10 items-center gap-3 rounded-md px-2 text-sm hover:bg-accent"
+                      className={cn(
+                        'flex min-h-10 items-center gap-3 rounded-md px-2 text-sm',
+                        fixed ? 'cursor-not-allowed opacity-70' : 'hover:bg-accent'
+                      )}
                     >
                       <Checkbox
-                        checked={optionalColumns[key as keyof typeof optionalColumns]}
-                        disabled={key === 'balanceAfter' && !selectedAccountId}
+                        checked={
+                          fixed ? true : optionalColumns[key as keyof typeof optionalColumns]
+                        }
+                        disabled={fixed || (key === 'balanceAfter' && !selectedAccountId)}
                         onCheckedChange={() => toggleColumn(key as keyof typeof optionalColumns)}
                       />
                       {label}
