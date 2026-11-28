@@ -38,6 +38,12 @@ test('LEDGER-06: income row and detail agree on the debit account', async ({
   await expect(row).not.toContainText('Fixture Other');
 
   await page.getByText('Fixture paycheck', { exact: true }).click();
+  const backdrop = page.getByTestId('ledger-detail-backdrop');
+  await expect(backdrop).toBeVisible();
+  await expect(backdrop).toHaveClass(/bg-black\/45/);
+  await expect(backdrop).toHaveClass(/motion-safe:animate-in/);
+  await expect(backdrop).toHaveClass(/motion-safe:fade-in-0/);
+  await expect(backdrop).toHaveCSS('backdrop-filter', 'blur(8px)');
   const detailPanel = page.getByRole('heading', { name: 'Transaction Details' }).locator('../..');
   await expect(detailPanel.getByText('Fixture Checking', { exact: true })).toBeVisible();
   await expect(detailPanel.getByText('Fixture Other', { exact: true })).toHaveCount(0);

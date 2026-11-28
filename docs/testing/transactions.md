@@ -30,7 +30,7 @@ Focuses purely on double-entry bookkeeping math, isolated from React.
 
 ### 1.1a Shared selectors and edit prefill (implemented in `ledger.test.ts`)
 
-These checks use `LedgerEngine.createEntries` as the input to the inverse mapping. The Ledger row, detail panel, CSV export, Trash guard, category summary, and edit form now call the same selectors. `e2e/transaction-read.spec.ts` checks that an income row and its detail panel display the same debit account at six viewport profiles; other transaction details and types remain to test.
+These checks use `LedgerEngine.createEntries` as the input to the inverse mapping. The Ledger row, detail panel, CSV export, Trash guard, category summary, and edit form now call the same selectors. `e2e/transaction-read.spec.ts` checks that an income row and its detail panel display the same debit account and that the panel opens over a dimmed, blurred backdrop at six viewport profiles; other transaction details and types remain to test.
 
 | ID | Scenario | Expected Outcome |
 |---|---|---|

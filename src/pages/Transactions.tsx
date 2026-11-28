@@ -1509,6 +1509,15 @@ export default function Transactions() {
           settings={settings}
         />
       )}
+      {selectedTxn && (
+        <button
+          type="button"
+          aria-label={t('common.close')}
+          data-testid="ledger-detail-backdrop"
+          className="fixed inset-0 z-40 bg-black/45 backdrop-blur-sm motion-safe:animate-in motion-safe:fade-in-0 motion-reduce:animate-none"
+          onClick={() => setSelectedTxnId(null)}
+        />
+      )}
       <TransactionDetailPanel
         transaction={selectedTxn}
         onClose={() => setSelectedTxnId(null)}
