@@ -351,6 +351,14 @@ test('LEDGER-20: account balances match descending rows and update after reorder
   await expect(balance('Balance D')).toContainText('399');
   await expect(balance('Balance C')).toContainText('899');
   await expect(balance('Balance B')).toContainText('949');
+
+  await page.getByRole('button', { name: 'Columns' }).click();
+  const columnsToReset = page.getByRole('dialog', { name: 'Columns' });
+  const activeIndicator = page.locator('[data-testid="columns-active-indicator"]:visible');
+  await expect(activeIndicator).toBeVisible();
+  await columnsToReset.getByRole('button', { name: 'Reset columns' }).click();
+  await expect(columnsToReset.getByRole('checkbox', { name: /^Balance/ })).not.toBeChecked();
+  await expect(activeIndicator).toHaveCount(0);
 });
 
 test('LEDGER-09: phone scrolling stays within the dragged date group', async ({
@@ -531,7 +539,43 @@ test('LEDGER-21: mobile Columns lists fixed and optional Ledger columns', async 
     .poll(() => scrollFrame.evaluate(element => element.scrollWidth))
     .toBeGreaterThan(frameClientWidth);
 
+  const activeIndicator = page.locator('[data-testid="columns-active-indicator"]:visible');
+  await expect(activeIndicator).toBeVisible();
+  const resetButton = sheet.getByRole('button', { name: 'Reset columns' });
+  await expect(resetButton).toBeEnabled();
+  await resetButton.click();
+  await expect(sheet.getByRole('checkbox', { name: 'Category', exact: true })).not.toBeChecked();
+  await expect(sheet.getByRole('checkbox', { name: 'Account', exact: true })).not.toBeChecked();
+  await expect(resetButton).toBeDisabled();
+  await expect(activeIndicator).toHaveCount(0);
+
   const balanceCheckbox = sheet.getByRole('checkbox', { name: /^Balance/ });
   await expect(balanceCheckbox).not.toBeChecked();
   await expect(balanceCheckbox).toBeDisabled();
+});
+
+test('LEDGER-22: desktop Columns indicator and reset reflect optional Balance', async ({
+  seededDemoPage: page,
+}) => {
+  test.skip(test.info().project.name !== 'desktop', 'Checks the desktop Columns menu');
+  await openLedger(page);
+
+  await page.getByRole('button', { name: 'Filter by account' }).click();
+  const accountFilter = page
+    .locator('[data-radix-popper-content-wrapper]')
+    .filter({ has: page.getByPlaceholder('Search accounts...') });
+  await accountFilter.getByRole('checkbox', { name: 'Fixture Checking', exact: true }).click();
+
+  await page.getByRole('button', { name: 'Columns' }).click();
+  const columns = page
+    .locator('[data-radix-popper-content-wrapper]')
+    .filter({ has: page.getByRole('checkbox', { name: 'Balance', exact: true }) });
+  const balanceCheckbox = columns.getByRole('checkbox', { name: 'Balance', exact: true });
+  await balanceCheckbox.check();
+  const activeIndicator = page.locator('[data-testid="columns-active-indicator"]:visible');
+  await expect(activeIndicator).toBeVisible();
+
+  await columns.getByRole('button', { name: 'Reset columns' }).click();
+  await expect(balanceCheckbox).not.toBeChecked();
+  await expect(activeIndicator).toHaveCount(0);
 });

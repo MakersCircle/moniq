@@ -536,6 +536,9 @@ export default function Transactions() {
   }, [accounts, optionalColumns.balanceAfter, selectedAccountId, transactions]);
   const toggleColumn = (key: keyof typeof optionalColumns) =>
     setOptionalColumns(columns => ({ ...columns, [key]: !columns[key] }));
+  const resetColumns = () =>
+    setOptionalColumns({ category: false, account: false, balanceAfter: false });
+  const hasCustomColumns = Object.values(optionalColumns).some(Boolean);
 
   const toggleType = (value: (typeof typeFilterOptions)[number]['value'], checked: boolean) => {
     const next = new Set(selectedTypes);
@@ -793,10 +796,17 @@ export default function Transactions() {
                 size="icon"
                 aria-label="Columns"
                 title="Columns"
-                className="h-10 w-10 md:hidden"
+                className="relative h-10 w-10 md:hidden"
                 onClick={() => setColumnSheetOpen(true)}
               >
                 <Columns3 className="h-4 w-4" />
+                {hasCustomColumns && (
+                  <span
+                    aria-hidden="true"
+                    data-testid="columns-active-indicator"
+                    className="absolute right-1 top-1 size-1.5 rounded-full bg-destructive ring-2 ring-background"
+                  />
+                )}
               </Button>
               <ResponsiveModal
                 open={columnSheetOpen}
@@ -836,6 +846,18 @@ export default function Transactions() {
                       )}
                     </label>
                   ))}
+                  <div className="flex justify-end border-t border-border px-2 pt-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Reset columns"
+                      disabled={!hasCustomColumns}
+                      onClick={resetColumns}
+                    >
+                      Reset
+                    </Button>
+                  </div>
                 </div>
               </ResponsiveModal>
 
@@ -913,10 +935,18 @@ export default function Transactions() {
                   <Button
                     type="button"
                     variant="ghost"
-                    className="hidden h-9 w-[120px] justify-between border border-input bg-background px-3 text-xs shadow-sm md:flex"
+                    aria-label="Columns"
+                    className="relative hidden h-9 w-[120px] justify-between border border-input bg-background px-3 text-xs shadow-sm md:flex"
                   >
                     Columns
                     <ChevronDown className="h-4 w-4 opacity-50" />
+                    {hasCustomColumns && (
+                      <span
+                        aria-hidden="true"
+                        data-testid="columns-active-indicator"
+                        className="absolute right-1 top-1 size-1.5 rounded-full bg-destructive ring-2 ring-background"
+                      />
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent align="end" sideOffset={-36} className="w-[210px] p-1">
@@ -953,6 +983,18 @@ export default function Transactions() {
                       Select one account for balances
                     </div>
                   )}
+                  <div className="mt-1 flex justify-end border-t border-border px-2 pt-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Reset columns"
+                      disabled={!hasCustomColumns}
+                      onClick={resetColumns}
+                    >
+                      Reset
+                    </Button>
+                  </div>
                 </PopoverContent>
               </Popover>
 
