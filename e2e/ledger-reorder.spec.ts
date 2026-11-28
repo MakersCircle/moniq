@@ -515,6 +515,22 @@ test('LEDGER-21: mobile Columns lists fixed and optional Ledger columns', async 
     await expect(checkbox).not.toBeChecked();
   }
 
+  const row = page.locator('[data-ledger-row]').first();
+  const description = row.locator('[data-ledger-description-cell]');
+  const initialDescriptionWidth = (await description.boundingBox())?.width;
+  expect(initialDescriptionWidth).toBeDefined();
+
+  await sheet.getByRole('checkbox', { name: 'Category', exact: true }).click();
+  await sheet.getByRole('checkbox', { name: 'Account', exact: true }).click();
+  const expandedDescriptionWidth = (await description.boundingBox())?.width;
+  expect(expandedDescriptionWidth).toBeDefined();
+  expect(Math.abs(expandedDescriptionWidth! - initialDescriptionWidth!)).toBeLessThanOrEqual(1);
+  const scrollFrame = page.locator('[data-ledger-scroll-frame]');
+  const frameClientWidth = await scrollFrame.evaluate(element => element.clientWidth);
+  await expect
+    .poll(() => scrollFrame.evaluate(element => element.scrollWidth))
+    .toBeGreaterThan(frameClientWidth);
+
   const balanceCheckbox = sheet.getByRole('checkbox', { name: /^Balance/ });
   await expect(balanceCheckbox).not.toBeChecked();
   await expect(balanceCheckbox).toBeDisabled();

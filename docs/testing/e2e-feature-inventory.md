@@ -97,7 +97,7 @@ The **Recorded** column names the earliest relevant entry in [the changelog](../
 | LEDGER-18 | On phones, keep Ledger scrolling vertical and prevent the table frame from horizontally panning or overflowing the page. | Unreleased |
 | LEDGER-19 | Keep phone Ledger rows visually separate after vertical scrolling and transaction-list updates, including rows with different content heights. | Unreleased |
 | LEDGER-20 | When one account is selected, the optional Balance column shows that account's balance immediately after each transaction in chronological order, even though rows are listed newest first; changing the saved order within a date recalculates each affected row's balance. | Unreleased |
-| LEDGER-21 | The phone Columns sheet lists Date, Description, Category, Account, Amount, and Balance. Date, Description, and Amount are checked and locked; Category and Account remain optional separate columns, and Balance is disabled until one account is selected. | Unreleased |
+| LEDGER-21 | The phone Columns sheet lists Date, Description, Category, Account, Amount, and Balance. Date, Description, and Amount are checked and locked; Category and Account remain optional separate columns without widening Description, and Balance is disabled until one account is selected. | Unreleased |
 
 ## 6. Manage accounts, methods, and categories
 

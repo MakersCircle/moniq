@@ -143,7 +143,7 @@ function TxnGridRow({
       </div>
 
       {/* Description — flex-1 so it takes remaining space; min-w-0 allows truncation */}
-      <div className="px-3 md:px-5 py-3 flex-1 min-w-0">
+      <div data-ledger-description-cell className="px-3 md:px-5 py-3 flex-1 min-w-0">
         <div className="flex flex-col w-full min-w-0">
           <div className="flex items-center justify-between gap-2 min-w-0">
             <span
@@ -989,9 +989,18 @@ export default function Transactions() {
                   optionalColumns.category ||
                     optionalColumns.account ||
                     optionalColumns.balanceAfter
-                    ? 'min-w-[980px]'
+                    ? 'min-w-[calc(100%_+_var(--ledger-extra-columns-width))] md:min-w-[980px]'
                     : 'md:min-w-[800px]'
                 )}
+                style={
+                  {
+                    '--ledger-extra-columns-width': `${
+                      (optionalColumns.category ? 160 : 0) +
+                      (optionalColumns.account ? 140 : 0) +
+                      (optionalColumns.balanceAfter ? 140 : 0)
+                    }px`,
+                  } as React.CSSProperties
+                }
               >
                 {/* ── Sticky Column Header ── */}
                 <div
