@@ -78,6 +78,116 @@ async function seedLedger(page: import('@playwright/test').Page, count = 3) {
   );
 }
 
+async function seedBalanceLedger(page: import('@playwright/test').Page) {
+  await page.evaluate(sameDay => {
+    const app = window as typeof window & {
+      useDataStore?: {
+        getState: () => DataState;
+        setState: (updater: (state: DataState) => Partial<DataState>) => void;
+      };
+    };
+    const ledgerStore = app.useDataStore;
+    const store = ledgerStore?.getState();
+    if (!store) throw new Error('Demo store is unavailable');
+    const { accountId, methodId } = store.addAccount(
+      {
+        name: 'Ledger Test Account',
+        type: 'Asset',
+        initialBalance: 1000,
+        isSavings: false,
+        excludeFromNet: false,
+        isActive: true,
+      },
+      'Ledger Test Method'
+    );
+    const otherAccount = store.addAccount(
+      {
+        name: 'Unrelated Ledger Account',
+        type: 'Asset',
+        initialBalance: 0,
+        isSavings: false,
+        excludeFromNet: false,
+        isActive: true,
+      },
+      'Unrelated Ledger Method'
+    );
+    const categoryId = store.addCategory({
+      group: 'Needs',
+      head: 'Ledger Test Category',
+      isActive: true,
+    }).id;
+
+    for (const [note, amount, uiType] of [
+      ['Balance A', 100, 'income'],
+      ['Balance B', 51, 'expense'],
+      ['Balance C', 50, 'expense'],
+    ] as const) {
+      store.addTransaction({
+        date: sameDay,
+        uiType,
+        amount,
+        accountId,
+        targetId: categoryId,
+        methodId,
+        note,
+      });
+    }
+    store.addTransaction({
+      date: sameDay,
+      uiType: 'transfer',
+      amount: 500,
+      accountId,
+      targetId: otherAccount.accountId,
+      methodId,
+      note: 'Balance D',
+    });
+    store.addTransaction({
+      date: sameDay,
+      uiType: 'expense',
+      amount: 500,
+      accountId: otherAccount.accountId,
+      targetId: categoryId,
+      methodId: otherAccount.methodId,
+      note: 'Unrelated account legacy row',
+    });
+
+    // Model a legacy row between explicitly reordered records. The whole date
+    // group should use creation order until every row has a saved sort order.
+    ledgerStore?.setState(state => ({
+      transactions: state.transactions.map(transaction => {
+        if (transaction.note === 'Balance A') {
+          return {
+            ...transaction,
+            sortOrder: 2,
+            createdAt: `${sameDay}T08:00:00.000Z`,
+          };
+        }
+        if (transaction.note === 'Balance B') {
+          return {
+            ...transaction,
+            sortOrder: undefined,
+            createdAt: `${sameDay}T09:00:00.000Z`,
+          };
+        }
+        if (transaction.note === 'Balance C') {
+          return {
+            ...transaction,
+            sortOrder: 0,
+            createdAt: `${sameDay}T10:00:00.000Z`,
+          };
+        }
+        if (transaction.note === 'Balance D') {
+          return { ...transaction, createdAt: `${sameDay}T11:00:00.000Z` };
+        }
+        if (transaction.note === 'Unrelated account legacy row') {
+          return { ...transaction, sortOrder: undefined };
+        }
+        return transaction;
+      }),
+    }));
+  }, sameDay);
+}
+
 async function openLedger(page: import('@playwright/test').Page) {
   await page.getByRole('link', { name: 'Ledger', exact: true }).click();
   await expect(page).toHaveURL(/\/transactions$/);
@@ -195,6 +305,52 @@ test('LEDGER-09: the handle reorders transactions only within their date and sav
   await page.reload();
   await expect.poll(() => transactionNames(dayGroup(page))).toEqual(previewOrder);
   await expect(transactionNames(dayGroup(page, '2024-03-14'))).resolves.toEqual(['Other Day']);
+});
+
+test('LEDGER-20: account balances match descending rows and update after reorder', async ({
+  demoPage: page,
+}) => {
+  test.skip(test.info().project.name !== 'iphone-portrait', 'Checks the optional Balance column');
+  await seedBalanceLedger(page);
+  await openLedger(page);
+
+  const filterMenu = page.getByRole('button', { name: 'Filters' });
+  await filterMenu.click();
+  const filters = page.getByRole('dialog', { name: 'Filters' });
+  await filters.getByRole('button', { name: 'Account' }).click();
+  await filters.getByRole('checkbox', { name: 'Ledger Test Account' }).check();
+  await page.keyboard.press('Escape');
+
+  await page.getByRole('button', { name: 'Columns' }).click();
+  const columns = page.getByRole('dialog', { name: 'Columns' });
+  await columns.getByRole('checkbox', { name: 'Balance' }).check();
+  await page.keyboard.press('Escape');
+
+  const group = dayGroup(page);
+  await expect
+    .poll(() => transactionNames(group))
+    .toEqual(['Balance D', 'Balance C', 'Balance B', 'Balance A']);
+  const row = (note: string) => group.locator('[data-ledger-row]').filter({ hasText: note });
+  const balance = (note: string) => row(note).locator('div.mono.text-xs.truncate');
+  await expect(balance('Balance D')).toContainText('499');
+  await expect(balance('Balance C')).toContainText('999');
+  await expect(balance('Balance B')).toContainText('1,049');
+  await expect(balance('Balance A')).toContainText('1,100');
+
+  const balanceAHandle = row('Balance A').getByRole('button', {
+    name: 'Reorder Balance A within this date. Drag or use arrow keys.',
+  });
+  await balanceAHandle.press('ArrowUp');
+  await balanceAHandle.press('ArrowUp');
+  await balanceAHandle.press('ArrowUp');
+
+  await expect
+    .poll(() => transactionNames(group))
+    .toEqual(['Balance A', 'Balance D', 'Balance C', 'Balance B']);
+  await expect(balance('Balance A')).toContainText('499');
+  await expect(balance('Balance D')).toContainText('399');
+  await expect(balance('Balance C')).toContainText('899');
+  await expect(balance('Balance B')).toContainText('949');
 });
 
 test('LEDGER-09: phone scrolling stays within the dragged date group', async ({

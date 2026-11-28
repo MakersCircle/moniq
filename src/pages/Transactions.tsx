@@ -33,6 +33,7 @@ import { MobileLedgerFilters } from '@/components/Transactions/MobileLedgerFilte
 import { ResponsiveModal } from '@/components/ui/responsive-modal';
 import { cn } from '@/lib/utils';
 import { LedgerEngine } from '@/lib/ledger';
+import { sortLedgerTransactionsOldestFirst } from '@/lib/ledgerOrdering';
 import TransactionDetailPanel from '@/components/Transactions/TransactionDetailPanel';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useProgressiveRender } from '@/hooks/useProgressiveRender';
@@ -509,14 +510,10 @@ export default function Transactions() {
   const selectedAccountId = filter.accountIds?.length === 1 ? filter.accountIds[0] : null;
   const runningBalances = useMemo(() => {
     if (!optionalColumns.balanceAfter || !selectedAccountId) return new Map<string, number>();
-    const ordered = [...transactions]
-      .filter(txn => !txn.isDeleted)
-      .sort(
-        (a, b) =>
-          a.date.localeCompare(b.date) ||
-          (a.sortOrder ?? 0) - (b.sortOrder ?? 0) ||
-          a.createdAt.localeCompare(b.createdAt)
-      );
+    const accountTransactions = transactions.filter(
+      txn => !txn.isDeleted && txn.entries.some(entry => entry.accountId === selectedAccountId)
+    );
+    const ordered = sortLedgerTransactionsOldestFirst(accountTransactions);
     let balance = accounts.find(account => account.id === selectedAccountId)?.initialBalance ?? 0;
     const values = new Map<string, number>();
     for (const txn of ordered) {

@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mobile Ledger Scrolling**: Prevent horizontal panning in the phone Ledger viewport so vertical scrolling does not drift sideways.
 - **Mobile Ledger Row Layout**: Prevent date-group rows from overlapping or leaving gaps by synchronizing changed row IDs before paint and disabling mobile row-size transforms while preserving position-only reorder animation.
 - **Ledger Dialog Backdrops**: Give Export and the mobile filter bottom sheet the same dark blurred backdrop. The filter sheet slides up, grows to fit expanded lists within a comfortable viewport limit, and scrolls longer lists; search appears only for larger lists. Type, Account, and Category use concise headings in a single-open accordion with active-filter dots, and the sheet can clear all filters; all or no selected types show every transaction. Active date, category, account, and amount column filters show a dot on their header icons.
+- **Ledger Running Balances**: Calculate each account's balance in the exact reverse of its newest-first Ledger order, include the opening balance, use creation time consistently for legacy date groups without complete saved order, and recalculate row balances when a same-day transaction reorder changes the sequence.
 - **Mobile Ledger Search**: Use a shorter placeholder inside the expanded search field so it fits beside the search and clear controls.
 - **Dialog Animation**: Start Filter, Export, and Add Transaction dialog animations immediately on open and prepare their panels and blurred backdrops for smooth compositing. Add Transaction now uses the same blurred backdrop as Filter and Export.
 - **Mobile Transaction Selects**: Increase the payment method, category, and subcategory controls and option rows to 44 px on mobile for easier tapping; retain compact desktop sizing.
@@ -34,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ledger Transaction Order Coverage**: Verify descending date and within-day order, persisted drag reordering, and same-day phone list behavior.
 - **Mobile Ledger Scrolling Coverage**: Verify phone Ledger gestures are constrained to vertical panning and the document has no horizontal overflow.
 - **Ledger Dialog and Filter Coverage**: Verify Export and the mobile filter sheet use a consistent blurred backdrop; check the sheet animation, concise Type/Account/Category accordion headings, single-open behavior, active-filter indicators in the mobile sheet and desktop column headers, clear-all action, and all-or-none type behavior.
+- **Ledger Running Balance Coverage**: Verify opening balance and per-transaction balances in newest-first rows, then reorder transactions and verify each row's balance updates; cover legacy date groups with missing saved order.
 
 ## [0.12.1] - 2026-11-23
 

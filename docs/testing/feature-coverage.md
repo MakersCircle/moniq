@@ -104,6 +104,7 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | LEDGER-17 | Keep the sticky Ledger column header aligned with the scrollable rows while hiding its unnecessary hover scrollbar. | Covered | `e2e/ledger-amount-filter.spec.ts` verifies the sticky header keeps a stable scrollbar gutter with hidden overflow and that the transaction list remains vertically scrollable across the configured viewports. | — | No |
 | LEDGER-18 | On phones, keep Ledger scrolling vertical and prevent the table frame from horizontally panning or overflowing the page. | Covered | `e2e/ledger-reorder.spec.ts` checks phone touch-action, clipped horizontal overflow, the vertical row scroller, and document width. | — | No |
 | LEDGER-19 | Keep phone Ledger rows visually separate after scrolling and list updates, even when row content heights differ. | Covered | `e2e/ledger-reorder.spec.ts` checks row spacing at the top and bottom of the scroll area and after a same-date transaction update. | — | No |
+| LEDGER-20 | With one account selected, show its balance after each transaction in chronological order despite newest-first display; recalculate balances when same-day transaction order changes. | Covered | `src/lib/__tests__/ledgerOrdering.test.ts` checks saved-order groups and legacy groups with missing order values; `e2e/ledger-reorder.spec.ts` seeds a $1,000 opening balance, checks $1,100 after the oldest $100 income, $1,049 after the $51 expense, and $499 after the $500 transfer in newest-first rows, changes same-day order with keyboard controls, and verifies recalculated balances with an unrelated legacy account row present. | — | No |
 
 ## 6. Manage accounts, methods, and categories
 
@@ -203,6 +204,6 @@ Known defects should get tests that describe the intended behavior once fixed: [
 | PWA-02 | Previously cached app routes and assets load while offline. | Missing | — | Installed/offline browser | No |
 | PWA-03 | Installed mobile app icons display correctly on iOS and Android home screens. | Missing | — | Installed/offline browser | No |
 
-Tracked: **122 features**; **7 partial**, **93 missing**, **22 covered end to end**. Recalculate these totals when adding tests.
+Tracked: **123 features**; **7 partial**, **93 missing**, **23 covered end to end**. Recalculate these totals when adding tests.
 
 Regional preference persistence (#108): `userSettings.test.ts` and `settings-persistence.spec.ts` cover demo reload, pending changes, canonical defaults, and locale-dependent date order. Applying the date format throughout the UI remains separate issue #76.
