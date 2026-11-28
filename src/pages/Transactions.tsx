@@ -9,6 +9,7 @@ import {
   List,
   GripVertical,
   ListFilter,
+  Columns3,
   X,
 } from 'lucide-react';
 import { motion, Reorder, useDragControls } from 'framer-motion';
@@ -29,6 +30,7 @@ import { CategoryFilterPopover } from '@/components/Transactions/CategoryFilterP
 import { AccountFilterPopover } from '@/components/Transactions/AccountFilterPopover';
 import { AmountFilterPopover } from '@/components/Transactions/AmountFilterPopover';
 import { MobileLedgerFilters } from '@/components/Transactions/MobileLedgerFilters';
+import { ResponsiveModal } from '@/components/ui/responsive-modal';
 import { cn } from '@/lib/utils';
 import { LedgerEngine } from '@/lib/ledger';
 import TransactionDetailPanel from '@/components/Transactions/TransactionDetailPanel';
@@ -73,6 +75,8 @@ interface TxnRowProps {
   onMove: (id: string, direction: -1 | 1) => void;
   isDragging: boolean;
   isDragged: boolean;
+  optionalColumns?: { category: boolean; account: boolean; balanceAfter: boolean };
+  runningBalance?: number;
 }
 
 function TxnGridRow({
@@ -87,6 +91,8 @@ function TxnGridRow({
   onMove,
   isDragging,
   isDragged,
+  optionalColumns = { category: false, account: false, balanceAfter: false },
+  runningBalance,
 }: TxnRowProps) {
   const date = new Date(txn.date);
   return (
@@ -152,18 +158,35 @@ function TxnGridRow({
             {isSelected && <ChevronRight className="h-3.5 w-3.5 text-primary flex-shrink-0" />}
           </div>
           {/* Mobile: category + account beneath description */}
-          <div className="md:hidden flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground min-w-0">
-            <span className="truncate max-w-[70px]">
-              {getCategoryName(txn, accounts, categories, t)}
-            </span>
-            <span className="shrink-0 opacity-50">•</span>
-            <span className="truncate max-w-[70px]">{getAccountName(txn, accounts, t)}</span>
+          <div
+            className={cn(
+              'md:hidden items-center gap-1.5 mt-1 text-[10px] text-muted-foreground min-w-0',
+              (!optionalColumns.category || optionalColumns.account) && 'flex',
+              optionalColumns.category && !optionalColumns.account && 'flex'
+            )}
+          >
+            {!optionalColumns.category && (
+              <span className="truncate max-w-[70px]">
+                {getCategoryName(txn, accounts, categories, t)}
+              </span>
+            )}
+            {!optionalColumns.category && !optionalColumns.account && (
+              <span className="shrink-0 opacity-50">•</span>
+            )}
+            {!optionalColumns.account && (
+              <span className="truncate max-w-[70px]">{getAccountName(txn, accounts, t)}</span>
+            )}
           </div>
         </div>
       </div>
 
       {/* Category — desktop only, fixed width */}
-      <div className="hidden md:flex px-3 md:px-5 py-3 items-center gap-1.5 shrink-0 w-[160px]">
+      <div
+        className={cn(
+          'hidden md:flex px-3 md:px-5 py-3 items-center gap-1.5 shrink-0 w-[160px]',
+          optionalColumns.category && 'flex'
+        )}
+      >
         <div
           className={cn(
             'h-1.5 w-1.5 rounded-full shrink-0',
@@ -180,9 +203,19 @@ function TxnGridRow({
       </div>
 
       {/* Account — desktop only, fixed width */}
-      <div className="hidden md:block px-3 md:px-5 py-3 text-muted-foreground text-xs truncate shrink-0 w-[140px]">
+      <div
+        className={cn(
+          'hidden md:block px-3 md:px-5 py-3 text-muted-foreground text-xs truncate shrink-0 w-[140px]',
+          optionalColumns.account && 'block'
+        )}
+      >
         {getAccountName(txn, accounts, t)}
       </div>
+      {optionalColumns.balanceAfter && (
+        <div className="px-3 md:px-5 py-3 text-right mono text-xs truncate shrink-0 w-[140px]">
+          {formatCurrency(runningBalance ?? 0, settings)}
+        </div>
+      )}
 
       {/* Amount — fixed width, right-aligned */}
       <div
@@ -215,6 +248,8 @@ function DateGroup({
   t,
   onSelect,
   onCommitOrder,
+  optionalColumns,
+  runningBalances,
 }: {
   items: Transaction[];
   selectedTxnId: string | null;
@@ -224,6 +259,8 @@ function DateGroup({
   t: (key: string) => string;
   onSelect: (id: string | null) => void;
   onCommitOrder: (ids: string[]) => void;
+  optionalColumns: { category: boolean; account: boolean; balanceAfter: boolean };
+  runningBalances: Map<string, number>;
 }) {
   const [localIds, setLocalIds] = useState(() => items.map(t => t.id));
   const isDraggingRef = React.useRef(false);
@@ -323,6 +360,8 @@ function DateGroup({
             accounts={accounts}
             categories={categories}
             settings={settings}
+            optionalColumns={optionalColumns}
+            runningBalance={runningBalances.get(txn.id)}
             t={t}
             onDragStart={() => startDrag(txn.id)}
             onDragEnd={handleDragEnd}
@@ -350,6 +389,8 @@ function LedgerReorderRow({
   onDragEnd,
   onMove,
   onSelect,
+  optionalColumns,
+  runningBalance,
 }: Omit<TxnRowProps, 'onHandlePointerDown'> & {
   groupRef: React.RefObject<HTMLDivElement | null>;
   isMobile: boolean;
@@ -391,6 +432,8 @@ function LedgerReorderRow({
         onMove={onMove}
         isDragging={isDragging}
         isDragged={isDragged}
+        optionalColumns={optionalColumns}
+        runningBalance={runningBalance}
         onHandlePointerDown={handlePointerDown}
       />
     </Reorder.Item>
@@ -424,6 +467,13 @@ export default function Transactions() {
   const [selectedTxnId, setSelectedTxnId] = useState<string | null>(null);
   const [exportDialogOpen, setExportDialogOpen] = useState<boolean | null>(null);
   const [typeFilterOpen, setTypeFilterOpen] = useState(false);
+  const [columnsOpen, setColumnsOpen] = useState(false);
+  const [columnSheetOpen, setColumnSheetOpen] = useState(false);
+  const [optionalColumns, setOptionalColumns] = useState({
+    category: false,
+    account: false,
+    balanceAfter: false,
+  });
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const mobileSearchRef = useRef<HTMLInputElement>(null);
   const mobileSearchContainerRef = useRef<HTMLDivElement>(null);
@@ -456,6 +506,39 @@ export default function Transactions() {
         : t('ledger.selectedTypeCount', { count: selectedTypes.length });
   const typeFilterActive =
     selectedTypes.length > 0 && selectedTypes.length < typeFilterOptions.length;
+  const selectedAccountId = filter.accountIds?.length === 1 ? filter.accountIds[0] : null;
+  const runningBalances = useMemo(() => {
+    if (!optionalColumns.balanceAfter || !selectedAccountId) return new Map<string, number>();
+    const ordered = [...transactions]
+      .filter(txn => !txn.isDeleted)
+      .sort(
+        (a, b) =>
+          a.date.localeCompare(b.date) ||
+          (a.sortOrder ?? 0) - (b.sortOrder ?? 0) ||
+          a.createdAt.localeCompare(b.createdAt)
+      );
+    let balance = accounts.find(account => account.id === selectedAccountId)?.initialBalance ?? 0;
+    const values = new Map<string, number>();
+    for (const txn of ordered) {
+      for (const entry of txn.entries) {
+        if (entry.accountId !== selectedAccountId) continue;
+        const account = accounts.find(item => item.id === selectedAccountId);
+        const impact =
+          account?.type === 'Liability'
+            ? entry.type === 'CREDIT'
+              ? entry.amount
+              : -entry.amount
+            : entry.type === 'DEBIT'
+              ? entry.amount
+              : -entry.amount;
+        balance += impact;
+      }
+      values.set(txn.id, balance);
+    }
+    return values;
+  }, [accounts, optionalColumns.balanceAfter, selectedAccountId, transactions]);
+  const toggleColumn = (key: keyof typeof optionalColumns) =>
+    setOptionalColumns(columns => ({ ...columns, [key]: !columns[key] }));
 
   const toggleType = (value: (typeof typeFilterOptions)[number]['value'], checked: boolean) => {
     const next = new Set(selectedTypes);
@@ -706,6 +789,50 @@ export default function Transactions() {
                 t={t}
               />
 
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Columns"
+                title="Columns"
+                className="h-10 w-10 md:hidden"
+                onClick={() => setColumnSheetOpen(true)}
+              >
+                <Columns3 className="h-4 w-4" />
+              </Button>
+              <ResponsiveModal
+                open={columnSheetOpen}
+                onOpenChange={setColumnSheetOpen}
+                title="Columns"
+                overlayClassName="bg-black/45 backdrop-blur-sm"
+                className="max-h-[calc(var(--app-viewport-height)-7rem)] sm:max-w-sm"
+              >
+                <div role="group" aria-label="Columns" className="space-y-1 px-5 pb-5">
+                  {[
+                    ['category', 'Category'],
+                    ['account', 'Account'],
+                    ['balanceAfter', 'Balance'],
+                  ].map(([key, label]) => (
+                    <label
+                      key={key}
+                      className="flex min-h-10 items-center gap-3 rounded-md px-2 text-sm hover:bg-accent"
+                    >
+                      <Checkbox
+                        checked={optionalColumns[key as keyof typeof optionalColumns]}
+                        disabled={key === 'balanceAfter' && !selectedAccountId}
+                        onCheckedChange={() => toggleColumn(key as keyof typeof optionalColumns)}
+                      />
+                      {label}
+                      {key === 'balanceAfter' && !selectedAccountId && (
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          Select one account
+                        </span>
+                      )}
+                    </label>
+                  ))}
+                </div>
+              </ResponsiveModal>
+
               <Popover
                 open={typeFilterOpen}
                 onOpenChange={open => {
@@ -775,6 +902,54 @@ export default function Transactions() {
                 </PopoverContent>
               </Popover>
 
+              <Popover open={columnsOpen} onOpenChange={setColumnsOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="hidden h-9 w-[120px] justify-between border border-input bg-background px-3 text-xs shadow-sm md:flex"
+                  >
+                    Columns
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" sideOffset={-36} className="w-[210px] p-1">
+                  {[
+                    ['date', 'Date'],
+                    ['description', 'Description'],
+                    ['category', 'Category'],
+                    ['account', 'Account'],
+                    ['amount', 'Amount'],
+                    ['balanceAfter', 'Balance'],
+                  ].map(([key, label]) => {
+                    const fixedColumn = key !== 'balanceAfter';
+                    return (
+                      <label
+                        key={key}
+                        className={cn(
+                          'flex h-9 items-center gap-2 rounded-md px-2 text-xs',
+                          fixedColumn
+                            ? 'cursor-not-allowed opacity-70'
+                            : 'cursor-pointer hover:bg-accent'
+                        )}
+                      >
+                        <Checkbox
+                          checked={fixedColumn || optionalColumns.balanceAfter}
+                          disabled={fixedColumn || !selectedAccountId}
+                          onCheckedChange={() => toggleColumn('balanceAfter')}
+                        />
+                        {label}
+                      </label>
+                    );
+                  })}
+                  {!selectedAccountId && (
+                    <div className="px-2 py-1 text-xs text-muted-foreground">
+                      Select one account for balances
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -795,9 +970,23 @@ export default function Transactions() {
           <div className="flex-1 rounded-xl border border-border bg-card shadow-sm w-full overflow-hidden flex flex-col min-h-0 relative">
             <div
               data-ledger-scroll-frame
-              className="w-full h-full overflow-x-clip touch-pan-y md:overflow-x-auto md:touch-auto flex flex-col custom-scrollbar"
+              className={cn(
+                'w-full h-full flex flex-col custom-scrollbar',
+                optionalColumns.category || optionalColumns.account || optionalColumns.balanceAfter
+                  ? 'overflow-x-auto touch-pan-x'
+                  : 'overflow-x-clip touch-pan-y md:overflow-x-auto md:touch-auto'
+              )}
             >
-              <div className="w-full md:min-w-[800px] flex flex-col h-full">
+              <div
+                className={cn(
+                  'w-full flex flex-col h-full',
+                  optionalColumns.category ||
+                    optionalColumns.account ||
+                    optionalColumns.balanceAfter
+                    ? 'min-w-[980px]'
+                    : 'md:min-w-[800px]'
+                )}
+              >
                 {/* ── Sticky Column Header ── */}
                 <div
                   data-ledger-column-header
@@ -1203,7 +1392,12 @@ export default function Transactions() {
                     <div className="px-3 md:px-5 py-3 flex-1 min-w-0">
                       {t('common.description')}
                     </div>
-                    <div className="hidden md:flex items-center gap-1 px-3 md:px-5 py-3 shrink-0 w-[160px]">
+                    <div
+                      className={cn(
+                        'hidden md:flex items-center gap-1 px-3 md:px-5 py-3 shrink-0 w-[160px]',
+                        optionalColumns.category && 'flex'
+                      )}
+                    >
                       <span>{t('common.categories')}</span>
                       <CategoryFilterPopover
                         categories={categories}
@@ -1214,7 +1408,12 @@ export default function Transactions() {
                         t={t}
                       />
                     </div>
-                    <div className="hidden md:flex items-center gap-1 px-3 md:px-5 py-3 shrink-0 w-[140px]">
+                    <div
+                      className={cn(
+                        'hidden md:flex items-center gap-1 px-3 md:px-5 py-3 shrink-0 w-[140px]',
+                        optionalColumns.account && 'flex'
+                      )}
+                    >
                       <span>{t('common.accounts')}</span>
                       <AccountFilterPopover
                         accounts={accounts}
@@ -1223,6 +1422,9 @@ export default function Transactions() {
                         t={t}
                       />
                     </div>
+                    {optionalColumns.balanceAfter && (
+                      <div className="px-3 py-3 shrink-0 w-[140px] text-right">Balance</div>
+                    )}
                     <div className="flex items-center justify-end gap-1 px-3 md:px-5 py-3 text-right shrink-0 w-[110px] md:w-[140px]">
                       <span>{t('common.amount')}</span>
                       <AmountFilterPopover
@@ -1267,6 +1469,8 @@ export default function Transactions() {
                       accounts={accounts}
                       categories={categories}
                       settings={settings}
+                      optionalColumns={optionalColumns}
+                      runningBalances={runningBalances}
                       t={t}
                       onSelect={setSelectedTxnId}
                       onCommitOrder={reorderTransactions}
