@@ -21,6 +21,7 @@ interface MobileLedgerFiltersProps {
   onAccountsChange: (ids: string[]) => void;
   onCategoriesChange: (ids: string[]) => void;
   onTypeChange: (type: TransactionType, checked: boolean) => void;
+  onClear: () => void;
   onOpenChange?: (open: boolean) => void;
   t: (key: string, vars?: Record<string, string | number>) => string;
 }
@@ -35,6 +36,7 @@ export function MobileLedgerFilters({
   onAccountsChange,
   onCategoriesChange,
   onTypeChange,
+  onClear,
   onOpenChange,
   t,
 }: MobileLedgerFiltersProps) {
@@ -93,6 +95,10 @@ export function MobileLedgerFilters({
 
   const renderSection = (section: FilterSection, label: string, content: ReactNode) => {
     const expanded = openSection === section;
+    const sectionActive =
+      (section === 'type' && typeFilterActive) ||
+      (section === 'account' && selectedAccountIds.length > 0) ||
+      (section === 'category' && selectedCategoryIds.length > 0);
     const contentId = `mobile-ledger-filter-${section}`;
     return (
       <section key={section} className="border-b border-border last:border-b-0">
@@ -105,6 +111,12 @@ export function MobileLedgerFilters({
           onClick={() => setOpenSection(current => (current === section ? 'type' : section))}
         >
           <span>{label}</span>
+          {sectionActive && (
+            <span
+              aria-label="Filter active"
+              className="ml-auto mr-2 size-1.5 shrink-0 rounded-full bg-destructive"
+            />
+          )}
           <ChevronDown
             aria-hidden="true"
             className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out motion-reduce:transition-none ${expanded ? 'rotate-180' : ''}`}
@@ -164,8 +176,8 @@ export function MobileLedgerFilters({
         <div className="px-4 pb-4">
           {renderSection(
             'type',
-            t('ledger.filterByType'),
-            <fieldset role="group" aria-label={t('ledger.filterByType')} className="space-y-1 px-1">
+            t('common.type'),
+            <fieldset role="group" aria-label={t('common.type')} className="space-y-1 px-1">
               {typeOptions.map(option => (
                 <label
                   key={option.value}
@@ -184,7 +196,7 @@ export function MobileLedgerFilters({
 
           {renderSection(
             'account',
-            t('ledger.filterByAccount'),
+            t('common.account'),
             <div className="space-y-1 px-1">
               {showAccountSearch ? (
                 <Input
@@ -223,7 +235,7 @@ export function MobileLedgerFilters({
 
           {renderSection(
             'category',
-            t('ledger.filterByCategory'),
+            t('common.category'),
             <div className="space-y-1 px-1">
               {showCategorySearch ? (
                 <Input
@@ -293,6 +305,13 @@ export function MobileLedgerFilters({
                   </p>
                 )}
               </div>
+            </div>
+          )}
+          {filtersApplied && (
+            <div className="border-t border-border pt-3">
+              <Button type="button" variant="ghost" size="sm" className="w-full" onClick={onClear}>
+                Clear filters
+              </Button>
             </div>
           )}
         </div>

@@ -783,6 +783,7 @@ export default function Transactions() {
                   updateFilter({ categoryIds: ids.length ? ids : undefined })
                 }
                 onTypeChange={toggleType}
+                onClear={() => setFilter({})}
                 onOpenChange={isOpen => {
                   if (isOpen) setMobileSearchOpen(false);
                 }}
@@ -1012,9 +1013,18 @@ export default function Transactions() {
                             size="icon-xs"
                             aria-label={t('ledger.filterByDate')}
                             title={t('ledger.filterByDate')}
-                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            className="relative h-7 w-7 text-muted-foreground hover:text-foreground"
                           >
                             <ListFilter className="h-3 w-3" />
+                            {(filter.dates?.length ||
+                              filter.months?.length ||
+                              filter.years?.length ||
+                              hasCustomRangeValues) && (
+                              <span
+                                aria-hidden="true"
+                                className="absolute right-1 top-1 size-1.5 rounded-full bg-destructive ring-2 ring-background"
+                              />
+                            )}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent

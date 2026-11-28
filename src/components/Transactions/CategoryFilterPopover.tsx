@@ -101,9 +101,15 @@ export function CategoryFilterPopover({
           size="icon-xs"
           aria-label={t('ledger.filterByCategory')}
           title={t('ledger.filterByCategory')}
-          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          className="relative h-7 w-7 text-muted-foreground hover:text-foreground"
         >
           <ListFilter className="h-3 w-3" />
+          {selectedIds.length > 0 && (
+            <span
+              aria-hidden="true"
+              className="absolute right-1 top-1 size-1.5 rounded-full bg-destructive ring-2 ring-background"
+            />
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent
